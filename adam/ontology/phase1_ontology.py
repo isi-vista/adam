@@ -1834,8 +1834,14 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL}),
     during=DuringAction(
         objects_to_paths=[
-            (_PUT_THEME, SpatialPath(FROM, _CONTACTING_MANIPULATOR)),
-            (_PUT_THEME, SpatialPath(TO, _PUT_GOAL)),
+            (
+                _PUT_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=_CONTACTING_MANIPULATOR,
+                    reference_destination_object=_PUT_GOAL,
+                ),
+            )
         ]
     ),
     enduring_conditions=[
@@ -1874,7 +1880,16 @@ PUSH_SURFACE_AUX = ActionDescriptionVariable(
 
 def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
+        objects_to_paths=[
+            (
+                _PUSH_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(PUSH_GOAL, distance=DISTAL),
+                    reference_destination_object=Region(PUSH_GOAL, distance=PROXIMAL),
+                ),
+            )
+        ]
     )
     enduring = [
         partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
@@ -1919,7 +1934,16 @@ _GO_GOAL = ActionDescriptionVariable(THING)
 def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     postconditions = [Relation(IN_REGION, _GO_AGENT, _GO_GOAL)]
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]
+        objects_to_paths=[
+            (
+                _GO_AGENT,
+                SpatialPath(
+                    TO,
+                    reference_source_object=Region(_GO_GOAL, distance=DISTAL),
+                    reference_destination_object=Region(_GO_GOAL, distance=PROXIMAL),
+                ),
+            )
+        ]
     )
     asserted_properties = [(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)]
 
@@ -1941,7 +1965,19 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
         {AGENT: _COME_AGENT, GOAL: _COME_GOAL}
     ),
     preconditions=[Relation(IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=DISTAL))],
-    during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
+    during=DuringAction(
+        objects_to_paths=[
+            (
+                _COME_AGENT,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(_COME_GOAL, distance=DISTAL),
+                    reference_destination_object=Region(_COME_GOAL, distance=PROXIMAL),
+                ),
+            )
+        ]
+    ),
+    # during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
     postconditions=[
         Relation(IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=PROXIMAL))
     ],
@@ -2073,6 +2109,7 @@ def spin_around_primary_axis(object_):
     return SpatialPath(
         operator=None,
         reference_source_object=object_,
+        reference_destination_object=object_,
         reference_axis=PrimaryAxisOfObject(object_),
         orientation_changed=True,
     )
@@ -2136,7 +2173,12 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
         objects_to_paths=[
             (
                 _FALL_THEME,
-                SpatialPath(operator=TOWARD, reference_source_object=_FALL_GROUND),
+                SpatialPath(
+                    operator=TOWARD,
+                    reference_source_object=Region(_FALL_GROUND, distance=DISTAL),
+                    reference_destination_object=Region(_FALL_GROUND, distance=PROXIMAL),
+                ),
+                # SpatialPath(operator=TOWARD, reference_source_object=_FALL_GROUND),
             )
         ]
     ),
@@ -2157,7 +2199,16 @@ _THROW_GROUND = ActionDescriptionVariable(GROUND)
 
 def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_THROW_THEME, SpatialPath(TO, THROW_GOAL))],
+        objects_to_paths=[
+            (
+                _THROW_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=_THROW_MANIPULATOR,
+                    reference_destination_object=THROW_GOAL,
+                ),
+            )
+        ],
         # must be above the ground at some point during the action
         at_some_point=[
             Relation(
@@ -2250,7 +2301,16 @@ _PASS_GROUND = ActionDescriptionVariable(GROUND)
 
 def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_PASS_THEME, SpatialPath(TO, PASS_GOAL))],
+        objects_to_paths=[
+            (
+                _PASS_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=_PASS_MANIPULATOR,
+                    reference_destination_object=PASS_GOAL,
+                ),
+            )
+        ],
         # must be above the ground at some point during the action
         at_some_point=[
             Relation(
@@ -2338,12 +2398,35 @@ _MOVE_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_
 
 def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during_move_self: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL))]
+        objects_to_paths=[
+            (
+                _MOVE_AGENT,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
+                    reference_destination_object=Region(MOVE_GOAL, distance=PROXIMAL),
+                ),
+            )
+        ]
     )
     during_move_object: DuringAction[ActionDescriptionVariable] = DuringAction(
         objects_to_paths=[
-            (_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL)),
-            (_MOVE_THEME, SpatialPath(TO, MOVE_GOAL)),
+            (
+                _MOVE_AGENT,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
+                    reference_destination_object=Region(MOVE_GOAL, distance=PROXIMAL),
+                ),
+            ),
+            (
+                _MOVE_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
+                    reference_destination_object=Region(MOVE_GOAL, distance=PROXIMAL),
+                ),
+            ),
         ]
     )
     enduring = [
@@ -2429,9 +2512,32 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
             frame=ActionDescriptionFrame({AGENT: jump_agent}),
             preconditions=preconditions,
             during=DuringAction(
+                # TODO: this one seems a bit sketchy
                 objects_to_paths=[
-                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
-                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                            reference_destination_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                        ),
+                    ),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=Region(
+                                jump_ground, distance=PROXIMAL
+                            ),
+                            reference_destination_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                        ),
+                    ),
                 ],
                 # must be above the ground at some point during the action
                 at_some_point=[
@@ -2458,8 +2564,30 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
             preconditions=preconditions,
             during=DuringAction(
                 objects_to_paths=[
-                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
-                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                            reference_destination_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                        ),
+                    ),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=Region(
+                                jump_ground, distance=PROXIMAL
+                            ),
+                            reference_destination_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                        ),
+                    ),
                 ],
                 # must be above the ground at some point during the action
                 at_some_point=[
@@ -2517,7 +2645,10 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         roll_theme,
                         SpatialPath(
                             operator=AWAY_FROM,
-                            reference_source_object=roll_agent,
+                            reference_source_object=Region(roll_agent, distance=PROXIMAL),
+                            reference_destination_object=Region(
+                                roll_agent, distance=DISTAL
+                            ),
                             reference_axis=HorizontalAxisOfObject(roll_theme, index=0),
                             orientation_changed=True,
                         ),
@@ -2546,7 +2677,10 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         roll_agent,
                         SpatialPath(
                             operator=AWAY_FROM,
-                            reference_source_object=roll_agent,
+                            reference_source_object=Region(roll_agent, distance=PROXIMAL),
+                            reference_destination_object=Region(
+                                roll_agent, distance=DISTAL
+                            ),
                             reference_axis=HorizontalAxisOfObject(roll_agent, index=0),
                             orientation_changed=True,
                         ),

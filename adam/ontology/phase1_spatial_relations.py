@@ -266,7 +266,7 @@ class SpatialPath(Generic[ReferenceObjectT]):
     reference_source_object: Union[ReferenceObjectT, Region[ReferenceObjectT]] = attrib()
     reference_destination_object: Union[
         ReferenceObjectT, Region[ReferenceObjectT]
-    ] = attrib(kw_only=True)
+    ] = attrib()
     reference_axis: Optional[Union[GeonAxis, AxisFunction[ReferenceObjectT]]] = attrib(
         # Ignored due to https://github.com/python/mypy/issues/5374
         validator=optional(instance_of(AxisFunction)),
@@ -286,15 +286,15 @@ class SpatialPath(Generic[ReferenceObjectT]):
         #  (e.g. for rotation without translation)
         # weird conditional to make mypy happy
         if (
-            not self.reference_source_object
-            and not self.reference_destination_object
+            (not self.reference_source_object or not self.reference_destination_object)
             and not self.reference_axis
             and not self.orientation_changed
         ):
             raise RuntimeError(
-                "A path must have at least one of a reference objects, "
+                "A path must have both reference objects, "
                 "a reference axis, or an orientation change"
             )
+
         if self.reference_axis:
             check_arg(isinstance(self.reference_axis, (GeonAxis, AxisFunction)))
 
@@ -414,6 +414,6 @@ class SpatialPath(Generic[ReferenceObjectT]):
             properties=chain(self.properties, other_path.properties),
         )
 
-    @reference_destination_object.default
-    def _assume_dest_is_source(self) -> Union[ReferenceObjectT, Region[ReferenceObjectT]]:
-        return self.reference_source_object
+    # @reference_destination_object.default
+    # def _assume_dest_is_source(self) -> Union[ReferenceObjectT, Region[ReferenceObjectT]]:
+    #    return self.reference_source_object
