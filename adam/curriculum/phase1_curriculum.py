@@ -1442,7 +1442,6 @@ def make_jump_template(
     agent: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
-    operator: PathOperator = None,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
@@ -1461,7 +1460,7 @@ def make_jump_template(
                         (
                             agent,
                             SpatialPath(
-                                operator=operator
+                                operator=AWAY_FROM
                                 if use_adverbial_path_modifier
                                 else None,
                                 reference_source_object=ground,
@@ -1584,7 +1583,6 @@ def _make_jump_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                     )
                     for use_adverbial_path_modifier in (True, False)
-                    for operator in [TOWARD, AWAY_FROM]
                 ]
             ),
             flatten(
@@ -3265,12 +3263,12 @@ def build_gaila_phase1_verb_curriculum(
         #    num_samples, num_noise_objects, language_generator
         # ),
         # _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
         # TODO: in Chinese, _make_speaker_addressee_curriculum currently leads to an error in graph matching
         # _make_speaker_addressee_curriculum(
         #    num_samples, num_noise_objects, language_generator
         # ),
-        # _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_curriculum(num_samples, num_noise_objects, language_generator),

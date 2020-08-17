@@ -2516,24 +2516,16 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         jump_agent,
                         SpatialPath(
                             AWAY_FROM,
-                            reference_source_object=Region(
-                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
-                            ),
-                            reference_destination_object=Region(
-                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
-                            ),
+                            reference_source_object=JUMP_INITIAL_SUPPORTER_AUX,
+                            reference_destination_object=JUMP_INITIAL_SUPPORTER_AUX,
                         ),
                     ),
                     (
                         jump_agent,
                         SpatialPath(
                             AWAY_FROM,
-                            reference_source_object=Region(
-                                jump_ground, distance=PROXIMAL
-                            ),
-                            reference_destination_object=Region(
-                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
-                            ),
+                            reference_source_object=jump_ground,
+                            reference_destination_object=jump_ground,
                         ),
                     ),
                 ],
