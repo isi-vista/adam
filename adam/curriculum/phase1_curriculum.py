@@ -709,9 +709,7 @@ def falling_template(
                                 reference_source_object=Region(
                                     ground, distance=DISTAL if start_distal else PROXIMAL
                                 ),
-                                reference_destination_object=Region(
-                                    ground, distance=EXTERIOR_BUT_IN_CONTACT
-                                ),
+                                reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -752,9 +750,7 @@ def fall_on_ground_template(
                                 reference_source_object=Region(
                                     ground, distance=DISTAL if start_distal else PROXIMAL
                                 ),
-                                reference_destination_object=Region(
-                                    ground, distance=EXTERIOR_BUT_IN_CONTACT
-                                ),
+                                reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -3265,29 +3261,29 @@ def build_gaila_phase1_verb_curriculum(
     """
     return [
         _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_transfer_of_possession_curriculum(
-            num_samples, num_noise_objects, language_generator
-        ),
-        _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_transfer_of_possession_curriculum(
+        #    num_samples, num_noise_objects, language_generator
+        # ),
+        # _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
         # TODO: in Chinese, _make_speaker_addressee_curriculum currently leads to an error in graph matching
-        _make_speaker_addressee_curriculum(
-            num_samples, num_noise_objects, language_generator
-        ),
-        _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_put_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_eat_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_take_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_move_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_go_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_push_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_speaker_addressee_curriculum(
+        #    num_samples, num_noise_objects, language_generator
+        # ),
+        # _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_put_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_eat_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_take_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_move_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_go_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_push_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_come_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_come_curriculum(num_samples, num_noise_objects, language_generator),
     ]
 
 
