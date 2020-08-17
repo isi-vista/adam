@@ -3268,8 +3268,8 @@ def build_gaila_phase1_verb_curriculum(
         # _make_speaker_addressee_curriculum(
         #    num_samples, num_noise_objects, language_generator
         # ),
-        _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_eat_curriculum(num_samples, num_noise_objects, language_generator),

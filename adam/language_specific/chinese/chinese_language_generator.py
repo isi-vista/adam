@@ -59,6 +59,7 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     BABY,
     DOG,
     BIRD,
+    DRINK,
 )
 from adam.language_specific import (
     FIRST_PERSON,
@@ -1160,7 +1161,12 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     return None
 
             localiser: Optional[str] = None
-            if region.distance == INTERIOR and not relation.negated:
+            # we handle drink separately here since it indicates a coverb rather than a localiser
+            if (
+                region.distance == INTERIOR
+                and not relation.negated
+                and (not action or not action.action_type == DRINK)
+            ):
                 localiser = "li3"
             # to/towards -- this functions differntly in Chinese but this is the best approximation to handle it
             elif region.distance == PROXIMAL and not region.direction:
@@ -1208,9 +1214,16 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
             # if there's no localiser, this is a relation we don't know how to handle
             if not localiser:
+                coverb: str = ""
                 # handle out, which is a coverb rather than a localiser
                 if region.distance == INTERIOR and relation.negated:
                     coverb = "chu1"
+                # handle from (as in drink from), which is also a coverb
+                elif (
+                    region.distance == INTERIOR and action and action.action_type == DRINK
+                ):
+                    coverb = "tsung2"
+                if coverb:
                     self.dependency_graph.add_edge(
                         DependencyTreeToken(coverb, ADPOSITION),
                         reference_object_node,

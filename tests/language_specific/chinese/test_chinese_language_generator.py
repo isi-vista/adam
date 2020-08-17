@@ -3726,3 +3726,22 @@ def test_invalid_relations():
     )
     with pytest.raises(RuntimeError):
         generated_tokens(situation)
+
+
+def test_drink_from():
+    agent = situation_object(MOM)
+    liquid = situation_object(WATER)
+    container = situation_object(CUP)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, liquid, container],
+        actions=[
+            Action(
+                DRINK,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, liquid)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, container)],
+            )
+        ],
+        always_relations=[inside(liquid, container)],
+    )
+    print(generated_tokens(situation))
