@@ -2,7 +2,7 @@ import itertools
 import logging
 from itertools import chain, combinations
 from pathlib import Path
-from typing import AbstractSet, Iterator, Mapping, Optional, Tuple, List, Union
+from typing import Iterator, Mapping, Optional, Tuple, List
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS

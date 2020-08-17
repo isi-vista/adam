@@ -112,9 +112,6 @@ from adam.ontology.phase1_ontology import (
     WALK,
     strictly_over,
     strictly_under,
-    on_region,
-    near_region,
-    far_region,
 )
 from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
@@ -709,7 +706,9 @@ def falling_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_source_object=Region(
+                                    ground, distance=DISTAL if start_distal else PROXIMAL
+                                ),
                                 reference_destination_object=Region(
                                     ground, distance=EXTERIOR_BUT_IN_CONTACT
                                 ),
@@ -750,7 +749,9 @@ def fall_on_ground_template(
                             theme,
                             SpatialPath(
                                 TOWARD,
-                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_source_object=Region(
+                                    ground, distance=DISTAL if start_distal else PROXIMAL
+                                ),
                                 reference_destination_object=Region(
                                     ground, distance=EXTERIOR_BUT_IN_CONTACT
                                 ),

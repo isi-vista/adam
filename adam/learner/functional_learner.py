@@ -193,9 +193,13 @@ class FunctionalLearner(TemplateLearner):
                 file.write(f"{concept}\n")
                 for slot in self._concept_to_slots_to_function_counter[concept]:
                     file.write(f"\t{slot}\n")
-                    for functional_concept in self._concept_to_slots_to_function_counter[
+                    for (
+                        functional_concept
+                    ) in self._concept_to_slots_to_function_counter[  # pylint:disable=protected-access
                         concept
-                    ][slot]._concept_to_count:
+                    ][
+                        slot
+                    ]._concept_to_count:  # pylint:disable=protected-access
                         file.write(
-                            f"\t\t{functional_concept} - {self._concept_to_slots_to_function_counter[concept][slot]._concept_to_count[functional_concept]}\n"
+                            f"\t\t{functional_concept} - {self._concept_to_slots_to_function_counter[concept][slot]._concept_to_count[functional_concept]}\n"  # pylint:disable=protected-access
                         )

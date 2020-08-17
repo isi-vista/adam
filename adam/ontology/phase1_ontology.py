@@ -69,7 +69,6 @@ from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
-    FROM,
     GRAVITATIONAL_DOWN,
     GRAVITATIONAL_UP,
     INTERIOR,
@@ -620,7 +619,7 @@ def _on_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     )
 
 
-on_region = _on_region_factory
+on_region = _on_region_factory  # pylint:disable=invalid-name
 on = make_dsl_region_relation(_on_region_factory)  # pylint:disable=invalid-name
 
 
@@ -632,7 +631,7 @@ def _near_region_factory(
     )
 
 
-near_region = _near_region_factory
+near_region = _near_region_factory  # pylint:disable=invalid-name
 near = make_dsl_region_relation(_near_region_factory)  # pylint:disable=invalid-name
 
 
@@ -642,7 +641,7 @@ def _far_region_factory(
     return Region(reference_object=reference_object, distance=DISTAL, direction=direction)
 
 
-far_region = _far_region_factory
+far_region = _far_region_factory  # pylint:disable=invalid-name
 far = make_dsl_region_relation(_far_region_factory)  # pylint:disable=invalid-name
 
 

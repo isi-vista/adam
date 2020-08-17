@@ -10,10 +10,8 @@ from typing import (
     Tuple,
     Union,
     Callable,
-    Optional,
 )
 
-from adam.axis import GeonAxis
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
