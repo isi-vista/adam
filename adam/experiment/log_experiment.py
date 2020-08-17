@@ -153,11 +153,11 @@ def learner_factory_from_params(
 
     beam_size = params.positive_integer("beam_size", default=10)
 
-    if language_mode == LanguageMode.CHINESE and learner_type not in [
-        "integrated-learner",
-        "integrated-learner-recognizer",
-    ]:
-        raise RuntimeError("Only able to test Chinese with integrated learner.")
+    # if language_mode == LanguageMode.CHINESE and learner_type not in [
+    #    "integrated-learner",
+    #    "integrated-learner-recognizer",
+    # ]:
+    #    raise RuntimeError("Only able to test Chinese with integrated learner.")
 
     rng = random.Random()
     rng.seed(0)

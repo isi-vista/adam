@@ -927,6 +927,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     )
                 )
                 if fills_legal_argument_role:
+                    region = cast(SituationRegion, relation.second_slot)
+                    # we can only have one relation per object; this is an issue for cases such as having during and after action relations
+                    # in the same VP. To solve this, we check if the reference object node is already in the modifiers and return if it is.
+                    if any(
+                        m[1].token == region.reference_object.debug_handle
+                        for m in modifiers
+                    ):
+                        return
                     prepositional_modifier = self.relation_to_prepositional_modifier(
                         action, relation
                     )

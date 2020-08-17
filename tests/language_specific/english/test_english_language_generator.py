@@ -68,6 +68,7 @@ from adam.ontology.phase1_ontology import (
     RED,
     BLACK,
     far,
+    negate,
     WALK,
     HARD_FORCE,
     PASS,
@@ -87,6 +88,7 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
     PROXIMAL,
     VIA,
+    TOWARD,
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation, flatten_relations
@@ -1919,6 +1921,36 @@ def test_counts_of_objects():
                 "a",
                 object_type.handle,
             )
+
+
+def test_not_toward_on_translation_of_relations():
+    theme = situation_object(MOM)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[theme, ground],
+        actions=[
+            Action(
+                action_type=FALL,
+                argument_roles_to_fillers=[(THEME, theme)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        before_action_relations=[negate(on(theme, ground))],
+        after_action_relations=[on(theme, ground)],
+    )
+    assert generated_tokens(situation) == ("Mom", "falls", "toward", "the", "ground")
 
 
 def generated_tokens(situation):

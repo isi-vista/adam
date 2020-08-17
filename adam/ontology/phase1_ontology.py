@@ -2174,7 +2174,7 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
                 _FALL_THEME,
                 SpatialPath(
                     operator=TOWARD,
-                    reference_source_object=Region(_FALL_GROUND, distance=DISTAL),
+                    reference_source_object=_far_region_factory(_FALL_GROUND),
                     reference_destination_object=_FALL_GROUND,
                 ),
             )
