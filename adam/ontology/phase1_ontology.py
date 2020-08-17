@@ -1997,11 +1997,7 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
     postconditions=[
         has(_TAKE_AGENT, _TAKE_THEME),
-        Relation(
-            IN_REGION,
-            _TAKE_THEME,
-            Region(_TAKE_MANIPULATOR, distance=EXTERIOR_BUT_IN_CONTACT),
-        ),
+        contacts(_TAKE_THEME, _TAKE_MANIPULATOR),
     ],
     asserted_properties=[
         (_TAKE_AGENT, VOLITIONALLY_INVOLVED),
