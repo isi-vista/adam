@@ -2144,19 +2144,19 @@ def bare_move_template(
             Action(
                 MOVE,
                 argument_roles_to_fillers=[(AGENT, agent)],
-                auxiliary_variable_bindings=[
-                    (MOVE_GOAL, Region(goal_reference, distance=PROXIMAL))
-                ],
+                auxiliary_variable_bindings=[(MOVE_GOAL, goal_reference)],
                 during=DuringAction(
                     objects_to_paths=[
                         (
                             agent,
                             SpatialPath(
-                                None,
+                                TO,
                                 reference_source_object=Region(
                                     goal_reference, distance=DISTAL
                                 ),
-                                reference_destination_object=goal_reference,
+                                reference_destination_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
                                 properties=spatial_properties,
                             ),
                         )
@@ -2183,25 +2183,24 @@ def transitive_move_template(
             Action(
                 MOVE,
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(MOVE_GOAL, goal_reference)],
                 during=DuringAction(
-                    continuously=[contacts(agent, theme)],
                     objects_to_paths=[
                         (
                             theme,
                             SpatialPath(
-                                None,
+                                TO,
                                 reference_source_object=Region(
                                     goal_reference, distance=DISTAL
                                 ),
-                                reference_destination_object=goal_reference,
+                                reference_destination_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
                                 properties=spatial_properties,
                             ),
                         )
-                    ],
+                    ]
                 ),
-                auxiliary_variable_bindings=[
-                    (MOVE_GOAL, Region(goal_reference, distance=PROXIMAL))
-                ],
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
@@ -3273,8 +3272,8 @@ def build_gaila_phase1_verb_curriculum(
         # _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_eat_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_take_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_move_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_take_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_move_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_go_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_push_curriculum(num_samples, num_noise_objects, language_generator),

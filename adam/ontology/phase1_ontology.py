@@ -2432,7 +2432,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT}),
         during=during_move_self,
-        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        postconditions=[near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2445,10 +2445,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME}),
         during=during_move_object,
         enduring_conditions=enduring,
-        postconditions=[
-            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
-            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
-        ],
+        postconditions=[near(_MOVE_THEME, MOVE_GOAL), near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2460,7 +2457,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, GOAL: MOVE_GOAL}),
         during=during_move_self,
-        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        postconditions=[near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2476,10 +2473,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ),
         during=during_move_object,
         enduring_conditions=enduring,
-        postconditions=[
-            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
-            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
-        ],
+        postconditions=[near(_MOVE_THEME, MOVE_GOAL), near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
