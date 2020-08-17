@@ -2041,7 +2041,7 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
         {AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL}
     ),
     enduring_conditions=[
-        bigger_than(_GIVE_AGENT, _GIVE_THEME),
+        # bigger_than(_GIVE_AGENT, _GIVE_THEME),
         bigger_than(_GIVE_GOAL, _GIVE_THEME),
         partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
         partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),

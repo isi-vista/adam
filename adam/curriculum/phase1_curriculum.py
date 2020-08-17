@@ -3260,10 +3260,10 @@ def build_gaila_phase1_verb_curriculum(
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
-        _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_transfer_of_possession_curriculum(
-        #    num_samples, num_noise_objects, language_generator
-        # ),
+        # _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_transfer_of_possession_curriculum(
+            num_samples, num_noise_objects, language_generator
+        ),
         # _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
         # TODO: in Chinese, _make_speaker_addressee_curriculum currently leads to an error in graph matching
