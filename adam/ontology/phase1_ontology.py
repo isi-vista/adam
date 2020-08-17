@@ -2643,10 +2643,8 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         roll_theme,
                         SpatialPath(
                             operator=AWAY_FROM,
-                            reference_source_object=Region(roll_agent, distance=PROXIMAL),
-                            reference_destination_object=Region(
-                                roll_agent, distance=DISTAL
-                            ),
+                            reference_source_object=roll_agent,
+                            reference_destination_object=roll_agent,
                             reference_axis=HorizontalAxisOfObject(roll_theme, index=0),
                             orientation_changed=True,
                         ),
@@ -2674,11 +2672,9 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     (
                         roll_agent,
                         SpatialPath(
-                            operator=AWAY_FROM,
-                            reference_source_object=Region(roll_agent, distance=PROXIMAL),
-                            reference_destination_object=Region(
-                                roll_agent, distance=DISTAL
-                            ),
+                            operator=None,
+                            reference_source_object=roll_agent,
+                            reference_destination_object=roll_agent,
                             reference_axis=HorizontalAxisOfObject(roll_agent, index=0),
                             orientation_changed=True,
                         ),
