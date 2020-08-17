@@ -241,6 +241,9 @@ class TemporallyScopedEdgeLabel:
 
 
 # certain constant edges used by PerceptionGraphs
+REFERENCE_OBJECT_SOURCE_LABEL = OntologyNode("reference-object-source")
+REFERENCE_OBJECT_DESTINATION_LABEL = OntologyNode("reference-object-destination")
+
 REFERENCE_OBJECT_LABEL = OntologyNode("reference-object")
 """
 Edge label in a `PerceptionGraph` linking a `Region` to its reference object.
@@ -2962,10 +2965,14 @@ class _FrameTranslation:
         edges_to_add: List[Tuple[Any, Any, Any]] = []
         edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
         edges_to_add.append(
-            (path, map_node(path.reference_source_object), REFERENCE_OBJECT_LABEL)
+            (path, map_node(path.reference_source_object), REFERENCE_OBJECT_SOURCE_LABEL)
         )
         edges_to_add.append(
-            (path, map_node(path.reference_destination_object), REFERENCE_OBJECT_LABEL)
+            (
+                path,
+                map_node(path.reference_destination_object),
+                REFERENCE_OBJECT_DESTINATION_LABEL,
+            )
         )
         if path.reference_source_object == path.reference_destination_object:
             if isinstance(path.reference_source_object, Region):
