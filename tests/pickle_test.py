@@ -71,12 +71,12 @@ def test_object_recognition_with_drink_perception():
     )
 
     object_recognizer = LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode]
-    learner = IntegratedTemplateLearner(
-        object_learner=object_recognizer
-    )
+    learner = IntegratedTemplateLearner(object_learner=object_recognizer)
 
     for (_, linguistic_description, perceptual_representation) in curriculum.instances():
-        new_perceptual_representation = _pickle_and_unpickle_object(perceptual_representation)
+        new_perceptual_representation = _pickle_and_unpickle_object(
+            perceptual_representation
+        )
         learner.observe(
             LearningExample(new_perceptual_representation, linguistic_description)
         )
