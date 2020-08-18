@@ -26,6 +26,8 @@ class AdamPickler(Pickler):
         elif isinstance(obj, ObjectPerception):
             if obj == GROUND_PERCEPTION or obj == LEARNER_PERCEPTION:
                 return PERSISTENT_OBJECT_PERCEPTION_TAG, obj.debug_handle
+            else:
+                return None
         else:
             return None
 
