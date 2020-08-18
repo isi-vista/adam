@@ -42,6 +42,7 @@ from adam.language.dependency.universal_dependencies import (
     VERB,
     IS_ATTRIBUTE,
     ADVERBIAL_CLAUSE_MODIFIER,
+    PRE_VERBAL_ADVERBIAL_CLAUSE_MODIFIER,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -585,7 +586,9 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         # an always relation presented as a localiser always occurs preverbially
                         # TODO: https://github.com/isi-vista/adam/issues/811 NP mods within VP's aren't currently handled
                         if relation in self.situation.always_relations:
-                            modifiers.append((OBLIQUE_NOMINAL, localiser_modifier))
+                            modifiers.append(
+                                (PRE_VERBAL_ADVERBIAL_CLAUSE_MODIFIER, localiser_modifier)
+                            )
                         # all other relations indicate something about the path and so they occur post-verbially
                         else:
                             modifiers.append(

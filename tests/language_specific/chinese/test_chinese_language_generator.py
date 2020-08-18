@@ -3744,4 +3744,66 @@ def test_drink_from():
         ],
         always_relations=[inside(liquid, container)],
     )
-    print(generated_tokens(situation))
+    assert generated_tokens(situation) == (
+        "ma1 ma1",
+        "tsung2",
+        "bei1 dz",
+        "he1",
+        "shwei3",
+    )
+
+
+def test_order_ba_and_prep_phrase():
+    agent = situation_object(MOM)
+    theme = situation_object(BOOK)
+    push_surface = situation_object(TABLE)
+    push_goal = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        salient_objects=[agent, theme, push_surface],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        actions=[
+            Action(
+                PUSH,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[
+                    (PUSH_SURFACE_AUX, push_surface),
+                    (PUSH_GOAL, push_goal),
+                ],
+                during=DuringAction(
+                    continuously=[on(theme, push_surface)],
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_source_object=Region(
+                                    push_goal, distance=DISTAL
+                                ),
+                                reference_destination_object=push_goal,
+                            ),
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
+                            ),
+                        ),
+                    ],
+                ),
+            )
+        ],
+        always_relations=[on(theme, push_surface)],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "ma1 ma1",
+        "dzai4",
+        "jwo1 dz",
+        "shang4",
+        "ba3",
+        "shu1",
+        "twei1",
+        "sya4 lai2",
+    )
