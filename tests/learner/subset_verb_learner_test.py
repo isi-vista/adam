@@ -174,6 +174,19 @@ def test_eat_simple(language_mode, learner):
     )
 
 
+def drink_test_template():
+    object_0 = standard_object(
+        "object_0",
+        required_properties=[HOLLOW, PERSON_CAN_HAVE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
+    person_0 = standard_object(
+        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+    return make_drink_template(person_0, liquid_0, object_0, None)
+
+
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner",
@@ -186,18 +199,9 @@ def test_eat_simple(language_mode, learner):
     ],
 )
 def test_drink(language_mode, learner):
-    object_0 = standard_object(
-        "object_0",
-        required_properties=[HOLLOW, PERSON_CAN_HAVE],
-        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
-    )
-    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
-    person_0 = standard_object(
-        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
-    )
     run_verb_test(
         learner(language_mode),
-        make_drink_template(person_0, liquid_0, object_0, None),
+        drink_test_template(),
         language_generator=phase1_language_generator(language_mode),
     )
 
