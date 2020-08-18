@@ -40,32 +40,32 @@ class AdamUnpickler(Unpickler):
     """
 
     @staticmethod
-    def persistent_load(persistence_id):
-        if not isinstance(persistence_id, tuple) or len(persistence_id) < 1:
+    def persistent_load(persistent_id):
+        if not isinstance(persistent_id, tuple) or len(persistent_id) < 1:
             raise RuntimeError(
-                "Got bad persistence ID {pid}; persistence ID must be a tuple of at least one item"
+                "Got bad persistent ID {pid}; persistent ID must be a tuple of at least one item"
             )
 
-        tag = persistence_id[0]
+        tag = persistent_id[0]
         if tag == PERSISTENT_AXIS_TAG:
-            name = persistence_id[1]
+            name = persistent_id[1]
             for axis in SHARED_WORLD_ITEMS:
                 # Check that the item is an axis before just to make sure
                 if isinstance(axis, GeonAxis) and axis.debug_name == name:
                     return axis
             raise RuntimeError(
-                f"Axis persisted with name {name} but no such shared world item found!"
+                f"Persistent axis found with name {name} but no such shared world item found!"
             )
 
         elif tag == PERSISTENT_OBJECT_PERCEPTION_TAG:
-            name = persistence_id[1]
+            name = persistent_id[1]
             if name == GROUND_PERCEPTION.debug_handle:
                 return GROUND_PERCEPTION
             elif name == LEARNER_PERCEPTION.debug_handle:
                 return LEARNER_PERCEPTION
             else:
                 raise RuntimeError(
-                    f"Object perception persisted with name {name} but no such object perception known!"
+                    f"Persistent object perception found with name {name} but no such object perception known!"
                 )
         else:
-            raise RuntimeError(f"Got unrecognized persistence ID {persistence_id}!")
+            raise RuntimeError(f"Got unrecognized persistent ID {persistent_id}!")
