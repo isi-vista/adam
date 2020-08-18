@@ -26,7 +26,6 @@ from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_DOWN,
     PROXIMAL,
-    DISTAL,
 )
 from adam.relation import flatten_relations
 from adam.situation import Action
@@ -87,7 +86,7 @@ def _go_under_template(
     goal_object: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
+    is_distal: bool,  # pylint:disable=unused-argument
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"go_under-{agent.handle}-under-{goal_object.handle}",
@@ -101,9 +100,7 @@ def _go_under_template(
                     (
                         GOAL,
                         Region(
-                            goal_object,
-                            distance=DISTAL if is_distal else PROXIMAL,
-                            direction=GRAVITATIONAL_DOWN,
+                            goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN
                         ),
                     ),
                 ],

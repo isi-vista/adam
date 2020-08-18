@@ -1939,7 +1939,7 @@ def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
                 SpatialPath(
                     TO,
                     reference_source_object=Region(_GO_GOAL, distance=DISTAL),
-                    reference_destination_object=Region(_GO_GOAL, distance=PROXIMAL),
+                    reference_destination_object=_GO_GOAL,
                 ),
             )
         ]
