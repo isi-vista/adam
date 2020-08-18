@@ -80,6 +80,7 @@ def test_object_recognition_with_drink_perception():
     )
 
     for (_, linguistic_description, perceptual_representation) in curriculum.instances():
+        new_perceptual_representation = _pickle_and_unpickle_object(perceptual_representation)
         learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
+            LearningExample(new_perceptual_representation, linguistic_description)
         )
