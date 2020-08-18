@@ -15,7 +15,7 @@ T = TypeVar("T")
 
 def _pickle_and_unpickle_object(object: T) -> T:
     stream = BytesIO()
-    pickler = AdamPickler(file=object, protocol=HIGHEST_PROTOCOL)
+    pickler = AdamPickler(file=stream, protocol=HIGHEST_PROTOCOL)
     pickler.dump(object)
 
     stream.seek(0, SEEK_SET)
