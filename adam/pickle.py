@@ -61,6 +61,8 @@ class AdamUnpickler(Unpickler):
             name = persistence_id[1]
             if name == GROUND_PERCEPTION.debug_handle:
                 return GROUND_PERCEPTION
+            elif name == LEARNER_PERCEPTION.debug_handle:
+                return LEARNER_PERCEPTION
             else:
                 raise RuntimeError(
                     f"Object perception persisted with name {name} but no such object perception known!"
