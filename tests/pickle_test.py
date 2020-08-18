@@ -42,10 +42,6 @@ def test_pickle_preserves_ground_perception_identity():
     assert new_ground_perception is GROUND_PERCEPTION
 
 
-@pytest.mark.xfail(
-    reason="Learner perception is not currently preserved "
-    "since not preserving it doesn't seem to cause any learning problems."
-)
 def test_pickle_preserves_learner_perception_identity():
     new_ground_perception = _pickle_and_unpickle_object(LEARNER_PERCEPTION)
     assert new_ground_perception is LEARNER_PERCEPTION

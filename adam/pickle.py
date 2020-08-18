@@ -1,6 +1,6 @@
 from adam.axis import GeonAxis
 from adam.learner.object_recognizer import SHARED_WORLD_ITEMS
-from adam.perception import ObjectPerception, GROUND_PERCEPTION
+from adam.perception import ObjectPerception, GROUND_PERCEPTION, LEARNER_PERCEPTION
 from pickle import Pickler, Unpickler
 
 
@@ -24,7 +24,7 @@ class AdamPickler(Pickler):
             else:
                 return None
         elif isinstance(obj, ObjectPerception):
-            if obj == GROUND_PERCEPTION:
+            if obj == GROUND_PERCEPTION or obj == LEARNER_PERCEPTION:
                 return PERSISTENT_OBJECT_PERCEPTION_TAG, obj.debug_handle
         else:
             return None
