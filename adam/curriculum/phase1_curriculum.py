@@ -2414,10 +2414,7 @@ def make_push_templates(
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> List[Phase1SituationTemplate]:
     # push with implicit goal
-    aux_bindings = [
-        (PUSH_SURFACE_AUX, push_surface),
-        (PUSH_GOAL, Region(push_goal, distance=PROXIMAL)),
-    ]
+    aux_bindings = [(PUSH_SURFACE_AUX, push_surface), (PUSH_GOAL, push_goal)]
     push_unexpressed_goal = Phase1SituationTemplate(
         "push-unexpressed-surface-goal",
         salient_object_variables=[agent, theme],
@@ -2444,11 +2441,11 @@ def make_push_templates(
                         (
                             agent,
                             SpatialPath(
-                                operator=operator
-                                if use_adverbial_path_modifier
-                                else None,
-                                reference_source_object=push_surface,
-                                reference_destination_object=push_surface,
+                                operator=operator,
+                                reference_source_object=standard_object("ground", GROUND),
+                                reference_destination_object=standard_object(
+                                    "ground", GROUND
+                                ),
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2456,10 +2453,8 @@ def make_push_templates(
                 ),
             )
         ],
-        constraining_relations=[
-            bigger_than(push_surface, agent),
-            bigger_than(push_surface, push_goal),
-        ],
+        constraining_relations=[bigger_than(push_surface, theme)],
+        asserted_always_relations=[on(theme, push_surface)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 
@@ -2490,11 +2485,11 @@ def make_push_templates(
                         (
                             agent,
                             SpatialPath(
-                                operator=operator
-                                if use_adverbial_path_modifier
-                                else None,
-                                reference_source_object=push_surface,
-                                reference_destination_object=push_surface,
+                                operator=operator,
+                                reference_source_object=standard_object("ground", GROUND),
+                                reference_destination_object=standard_object(
+                                    "ground", GROUND
+                                ),
                                 properties=spatial_properties,
                             ),
                         ),
@@ -3275,8 +3270,8 @@ def build_gaila_phase1_verb_curriculum(
         # _make_take_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_move_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_go_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_push_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_go_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_push_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),

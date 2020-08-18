@@ -1885,18 +1885,11 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
                 SpatialPath(
                     operator=TO,
                     reference_source_object=Region(PUSH_GOAL, distance=DISTAL),
-                    reference_destination_object=Region(PUSH_GOAL, distance=PROXIMAL),
+                    reference_destination_object=PUSH_GOAL,
                 ),
             )
         ]
     )
-    enduring = [
-        partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
-        bigger_than(_PUSH_AGENT, _PUSH_THEME),
-        bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
-        contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
-        on(_PUSH_THEME, PUSH_SURFACE_AUX),
-    ]
     preconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL, negated=True)]
     postconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL)]
     asserted_properties = [
@@ -1910,7 +1903,13 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
             {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: PUSH_GOAL}
         ),
         during=during,
-        enduring_conditions=enduring,
+        enduring_conditions=[
+            partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+            bigger_than(_PUSH_AGENT, _PUSH_THEME),
+            bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
+            contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
+            on(_PUSH_THEME, PUSH_SURFACE_AUX),
+        ],
         preconditions=preconditions,
         postconditions=postconditions,
         asserted_properties=asserted_properties,
@@ -1919,7 +1918,13 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     yield PUSH, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME}),
         during=during,
-        enduring_conditions=enduring,
+        enduring_conditions=[
+            partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+            bigger_than(_PUSH_AGENT, _PUSH_THEME),
+            bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
+            contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
+            on(_PUSH_THEME, PUSH_SURFACE_AUX),
+        ],
         preconditions=preconditions,
         postconditions=postconditions,
         asserted_properties=asserted_properties,
