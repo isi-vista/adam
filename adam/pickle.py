@@ -17,16 +17,16 @@ class AdamPickler(Pickler):
     """
 
     @staticmethod
-    def persistent_id(obj):
+    def persistent_id(object_):
         persistent_id_ = None
 
-        if isinstance(obj, GeonAxis):
-            if obj in SHARED_WORLD_ITEMS:
-                persistent_id_ = PERSISTENT_AXIS_TAG, obj.debug_name
+        if isinstance(object_, GeonAxis):
+            if object_ in SHARED_WORLD_ITEMS:
+                persistent_id_ = PERSISTENT_AXIS_TAG, object_.debug_name
 
-        elif isinstance(obj, ObjectPerception):
-            if obj == GROUND_PERCEPTION or obj == LEARNER_PERCEPTION:
-                persistent_id_ = PERSISTENT_OBJECT_PERCEPTION_TAG, obj.debug_handle
+        elif isinstance(object_, ObjectPerception):
+            if object_ == GROUND_PERCEPTION or object_ == LEARNER_PERCEPTION:
+                persistent_id_ = PERSISTENT_OBJECT_PERCEPTION_TAG, object_.debug_handle
 
         return persistent_id_
 
