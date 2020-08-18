@@ -2,8 +2,6 @@ from typing import TypeVar
 from pickle import HIGHEST_PROTOCOL
 from io import BytesIO, SEEK_SET
 
-import pytest
-
 from adam.curriculum.curriculum_utils import phase1_instances, PHASE1_CHOOSER_FACTORY
 from adam.language.language_utils import phase1_language_generator
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
