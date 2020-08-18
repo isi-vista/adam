@@ -18,17 +18,17 @@ class AdamPickler(Pickler):
 
     @staticmethod
     def persistent_id(obj):
-        pid = None
+        persistent_id_ = None
 
         if isinstance(obj, GeonAxis):
             if obj in SHARED_WORLD_ITEMS:
-                pid = PERSISTENT_AXIS_TAG, obj.debug_name
+                persistent_id_ = PERSISTENT_AXIS_TAG, obj.debug_name
 
         elif isinstance(obj, ObjectPerception):
             if obj == GROUND_PERCEPTION or obj == LEARNER_PERCEPTION:
-                pid = PERSISTENT_OBJECT_PERCEPTION_TAG, obj.debug_handle
+                persistent_id_ = PERSISTENT_OBJECT_PERCEPTION_TAG, obj.debug_handle
 
-        return pid
+        return persistent_id_
 
 
 class AdamUnpickler(Unpickler):
