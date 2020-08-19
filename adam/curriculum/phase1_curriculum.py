@@ -2958,9 +2958,7 @@ def _make_come_down_template(
                             SpatialPath(
                                 TOWARD,
                                 reference_source_object=Region(ground, distance=DISTAL),
-                                reference_destination_object=Region(
-                                    ground, distance=PROXIMAL
-                                ),
+                                reference_destination_object=ground,
                             ),
                         ),
                         (
@@ -2994,7 +2992,8 @@ def _make_come_curriculum(
 ) -> Phase1InstanceGroup:
     movee = standard_object(
         "movee",
-        required_properties=[SELF_MOVING],
+        THING,
+        required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
     learner = standard_object("leaner_0", LEARNER)
