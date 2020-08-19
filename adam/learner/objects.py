@@ -297,7 +297,6 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
                     if not isinstance(neighbor, ObjectPerception):
                         other_nodes.append(neighbor)
 
-
             generated_subgraph = networkx_utils.subgraph(
                 perception_as_digraph, all_object_perception_nodes + other_nodes
             )

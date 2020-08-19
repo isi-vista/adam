@@ -193,7 +193,6 @@ class FunctionalLearner(TemplateLearner):
                         concept
                     ][
                         slot
-
                     ]._concept_to_count:  # pylint:disable=protected-access
                         file.write(
                             f"\t\t{functional_concept} - {self._concept_to_slots_to_function_counter[concept][slot]._concept_to_count[functional_concept]}\n"  # pylint:disable=protected-access
