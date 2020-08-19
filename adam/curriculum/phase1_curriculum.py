@@ -2046,15 +2046,18 @@ def make_take_template(
                                 # this is a hack since "grab" with an adverb doesn't really work in English
                                 operator=operator
                                 if (
-                                    use_adverbial_path_modifier
-                                    and (
-                                        not spatial_properties
-                                        or HARD_FORCE not in spatial_properties
-                                    )
+                                    not spatial_properties
+                                    or HARD_FORCE not in spatial_properties
                                 )
                                 else None,
-                                reference_source_object=ground,
-                                reference_destination_object=ground,
+                                reference_source_object=Region(ground, distance=DISTAL)
+                                if (operator and operator == TOWARD)
+                                else ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2149,7 +2152,7 @@ def _make_take_curriculum(
                                 "object_taken_0", required_properties=[INANIMATE]
                             ),
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
-                            operator=operator,
+                            operator=operator if use_adverbial_path_modifier else None,
                             background=make_noise_objects(noise_objects),
                         ),
                         block_multiple_of_the_same_type=True,
@@ -3316,7 +3319,7 @@ def build_gaila_phase1_verb_curriculum(
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
-        _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_transfer_of_possession_curriculum(
         #    num_samples, num_noise_objects, language_generator
         # ),
@@ -3331,7 +3334,7 @@ def build_gaila_phase1_verb_curriculum(
         # _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_eat_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_take_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_take_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_move_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_go_curriculum(num_samples, num_noise_objects, language_generator),
