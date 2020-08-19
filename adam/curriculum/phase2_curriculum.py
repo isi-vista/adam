@@ -45,6 +45,7 @@ from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
+
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
     CHAIR,
@@ -123,6 +124,7 @@ def _make_sit_on_chair_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -179,6 +181,7 @@ def _make_drink_cups_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -217,6 +220,7 @@ def _make_put_in_curriculum(
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
             max_to_sample=num_samples if num_samples else 20,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )

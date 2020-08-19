@@ -210,6 +210,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                     max_to_sample=num_samples,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -222,6 +223,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                     max_to_sample=num_samples,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -235,6 +237,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for object in [MOM, DAD, BABY]
                 ),
@@ -244,6 +247,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for object in [MOM, DAD, BABY]
                 ),
@@ -282,6 +286,7 @@ def _make_objects_with_colors_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 80,
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -319,6 +324,7 @@ def _make_objects_with_colors_is_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 80,
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -466,6 +472,7 @@ def _make_object_on_ground_curriculum(  # pylint: disable=unused-argument
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -478,6 +485,7 @@ def _make_object_on_ground_curriculum(  # pylint: disable=unused-argument
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -530,6 +538,7 @@ def _make_person_has_object_curriculum(
                             inanimate_object_0,
                             background=background,
                         ),
+                        block_multiple_of_the_same_type=True,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         max_to_sample=num_samples if num_samples else 35,
@@ -598,6 +607,7 @@ def _make_part_whole_curriculum(  # pylint: disable=unused-argument
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
+                    block_multiple_of_the_same_type=True,
                 ),
                 language_generator=language_generator,
             ).instances()
@@ -619,6 +629,7 @@ def _make_part_whole_curriculum(  # pylint: disable=unused-argument
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=3,
+                    block_multiple_of_the_same_type=True,
                 ),
                 language_generator=language_generator,
             ).instances()
@@ -671,6 +682,7 @@ def _make_my_your_object_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 20,
+                    block_multiple_of_the_same_type=True,
                 )
                 for person in owners
             ]
@@ -814,6 +826,7 @@ def _make_fall_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -877,6 +890,7 @@ def _make_transfer_of_possession_curriculum(
                     max_to_sample=num_samples if num_samples else 100,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for template in make_give_templates(background)
             ]
@@ -913,6 +927,7 @@ def _make_object_on_object_curriculum(
             max_to_sample=num_samples if num_samples else 100,
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -954,6 +969,7 @@ def _make_object_beside_object_curriculum(
             max_to_sample=num_samples if num_samples else 50,
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -994,6 +1010,7 @@ def _make_object_under_or_over_object_curriculum(
                     max_to_sample=num_samples if num_samples else 100,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for template in templates
             ]
@@ -1040,12 +1057,14 @@ def _make_object_in_other_object_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 ),
                 sampled(
                     solid_template,
                     max_to_sample=num_samples * 3 if num_samples else 75,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 ),
             ]
         ),
@@ -1140,6 +1159,7 @@ def _make_fly_curriculum(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
+                        block_multiple_of_the_same_type=True,
                     )
                     if num_samples
                     else all_possible(
@@ -1305,6 +1325,7 @@ def _make_roll_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation in make_roll_templates(noise_objects)
             ]
@@ -1351,6 +1372,7 @@ def _make_transitive_roll_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation in make_transitive_roll_templates(noise_objects)
             ]
@@ -1428,6 +1450,7 @@ def _make_speaker_addressee_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in _make_templates()
                 )
@@ -1583,6 +1606,7 @@ def _make_jump_curriculum(
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
                             background=background,
                         ),
+                        block_multiple_of_the_same_type=True,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 25,
@@ -1597,6 +1621,7 @@ def _make_jump_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -1647,6 +1672,7 @@ def _make_put_curriculum(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 25,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in make_put_templates(noise_objects)
                 ]
@@ -1694,6 +1720,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum(
                             body_part_of_putter,
                             background=make_noise_objects(noise_objects),
                         ),
+                        block_multiple_of_the_same_type=True,
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -1776,6 +1803,7 @@ def _make_drink_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -1790,6 +1818,7 @@ def _make_drink_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 ),
             ]
         ),
@@ -1842,6 +1871,7 @@ def _make_eat_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -1974,6 +2004,7 @@ def _make_sit_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -2121,6 +2152,7 @@ def _make_take_curriculum(
                             operator=operator,
                             background=make_noise_objects(noise_objects),
                         ),
+                        block_multiple_of_the_same_type=True,
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -2260,6 +2292,7 @@ def _make_move_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation in make_move_templates(noise_objects)
             ]
@@ -2324,6 +2357,7 @@ def _make_spin_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation in make_spin_templates(noise_objects)
             ]
@@ -2382,6 +2416,7 @@ def _make_go_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for situation in make_go_templates(noise_objects)
                 ]
@@ -2398,6 +2433,7 @@ def _make_go_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in (True, False)
                 ]
@@ -2537,6 +2573,7 @@ def _make_push_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for adverbial_path_modifier in [True, False]
                 for operator in [TOWARD, AWAY_FROM]
@@ -2878,6 +2915,7 @@ def _make_throw_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in make_throw_templates(noise_objects)
                 ]
@@ -2920,6 +2958,7 @@ def _make_pass_curriculum(
                             operator=operator if use_adverbial_path_modifier else None,
                             background=make_noise_objects(noise_objects),
                         ),
+                        block_multiple_of_the_same_type=True,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 25,
@@ -3045,6 +3084,7 @@ def _make_come_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -3057,6 +3097,7 @@ def _make_come_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -3069,12 +3110,14 @@ def _make_come_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 ),
                 sampled(
                     _make_come_down_template(movee, object_, speaker, ground, background),
                     max_to_sample=num_samples if num_samples else 25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 ),
             ]
         ),
@@ -3146,6 +3189,7 @@ def _make_behind_in_front_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in make_behind_in_front_templates()
                 )

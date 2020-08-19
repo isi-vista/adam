@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pytest
 from more_itertools import only
-
+from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
@@ -12,7 +12,6 @@ from adam.language_specific.english.english_language_generator import (
     IGNORE_COLORS,
     USE_ABOVE_BELOW,
     USE_NEAR,
-    USE_VERTICAL_MODIFIERS,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -21,7 +20,9 @@ from adam.ontology import IN_REGION, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
+    BOOK,
     BABY,
+    TRUCK,
     BALL,
     BIRD,
     BOX,
@@ -1651,50 +1652,56 @@ def test_box_without_attribute():
         generated_tokens(box_without_attribute)
 
 
-def test_bigger_than():
-    box = situation_object(BOX)
-    learner = situation_object(LEARNER)
-    big_box = HighLevelSemanticsSituation(
+def test_big_truck_updated():
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[box, learner],
-        always_relations=[bigger_than(box, learner)],
+        salient_objects=[truck1],
+        other_objects=[truck2],
+        always_relations=[(bigger_than(truck1, truck2))],
     )
-    assert generated_tokens(situation=big_box) == ("a", "big", "box")
+    assert not gravitationally_aligned_axis_is_largest(TRUCK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("a", "big", "truck")
 
 
-def test_taller_than():
-    box = situation_object(BOX)
-    learner = situation_object(LEARNER)
-    big_box = HighLevelSemanticsSituation(
+def test_tall_book_updated():
+    book1 = situation_object(BOOK, debug_handle="book1")
+    book2 = situation_object(BOOK, debug_handle="book2")
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[box, learner],
-        always_relations=[bigger_than(box, learner)],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        salient_objects=[book1],
+        other_objects=[book2],
+        always_relations=[(bigger_than(book1, book2))],
     )
-    assert generated_tokens(situation=big_box) == ("a", "tall", "box")
+    assert gravitationally_aligned_axis_is_largest(BOOK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("a", "tall", "book")
 
 
-def test_shorter_than():
-    box = situation_object(BOX)
-    learner = situation_object(LEARNER)
-    big_box = HighLevelSemanticsSituation(
+def test_short_book_updated():
+    book1 = situation_object(BOOK, debug_handle="book1")
+    book2 = situation_object(BOOK, debug_handle="book2")
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[box, learner],
-        always_relations=[bigger_than(learner, box)],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        salient_objects=[book1],
+        other_objects=[book2],
+        always_relations=[(bigger_than(book2, book1))],
     )
-    assert generated_tokens(situation=big_box) == ("a", "short", "box")
+    assert gravitationally_aligned_axis_is_largest(BOOK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("a", "short", "book")
 
 
-def test_smaller_than():
-    box = situation_object(BOX)
-    learner = situation_object(LEARNER)
-    big_box = HighLevelSemanticsSituation(
+def test_small_truck_updated():
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[box, learner],
-        always_relations=[bigger_than(learner, box)],
+        salient_objects=[truck1],
+        other_objects=[truck2],
+        always_relations=[(bigger_than(truck2, truck1))],
     )
-    assert generated_tokens(situation=big_box) == ("a", "small", "box")
+    assert not gravitationally_aligned_axis_is_largest(TRUCK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("a", "small", "truck")
 
 
 def test_run():

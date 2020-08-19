@@ -131,7 +131,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
         perception_graph_after_matching: PerceptionGraph,
         immutable_new_nodes: AbstractSet[SemanticNode],
     ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
-        object_root_nodes = immutableset(
+        object_root_nodes = immutableset(  # pylint:disable=protected-access
             node
             for node in perception_graph_after_matching._graph.nodes  # pylint:disable=protected-access
             if isinstance(node, ObjectPerception)
@@ -139,7 +139,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
         new_nodes = []
         perception_graph_after_processing = perception_graph_after_matching
         for object_root_node in object_root_nodes:
-            fake_subgraph = subgraph(
+            fake_subgraph = subgraph(  # pylint:disable=protected-access
                 perception_graph_after_matching._graph,  # pylint:disable=protected-access
                 [object_root_node],
             )
@@ -297,10 +297,12 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
                     if not isinstance(neighbor, ObjectPerception):
                         other_nodes.append(neighbor)
 
-            updated_subgraph = networkx_utils.subgraph(
+
+            generated_subgraph = networkx_utils.subgraph(
                 perception_as_digraph, all_object_perception_nodes + other_nodes
             )
-            meanings.append(PerceptionGraph(updated_subgraph))
+            meanings.append(PerceptionGraph(generated_subgraph))
+
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 
@@ -490,7 +492,8 @@ class SubsetObjectLearnerNew(
                 template_variable_to_pattern_node=immutabledict(),
             )
             for candidate_object in extract_candidate_objects(
-                learning_state.perception_semantic_alignment.perception_graph
+                learning_state.perception_semantic_alignment.perception_graph,
+                sort_by_increasing_size=False,
             )
         )
 
@@ -542,7 +545,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         # The object recognizer doesn't learn anything.
         # It just recognizes predefined object patterns.
@@ -556,7 +559,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         new_nodes = []
         perception_graph_after_processing = perception_graph_after_matching
         for candiate_object_graph in extract_candidate_objects(
-            perception_graph_after_matching
+            perception_graph_after_matching, sort_by_increasing_size=False
         ):
             fake_pattern_graph = PerceptionGraphPattern.from_graph(candiate_object_graph)
             fake_object_semantic_node = ObjectSemanticNode(
@@ -685,7 +688,8 @@ class PursuitObjectLearnerNew(
                 template_variable_to_pattern_node=immutabledict(),
             )
             for candidate_object in extract_candidate_objects(
-                learning_state.perception_semantic_alignment.perception_graph
+                learning_state.perception_semantic_alignment.perception_graph,
+                sort_by_increasing_size=False,
             )
         )
 

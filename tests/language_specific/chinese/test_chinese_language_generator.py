@@ -10,6 +10,7 @@ from adam.axes import (
     AxesInfo,
     GRAVITATIONAL_AXIS_FUNCTION,
 )
+from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from adam.language_specific.chinese.chinese_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedChineseLanguageGenerator,
@@ -17,7 +18,6 @@ from adam.language_specific.chinese.chinese_language_generator import (
     IGNORE_HAS_AS_VERB,
     ATTRIBUTES_AS_X_IS_Y,
     IGNORE_GOAL,
-    USE_VERTICAL_MODIFIERS,
     USE_ABOVE_BELOW,
     USE_NEAR,
 )
@@ -2579,50 +2579,56 @@ def test_I_walk_out_of_house():
     assert generated_tokens(situation) == ("wo3", "bu4 sying2", "chu1", "wu1")
 
 
-def test_big_truck():
-    learner = situation_object(LEARNER)
-    truck = situation_object(TRUCK)
+def test_big_truck_updated():
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[truck],
-        always_relations=[(bigger_than(truck, learner))],
+        salient_objects=[truck1],
+        other_objects=[truck2],
+        always_relations=[(bigger_than(truck1, truck2))],
     )
+    assert not gravitationally_aligned_axis_is_largest(TRUCK, GAILA_PHASE_1_ONTOLOGY)
     assert generated_tokens(situation) == ("da4", "ka3 che1")
 
 
-def test_tall_truck():
-    learner = situation_object(LEARNER)
-    truck = situation_object(TRUCK)
+def test_tall_book_updated():
+    book1 = situation_object(BOOK, debug_handle="book1")
+    book2 = situation_object(BOOK, debug_handle="book2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[truck],
-        always_relations=[(bigger_than(truck, learner))],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        salient_objects=[book1],
+        other_objects=[book2],
+        always_relations=[(bigger_than(book1, book2))],
     )
-    assert generated_tokens(situation) == ("gau1 da4", "ka3 che1")
+    assert gravitationally_aligned_axis_is_largest(BOOK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("gau1 da4", "shu1")
 
 
-def test_small_truck():
-    learner = situation_object(LEARNER)
-    truck = situation_object(TRUCK)
+def test_small_truck_updated():
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[truck],
-        always_relations=[(bigger_than(learner, truck))],
+        salient_objects=[truck1],
+        other_objects=[truck2],
+        always_relations=[(bigger_than(truck2, truck1))],
     )
+    assert not gravitationally_aligned_axis_is_largest(TRUCK, GAILA_PHASE_1_ONTOLOGY)
     assert generated_tokens(situation) == ("syau3", "ka3 che1")
 
 
-def test_short_truck():
-    learner = situation_object(LEARNER)
-    truck = situation_object(TRUCK)
+def test_short_book_updated():
+    book1 = situation_object(BOOK, debug_handle="book1")
+    book2 = situation_object(BOOK, debug_handle="book2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[truck],
-        always_relations=[(bigger_than(learner, truck))],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        salient_objects=[book1],
+        other_objects=[book2],
+        always_relations=[(bigger_than(book2, book1))],
     )
-    assert generated_tokens(situation) == ("dwan3", "ka3 che1")
+    assert gravitationally_aligned_axis_is_largest(BOOK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("dwan3", "shu1")
 
 
 # there is no under/below distinction in Chinese

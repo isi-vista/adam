@@ -89,7 +89,8 @@ M6_CURRICULUM_ALL_OBJECTS = [
     JUICE,
     CUP,
     BOX,
-    CHAIR,
+    # TODO: https://github.com/isi-vista/adam/issues/946
+    # CHAIR,
     HEAD,
     MILK,
     HAND,
@@ -134,6 +135,7 @@ def _make_m6_on_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
+                    block_multiple_of_the_same_type=True,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
@@ -166,6 +168,7 @@ def _make_m6_beside_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
+                    block_multiple_of_the_same_type=True,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
@@ -198,6 +201,7 @@ def _make_m6_under_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
+                    block_multiple_of_the_same_type=True,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
@@ -230,6 +234,7 @@ def _make_m6_over_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
+                    block_multiple_of_the_same_type=True,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
@@ -263,6 +268,7 @@ def _make_m6_behind_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
+                    block_multiple_of_the_same_type=True,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
@@ -296,6 +302,7 @@ def _make_m6_in_front_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
+                    block_multiple_of_the_same_type=True,
                 )
                 for object_1 in r.sample(SMALL_OBJECT_VARS, 3)
                 for object_2 in r.sample(LARGE_OBJECT_VARS, 3)
