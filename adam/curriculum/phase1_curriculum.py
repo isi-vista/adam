@@ -757,7 +757,7 @@ def fall_on_ground_template(
                         (
                             theme,
                             SpatialPath(
-                                TOWARD,
+                                None,
                                 reference_source_object=Region(
                                     ground, distance=DISTAL if start_distal else PROXIMAL
                                 ),
@@ -3316,7 +3316,7 @@ def build_gaila_phase1_verb_curriculum(
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
-        # _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_transfer_of_possession_curriculum(
         #    num_samples, num_noise_objects, language_generator
         # ),
@@ -3339,7 +3339,7 @@ def build_gaila_phase1_verb_curriculum(
         # _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_come_curriculum(num_samples, num_noise_objects, language_generator)
+        # _make_come_curriculum(num_samples, num_noise_objects, language_generator)
     ]
 
 
