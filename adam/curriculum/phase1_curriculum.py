@@ -44,7 +44,6 @@ from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
     BIRD,
-    BOX,
     CAN_BE_SAT_ON_BY_PEOPLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
@@ -2442,10 +2441,16 @@ def make_push_templates(
                             agent,
                             SpatialPath(
                                 operator=operator,
-                                reference_source_object=standard_object("ground", GROUND),
-                                reference_destination_object=standard_object(
-                                    "ground", GROUND
-                                ),
+                                reference_source_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == TOWARD)
+                                else GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2486,10 +2491,16 @@ def make_push_templates(
                             agent,
                             SpatialPath(
                                 operator=operator,
-                                reference_source_object=standard_object("ground", GROUND),
-                                reference_destination_object=standard_object(
-                                    "ground", GROUND
-                                ),
+                                reference_source_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == TOWARD)
+                                else GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2672,7 +2683,9 @@ def throw_up_down_template(
                             theme,
                             SpatialPath(
                                 TOWARD,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                ),
                                 reference_destination_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
@@ -2809,7 +2822,9 @@ def make_throw_templates(
     )
 
     object_thrown = standard_object("object_0", required_properties=[INANIMATE])
-    implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
+    implicit_goal_reference = standard_object(
+        "implicit_throw_goal_object", required_properties=[INANIMATE]
+    )
     background = make_noise_objects(noise_objects)
 
     return [
@@ -3271,8 +3286,8 @@ def build_gaila_phase1_verb_curriculum(
         # _make_move_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_go_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_push_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_push_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_come_curriculum(num_samples, num_noise_objects, language_generator),
