@@ -1511,11 +1511,17 @@ def make_pass_template(
                         (
                             agent,
                             SpatialPath(
-                                operator=operator
-                                if use_adverbial_path_modifier
-                                else None,
-                                reference_source_object=GROUND_OBJECT_TEMPLATE,
-                                reference_destination_object=GROUND_OBJECT_TEMPLATE,
+                                operator=operator,
+                                reference_source_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == TOWARD)
+                                else GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2911,7 +2917,7 @@ def _make_pass_curriculum(
                                 banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
                             ),
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
-                            operator=operator,
+                            operator=operator if use_adverbial_path_modifier else None,
                             background=make_noise_objects(noise_objects),
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -3287,10 +3293,10 @@ def build_gaila_phase1_verb_curriculum(
         # _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_go_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_push_curriculum(num_samples, num_noise_objects, language_generator),
-        _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
+        # _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_come_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_come_curriculum(num_samples, num_noise_objects, language_generator)
     ]
 
 

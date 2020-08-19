@@ -2309,28 +2309,11 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
                     reference_destination_object=PASS_GOAL,
                 ),
             )
-        ],
-        # must be above the ground at some point during the action
-        at_some_point=[
-            Relation(
-                IN_REGION,
-                _PASS_THEME,
-                Region(
-                    reference_object=_PASS_GROUND,
-                    distance=DISTAL,
-                    direction=GRAVITATIONAL_UP,
-                ),
-            )
-        ],
+        ]
     )
     enduring = [
         partOf(_PASS_MANIPULATOR, _PASS_AGENT),
         bigger_than(_PASS_AGENT, _PASS_THEME),
-    ]
-    preconditions = [
-        has(_PASS_AGENT, _PASS_THEME),
-        # contacts(_PASS_MANIPULATOR, _PASS_THEME),
-        contacts(_PASS_AGENT, _PASS_THEME),
     ]
     postconditions = flatten_relations(
         [
@@ -2363,7 +2346,10 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ),
         during=during,
         enduring_conditions=enduring,
-        preconditions=preconditions,
+        preconditions=[
+            contacts(_PASS_MANIPULATOR, _PASS_THEME),
+            has(_PASS_AGENT, _PASS_THEME),
+        ],
         postconditions=postconditions_manipulator,
         asserted_properties=asserted_properties,
     )
@@ -2374,7 +2360,10 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ),
         during=during,
         enduring_conditions=enduring,
-        preconditions=preconditions,
+        preconditions=[
+            contacts(_PASS_MANIPULATOR, _PASS_THEME),
+            has(_PASS_AGENT, _PASS_THEME),
+        ],
         postconditions=postconditions,
         asserted_properties=asserted_properties,
     )
@@ -2383,7 +2372,10 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         frame=ActionDescriptionFrame({AGENT: _PASS_AGENT, THEME: _PASS_THEME}),
         during=during,
         enduring_conditions=enduring,
-        preconditions=preconditions,
+        preconditions=[
+            contacts(_PASS_MANIPULATOR, _PASS_THEME),
+            has(_PASS_AGENT, _PASS_THEME),
+        ],
         postconditions=postconditions,
         asserted_properties=asserted_properties,
     )

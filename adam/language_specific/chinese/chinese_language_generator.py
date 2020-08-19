@@ -635,6 +635,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     zhao = DependencyTreeToken("jau3", ADPOSITION)
                     self.dependency_graph.add_edge(zhao, filler_noun, role=CASE_SPATIAL)
                 # deal with movement to a person as the goal
+
                 elif (
                     action
                     and (argument_role == GOAL or argument_role == GOAL_MANIPULATOR)
@@ -679,7 +680,8 @@ class SimpleRuleBasedChineseLanguageGenerator(
                         and (
                             IS_SPEAKER in filler.reference_object.properties
                             or IS_ADDRESSEE in filler.reference_object.properties
-                            or filler.reference_object.ontology_node in [DAD, MOM, BABY]
+                            or filler.reference_object.ontology_node
+                            in [DAD, MOM, BABY, BIRD, DOG]
                         )
                     ):
                         coverb = "gei3"
