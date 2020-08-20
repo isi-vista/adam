@@ -11,7 +11,17 @@ from adam.learner.language_mode import LanguageMode, LANGUAGE_MODE_TO_NAME
 from adam.pickle import AdamPickler, AdamUnpickler
 
 
-_PARAMETER_ORDER = immutableset(["curriculum"])
+_PARAMETER_ORDER = immutableset([
+    "curriculum",
+    "num_samples",
+
+    # Pursuit parameters
+    "num_noise_objects",
+    "num_instances",
+    "num_noise_instances",
+    "num_objects_in_instance",
+    "add_gaze",
+])
 
 
 IGNORED_PARAMETERS: ImmutableSet[str] = immutableset(
