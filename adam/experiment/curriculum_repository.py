@@ -71,7 +71,7 @@ def _build_curriculum_path(
 
     for parameter in iter(_PARAMETER_ORDER):
         unqualified_name: str = parameter.split(".")[-1]
-        value = parameters.get(parameter, object, default=None)
+        value = parameters.get_optional(parameter, object)
         path = path / f"{value}_{unqualified_name}"
 
     return path
