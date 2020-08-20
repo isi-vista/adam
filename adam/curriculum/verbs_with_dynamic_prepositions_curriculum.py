@@ -164,12 +164,11 @@ def _push_in_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
-        after_action_relations=[near(theme, goal_reference)],
+        after_action_relations=[inside(theme, goal_reference)],
+        # we might expect that the surface is also bigger than the goal_reference, but if we add this constraint it causes over-specification since
+        # only a couple of objects fit this criteria
         constraining_relations=flatten_relations(
-            [
-                bigger_than(surface, [agent, goal_reference]),
-                bigger_than(goal_reference, theme),
-            ]
+            [bigger_than(surface, [agent]), bigger_than(goal_reference, theme)]
         ),
     )
 
@@ -181,7 +180,7 @@ def _push_under_template(
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
+    is_distal: bool,  # pylint: disable = unused-argument
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-pushes-{theme.handle}-under-{goal_reference.handle}",
@@ -197,7 +196,7 @@ def _push_under_template(
                         GOAL,
                         Region(
                             goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                             direction=GRAVITATIONAL_DOWN,
                         ),
                     ),
@@ -208,10 +207,7 @@ def _push_under_template(
         ],
         after_action_relations=[near(theme, goal_reference)],
         constraining_relations=flatten_relations(
-            [
-                bigger_than(surface, [agent, goal_reference]),
-                bigger_than(goal_reference, theme),
-            ]
+            [bigger_than(surface, [agent]), bigger_than(goal_reference, theme)]
         ),
     )
 
@@ -267,7 +263,7 @@ def _push_in_front_of_behind_template(
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
+    is_distal: bool,  # pylint: disable=unused-argument
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -284,7 +280,7 @@ def _push_in_front_of_behind_template(
                         GOAL,
                         Region(
                             goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                             direction=Direction(
                                 positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(goal_reference),
@@ -326,8 +322,7 @@ def _push_towards_away_template(
                     (
                         PUSH_GOAL,
                         Region(
-                            spatial_reference,
-                            distance=PROXIMAL if is_ending_proximal else DISTAL,
+                            spatial_reference, distance=PROXIMAL if is_towards else DISTAL
                         ),
                     ),
                 ],
@@ -369,11 +364,11 @@ def _push_out_template(
     agent: TemplateObjectVariable,
     theme: TemplateObjectVariable,
     spatial_reference: TemplateObjectVariable,
-    goal_reference: TemplateObjectVariable,
+    goal_reference: TemplateObjectVariable,  # pylint:disable=unused-argument
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
+    is_distal: bool,  # pylint:disable=unused-argument
 ) -> Phase1SituationTemplate:
     inside_relation = inside([agent, theme], spatial_reference)
     return Phase1SituationTemplate(
@@ -385,12 +380,7 @@ def _push_out_template(
                 PUSH,
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=[
-                    (
-                        PUSH_GOAL,
-                        Region(
-                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
-                        ),
-                    ),
+                    (PUSH_GOAL, Region(spatial_reference, distance=DISTAL)),
                     (PUSH_SURFACE_AUX, surface),
                 ],
             )
@@ -2640,7 +2630,7 @@ def _make_push_with_prepositions(
                     for template in to_in_templates
                 ]
             ),
-            # beside
+            # TODO: fix beside so that the semantics don't break for left vs. right; see https://github.com/isi-vista/adam/issues/932 followups for this and related issues
             flatten(
                 [
                     sampled(
@@ -4240,15 +4230,15 @@ def make_verb_with_dynamic_prepositions_curriculum(
 ) -> Sequence[Phase1InstanceGroup]:
     return [
         _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_go_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_come_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_go_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_come_with_prepositions(num_samples, num_noise_objects, language_generator),
     ]
