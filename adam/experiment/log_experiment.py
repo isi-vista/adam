@@ -110,7 +110,9 @@ def log_experiment_entry_point(params: Parameters) -> None:
         "language_mode", LanguageMode, default=LanguageMode.ENGLISH
     )
 
-    curriculum_repository_path = params.optional_existing_directory("load_from_curriculum_repository")
+    curriculum_repository_path = params.optional_existing_directory(
+        "load_from_curriculum_repository"
+    )
     if curriculum_repository_path:
         (training_instance_groups, test_instance_groups) = read_experiment_curriculum(
             curriculum_repository_path, params, language_mode
