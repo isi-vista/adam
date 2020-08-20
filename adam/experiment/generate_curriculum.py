@@ -4,7 +4,7 @@ from immutablecollections import immutableset
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
-from adam.curriculum import ExplicitWithoutSituationInstanceGroup
+from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.experiment.log_experiment import curriculum_from_params
 from adam.experiment.curriculum_repository import write_experiment_curriculum, IGNORED_PARAMETERS
@@ -20,16 +20,10 @@ def evaluate_curriculum(
 ) -> List[Phase1InstanceGroup]:
     strict_curriculum: List[Phase1InstanceGroup] = []
     for instance_group in lazy_curriculum:
-        # For now we convert each instance group to an `ExplicitWithoutSituationInstanceGroup`.
-        #
-        # Is there any reason we shouldn't have an `ExplicitInstanceGroup` where the situation is
-        # optional?
-        instances = tuple(
-            (linguistic_description, perceptual_representation)
-            for _, linguistic_description, perceptual_representation in instance_group.instances()
-        )
+        # We assume that the instance groups all specify Situations since otherwise you can't run
+        # experiments on them.
         strict_curriculum.append(
-            ExplicitWithoutSituationInstanceGroup(instance_group.name(), instances)
+            ExplicitWithSituationInstanceGroup(instance_group.name(), tuple(instance_group.instances()))
         )
     return strict_curriculum
 
