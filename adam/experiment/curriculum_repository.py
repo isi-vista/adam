@@ -1,4 +1,4 @@
-from typing import Iterable, Tuple, AbstractSet
+from typing import Iterable, Tuple
 from pathlib import Path
 import pickle
 import logging
@@ -15,12 +15,11 @@ _PARAMETER_ORDER: ImmutableSet[str] = immutableset([
     "curriculum",
     "num_samples",
 
-    # Pursuit parameters
-    "num_noise_objects",
-    "num_instances",
-    "num_noise_instances",
-    "num_objects_in_instance",
-    "add_gaze",
+    "pursuit-curriculum-params.num_noise_objects",
+    "pursuit-curriculum-params.num_instances",
+    "pursuit-curriculum-params.num_noise_instances",
+    "pursuit-curriculum-params.num_objects_in_instance",
+    "pursuit-curriculum-params.add_gaze",
 ])
 
 
@@ -52,9 +51,8 @@ def _build_curriculum_path(
 
     # Would it make sense to ignore None values? Could that ever be ambiguous?
     for parameter in iter(_PARAMETER_ORDER):
-        unqualified_name: str = parameter.split(".")[-1]
         value = parameters.get_optional(parameter, object)
-        path = path / f"{value}_{unqualified_name}"
+        path = path / f"{value}_{parameter}"
 
     return path / _EXPERIMENT_CURRICULUM_FILE_NAME
 
