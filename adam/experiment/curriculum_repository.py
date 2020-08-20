@@ -10,7 +10,7 @@ from adam.learner.language_mode import LanguageMode, LANGUAGE_MODE_TO_NAME
 from adam.pickle import AdamPickler, AdamUnpickler
 
 
-_PARAMETER_ORDER = immutableset([
+_PARAMETER_ORDER: ImmutableSet[str] = immutableset([
     "curriculum",
     "num_samples",
 
