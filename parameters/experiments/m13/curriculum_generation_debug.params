@@ -1,0 +1,5 @@
+_include:
+  - objects.params
+
+curriculum_repository_path: '%adam_experiment_root%/curriculum_repository'
+language_mode: english
