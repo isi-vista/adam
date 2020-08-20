@@ -49,6 +49,9 @@ Curriculum = Iterable[Phase1InstanceGroup]
 ExperimentCurriculum = Tuple[Curriculum, Curriculum]
 
 
+_EXPERIMENT_CURRICULUM_FILE_NAME = "curriculum.pkl"
+
+
 def _build_curriculum_path(
     repository: Path,
     parameters: Parameters,
@@ -74,7 +77,7 @@ def _build_curriculum_path(
         value = parameters.get_optional(parameter, object)
         path = path / f"{value}_{unqualified_name}"
 
-    return path
+    return path / _EXPERIMENT_CURRICULUM_FILE_NAME
 
 
 def read_experiment_curriculum(
@@ -106,6 +109,8 @@ def write_experiment_curriculum(
     path = _build_curriculum_path(
         repository, parameters, language_mode, ignored_parameters=ignored_parameters
     )
+    # Create the parent directory if it doesn't exist, otherwise we can't write to it
+    path.parent().mkdir(exist_ok=True, parents=True)
 
     with path.open("wb") as f:
         pickler = AdamPickler(file=f, protocol=pickle.HIGHEST_PROTOCOL)
