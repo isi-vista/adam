@@ -48,9 +48,6 @@ def main(params: Parameters):
         params,
         language_mode,
         strict_curriculum,
-        ignored_parameters=immutableset(
-            IGNORED_PARAMETERS.union({CURRICULUM_REPOSITORY_PATH_PARAMETER, LANGUAGE_MODE_PARAMETER})
-        ),
     )
 
 
