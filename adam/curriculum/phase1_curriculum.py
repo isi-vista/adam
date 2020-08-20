@@ -424,7 +424,9 @@ def _make_generic_statements_curriculum(
                         GAILA_PHASE_1_LANGUAGE_GENERATOR,
                         GAILA_PHASE_2_LANGUAGE_GENERATOR,
                     ]
-                    else TokenSequenceLinguisticDescription((subject, verbs_to_ch[verb])),
+                    else TokenSequenceLinguisticDescription(
+                        (subject, "hwei4", verbs_to_ch[verb])
+                    ),
                     perception,
                 )
             )
