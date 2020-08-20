@@ -1,5 +1,4 @@
-from typing import Iterable, Tuple
-from collections.abc import Set
+from typing import Iterable, Tuple, AbstractSet
 from pathlib import Path
 import pickle
 
@@ -50,7 +49,7 @@ def _build_curriculum_path(
     parameters: Parameters,
     language_mode: LanguageMode,
     *,
-    ignored_parameters: Set[str] = IGNORED_PARAMETERS,
+    ignored_parameters: AbstractSet[str] = IGNORED_PARAMETERS,
 ) -> Path:
     path: Path = repository / LANGUAGE_MODE_TO_NAME[language_mode]
     unignored = immutableset(
@@ -78,7 +77,7 @@ def read_experiment_curriculum(
     parameters: Parameters,
     language_mode: LanguageMode,
     *,
-    ignored_parameters: Set[str] = IGNORED_PARAMETERS,
+    ignored_parameters: AbstractSet[str] = IGNORED_PARAMETERS,
 ) -> ExperimentCurriculum:
     path = _build_curriculum_path(
         repository, parameters, language_mode, ignored_parameters=ignored_parameters
@@ -97,7 +96,7 @@ def write_experiment_curriculum(
     language_mode: LanguageMode,
     curriculum: ExperimentCurriculum,
     *,
-    ignored_parameters: Set[str] = IGNORED_PARAMETERS,
+    ignored_parameters: AbstractSet[str] = IGNORED_PARAMETERS,
 ):
     path = _build_curriculum_path(
         repository, parameters, language_mode, ignored_parameters=ignored_parameters
