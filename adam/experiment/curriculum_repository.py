@@ -1,7 +1,6 @@
-import logging
+from typing import Iterable, Tuple, AbstractSet
 from pathlib import Path
 import pickle
-from typing import Iterable, Tuple, AbstractSet
 
 from immutablecollections import immutableset, ImmutableSet
 from vistautils.parameters import Parameters
@@ -59,7 +58,6 @@ def _build_curriculum_path(
     parameters: Parameters,
     language_mode: LanguageMode,
     *,
-    strict: bool = True,
     ignored_parameters: AbstractSet[str] = IGNORED_PARAMETERS,
 ) -> Path:
     path: Path = repository / LANGUAGE_MODE_TO_NAME[language_mode]
@@ -70,20 +68,12 @@ def _build_curriculum_path(
     )
     if not unignored.issubset(_PARAMETER_ORDER):
         unrecognized_parameters = unignored.difference(_PARAMETER_ORDER)
-        if strict:
-            raise RuntimeError(
-                f"No defined order for parameters: {unrecognized_parameters}"
-            )
-        else:
-            logging.warning(
-                "Ignoring unrecognized parameters; these might be intended as curriculum parameters: %o",
-                unrecognized_parameters,
-            )
+        raise RuntimeError(f"No defined order for parameters: {unrecognized_parameters}")
 
     if "curriculum" not in unignored:
         raise RuntimeError("Expected curriculum name, but none present in parameters.")
 
-    for parameter in iter(_PARAMETER_ORDER.intersection(unignored)):
+    for parameter in iter(_PARAMETER_ORDER):
         value = parameters.get_optional(parameter, object)
         path = path / f"{value}_{parameter}"
 
@@ -98,17 +88,12 @@ def read_experiment_curriculum(
     ignored_parameters: AbstractSet[str] = IGNORED_PARAMETERS,
 ) -> ExperimentCurriculum:
     path = _build_curriculum_path(
-        repository,
-        parameters,
-        language_mode,
-        ignored_parameters=ignored_parameters,
-        strict=False,
+        repository, parameters, language_mode, ignored_parameters=ignored_parameters
     )
 
     with path.open("rb") as f:
         unpickler = AdamUnpickler(file=f)
         curriculum = unpickler.load()
-    logging.info("Read curriculum from path %s", path)
 
     return curriculum
 
