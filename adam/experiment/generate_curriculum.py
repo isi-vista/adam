@@ -22,7 +22,9 @@ def evaluate_curriculum(
         # We assume that the instance groups all specify Situations since otherwise you can't run
         # experiments on them.
         strict_curriculum.append(
-            ExplicitWithSituationInstanceGroup(instance_group.name(), tuple(instance_group.instances()))
+            ExplicitWithSituationInstanceGroup(
+                instance_group.name(), tuple(instance_group.instances())
+            )
         )
     return strict_curriculum
 
@@ -43,10 +45,7 @@ def main(params: Parameters):
         evaluate_curriculum(test_curriculum),
     )
     write_experiment_curriculum(
-        curriculum_repository_path,
-        params,
-        language_mode,
-        strict_curriculum,
+        curriculum_repository_path, params, language_mode, strict_curriculum
     )
 
 
