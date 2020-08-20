@@ -30,6 +30,7 @@ IGNORED_PARAMETERS: ImmutableSet[str] = immutableset(
         "experiment",
         "experiment_name",
         "experiment_group_dir",
+        "load_from_curriculum_repository",
         "learner",
         "hypothesis_log_dir",
         "include_image_links",
