@@ -49,7 +49,8 @@ def _build_curriculum_path(
         if parameter not in ignored_parameters
     )
     if not unignored.issubset(_PARAMETER_ORDER):
-        raise RuntimeError("")
+        unrecognized_parameters = unignored.difference(_PARAMETER_ORDER)
+        raise RuntimeError(f"No defined order for parameters: {unrecognized_parameters}")
 
     for parameter in iter(_PARAMETER_ORDER):
         unqualified_name: str = parameter.split(".")[-1]
