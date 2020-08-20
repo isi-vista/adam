@@ -74,6 +74,9 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
                                 "experiment": experiment_name_string,
                                 "experiment_group_dir": directory_for(experiment_name),
                                 "hypothesis_log_dir": directory_for(experiment_name) / "hypotheses",
+                                "learner_logging_path": directory_for(experiment_name),
+                                "log_learner_state": True,
+                                "resume_from_latest_logged_state": True,
                                 "pursuit-curriculum-params": {
                                     "num_instances": num_instances,
                                     "num_noise_instances": num_noise_instances,
