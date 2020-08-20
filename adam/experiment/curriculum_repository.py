@@ -11,16 +11,17 @@ from adam.learner.language_mode import LanguageMode, LANGUAGE_MODE_TO_NAME
 from adam.pickle import AdamPickler, AdamUnpickler
 
 
-_PARAMETER_ORDER: ImmutableSet[str] = immutableset([
-    "curriculum",
-    "num_samples",
-
-    "pursuit-curriculum-params.num_noise_objects",
-    "pursuit-curriculum-params.num_instances",
-    "pursuit-curriculum-params.num_noise_instances",
-    "pursuit-curriculum-params.num_objects_in_instance",
-    "pursuit-curriculum-params.add_gaze",
-])
+_PARAMETER_ORDER: ImmutableSet[str] = immutableset(
+    [
+        "curriculum",
+        "num_samples",
+        "pursuit-curriculum-params.num_noise_objects",
+        "pursuit-curriculum-params.num_instances",
+        "pursuit-curriculum-params.num_noise_instances",
+        "pursuit-curriculum-params.num_objects_in_instance",
+        "pursuit-curriculum-params.add_gaze",
+    ]
+)
 
 
 Curriculum = Iterable[Phase1InstanceGroup]
@@ -31,9 +32,7 @@ _EXPERIMENT_CURRICULUM_FILE_NAME = "curriculum.pkl"
 
 
 def _build_curriculum_path(
-    repository: Path,
-    parameters: Parameters,
-    language_mode: LanguageMode,
+    repository: Path, parameters: Parameters, language_mode: LanguageMode
 ) -> Path:
     path: Path = repository / LANGUAGE_MODE_TO_NAME[language_mode]
 
@@ -56,13 +55,9 @@ def _build_curriculum_path(
 
 
 def read_experiment_curriculum(
-    repository: Path,
-    parameters: Parameters,
-    language_mode: LanguageMode,
+    repository: Path, parameters: Parameters, language_mode: LanguageMode
 ) -> ExperimentCurriculum:
-    path = _build_curriculum_path(
-        repository, parameters, language_mode
-    )
+    path = _build_curriculum_path(repository, parameters, language_mode)
 
     with path.open("rb") as f:
         unpickler = AdamUnpickler(file=f)
@@ -77,9 +72,7 @@ def write_experiment_curriculum(
     language_mode: LanguageMode,
     curriculum: ExperimentCurriculum,
 ):
-    path = _build_curriculum_path(
-        repository, parameters, language_mode
-    )
+    path = _build_curriculum_path(repository, parameters, language_mode)
     # Create the parent directory if it doesn't exist, otherwise we can't write to it
     path.parent.mkdir(exist_ok=True, parents=True)
 
