@@ -79,3 +79,5 @@ def write_experiment_curriculum(
     with path.open("wb") as f:
         pickler = AdamPickler(file=f, protocol=pickle.HIGHEST_PROTOCOL)
         pickler.dump(curriculum)
+
+    logging.info(f"Saved curriculum to path {path}")
