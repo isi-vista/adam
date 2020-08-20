@@ -1,12 +1,13 @@
 from typing import List, Iterable
 
+from immutablecollections import immutableset
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.experiment.log_experiment import curriculum_from_params
-from adam.experiment.curriculum_repository import write_experiment_curriculum
+from adam.experiment.curriculum_repository import write_experiment_curriculum, IGNORED_PARAMETERS
 from adam.learner.language_mode import LanguageMode
 
 
@@ -22,9 +23,7 @@ def evaluate_curriculum(
         # We assume that the instance groups all specify Situations since otherwise you can't run
         # experiments on them.
         strict_curriculum.append(
-            ExplicitWithSituationInstanceGroup(
-                instance_group.name(), tuple(instance_group.instances())
-            )
+            ExplicitWithSituationInstanceGroup(instance_group.name(), tuple(instance_group.instances()))
         )
     return strict_curriculum
 
@@ -45,7 +44,10 @@ def main(params: Parameters):
         evaluate_curriculum(test_curriculum),
     )
     write_experiment_curriculum(
-        curriculum_repository_path, params, language_mode, strict_curriculum
+        curriculum_repository_path,
+        params,
+        language_mode,
+        strict_curriculum,
     )
 
 
