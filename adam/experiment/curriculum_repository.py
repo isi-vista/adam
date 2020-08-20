@@ -38,9 +38,7 @@ def _build_curriculum_path(
     path: Path = repository / LANGUAGE_MODE_TO_NAME[language_mode]
 
     all_parameters = immutableset(
-        parameter
-        for parameter, _ in parameters.namespaced_items()
-        if parameter not in _PARAMETER_ORDER
+        parameter for parameter, _ in parameters.namespaced_items()
     )
     ignored = all_parameters - _PARAMETER_ORDER
     logging.info(f"Ignoring parameters: {ignored}")
