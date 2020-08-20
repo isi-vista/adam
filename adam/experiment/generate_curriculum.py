@@ -7,7 +7,7 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from adam.curriculum import ExplicitWithoutSituationInstanceGroup
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.experiment.log_experiment import curriculum_from_params
-from adam.experiment.curriculum_repository import write_experiment_curriculum
+from adam.experiment.curriculum_repository import write_experiment_curriculum, IGNORED_PARAMETERS
 from adam.learner.language_mode import LanguageMode
 
 
@@ -55,7 +55,7 @@ def main(params: Parameters):
         language_mode,
         strict_curriculum,
         ignored_parameters=immutableset(
-            [CURRICULUM_REPOSITORY_PATH_PARAMETER, LANGUAGE_MODE_PARAMETER]
+            IGNORED_PARAMETERS.union({CURRICULUM_REPOSITORY_PATH_PARAMETER, LANGUAGE_MODE_PARAMETER})
         ),
     )
 

@@ -36,6 +36,9 @@ IGNORED_PARAMETERS: ImmutableSet[str] = immutableset(
         "sort_learner_descriptions_by_length",
         "save_state_every_n_steps",
         "spack_root",
+        "conda_base_path",
+        "conda_environment",
+        "language_mode",
     ]
 )
 
