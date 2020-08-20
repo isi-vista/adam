@@ -110,7 +110,7 @@ def write_experiment_curriculum(
         repository, parameters, language_mode, ignored_parameters=ignored_parameters
     )
     # Create the parent directory if it doesn't exist, otherwise we can't write to it
-    path.parent().mkdir(exist_ok=True, parents=True)
+    path.parent.mkdir(exist_ok=True, parents=True)
 
     with path.open("wb") as f:
         pickler = AdamPickler(file=f, protocol=pickle.HIGHEST_PROTOCOL)
