@@ -1550,7 +1550,6 @@ def _fall_in_front_of_behind_template(
     background: Iterable[TemplateObjectVariable],
     *,
     syntax_hints: Iterable[str],
-    is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
     direction = Direction(
@@ -1562,9 +1561,7 @@ def _fall_in_front_of_behind_template(
         background_object_variables=background,
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
         after_action_relations=flatten_relations(
-            far(theme, goal_reference, direction=direction)
-            if is_distal
-            else near(theme, goal_reference, direction=direction)
+            near(theme, goal_reference, direction=direction)
         ),
         syntax_hints=syntax_hints,
     )
@@ -3321,7 +3318,6 @@ def _make_fall_with_prepositions(
                             goal_reference,
                             background,
                             syntax_hints=syntax_hints,
-                            is_distal=is_distal,
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -3330,7 +3326,6 @@ def _make_fall_with_prepositions(
                         block_multiple_of_the_same_type=True,
                     )
                     for syntax_hints in syntax_hints_options
-                    for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
                 ]
             ),
