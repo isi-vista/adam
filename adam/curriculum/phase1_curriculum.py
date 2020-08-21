@@ -2194,9 +2194,7 @@ def bare_move_template(
                                 reference_source_object=Region(
                                     goal_reference, distance=DISTAL
                                 ),
-                                reference_destination_object=Region(
-                                    goal_reference, distance=PROXIMAL
-                                ),
+                                reference_destination_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2233,9 +2231,7 @@ def transitive_move_template(
                                 reference_source_object=Region(
                                     goal_reference, distance=DISTAL
                                 ),
-                                reference_destination_object=Region(
-                                    goal_reference, distance=PROXIMAL
-                                ),
+                                reference_destination_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )

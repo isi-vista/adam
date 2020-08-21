@@ -28,6 +28,7 @@ from adam.ontology.phase1_ontology import (
     GOAL,
     GAILA_PHASE_1_ONTOLOGY,
     HOLLOW,
+    MOVE_GOAL,
     SIT,
     SIT_THING_SAT_ON,
     CAN_BE_SAT_ON_BY_PEOPLE,
@@ -1767,7 +1768,6 @@ def _x_move_in_front_of_behind_y_template(
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1777,13 +1777,26 @@ def _x_move_in_front_of_behind_y_template(
         actions=[
             Action(
                 MOVE,
+                auxiliary_variable_bindings=[
+                    (
+                        MOVE_GOAL,
+                        Region(
+                            goal_reference,
+                            distance=PROXIMAL,
+                            direction=Direction(
+                                positive=is_in_front,
+                                relative_to_axis=FacingAddresseeAxis(goal_reference),
+                            ),
+                        ),
+                    )
+                ],
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (
                         GOAL,
                         Region(
                             goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                             direction=Direction(
                                 positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(goal_reference),
@@ -1802,8 +1815,6 @@ def _x_move_under_y_template(
     agent: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-moves-under-{goal_reference.handle}",
@@ -1819,7 +1830,7 @@ def _x_move_under_y_template(
                         Region(
                             goal_reference,
                             direction=GRAVITATIONAL_DOWN,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                         ),
                     ),
                 ],
@@ -1844,6 +1855,9 @@ def _x_move_y_in_z_template(
         actions=[
             Action(
                 MOVE,
+                auxiliary_variable_bindings=[
+                    (MOVE_GOAL, Region(goal_reference, distance=INTERIOR))
+                ],
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
@@ -1855,7 +1869,10 @@ def _x_move_y_in_z_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
-        after_action_relations=[near(agent, goal_reference)],
+        after_action_relations=[
+            near(agent, goal_reference),
+            inside(theme, goal_reference),
+        ],
     )
 
 
@@ -1901,8 +1918,6 @@ def _x_move_y_under_z_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-moves-{theme.handle}-under-{goal_reference.handle}",
@@ -1918,7 +1933,7 @@ def _x_move_y_under_z_template(
                         GOAL,
                         Region(
                             goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                             direction=GRAVITATIONAL_DOWN,
                         ),
                     ),
@@ -1982,7 +1997,6 @@ def _x_move_y_in_front_of_behind_z_template(
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1999,7 +2013,7 @@ def _x_move_y_in_front_of_behind_z_template(
                         GOAL,
                         Region(
                             goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                             direction=Direction(
                                 positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(goal_reference),
@@ -2030,7 +2044,15 @@ def _x_moves_towards_away_from_z_template(
         actions=[
             Action(
                 MOVE,
-                argument_roles_to_fillers=[(AGENT, agent), (GOAL, spatial_reference)],
+                argument_roles_to_fillers=[(AGENT, agent)],
+                auxiliary_variable_bindings=[
+                    (
+                        MOVE_GOAL,
+                        Region(
+                            spatial_reference, distance=PROXIMAL if is_toward else DISTAL
+                        ),
+                    )
+                ],
                 during=DuringAction(
                     objects_to_paths=[
                         (
@@ -2070,29 +2092,18 @@ def _x_moves_y_towards_away_from_z_template(
         actions=[
             Action(
                 MOVE,
-                argument_roles_to_fillers=[
-                    (AGENT, agent),
-                    (THEME, theme),
-                    (GOAL, spatial_reference),
+                auxiliary_variable_bindings=[
+                    (
+                        MOVE_GOAL,
+                        Region(
+                            spatial_reference, distance=PROXIMAL if is_toward else DISTAL
+                        ),
+                    )
                 ],
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 during=DuringAction(
                     continuously=flatten_relations(contacts(agent, theme)),
                     objects_to_paths=[
-                        (
-                            theme,
-                            SpatialPath(
-                                operator=TOWARD if is_toward else AWAY_FROM,
-                                reference_source_object=Region(
-                                    spatial_reference,
-                                    distance=DISTAL if is_toward else PROXIMAL,
-                                ),
-                                reference_destination_object=Region(
-                                    spatial_reference,
-                                    distance=PROXIMAL if is_toward else DISTAL,
-                                ),
-                                reference_axis=HorizontalAxisOfObject(theme, 1),
-                            ),
-                        ),
                         (
                             agent,
                             SpatialPath(
@@ -2107,7 +2118,7 @@ def _x_moves_y_towards_away_from_z_template(
                                 ),
                                 reference_axis=HorizontalAxisOfObject(agent, 1),
                             ),
-                        ),
+                        )
                     ],
                 ),
             )
@@ -2120,8 +2131,6 @@ def _x_moves_out_of_z_template(
     spatial_reference: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     inside_relation = inside(agent, spatial_reference)
     return Phase1SituationTemplate(
@@ -2133,12 +2142,7 @@ def _x_moves_out_of_z_template(
                 MOVE,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
-                        ),
-                    ),
+                    (GOAL, Region(goal_reference, distance=PROXIMAL)),
                 ],
             )
         ],
@@ -2157,8 +2161,6 @@ def _x_moves_y_out_of_z_template(
     spatial_reference: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     inside_relations = inside([agent, theme], spatial_reference)
     return Phase1SituationTemplate(
@@ -2171,12 +2173,7 @@ def _x_moves_y_out_of_z_template(
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference, distance=DISTAL if is_distal else PROXIMAL
-                        ),
-                    ),
+                    (GOAL, Region(goal_reference, distance=PROXIMAL)),
                 ],
             )
         ],
@@ -3531,18 +3528,13 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_in_front_of_behind_y_template(
-                            agent,
-                            goal_reference,
-                            background,
-                            is_distal=is_distal,
-                            is_in_front=is_in_front,
+                            agent, goal_reference, background, is_in_front=is_in_front
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
                 ]
             ),
@@ -3550,15 +3542,12 @@ def _make_move_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _x_move_under_y_template(
-                            agent, goal_under, background, is_distal=is_distal
-                        ),
+                        _x_move_under_y_template(agent, goal_under, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                 ]
             ),
             # move toward or away from
@@ -3594,18 +3583,13 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_move_y_under_z_template(
-                            manipulating_agent,
-                            theme,
-                            goal_under,
-                            background,
-                            is_distal=is_distal,
+                            manipulating_agent, theme, goal_under, background
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                 ]
             ),
             # move something beside
@@ -3636,7 +3620,6 @@ def _make_move_with_prepositions(
                             theme,
                             goal_reference,
                             background,
-                            is_distal=is_distal,
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -3644,7 +3627,6 @@ def _make_move_with_prepositions(
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
                 ]
             ),
@@ -3672,18 +3654,13 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_moves_out_of_z_template(
-                            agent,
-                            goal_in,
-                            goal_reference,
-                            background,
-                            is_distal=is_distal,
+                            agent, goal_in, goal_reference, background
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                 ]
             ),
             # x moves y out of z
@@ -3691,19 +3668,13 @@ def _make_move_with_prepositions(
                 [
                     sampled(
                         _x_moves_y_out_of_z_template(
-                            manipulating_agent,
-                            theme,
-                            goal_in,
-                            goal_reference,
-                            background,
-                            is_distal=is_distal,
+                            manipulating_agent, theme, goal_in, goal_reference, background
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                 ]
             ),
         ),
@@ -4131,8 +4102,8 @@ def make_verb_with_dynamic_prepositions_curriculum(
         # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_come_with_prepositions(num_samples, num_noise_objects, language_generator),

@@ -2408,7 +2408,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
                 SpatialPath(
                     operator=TO,
                     reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
-                    reference_destination_object=Region(MOVE_GOAL, distance=PROXIMAL),
+                    reference_destination_object=MOVE_GOAL,
                 ),
             )
         ]
@@ -2420,7 +2420,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
                 SpatialPath(
                     operator=TO,
                     reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
-                    reference_destination_object=Region(MOVE_GOAL, distance=PROXIMAL),
+                    reference_destination_object=MOVE_GOAL,
                 ),
             ),
             (
@@ -2428,7 +2428,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
                 SpatialPath(
                     operator=TO,
                     reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
-                    reference_destination_object=Region(MOVE_GOAL, distance=PROXIMAL),
+                    reference_destination_object=MOVE_GOAL,
                 ),
             ),
         ]
