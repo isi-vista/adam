@@ -1622,8 +1622,6 @@ def _put_under_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-puts-{theme.handle}-under-{goal_reference.handle}",
@@ -1639,7 +1637,7 @@ def _put_under_template(
                         GOAL,
                         Region(
                             goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                             direction=GRAVITATIONAL_DOWN,
                         ),
                     ),
@@ -1696,7 +1694,6 @@ def _put_in_front_of_behind_template(
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -1713,7 +1710,7 @@ def _put_in_front_of_behind_template(
                         GOAL,
                         Region(
                             goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                             direction=Direction(
                                 positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(goal_reference),
@@ -3440,15 +3437,12 @@ def _make_put_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _put_under_template(
-                            agent, theme, goal_under, background, is_distal=is_distal
-                        ),
+                        _put_under_template(agent, theme, goal_under, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                 ]
             ),
             # in front of, behind
@@ -3460,7 +3454,6 @@ def _make_put_with_prepositions(
                             theme,
                             goal_reference,
                             background,
-                            is_distal=is_distal,
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -3468,7 +3461,6 @@ def _make_put_with_prepositions(
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
                 ]
             ),
@@ -4138,8 +4130,8 @@ def make_verb_with_dynamic_prepositions_curriculum(
         # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
