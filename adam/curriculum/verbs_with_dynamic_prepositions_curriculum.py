@@ -1139,7 +1139,6 @@ def _x_roll_behind_in_front_y_template(
     background: Iterable[TemplateObjectVariable],
     surface: TemplateObjectVariable,
     *,
-    is_distal: bool,
     is_behind: bool,
 ) -> Phase1SituationTemplate:
     direction = Direction(
@@ -1158,9 +1157,7 @@ def _x_roll_behind_in_front_y_template(
             )
         ],
         after_action_relations=flatten_relations(
-            far(agent, goal_reference, direction=direction)
-            if is_distal
-            else near(agent, goal_reference, direction=direction)
+            near(agent, goal_reference, direction=direction)
         ),
         gazed_objects=[agent],
     )
@@ -1253,7 +1250,6 @@ def _x_roll_y_behind_in_front_z_template(
     surface: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
     is_behind: bool,
 ) -> Phase1SituationTemplate:
     value = "behind" if is_behind else "in-front-of"
@@ -1275,9 +1271,7 @@ def _x_roll_y_behind_in_front_z_template(
         ],
         constraining_relations=flatten_relations([bigger_than(agent, theme)]),
         after_action_relations=flatten_relations(
-            far(theme, goal_reference, direction=direction)
-            if is_distal
-            else near(theme, goal_reference, direction=direction)
+            near(theme, goal_reference, direction=direction)
         ),
         gazed_objects=[theme],
     )
@@ -1382,7 +1376,7 @@ def _x_rolls_y_towards_away_from_z_template(
                 during=DuringAction(
                     objects_to_paths=[
                         (
-                            agent,
+                            theme,
                             SpatialPath(
                                 operator=TOWARD if is_toward else AWAY_FROM,
                                 reference_source_object=Region(
@@ -1393,7 +1387,7 @@ def _x_rolls_y_towards_away_from_z_template(
                                     spatial_reference,
                                     distance=PROXIMAL if is_toward else DISTAL,
                                 ),
-                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                                reference_axis=HorizontalAxisOfObject(theme, 1),
                             ),
                         )
                     ]
@@ -3003,7 +2997,6 @@ def _make_roll_with_prepositions(
                             goal_object,
                             make_background([roll_surface], all_object),
                             ground,
-                            is_distal=is_distal,
                             is_behind=is_behind,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -3011,7 +3004,6 @@ def _make_roll_with_prepositions(
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                     for is_behind in BOOL_SET
                 ]
             ),
@@ -3080,7 +3072,6 @@ def _make_roll_with_prepositions(
                             goal_object,
                             ground,
                             make_background([roll_surface], all_object),
-                            is_distal=is_distal,
                             is_behind=is_behind,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -3088,30 +3079,29 @@ def _make_roll_with_prepositions(
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                     for is_behind in BOOL_SET
                 ]
             ),
-            # X rolls Y over/under Z
-            flatten(
-                [
-                    sampled(
-                        _x_rolls_y_over_under_z_template(
-                            agent,
-                            theme,
-                            goal_object,
-                            ground,
-                            make_background([ground], all_object),
-                            is_over=is_over,
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                    for is_over in BOOL_SET
-                ]
-            ),
+            # X rolls Y over/under Z -- we can't have both path and goal as under/over because we can't learning two meanings for one linguistic description so this is disabled
+            # flatten(
+            #     [
+            #         sampled(
+            #             _x_rolls_y_over_under_z_template(
+            #                 agent,
+            #                 theme,
+            #                 goal_object,
+            #                 ground,
+            #                 make_background([ground], all_object),
+            #                 is_over=is_over,
+            #             ),
+            #             ontology=GAILA_PHASE_1_ONTOLOGY,
+            #             chooser=PHASE1_CHOOSER_FACTORY(),
+            #             max_to_sample=num_samples if num_samples else 5,
+            #             block_multiple_of_the_same_type=True,
+            #         )
+            #         for is_over in BOOL_SET
+            #     ]
+            # ),
             # X rolls (Y) over/under Z - As Goal
             flatten(
                 [
@@ -4150,8 +4140,8 @@ def make_verb_with_dynamic_prepositions_curriculum(
         # _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_go_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
