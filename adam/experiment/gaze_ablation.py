@@ -64,34 +64,41 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
                                 prob_not_given=prob_not_given,
                                 add_gaze=add_gaze,
                             )
-                            experiment_name = Locator(
-                                experiment_name_string.split('-')
-                            )
+                            experiment_name = Locator(experiment_name_string.split("-"))
 
                             # Note that the input parameters should include the root params and
                             # anything else we want.
-                            experiment_params = baseline_parameters.unify(FIXED_PARAMETERS).unify({
-                                "experiment": experiment_name_string,
-                                "experiment_group_dir": directory_for(experiment_name),
-                                "hypothesis_log_dir": directory_for(experiment_name) / "hypotheses",
-                                "learner_logging_path": directory_for(experiment_name),
-                                "log_learner_state": True,
-                                "resume_from_latest_logged_state": True,
-                                "pursuit-curriculum-params": {
-                                    "num_instances": num_instances,
-                                    "num_noise_instances": num_noise_instances,
-                                    "num_objects_in_instance": num_objects_in_instance,
-                                    "add_gaze": add_gaze,
-                                    "prob_given": float(prob_given),
-                                    "prob_not_given": float(prob_not_given),
+                            experiment_params = baseline_parameters.unify(
+                                FIXED_PARAMETERS
+                            ).unify(
+                                {
+                                    "experiment": experiment_name_string,
+                                    "experiment_group_dir": directory_for(
+                                        experiment_name
+                                    ),
+                                    "hypothesis_log_dir": directory_for(experiment_name)
+                                    / "hypotheses",
+                                    "learner_logging_path": directory_for(
+                                        experiment_name
+                                    ),
+                                    "log_learner_state": True,
+                                    "resume_from_latest_logged_state": True,
+                                    "pursuit-curriculum-params": {
+                                        "num_instances": num_instances,
+                                        "num_noise_instances": num_noise_instances,
+                                        "num_objects_in_instance": num_objects_in_instance,
+                                        "add_gaze": add_gaze,
+                                        "prob_given": float(prob_given),
+                                        "prob_not_given": float(prob_not_given),
+                                    },
                                 }
-                            })
+                            )
 
                             run_python_on_parameters(
                                 experiment_name,
                                 log_experiment_script,
                                 experiment_params,
-                                depends_on=[]
+                                depends_on=[],
                             )
 
     write_workflow_description()
