@@ -1337,7 +1337,7 @@ class PatternMatching:
                 )
                 if trim_after_match and cur_pattern:
                     cur_pattern = trim_after_match(cur_pattern)
-                if graph_logger and cur_pattern:
+                if cur_pattern:
                     # This is probably a bad idea, but it seems worth trying.
                     match_attempt = cast(PatternMatching.MatchFailure, match_attempt)
                     partial_match = {
@@ -1345,6 +1345,7 @@ class PatternMatching:
                         for pattern_node, graph_node in match_attempt.pattern_node_to_graph_node_for_largest_match.items()
                         if pattern_node in cur_pattern
                     }
+                if graph_logger and cur_pattern:
                     graph_logger.log_graph(
                         cur_pattern,
                         logging.INFO,
