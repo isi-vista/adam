@@ -2246,7 +2246,7 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     postconditions = flatten_relations(
         [
             Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
-            on(_THROW_THEME, THROW_GOAL),
+            near(_THROW_THEME, THROW_GOAL),
             # negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
             negate(contacts(_THROW_AGENT, _THROW_THEME)),
         ]

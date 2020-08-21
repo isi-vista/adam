@@ -775,7 +775,7 @@ def _throw_on_template(
                 ],
             )
         ],
-        after_action_relations=[near(theme, goal_reference)],
+        after_action_relations=[on(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
         gazed_objects=[theme],
     )
@@ -827,7 +827,6 @@ def _throw_in_front_of_behind_template(
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -848,7 +847,7 @@ def _throw_in_front_of_behind_template(
                                 positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(goal_reference),
                             ),
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                         ),
                     ),
                 ],
@@ -866,8 +865,6 @@ def _throw_under_template(
     theme: TemplateObjectVariable,
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-throws-{theme.handle}-under-{goal_reference.handle}",
@@ -884,7 +881,7 @@ def _throw_under_template(
                         Region(
                             goal_reference,
                             direction=GRAVITATIONAL_DOWN,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                         ),
                     ),
                 ],
@@ -922,9 +919,10 @@ def _throw_path_over_template(
                 ),
             )
         ],
-        # hack of ordering relation for English language generator
-        after_action_relations=[near(implicit_goal_reference, theme)],
-        constraining_relations=flatten_relations(bigger_than(agent, theme)),
+        after_action_relations=[near(theme, implicit_goal_reference)],
+        constraining_relations=flatten_relations(
+            bigger_than([agent, object_in_path], theme)
+        ),
         gazed_objects=[theme],
     )
 
@@ -936,8 +934,6 @@ def _throw_path_under_template(
     object_in_path: TemplateObjectVariable,
     implicit_goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
-    *,
-    is_distal: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"{agent.handle}-throws-{theme.handle}-with-path-under-{object_in_path.handle}",
@@ -948,13 +944,7 @@ def _throw_path_under_template(
                 THROW,
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=[
-                    (
-                        THROW_GOAL,
-                        Region(
-                            implicit_goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
-                        ),
-                    )
+                    (THROW_GOAL, Region(implicit_goal_reference, distance=PROXIMAL))
                 ],
                 during=DuringAction(
                     at_some_point=[strictly_above(object_in_path, theme)]
@@ -3816,7 +3806,6 @@ def _make_throw_with_prepositions(
                             theme,
                             goal_reference,
                             background,
-                            is_distal=is_distal,
                             is_in_front=is_in_front,
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -3824,7 +3813,6 @@ def _make_throw_with_prepositions(
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
                 ]
             ),
@@ -3832,15 +3820,12 @@ def _make_throw_with_prepositions(
             flatten(
                 [
                     sampled(
-                        _throw_under_template(
-                            agent, theme, goal_under, background, is_distal=is_distal
-                        ),
+                        _throw_under_template(agent, theme, goal_under, background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                 ]
             ),
             # path over
@@ -3861,26 +3846,24 @@ def _make_throw_with_prepositions(
                     )
                 ]
             ),
-            # path under
-            flatten(
-                [
-                    sampled(
-                        _throw_path_under_template(
-                            agent,
-                            theme,
-                            goal_under,
-                            implicit_goal_reference,
-                            background,
-                            is_distal=is_distal,
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                    for is_distal in BOOL_SET
-                ]
-            ),
+            # # path under -- currently disabled since we can't learn multiple semantics for one linguistic template
+            #  flatten(
+            #     [
+            #         sampled(
+            #             _throw_path_under_template(
+            #                 agent,
+            #                 theme,
+            #                 goal_under,
+            #                 implicit_goal_reference,
+            #                 background,
+            #             ),
+            #             ontology=GAILA_PHASE_1_ONTOLOGY,
+            #             chooser=PHASE1_CHOOSER_FACTORY(),
+            #             max_to_sample=num_samples if num_samples else 5,
+            #             block_multiple_of_the_same_type=True,
+            #         )
+            #     ]
+            # ),
             # Towards & Away
             flatten(
                 [
@@ -4168,9 +4151,9 @@ def make_verb_with_dynamic_prepositions_curriculum(
     ],
 ) -> Sequence[Phase1InstanceGroup]:
     return [
-        _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_go_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
