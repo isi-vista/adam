@@ -1340,15 +1340,11 @@ class PatternMatching:
                 if graph_logger and cur_pattern:
                     # This is probably a bad idea, but it seems worth trying.
                     match_attempt = cast(PatternMatching.MatchFailure, match_attempt)
-                    if partial_match == {}:
-                        logging.info(
-                            "Pattern match was in fact empty. Starting from biggest match..."
-                        )
-                        partial_match = {
-                            pattern_node: graph_node
-                            for pattern_node, graph_node in match_attempt.pattern_node_to_graph_node_for_largest_match.items()
-                            if pattern_node in cur_pattern
-                        }
+                    partial_match = {
+                        pattern_node: graph_node
+                        for pattern_node, graph_node in match_attempt.pattern_node_to_graph_node_for_largest_match.items()
+                        if pattern_node in cur_pattern
+                    }
                     graph_logger.log_graph(
                         cur_pattern,
                         logging.INFO,
