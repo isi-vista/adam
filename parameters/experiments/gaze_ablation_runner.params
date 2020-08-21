@@ -18,7 +18,8 @@ gaze_ablation:
    sort_learner_descriptions_by_length: true
    num_pretty_descriptions: 5
 
-   save_state_every_n_steps: 150
+   # save_state_every_n_steps: 180
+   log_hypothesis_every_n_steps: 180
    debug_learner_pickling: false
 
 workflow_name: 'gaze_ablation_pegasus'
