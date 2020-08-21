@@ -1041,7 +1041,7 @@ def _throw_towards_away_template(
 
 def _sit_on_template(
     agent: TemplateObjectVariable,
-    surface: TemplateObjectVariable,
+    surface: TemplateObjectVariable,  # pylint:disable=unused-argument
     seat: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
@@ -1068,16 +1068,14 @@ def _sit_on_template(
                 auxiliary_variable_bindings=[(SIT_THING_SAT_ON, seat)],
             )
         ],
-        constraining_relations=flatten_relations(
-            [bigger_than(surface, seat), bigger_than(seat, agent)]
-        ),
+        constraining_relations=flatten_relations([bigger_than(seat, agent)]),
         syntax_hints=syntax_hints,
     )
 
 
 def _sit_in_template(
     agent: TemplateObjectVariable,
-    surface: TemplateObjectVariable,
+    surface: TemplateObjectVariable,  # pylint:disable=unused-argument
     seat: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
@@ -1097,9 +1095,7 @@ def _sit_in_template(
                 auxiliary_variable_bindings=[(SIT_THING_SAT_ON, seat)],
             )
         ],
-        constraining_relations=flatten_relations(
-            [bigger_than(surface, seat), bigger_than(seat, agent)]
-        ),
+        constraining_relations=flatten_relations([bigger_than(seat, agent)]),
         syntax_hints=syntax_hints,
     )
 
@@ -4153,8 +4149,8 @@ def make_verb_with_dynamic_prepositions_curriculum(
     return [
         # _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_go_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
