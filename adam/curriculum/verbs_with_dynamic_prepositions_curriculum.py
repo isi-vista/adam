@@ -2201,9 +2201,24 @@ def _jump_in_template(
         f"{agent.handle}-jumps-in-{goal_reference.handle}",
         salient_object_variables=[agent, goal_reference],
         background_object_variables=background,
+        after_action_relations=[inside(agent, goal_reference)],
         actions=[
             Action(
                 JUMP,
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    goal_reference, distance=INTERIOR
+                                ),
+                            ),
+                        )
+                    ]
+                ),
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (GOAL, Region(goal_reference, distance=INTERIOR)),
@@ -2241,11 +2256,28 @@ def _jump_on_template(
                         ),
                     ),
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    goal_reference,
+                                    distance=EXTERIOR_BUT_IN_CONTACT,
+                                    direction=GRAVITATIONAL_UP,
+                                ),
+                            ),
+                        )
+                    ]
+                ),
                 auxiliary_variable_bindings=[
                     (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
                 ],
             )
         ],
+        after_action_relations=[on(agent, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(goal_reference, agent)),
     )
 
@@ -2311,7 +2343,7 @@ def _jump_in_front_of_behind_template(
                         GOAL,
                         Region(
                             goal_reference,
-                            distance=DISTAL if is_distal else PROXIMAL,
+                            distance=PROXIMAL,
                             direction=Direction(
                                 positive=is_in_front,
                                 relative_to_axis=FacingAddresseeAxis(goal_reference),
@@ -2319,6 +2351,27 @@ def _jump_in_front_of_behind_template(
                         ),
                     ),
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    goal_reference,
+                                    distance=PROXIMAL,
+                                    direction=Direction(
+                                        positive=is_in_front,
+                                        relative_to_axis=FacingAddresseeAxis(
+                                            goal_reference
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        )
+                    ]
+                ),
                 auxiliary_variable_bindings=[
                     (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
                 ],
@@ -4103,8 +4156,8 @@ def make_verb_with_dynamic_prepositions_curriculum(
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_come_with_prepositions(num_samples, num_noise_objects, language_generator),
     ]

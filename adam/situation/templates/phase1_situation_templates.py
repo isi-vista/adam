@@ -2,7 +2,7 @@
 This contains methods that create common situation templates.
 """
 from typing import Iterable
-
+from adam.ontology.phase1_spatial_relations import SpatialPath, VIA
 from adam.curriculum.curriculum_utils import GROUND_OBJECT_TEMPLATE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
@@ -221,7 +221,21 @@ def _jump_over_template(
                 JUMP,
                 argument_roles_to_fillers=[(AGENT, agent)],
                 during=DuringAction(
-                    at_some_point=flatten_relations(strictly_above(agent, object_in_path))
+                    at_some_point=flatten_relations(
+                        strictly_above(agent, object_in_path)
+                    ),
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=VIA,
+                                reference_source_object=Region(
+                                    object_in_path, direction=GRAVITATIONAL_UP
+                                ),
+                                reference_destination_object=GROUND_OBJECT_TEMPLATE,
+                            ),
+                        )
+                    ],
                 ),
                 auxiliary_variable_bindings=[
                     (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
