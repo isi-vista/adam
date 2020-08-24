@@ -1014,12 +1014,12 @@ def make_subtle_verb_distinctions_curriculum(
         # make_push_shove_subtle_verb_distinctions(
         #     num_samples, num_noise_objects, language_generator
         # ),
-        make_walk_run_subtle_verb_distinction(
-            num_samples, num_noise_objects, language_generator
-        ),
-        # make_pass_toss_subtle_verb_distinction(
+        # make_walk_run_subtle_verb_distinction(
         #     num_samples, num_noise_objects, language_generator
         # ),
+        make_pass_toss_subtle_verb_distinction(
+            num_samples, num_noise_objects, language_generator
+        ),
         # make_take_grab_subtle_verb_distinction(
         #     num_samples, num_noise_objects, language_generator
         # ),
