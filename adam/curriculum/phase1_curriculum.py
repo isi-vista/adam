@@ -2470,7 +2470,7 @@ def make_push_templates(
                         (
                             agent,
                             SpatialPath(
-                                None,
+                                TO,
                                 reference_source_object=Region(
                                     push_goal, distance=DISTAL
                                 ),
@@ -2520,7 +2520,7 @@ def make_push_templates(
                         (
                             agent,
                             SpatialPath(
-                                None,
+                                TO,
                                 reference_source_object=Region(
                                     push_goal, distance=DISTAL
                                 ),

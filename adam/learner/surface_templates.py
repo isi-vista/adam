@@ -121,11 +121,12 @@ class SurfaceTemplate:
                         ]
                     )
                 else:
-                    raise RuntimeError(
-                        f"Template contained variable {element}, "
-                        f"but it was not found in the mapping of slots to spans: "
-                        f"{slots_to_filler_spans}"
-                    )
+                    return None
+                    # raise RuntimeError(
+                    #    f"Template contained variable {element}, "
+                    #    f"but it was not found in the mapping of slots to spans: "
+                    #    f"{slots_to_filler_spans}"
+                    # )
 
         # Now we need to check if the tokens to match occur in the given token sequence to
         # match against.  We don't expect these sequences to be long, so an inefficient solution
