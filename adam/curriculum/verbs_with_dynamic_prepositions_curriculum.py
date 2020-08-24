@@ -427,21 +427,26 @@ def _go_beside_template(
         actions=[
             Action(
                 GO,
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=Region(
+                                    goal_object, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_object, distance=PROXIMAL
+                                ),
+                                properties=[SIDE, RIGHT if is_right else LEFT],
+                            ),
+                        )
+                    ]
+                ),
                 argument_roles_to_fillers=[
                     (AGENT, agent),
-                    (
-                        GOAL,
-                        Region(
-                            goal_object,
-                            distance=PROXIMAL,
-                            direction=Direction(
-                                positive=is_right,
-                                relative_to_axis=HorizontalAxisOfObject(
-                                    goal_object, index=0
-                                ),
-                            ),
-                        ),
-                    ),
+                    (GOAL, Region(goal_object, distance=PROXIMAL)),
                 ],
             )
         ],
@@ -2693,7 +2698,7 @@ def _make_push_with_prepositions(
                     for template in to_in_templates
                 ]
             ),
-            # TODO: fix beside so that the semantics don't break for left vs. right; see https://github.com/isi-vista/adam/issues/932 followups for this and related issues
+            # beside
             flatten(
                 [
                     sampled(
@@ -2794,6 +2799,7 @@ def _make_go_with_prepositions(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    use_paths_instead_of_goals: bool = False,
 ) -> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
@@ -2821,164 +2827,286 @@ def _make_go_with_prepositions(
     # )
     background = make_noise_objects(noise_objects)
 
-    return phase1_instances(
-        "Go + PP",
-        chain(
-            # To
-            flatten(
-                [
-                    sampled(
-                        _go_to_template(agent, goal_object, background),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                ]
+    if use_paths_instead_of_goals:
+        return phase1_instances(
+            "Go + PP",
+            chain(
+                # To
+                flatten(
+                    [
+                        sampled(
+                            _go_to_template(agent, goal_object, background),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                    ]
+                ),
+                # In
+                flatten(
+                    [
+                        sampled(
+                            _go_in_template(agent, goal_object_hollow, background),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                    ]
+                ),
+                # TODO: fix left/right Beside
+                flatten(
+                    [
+                        sampled(
+                            _go_beside_template(
+                                agent, goal_object, background, is_right=is_right
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                        for is_right in BOOL_SET
+                    ]
+                ),
+                # Behind & In Front Of
+                flatten(
+                    [
+                        sampled(
+                            _go_behind_in_front_template(
+                                agent, goal_object, background, is_behind=is_behind
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                        for is_behind in BOOL_SET
+                    ]
+                ),
+                # Over
+                flatten(
+                    [
+                        sampled(
+                            _go_over_template(agent, goal_object, background),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                    ]
+                ),
+                # Under
+                flatten(
+                    [
+                        sampled(
+                            _go_under_template(
+                                agent,
+                                goal_object_with_space_under,
+                                background,
+                                is_distal=is_distal,
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                        for is_distal in BOOL_SET
+                    ]
+                ),
+                # TODO: paths are currently disabled here since they are described the same way in English as goals and this causes the learning to break
+                # Behind & In Front Of Paths
+                # flatten(
+                #    [
+                #        sampled(
+                #            _go_behind_in_front_path_template(
+                #                agent,
+                #                goal_object,
+                #                path_object,
+                #                background,
+                #                is_behind=is_behind,
+                #            ),
+                #            ontology=GAILA_PHASE_1_ONTOLOGY,
+                #            chooser=PHASE1_CHOOSER_FACTORY(),
+                #            max_to_sample=num_samples if num_samples else 5,
+                #            block_multiple_of_the_same_type=True,
+                #        )
+                #        for is_behind in BOOL_SET
+                #    ]
+                # ),
+                # Over & Under Paths
+                # flatten(
+                #    [
+                #        sampled(
+                #           _go_over_under_path_template(
+                #                agent,
+                #                goal_object,
+                #                path_object,
+                #                background,
+                #                is_over=is_over,
+                #            ),
+                #            ontology=GAILA_PHASE_1_ONTOLOGY,
+                #            chooser=PHASE1_CHOOSER_FACTORY(),
+                #            max_to_sample=num_samples if num_samples else 5,
+                #            block_multiple_of_the_same_type=True,
+                #        )
+                #        for is_over in BOOL_SET
+                #    ]
+                # ),
+                # Toward & Away Paths
+                flatten(
+                    [
+                        sampled(
+                            _go_towards_away_template(
+                                agent, goal_object, background, is_toward=is_toward
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                        for is_toward in BOOL_SET
+                    ]
+                ),
+                # Out
+                flatten(
+                    [
+                        sampled(
+                            _x_go_out_y_template(
+                                agent, goal_object_hollow, goal_object, background
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                    ]
+                ),
             ),
-            # In
-            flatten(
-                [
-                    sampled(
-                        _go_in_template(agent, goal_object_hollow, background),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                ]
+            language_generator=language_generator,
+        )
+
+    else:
+        return phase1_instances(
+            "Go + PP goal",
+            chain(
+                # To
+                flatten(
+                    [
+                        sampled(
+                            _go_to_template(agent, goal_object, background),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                    ]
+                ),
+                # In
+                flatten(
+                    [
+                        sampled(
+                            _go_in_template(agent, goal_object_hollow, background),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                    ]
+                ),
+                # Beside
+                flatten(
+                    [
+                        sampled(
+                            _go_beside_template(
+                                agent, goal_object, background, is_right=is_right
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                        for is_right in BOOL_SET
+                    ]
+                ),
+                # Behind & In Front Of
+                flatten(
+                    [
+                        sampled(
+                            _go_behind_in_front_template(
+                                agent, goal_object, background, is_behind=is_behind
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                        for is_behind in BOOL_SET
+                    ]
+                ),
+                # Over
+                flatten(
+                    [
+                        sampled(
+                            _go_over_template(agent, goal_object, background),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                    ]
+                ),
+                # Under
+                flatten(
+                    [
+                        sampled(
+                            _go_under_template(
+                                agent,
+                                goal_object_with_space_under,
+                                background,
+                                is_distal=is_distal,
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                        for is_distal in BOOL_SET
+                    ]
+                ),
+                # Toward & Away Paths
+                flatten(
+                    [
+                        sampled(
+                            _go_towards_away_template(
+                                agent, goal_object, background, is_toward=is_toward
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                        for is_toward in BOOL_SET
+                    ]
+                ),
+                # Out
+                flatten(
+                    [
+                        sampled(
+                            _x_go_out_y_template(
+                                agent, goal_object_hollow, goal_object, background
+                            ),
+                            ontology=GAILA_PHASE_1_ONTOLOGY,
+                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
+                        )
+                    ]
+                ),
             ),
-            # TODO: fix left/right Beside
-            flatten(
-                [
-                    sampled(
-                        _go_beside_template(
-                            agent, goal_object, background, is_right=is_right
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                    for is_right in BOOL_SET
-                ]
-            ),
-            # Behind & In Front Of
-            flatten(
-                [
-                    sampled(
-                        _go_behind_in_front_template(
-                            agent, goal_object, background, is_behind=is_behind
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                    for is_behind in BOOL_SET
-                ]
-            ),
-            # Over
-            flatten(
-                [
-                    sampled(
-                        _go_over_template(agent, goal_object, background),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                ]
-            ),
-            # Under
-            flatten(
-                [
-                    sampled(
-                        _go_under_template(
-                            agent,
-                            goal_object_with_space_under,
-                            background,
-                            is_distal=is_distal,
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                    for is_distal in BOOL_SET
-                ]
-            ),
-            # TODO: paths are currently disabled here since they are described the same way in English as goals and this causes the learning to break
-            # Behind & In Front Of Paths
-            # flatten(
-            #    [
-            #        sampled(
-            #            _go_behind_in_front_path_template(
-            #                agent,
-            #                goal_object,
-            #                path_object,
-            #                background,
-            #                is_behind=is_behind,
-            #            ),
-            #            ontology=GAILA_PHASE_1_ONTOLOGY,
-            #            chooser=PHASE1_CHOOSER_FACTORY(),
-            #            max_to_sample=num_samples if num_samples else 5,
-            #            block_multiple_of_the_same_type=True,
-            #        )
-            #        for is_behind in BOOL_SET
-            #    ]
-            # ),
-            # Over & Under Paths
-            # flatten(
-            #    [
-            #        sampled(
-            #           _go_over_under_path_template(
-            #                agent,
-            #                goal_object,
-            #                path_object,
-            #                background,
-            #                is_over=is_over,
-            #            ),
-            #            ontology=GAILA_PHASE_1_ONTOLOGY,
-            #            chooser=PHASE1_CHOOSER_FACTORY(),
-            #            max_to_sample=num_samples if num_samples else 5,
-            #            block_multiple_of_the_same_type=True,
-            #        )
-            #        for is_over in BOOL_SET
-            #    ]
-            # ),
-            # Toward & Away Paths
-            flatten(
-                [
-                    sampled(
-                        _go_towards_away_template(
-                            agent, goal_object, background, is_toward=is_toward
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                    for is_toward in BOOL_SET
-                ]
-            ),
-            # Out
-            flatten(
-                [
-                    sampled(
-                        _x_go_out_y_template(
-                            agent, goal_object_hollow, goal_object, background
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=num_samples if num_samples else 5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                ]
-            ),
-        ),
-        language_generator=language_generator,
-    )
+            language_generator=language_generator,
+        )
 
 
 def _make_sit_with_prepositions(
@@ -4202,8 +4330,8 @@ def make_verb_with_dynamic_prepositions_curriculum(
     ],
 ) -> Sequence[Phase1InstanceGroup]:
     return [
-        _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_go_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_go_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),

@@ -676,6 +676,18 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and (filler.distance == PROXIMAL)
                     and (not filler.direction)
                     and (USE_NEAR not in self.situation.syntax_hints)
+                    # beside hack
+                    and not (
+                        self.situation.actions
+                        and self.situation.actions[0].during
+                        and self.situation.actions[0].during.objects_to_paths
+                        and any(
+                            v.reference_destination_object == filler
+                            for k, v in self.situation.actions[
+                                0
+                            ].during.objects_to_paths.items()
+                        )
+                    )
                 ):
                     pass
                 # in all other cases, we construct a localiser phrase to attach as an adverbial modifier
