@@ -1011,7 +1011,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
     def intersection(
         self,
-        graph_pattern: "PerceptionGraphPattern",
+        pattern_matched_as_pattern: "PerceptionGraphPattern",
         *,
         debug_callback: Optional[DebugCallableType] = None,
         graph_logger: Optional["GraphLogger"] = None,
@@ -1027,9 +1027,12 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
         The algorithm used is approximate and is not guaranteed to return the largest
         possible match.
+
+        Note that the pattern_matched_as_pattern should be the *smaller* pattern, since we need to
+        do more relaxations and therefore more matchings when that pattern is larger.
         """
         matcher = PatternMatching(
-            pattern=graph_pattern,
+            pattern=pattern_matched_as_pattern,
             graph_to_match_against=self,
             debug_callback=debug_callback,
             matching_pattern_against_pattern=True,

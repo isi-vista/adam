@@ -284,8 +284,8 @@ class PrepositionPursuitLearner(
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
     ) -> Optional[PerceptionGraphTemplate]:
-        return previous_pattern_hypothesis.intersection(
-            current_pattern_hypothesis,
+        return current_pattern_hypothesis.intersection(
+            previous_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
         )
@@ -320,8 +320,8 @@ class SubsetPrepositionLearner(
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
     ) -> Optional[PerceptionGraphTemplate]:
-        return previous_pattern_hypothesis.intersection(
-            current_pattern_hypothesis,
+        return current_pattern_hypothesis.intersection(
+            previous_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
         )
