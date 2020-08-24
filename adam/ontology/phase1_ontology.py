@@ -214,6 +214,12 @@ FAST = OntologyNode("fast")
 subtype(FAST, PROPERTY)
 SLOW = OntologyNode("slow")
 subtype(SLOW, PROPERTY)
+SIDE = OntologyNode("side")
+subtype(SIDE, PROPERTY)
+LEFT = OntologyNode("left")
+subtype(LEFT, PROPERTY)
+RIGHT = OntologyNode("right")
+subtype(RIGHT, PROPERTY)
 
 # forcefulness distinctions
 HARD_FORCE = OntologyNode("hard-force")

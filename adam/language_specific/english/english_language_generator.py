@@ -67,6 +67,7 @@ from adam.language_specific.english.english_syntax import (
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
+    SIDE,
     AGENT,
     COLOR,
     FALL,
@@ -705,7 +706,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             ],  # pylint:disable=unused-argument
         ) -> Optional[DependencyTreeToken]:
             moving_thing = self._get_moving_thing(action)
-
             if moving_thing:
                 return DependencyTreeToken("to", ADPOSITION)
             else:
@@ -771,6 +771,20 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             ):
                 return "on"
             elif region.distance == PROXIMAL and not region.direction:
+                # beside hack for dynamic situations
+                if (
+                    self.situation.actions
+                    and self.situation.actions[0].during
+                    and self.situation.actions[0].during.objects_to_paths
+                ):
+                    for _, path in self.situation.actions[
+                        0
+                    ].during.objects_to_paths.items():
+                        if (
+                            path.reference_destination_object == region
+                            and SIDE in path.properties
+                        ):
+                            return "beside"
                 # See: https://github.com/isi-vista/adam/issues/836
                 if USE_NEAR in self.situation.syntax_hints:
                     return "near"

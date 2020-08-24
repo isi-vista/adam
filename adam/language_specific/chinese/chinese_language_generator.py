@@ -74,6 +74,7 @@ from adam.language_specific.chinese.chinese_syntax import (
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
+    SIDE,
     ANIMATE,
     AGENT,
     PUSH,
@@ -742,9 +743,23 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 return "shang4"
             # this is how we currently handle "to" in Chinese, but there's not a real equivalent
             elif region.distance == PROXIMAL and not region.direction:
+                # beside hack in Chinese
+                if (
+                    self.situation.actions
+                    and self.situation.actions[0].during
+                    and self.situation.actions[0].during.objects_to_paths
+                ):
+                    for object, path in self.situation.actions[
+                        0
+                    ].during.objects_to_paths.items():
+                        if (
+                            region == path.reference_destination_object
+                            and SIDE in path.properties
+                        ):
+                            return "pang2 byan1"
                 if USE_NEAR in self.situation.syntax_hints:
                     return "pang2 byan1"
-                return "shang4"
+                return "shang"
             elif region.distance == DISTAL and not region.direction:
                 return "ywan3 li2"
             # TODO: https://github.com/isi-vista/adam/issues/846 -- above/over distinction
