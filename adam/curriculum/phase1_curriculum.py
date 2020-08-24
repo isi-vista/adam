@@ -2115,8 +2115,14 @@ def make_walk_run_template(
                                 operator=operator
                                 if use_adverbial_path_modifier
                                 else None,
-                                reference_source_object=ground,
-                                reference_destination_object=ground,
+                                reference_source_object=Region(ground, distance=DISTAL)
+                                if (operator and operator == TOWARD)
+                                else ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else ground,
                                 properties=spatial_properties,
                             ),
                         ),
