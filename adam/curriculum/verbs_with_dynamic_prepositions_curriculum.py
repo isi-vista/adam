@@ -2327,7 +2327,6 @@ def _jump_in_front_of_behind_template(
     goal_reference: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
@@ -3952,18 +3951,13 @@ def _make_jump_with_prepositions(
                 [
                     sampled(
                         _jump_in_front_of_behind_template(
-                            agent,
-                            goal_reference,
-                            background,
-                            is_distal=is_distal,
-                            is_in_front=is_in_front,
+                            agent, goal_reference, background, is_in_front=is_in_front
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
                 ]
             ),

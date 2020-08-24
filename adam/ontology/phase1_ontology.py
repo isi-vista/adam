@@ -2510,7 +2510,6 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
             frame=ActionDescriptionFrame({AGENT: jump_agent}),
             preconditions=preconditions,
             during=DuringAction(
-                # TODO: this one seems a bit sketchy
                 objects_to_paths=[
                     (
                         jump_agent,
@@ -2592,7 +2591,8 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     )
                 ],
             ),
-            postconditions=[on(jump_agent, jump_goal)],
+            # this breaks for regions so is currently disabled and specified in the curricula instead
+            # postconditions=[on(jump_agent, jump_goal)],
             asserted_properties=asserted_properties,
         ),
     )

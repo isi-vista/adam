@@ -8,6 +8,7 @@ from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     strictly_above,
     AGENT,
+    DISTAL,
     FLY,
     bigger_than,
     JUMP_INITIAL_SUPPORTER_AUX,
@@ -230,7 +231,9 @@ def _jump_over_template(
                             SpatialPath(
                                 operator=VIA,
                                 reference_source_object=Region(
-                                    object_in_path, direction=GRAVITATIONAL_UP
+                                    object_in_path,
+                                    direction=GRAVITATIONAL_UP,
+                                    distance=DISTAL,
                                 ),
                                 reference_destination_object=GROUND_OBJECT_TEMPLATE,
                             ),
