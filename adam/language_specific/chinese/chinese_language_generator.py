@@ -1227,6 +1227,19 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     localiser = "pang2 byan1"
                 else:
                     localiser = "shang4"
+                if (
+                    self.situation.actions
+                    and self.situation.actions[0].during
+                    and self.situation.actions[0].during.objects_to_paths
+                ):
+                    for object, path in self.situation.actions[
+                        0
+                    ].during.objects_to_paths.items():
+                        if (
+                            region == path.reference_destination_object
+                            and SIDE in path.properties
+                        ):
+                            localiser = "pang2 byan1"
             elif region.distance == DISTAL and not region.direction:
                 localiser = "hen3 ywan3"
             elif region.direction:

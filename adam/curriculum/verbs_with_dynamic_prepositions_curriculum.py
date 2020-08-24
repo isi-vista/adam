@@ -1124,18 +1124,26 @@ def _x_roll_beside_y_template(
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, agent)],
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
-            )
-        ],
-        after_action_relations=flatten_relations(
-            near(
-                agent,
-                goal_reference,
-                direction=Direction(
-                    positive=is_right,
-                    relative_to_axis=HorizontalAxisOfObject(goal_reference, index=0),
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
+                                properties=[SIDE, RIGHT if is_right else LEFT],
+                            ),
+                        )
+                    ]
                 ),
             )
-        ),
+        ],
+        after_action_relations=flatten_relations(near(agent, goal_reference)),
         gazed_objects=[agent],
     )
 
@@ -1227,10 +1235,6 @@ def _x_roll_y_beside_z_template(
     *,
     is_right: bool,
 ) -> Phase1SituationTemplate:
-    direction = Direction(
-        positive=True if is_right else False,
-        relative_to_axis=HorizontalAxisOfObject(goal_reference, index=0),
-    )
     return Phase1SituationTemplate(
         f"{agent.handle}-rolls-{theme.handle}-beside-{goal_reference.handle}",
         salient_object_variables=[agent, theme, goal_reference],
@@ -1240,12 +1244,27 @@ def _x_roll_y_beside_z_template(
                 ROLL,
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
+                                properties=[SIDE, RIGHT if is_right else LEFT],
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
         constraining_relations=flatten_relations([bigger_than(agent, theme)]),
-        after_action_relations=flatten_relations(
-            near(theme, goal_reference, direction=direction)
-        ),
+        after_action_relations=flatten_relations(near(theme, goal_reference)),
         gazed_objects=[theme],
     )
 
@@ -4392,7 +4411,7 @@ def make_verb_with_dynamic_prepositions_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
-    include_path_instead_of_goal: bool = True,
+    include_path_instead_of_goal: bool = True,  # pylint: disable = unused-argument
 ) -> Sequence[Phase1InstanceGroup]:
     return [
         # _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
@@ -4402,14 +4421,14 @@ def make_verb_with_dynamic_prepositions_curriculum(
         #     language_generator,
         #     include_path_instead_of_goal,
         # ),
-        _make_throw_with_prepositions(
-            num_samples,
-            num_noise_objects,
-            language_generator,
-            include_path_instead_of_goal,
-        ),
+        # _make_throw_with_prepositions(
+        #     num_samples,
+        #     num_noise_objects,
+        #     language_generator,
+        #     include_path_instead_of_goal,
+        # ),
         # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),

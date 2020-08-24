@@ -1015,10 +1015,25 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             elif region.distance == PROXIMAL and not region.direction:
                 # See: https://github.com/isi-vista/adam/issues/836
+
                 if USE_NEAR in self.situation.syntax_hints:
                     preposition = "near"
                 else:
                     preposition = "to"
+                if (
+                    self.situation.actions
+                    and self.situation.actions[0].during
+                    and self.situation.actions[0].during.objects_to_paths
+                ):
+                    for _, path in self.situation.actions[
+                        0
+                    ].during.objects_to_paths.items():
+                        print(region, path.reference_destination_object)
+                        if (
+                            path.reference_destination_object == region
+                            and SIDE in path.properties
+                        ):
+                            preposition = "beside"
 
             elif region.distance == DISTAL and not region.direction:
                 preposition = "far from"
