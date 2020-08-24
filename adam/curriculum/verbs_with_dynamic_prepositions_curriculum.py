@@ -2376,6 +2376,20 @@ def _jump_in_front_of_behind_template(
                 ],
             )
         ],
+        after_action_relations=[
+            Relation(
+                IN_REGION,
+                agent,
+                Region(
+                    goal_reference,
+                    distance=PROXIMAL,
+                    direction=Direction(
+                        positive=is_in_front,
+                        relative_to_axis=FacingAddresseeAxis(goal_reference),
+                    ),
+                ),
+            )
+        ],
     )
 
 
@@ -2392,7 +2406,28 @@ def _fly_in_template(
         f"{agent.handle}-flies-in-{goal_reference.handle}",
         salient_object_variables=[agent, goal_reference],
         background_object_variables=background,
-        actions=[Action(FLY, argument_roles_to_fillers=[(AGENT, agent)])],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_reference, distance=INTERIOR
+                                ),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
         after_action_relations=flatten_relations(inside(agent, goal_reference)),
         constraining_relations=flatten_relations(bigger_than(goal_reference, agent)),
     )
@@ -2451,12 +2486,11 @@ def _fly_in_front_of_behind_template(
     object_passed: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
     is_in_front: bool,
 ) -> Phase1SituationTemplate:
     object_region = Region(
         object_passed,
-        distance=DISTAL if is_distal else PROXIMAL,
+        distance=PROXIMAL,
         direction=Direction(
             positive=is_in_front, relative_to_axis=FacingAddresseeAxis(object_passed)
         ),
@@ -2473,6 +2507,8 @@ def _fly_in_front_of_behind_template(
                     objects_to_paths=[
                         (
                             agent,
+                            # This isn't the greatest definitio of the path since it's via and we don't have an explicit goal so the
+                            # source and goal end up being the same thing since we don't have anything else to give
                             SpatialPath(
                                 VIA,
                                 reference_source_object=object_region,
@@ -2539,7 +2575,28 @@ def _fly_out_template(
         f"{agent.handle}-fly-out-of-{spatial_reference.handle}",
         salient_object_variables=[agent, spatial_reference],
         background_object_variables=background,
-        actions=[Action(FLY, argument_roles_to_fillers=[(AGENT, agent)])],
+        actions=[
+            Action(
+                FLY,
+                argument_roles_to_fillers=[(AGENT, agent)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=Region(
+                                    spatial_reference, distance=INTERIOR
+                                ),
+                                reference_destination_object=Region(
+                                    spatial_reference, distance=DISTAL
+                                ),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
         before_action_relations=flatten_relations(inside_relation),
         after_action_relations=flatten_relations(
             [relation.negated_copy() for relation in inside_relation]
@@ -4024,18 +4081,13 @@ def _make_fly_with_prepositions(
                 [
                     sampled(
                         _fly_in_front_of_behind_template(
-                            agent,
-                            goal_reference,
-                            background,
-                            is_distal=is_distal,
-                            is_in_front=is_in_front,
+                            agent, goal_reference, background, is_in_front=is_in_front
                         ),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
                         block_multiple_of_the_same_type=True,
                     )
-                    for is_distal in BOOL_SET
                     for is_in_front in BOOL_SET
                 ]
             ),
