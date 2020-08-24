@@ -537,17 +537,7 @@ def _go_behind_in_front_path_template(
                 GO,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
-                    (
-                        GOAL,
-                        Region(
-                            goal_object,
-                            distance=PROXIMAL,
-                            # direction=Direction(
-                            #    positive=not is_behind,
-                            #    relative_to_axis=FacingAddresseeAxis(goal_object),
-                            # ),
-                        ),
-                    ),
+                    (GOAL, Region(goal_object, distance=PROXIMAL)),
                 ],
                 during=DuringAction(
                     at_some_point=[
@@ -556,7 +546,7 @@ def _go_behind_in_front_path_template(
                             path_object,
                             direction=Direction(
                                 positive=not is_behind,
-                                relative_to_axis=FacingAddresseeAxis(goal_object),
+                                relative_to_axis=FacingAddresseeAxis(path_object),
                             ),
                         )
                     ]
@@ -2799,7 +2789,7 @@ def _make_go_with_prepositions(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
-    use_paths_instead_of_goals: bool = False,
+    use_paths_instead_of_goals: bool,
 ) -> Phase1InstanceGroup:
     agent = standard_object(
         "agent",
@@ -2820,11 +2810,10 @@ def _make_go_with_prepositions(
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
 
-    # TODO: objects in paths are currently disabled since they break English
-    # path_object = standard_object(
-    #    "path_object",
-    #    required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER],
-    # )
+    path_object = standard_object(
+        "path_object",
+        required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM, HAS_SPACE_UNDER],
+    )
     background = make_noise_objects(noise_objects)
 
     if use_paths_instead_of_goals:
@@ -2855,7 +2844,7 @@ def _make_go_with_prepositions(
                         )
                     ]
                 ),
-                # TODO: fix left/right Beside
+                # beside
                 flatten(
                     [
                         sampled(
@@ -2870,12 +2859,16 @@ def _make_go_with_prepositions(
                         for is_right in BOOL_SET
                     ]
                 ),
-                # Behind & In Front Of
+                # Behind & In Front Of Paths
                 flatten(
                     [
                         sampled(
-                            _go_behind_in_front_template(
-                                agent, goal_object, background, is_behind=is_behind
+                            _go_behind_in_front_path_template(
+                                agent,
+                                goal_object,
+                                path_object,
+                                background,
+                                is_behind=is_behind,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
@@ -2885,75 +2878,25 @@ def _make_go_with_prepositions(
                         for is_behind in BOOL_SET
                     ]
                 ),
-                # Over
+                # Over & Under Paths
                 flatten(
                     [
                         sampled(
-                            _go_over_template(agent, goal_object, background),
-                            ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
-                            max_to_sample=num_samples if num_samples else 5,
-                            block_multiple_of_the_same_type=True,
-                        )
-                    ]
-                ),
-                # Under
-                flatten(
-                    [
-                        sampled(
-                            _go_under_template(
+                            _go_over_under_path_template(
                                 agent,
-                                goal_object_with_space_under,
+                                goal_object,
+                                path_object,
                                 background,
-                                is_distal=is_distal,
+                                is_over=is_over,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
-                        for is_distal in BOOL_SET
+                        for is_over in BOOL_SET
                     ]
                 ),
-                # TODO: paths are currently disabled here since they are described the same way in English as goals and this causes the learning to break
-                # Behind & In Front Of Paths
-                # flatten(
-                #    [
-                #        sampled(
-                #            _go_behind_in_front_path_template(
-                #                agent,
-                #                goal_object,
-                #                path_object,
-                #                background,
-                #                is_behind=is_behind,
-                #            ),
-                #            ontology=GAILA_PHASE_1_ONTOLOGY,
-                #            chooser=PHASE1_CHOOSER_FACTORY(),
-                #            max_to_sample=num_samples if num_samples else 5,
-                #            block_multiple_of_the_same_type=True,
-                #        )
-                #        for is_behind in BOOL_SET
-                #    ]
-                # ),
-                # Over & Under Paths
-                # flatten(
-                #    [
-                #        sampled(
-                #           _go_over_under_path_template(
-                #                agent,
-                #                goal_object,
-                #                path_object,
-                #                background,
-                #                is_over=is_over,
-                #            ),
-                #            ontology=GAILA_PHASE_1_ONTOLOGY,
-                #            chooser=PHASE1_CHOOSER_FACTORY(),
-                #            max_to_sample=num_samples if num_samples else 5,
-                #            block_multiple_of_the_same_type=True,
-                #        )
-                #        for is_over in BOOL_SET
-                #    ]
-                # ),
                 # Toward & Away Paths
                 flatten(
                     [
@@ -2986,7 +2929,6 @@ def _make_go_with_prepositions(
             ),
             language_generator=language_generator,
         )
-
     else:
         return phase1_instances(
             "Go + PP goal",
@@ -4328,10 +4270,16 @@ def make_verb_with_dynamic_prepositions_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    include_path_instead_of_goal: bool = True,
 ) -> Sequence[Phase1InstanceGroup]:
     return [
         # _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_go_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_go_with_prepositions(
+            num_samples,
+            num_noise_objects,
+            language_generator,
+            include_path_instead_of_goal,
+        ),
         # _make_throw_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
