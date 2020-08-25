@@ -919,7 +919,6 @@ def make_fall_imprecise_temporal_descriptions(
                         syntax_hints=syntax_hints,
                         spatial_properties=[FAST] if is_fast else [SLOW],
                         background=background,
-                        start_distal=start_distal,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
@@ -929,7 +928,6 @@ def make_fall_imprecise_temporal_descriptions(
                 for object_ends_up_on_ground in BOOL_SET
                 for syntax_hints in syntax_hints_options
                 for is_fast in BOOL_SET
-                for start_distal in BOOL_SET
             ),
             # Fall on Ground
             flatten(
@@ -938,7 +936,6 @@ def make_fall_imprecise_temporal_descriptions(
                         arbitary_object,
                         spatial_properties=[FAST] if is_fast else [SLOW],
                         background=background,
-                        start_distal=start_distal,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
@@ -946,7 +943,6 @@ def make_fall_imprecise_temporal_descriptions(
                     block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
-                for start_distal in BOOL_SET
             ),
         ),
         language_generator=language_generator,
@@ -981,24 +977,24 @@ def make_imprecise_temporal_descriptions(
     One particular instantiation of the Imprecise Temporal Descriptions Curriculum
     """
     return [
-        # make_throw_imprecise_temporal_descriptions(
-        #     num_samples, num_noise_objects, language_generator
-        # ),
-        # make_move_imprecise_temporal_descriptions(
-        #     num_samples, num_noise_objects, language_generator
-        # ),
-        # make_jump_imprecise_temporal_descriptions(
-        #     num_samples, num_noise_objects, language_generator
-        # ),
-        # make_roll_imprecise_temporal_descriptions(
-        #     num_samples, num_noise_objects, language_generator
-        # ),
+        make_throw_imprecise_temporal_descriptions(
+            num_samples, num_noise_objects, language_generator
+        ),
+        make_move_imprecise_temporal_descriptions(
+            num_samples, num_noise_objects, language_generator
+        ),
+        make_jump_imprecise_temporal_descriptions(
+            num_samples, num_noise_objects, language_generator
+        ),
+        make_roll_imprecise_temporal_descriptions(
+            num_samples, num_noise_objects, language_generator
+        ),
         make_fly_imprecise_temporal_descriptions(
             num_samples, num_noise_objects, language_generator
         ),
-        # make_fall_imprecise_temporal_descriptions(
-        #     num_samples, num_noise_objects, language_generator
-        # ),
+        make_fall_imprecise_temporal_descriptions(
+            num_samples, num_noise_objects, language_generator
+        ),
     ]
 
 

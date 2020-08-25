@@ -698,7 +698,6 @@ def falling_template(
     syntax_hints: Iterable[str],
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable],
-    start_distal: bool,
 ) -> Phase1SituationTemplate:
     ground = GROUND_OBJECT_TEMPLATE
     computed_background = [ground]
@@ -717,9 +716,7 @@ def falling_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_source_object=Region(
-                                    ground, distance=DISTAL if start_distal else PROXIMAL
-                                ),
+                                reference_source_object=Region(ground, distance=DISTAL),
                                 reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
@@ -741,7 +738,6 @@ def fall_on_ground_template(
     *,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
-    start_distal: bool,
 ) -> Phase1SituationTemplate:
     ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
@@ -758,9 +754,7 @@ def fall_on_ground_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=Region(
-                                    ground, distance=DISTAL if start_distal else PROXIMAL
-                                ),
+                                reference_source_object=Region(ground, distance=DISTAL),
                                 reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
@@ -789,20 +783,13 @@ def make_fall_templates(
             lands_on_ground=object_ends_up_on_ground,
             syntax_hints=syntax_hints,
             background=background,
-            start_distal=start_distal,
         )
         for object_ends_up_on_ground in (True, False)
         for syntax_hints in syntax_hints_options
-        for start_distal in (True, False)
     ]
 
     object_falling.extend(
-        [
-            fall_on_ground_template(
-                arbitary_object, background=background, start_distal=start_distal
-            )
-            for start_distal in (True, False)
-        ]
+        [fall_on_ground_template(arbitary_object, background=background)]
     )
 
     # "ball fell on the ground"
