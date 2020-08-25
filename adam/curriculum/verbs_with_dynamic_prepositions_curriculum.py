@@ -3282,26 +3282,6 @@ def _make_roll_with_prepositions(
                     for is_behind in BOOL_SET
                 ]
             ),
-            # X rolls Y over/under Z -- we can't have both path and goal as under/over because we can't learning two meanings for one linguistic description so this is disabled
-            # flatten(
-            #     [
-            #         sampled(
-            #             _x_rolls_y_over_under_z_template(
-            #                 agent,
-            #                 theme,
-            #                 goal_object,
-            #                 ground,
-            #                 make_background([ground], all_object),
-            #                 is_over=is_over,
-            #             ),
-            #             ontology=GAILA_PHASE_1_ONTOLOGY,
-            #             chooser=PHASE1_CHOOSER_FACTORY(),
-            #             max_to_sample=num_samples if num_samples else 5,
-            #             block_multiple_of_the_same_type=True,
-            #         )
-            #         for is_over in BOOL_SET
-            #     ]
-            # ),
             # X rolls (Y) over/under Z - As Goal
             flatten(
                 [
@@ -3309,7 +3289,7 @@ def _make_roll_with_prepositions(
                         _x_rolls_y_over_under_z_template(
                             agent,
                             theme,
-                            surface,
+                            goal_object,
                             surface,
                             noise_objects_immutable,
                             is_over=is_over,
