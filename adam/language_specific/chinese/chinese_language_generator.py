@@ -670,7 +670,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 elif (
                     action
                     and (argument_role == GOAL or argument_role == GOAL_MANIPULATOR)
-                    and action.action_type not in [GIVE, GO, COME]
+                    and action.action_type not in [GIVE, GO, COME, JUMP]
                     and (
                         IS_SPEAKER in filler.properties
                         or IS_ADDRESSEE in filler.properties
@@ -719,7 +719,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     if (
                         action
                         and (argument_role == GOAL or argument_role == GOAL_MANIPULATOR)
-                        and action.action_type not in [GIVE, GO, COME]
+                        and action.action_type not in [GIVE, GO, COME, JUMP]
                         and (
                             IS_SPEAKER in filler.reference_object.properties
                             or IS_ADDRESSEE in filler.reference_object.properties
