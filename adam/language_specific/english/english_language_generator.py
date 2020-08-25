@@ -847,7 +847,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             modifiers: List[Tuple[DependencyRole, DependencyTreeToken]] = []
 
             if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
-                # up and down modifiers
                 if action.during:
                     paths_involving_ground = immutableset(
                         path
@@ -881,6 +880,18 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             modifiers.append(
                                 (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
                             )
+
+                    # up and down modifiers
+                    elif action.action_type == FALL or action.action_type == SIT:
+                        # hack, awaiting https://github.com/isi-vista/adam/issues/239
+                        modifiers.append(
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
+                        )
+                    elif action.action_type == JUMP:
+                        modifiers.append(
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
+                        )
+                        # up and down modifiers
                 elif action.action_type == FALL or action.action_type == SIT:
                     # hack, awaiting https://github.com/isi-vista/adam/issues/239
                     modifiers.append(
@@ -890,6 +901,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     modifiers.append(
                         (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
                     )
+
             if action.during:
 
                 # so far we only handle IN_REGION relations which are asserted to hold

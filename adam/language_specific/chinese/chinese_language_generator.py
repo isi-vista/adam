@@ -359,6 +359,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # if there are adverbial path modifiers, collect them, parse them, and add them to the modifiers
             if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
                 # adverbial modifiers we currently handle must occur during the action and be related to the ground; check if such modifiers exist
+
                 if action.during:
                     paths_involving_ground = immutableset(
                         path
@@ -420,7 +421,25 @@ class SimpleRuleBasedChineseLanguageGenerator(
                                         DependencyTreeToken("chi3 lai2", ADVERB),
                                     )
                                 )
-                # falling or sitting is defaulted to down with advmod, but if specified otherwise, will be handled by first case
+
+                    # falling or sitting is defaulted to down with advmod, but if specified otherwise, will be handled by first case
+                    elif action.action_type == FALL or action.action_type == SIT:
+                        modifiers.append(
+                            (
+                                ADVERBIAL_CLAUSE_MODIFIER,
+                                DependencyTreeToken("sya4 lai2", ADVERB),
+                            )
+                        )
+                    # jumping is defaulted to up with advmod, but if specified otherwise, will be handled by first case
+                    elif action.action_type == JUMP:
+                        modifiers.append(
+                            (
+                                ADVERBIAL_CLAUSE_MODIFIER,
+                                DependencyTreeToken("chi3 lai2", ADVERB),
+                            )
+                        )
+
+                        # falling or sitting is defaulted to down with advmod, but if specified otherwise, will be handled by first case
                 elif action.action_type == FALL or action.action_type == SIT:
                     modifiers.append(
                         (

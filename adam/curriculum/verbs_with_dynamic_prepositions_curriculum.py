@@ -1554,18 +1554,34 @@ def _fall_beside_template(
     syntax_hints: Iterable[str],
     is_right: bool,
 ) -> Phase1SituationTemplate:
-    direction = Direction(
-        positive=is_right,
-        relative_to_axis=HorizontalAxisOfObject(goal_reference, index=0),
-    )
     return Phase1SituationTemplate(
         f"{theme.handle}-falls-(down)-beside-{goal_reference.handle}",
         salient_object_variables=[theme, goal_reference],
         background_object_variables=background,
-        actions=[Action(FALL, argument_roles_to_fillers=[(THEME, theme)])],
-        after_action_relations=flatten_relations(
-            near(theme, goal_reference, direction=direction)
-        ),
+        actions=[
+            Action(
+                FALL,
+                argument_roles_to_fillers=[(THEME, theme)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
+                                properties=[SIDE, RIGHT if is_right else LEFT],
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        after_action_relations=flatten_relations(near(theme, goal_reference)),
         syntax_hints=syntax_hints,
     )
 
@@ -4408,9 +4424,9 @@ def make_verb_with_dynamic_prepositions_curriculum(
         #     include_path_instead_of_goal,
         # ),
         # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
