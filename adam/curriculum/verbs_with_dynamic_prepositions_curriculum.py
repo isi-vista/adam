@@ -1787,20 +1787,25 @@ def _x_move_beside_y_template(
                 MOVE,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference,
-                            distance=PROXIMAL,
-                            direction=Direction(
-                                positive=is_right,
-                                relative_to_axis=HorizontalAxisOfObject(
-                                    goal_reference, index=0
-                                ),
-                            ),
-                        ),
-                    ),
+                    (GOAL, Region(goal_reference, distance=PROXIMAL)),
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
+                                properties=[SIDE, RIGHT if is_right else LEFT],
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
         after_action_relations=[near(agent, goal_reference)],
@@ -2012,22 +2017,23 @@ def _x_move_y_beside_z_template(
                 argument_roles_to_fillers=[
                     (AGENT, agent),
                     (THEME, theme),
-                    (
-                        GOAL,
-                        Region(
-                            goal_reference,
-                            distance=PROXIMAL,
-                            direction=Direction(
-                                positive=is_right,
-                                relative_to_axis=HorizontalAxisOfObject(
-                                    goal_reference, index=0
-                                ),
-                            ),
-                        ),
-                    ),
+                    (GOAL, Region(goal_reference, distance=PROXIMAL)),
                 ],
                 during=DuringAction(
-                    continuously=flatten_relations(contacts(agent, theme))
+                    continuously=flatten_relations(contacts(agent, theme)),
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                operator=TO,
+                                reference_source_object=agent,
+                                reference_destination_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
+                                properties=[SIDE, RIGHT if is_right else LEFT],
+                            ),
+                        )
+                    ],
                 ),
             )
         ],
@@ -4431,8 +4437,8 @@ def make_verb_with_dynamic_prepositions_curriculum(
         # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_come_with_prepositions(num_samples, num_noise_objects, language_generator),
