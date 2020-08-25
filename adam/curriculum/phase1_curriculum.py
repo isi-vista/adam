@@ -2639,8 +2639,12 @@ def throw_on_ground_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_source_object=ground,
-                                reference_destination_object=ground,
+                                reference_source_object=agent,
+                                reference_destination_object=Region(
+                                    ground,
+                                    distance=EXTERIOR_BUT_IN_CONTACT,
+                                    direction=GRAVITATIONAL_UP,
+                                ),
                                 properties=spatial_properties,
                             ),
                         )

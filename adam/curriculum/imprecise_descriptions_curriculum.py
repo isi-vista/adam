@@ -984,21 +984,21 @@ def make_imprecise_temporal_descriptions(
         make_throw_imprecise_temporal_descriptions(
             num_samples, num_noise_objects, language_generator
         ),
-        make_move_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects, language_generator
-        ),
-        make_jump_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects, language_generator
-        ),
-        make_roll_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects, language_generator
-        ),
-        make_fly_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects, language_generator
-        ),
-        make_fall_imprecise_temporal_descriptions(
-            num_samples, num_noise_objects, language_generator
-        ),
+        # make_move_imprecise_temporal_descriptions(
+        #     num_samples, num_noise_objects, language_generator
+        # ),
+        # make_jump_imprecise_temporal_descriptions(
+        #     num_samples, num_noise_objects, language_generator
+        # ),
+        # make_roll_imprecise_temporal_descriptions(
+        #     num_samples, num_noise_objects, language_generator
+        # ),
+        # make_fly_imprecise_temporal_descriptions(
+        #     num_samples, num_noise_objects, language_generator
+        # ),
+        # make_fall_imprecise_temporal_descriptions(
+        #     num_samples, num_noise_objects, language_generator
+        # ),
     ]
 
 
