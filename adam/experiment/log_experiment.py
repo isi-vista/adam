@@ -340,6 +340,7 @@ def curriculum_from_params(
         pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")
     else:
         pursuit_curriculum_params = Parameters.empty()
+    use_path_instead_of_goal = params.boolean("use-path-instead-of-goal", default=False)
 
     (training_instance_groups, test_instance_groups) = str_to_train_test_curriculum[
         curriculum_name
@@ -348,15 +349,38 @@ def curriculum_from_params(
     num_samples = params.optional_positive_integer("num_samples")
     num_noise_objects = params.optional_positive_integer("num_noise_objects")
 
+    if curriculum_name == "pursuit":
+        return (
+            training_instance_groups(
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                pursuit_curriculum_params=pursuit_curriculum_params,
+            ),
+            test_instance_groups(num_samples, num_noise_objects, language_generator)
+            if test_instance_groups
+            else [],
+        )
+
+    # optional argument to use path instead of goal
+    elif use_path_instead_of_goal and curriculum_name in [
+        "m13-complete",
+        "m13-shuffled",
+        "m13-verbs-with-dynamic-prepositions",
+    ]:
+        return (
+            training_instance_groups(
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                use_path_instead_of_goal,
+            ),
+            test_instance_groups(num_samples, num_noise_objects, language_generator)
+            if test_instance_groups
+            else [],
+        )
     return (
-        training_instance_groups(num_samples, num_noise_objects, language_generator)
-        if curriculum_name != "pursuit"
-        else training_instance_groups(
-            num_samples,
-            num_noise_objects,
-            language_generator,
-            pursuit_curriculum_params=pursuit_curriculum_params,
-        ),
+        training_instance_groups(num_samples, num_noise_objects, language_generator),
         test_instance_groups(num_samples, num_noise_objects, language_generator)
         if test_instance_groups
         else [],
