@@ -1096,12 +1096,12 @@ def bare_fly(
                             SpatialPath(
                                 AWAY_FROM if up else TOWARD,
                                 reference_source_object=Region(ground, distance=DISTAL)
-                                if not up
+                                if (not up) and syntax_hints
                                 else ground,
                                 reference_destination_object=Region(
                                     ground, distance=DISTAL
                                 )
-                                if up
+                                if up and syntax_hints
                                 else ground,
                                 properties=spatial_properties,
                             ),
