@@ -37,6 +37,7 @@ from adam.ontology.phase1_ontology import (
     CAN_BE_SAT_ON_BY_PEOPLE,
     HAS_SPACE_UNDER,
     PUSH,
+    TO,
     THEME,
     PUSH_SURFACE_AUX,
     ANIMATE,
@@ -730,6 +731,19 @@ def _throw_to_template(
                     (THEME, theme),
                     (GOAL, Region(goal_reference, distance=PROXIMAL)),
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                TO,
+                                reference_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
         after_action_relations=[near(theme, goal_reference)],
@@ -792,9 +806,19 @@ def _throw_on_template(
                         ),
                     ),
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None, reference_object=goal_reference, properties=[]
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
-        after_action_relations=[near(theme, goal_reference)],
+        after_action_relations=[on(theme, goal_reference)],
         constraining_relations=flatten_relations(bigger_than(agent, theme)),
         gazed_objects=[theme],
     )
