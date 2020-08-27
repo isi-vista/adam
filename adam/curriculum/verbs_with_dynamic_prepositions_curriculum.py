@@ -204,10 +204,16 @@ def _push_under_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
-        after_action_relations=[near(theme, goal_reference)],
+        # for some reason, we have to declare that slot 3 isn't on the ground before, after, and always
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_reference, GROUND_OBJECT_TEMPLATE)),
+            near(theme, goal_reference),
+        ],
         constraining_relations=flatten_relations(
             [bigger_than(surface, [agent]), bigger_than(goal_reference, theme)]
         ),
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
     )
 
 
@@ -4424,26 +4430,26 @@ def make_verb_with_dynamic_prepositions_curriculum(
     include_path_instead_of_goal: bool = False,
 ) -> Sequence[Phase1InstanceGroup]:
     return [
-        _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
         _make_go_with_prepositions(
             num_samples,
             num_noise_objects,
             language_generator,
             include_path_instead_of_goal,
         ),
-        _make_throw_with_prepositions(
-            num_samples,
-            num_noise_objects,
-            language_generator,
-            include_path_instead_of_goal,
-        ),
-        _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_come_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_throw_with_prepositions(
+        #     num_samples,
+        #     num_noise_objects,
+        #     language_generator,
+        #     include_path_instead_of_goal,
+        # ),
+        # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_come_with_prepositions(num_samples, num_noise_objects, language_generator),
     ]
