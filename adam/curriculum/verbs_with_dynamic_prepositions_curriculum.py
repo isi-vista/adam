@@ -518,7 +518,12 @@ def _go_over_template(
                 ],
             )
         ],
-        after_action_relations=[near(agent, goal_object)],
+        before_action_relations=[negate(on(agent, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(agent, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(agent, GROUND_OBJECT_TEMPLATE)),
+            near(agent, goal_object),
+        ],
     )
 
 
@@ -595,6 +600,15 @@ def _go_over_under_path_template(
                     ]
                 ),
             )
+        ],
+        after_action_relations=[
+            negate(on(agent if is_over else path_object, GROUND_OBJECT_TEMPLATE))
+        ],
+        before_action_relations=[
+            negate(on(agent if is_over else path_object, GROUND_OBJECT_TEMPLATE))
+        ],
+        asserted_always_relations=[
+            negate(on(agent if is_over else path_object, GROUND_OBJECT_TEMPLATE))
         ],
         gazed_objects=[agent],
         syntax_hints=[IGNORE_GOAL],
@@ -4431,18 +4445,18 @@ def make_verb_with_dynamic_prepositions_curriculum(
 ) -> Sequence[Phase1InstanceGroup]:
     return [
         # _make_push_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_go_with_prepositions(
-            num_samples,
-            num_noise_objects,
-            language_generator,
-            include_path_instead_of_goal,
-        ),
-        # _make_throw_with_prepositions(
+        # _make_go_with_prepositions(
         #     num_samples,
         #     num_noise_objects,
         #     language_generator,
         #     include_path_instead_of_goal,
         # ),
+        _make_throw_with_prepositions(
+            num_samples,
+            num_noise_objects,
+            language_generator,
+            include_path_instead_of_goal,
+        ),
         # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
