@@ -37,7 +37,6 @@ from adam.ontology.phase1_ontology import (
     CAN_BE_SAT_ON_BY_PEOPLE,
     HAS_SPACE_UNDER,
     PUSH,
-    TO,
     THEME,
     PUSH_SURFACE_AUX,
     ANIMATE,
@@ -722,9 +721,10 @@ def _throw_to_template(
                             theme,
                             SpatialPath(
                                 TO,
-                                reference_object=Region(
-                                    goal_reference, distance=PROXIMAL
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
                                 ),
+                                reference_destination_object=goal_reference,
                             ),
                         )
                     ]
@@ -796,7 +796,16 @@ def _throw_on_template(
                         (
                             theme,
                             SpatialPath(
-                                None, reference_object=goal_reference, properties=[]
+                                None,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_reference,
+                                    direction=GRAVITATIONAL_UP,
+                                    distance=EXTERIOR_BUT_IN_CONTACT,
+                                ),
+                                properties=[],
                             ),
                         )
                     ]
