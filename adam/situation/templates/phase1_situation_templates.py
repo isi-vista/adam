@@ -298,5 +298,8 @@ def _fly_under_template(
                 ),
             )
         ],
+        asserted_always_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        before_action_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
         constraining_relations=flatten_relations(bigger_than(object_in_path, agent)),
     )
