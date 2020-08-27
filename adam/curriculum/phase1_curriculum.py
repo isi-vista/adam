@@ -2861,8 +2861,8 @@ def make_throw_templates(
     background = make_noise_objects(noise_objects)
 
     return [
-        # # Dad throws a cookie on the ground
-        throw_on_ground_template(thrower, object_thrown, background=background),
+        # # Dad throws a cookie on the ground -- disabled because we learn this in verbs with dynamic prepositions
+        # throw_on_ground_template(thrower, object_thrown, background=background),
         # A baby throws a truck
         throw_template(
             thrower, object_thrown, implicit_goal_reference, background=background
@@ -2883,7 +2883,7 @@ def make_throw_templates(
             is_up=False,
             background=background,
         ),
-        # Throw To
+        # Throw To -- disabled because we learn this in verbs with dynamic prepositions
         # throw_to_template(thrower, object_thrown, catcher, background=background),
     ]
 
@@ -3306,26 +3306,26 @@ def build_gaila_phase1_verb_curriculum(
     One particular instantiation of the object-learning parts of the curriculum for GAILA Phase 1.
     """
     return [
-        # _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_transfer_of_possession_curriculum(
+        _make_fall_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_transfer_of_possession_curriculum(
+            num_samples, num_noise_objects, language_generator
+        ),
+        _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
+        # TODO: see https://github.com/isi-vista/adam/issues/937
+        # _make_speaker_addressee_curriculum(
         #     num_samples, num_noise_objects, language_generator
         # ),
-        # _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
-        # # TODO: see https://github.com/isi-vista/adam/issues/937
-        # # _make_speaker_addressee_curriculum(
-        # #     num_samples, num_noise_objects, language_generator
-        # # ),
-        # _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_put_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_eat_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_take_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_move_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_go_curriculum(num_samples, num_noise_objects, language_generator),
-        # _make_push_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_put_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_eat_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_take_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_move_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_go_curriculum(num_samples, num_noise_objects, language_generator),
+        _make_push_curriculum(num_samples, num_noise_objects, language_generator),
         # TODO: fix this based on Deniz's thoughts
         _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
         _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
