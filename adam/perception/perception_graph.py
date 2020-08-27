@@ -1096,7 +1096,7 @@ class DumpPartialMatchCallback:
                 + "_call_"
                 + str(self.calls_to_match_counter).zfill(4)
             )
-            mapping = {k: f"match on {{{v.dot_label}}}" for k, v in graph_node_to_pattern_node.items()}
+            mapping = {k: f"match on {{{v.dot_label()}}}" for k, v in graph_node_to_pattern_node.items()}
             perception_graph.render_to_file(
                 graph_name=title,
                 output_file=Path(self.render_path + title),
