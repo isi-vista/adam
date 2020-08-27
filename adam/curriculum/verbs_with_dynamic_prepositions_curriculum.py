@@ -1733,6 +1733,9 @@ def _put_under_template(
                 ],
             )
         ],
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
         constraining_relations=flatten_relations(
             bigger_than([agent, goal_reference], theme)
         ),
@@ -4467,10 +4470,10 @@ def make_verb_with_dynamic_prepositions_curriculum(
         #     include_path_instead_of_goal,
         # ),
         # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
