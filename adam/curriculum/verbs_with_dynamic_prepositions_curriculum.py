@@ -1230,7 +1230,12 @@ def _x_roll_under_y_template(
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
             )
         ],
-        after_action_relations=flatten_relations(above(goal_reference, agent)),
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_reference, GROUND_OBJECT_TEMPLATE)),
+            above(goal_reference, agent),
+        ],
         gazed_objects=[agent],
     )
 
@@ -1360,9 +1365,16 @@ def _x_rolls_y_over_under_z_template(
             )
         ],
         constraining_relations=flatten_relations([bigger_than(agent, theme)]),
-        after_action_relations=flatten_relations(
-            above(theme, goal_reference) if is_over else above(goal_reference, theme)
-        ),
+        asserted_always_relations=[
+            negate(on(theme if is_over else goal_reference, GROUND_OBJECT_TEMPLATE))
+        ],
+        before_action_relations=[
+            negate(on(theme if is_over else goal_reference, GROUND_OBJECT_TEMPLATE))
+        ],
+        after_action_relations=[
+            negate(on(theme if is_over else goal_reference, GROUND_OBJECT_TEMPLATE)),
+            above(theme, goal_reference) if is_over else above(goal_reference, theme),
+        ],
         gazed_objects=[theme],
     )
 
@@ -4454,8 +4466,8 @@ def make_verb_with_dynamic_prepositions_curriculum(
         #     language_generator,
         #     include_path_instead_of_goal,
         # ),
-        _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
