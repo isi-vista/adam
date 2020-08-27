@@ -3734,7 +3734,6 @@ def test_invalid_relations():
         generated_tokens(situation)
 
 
-
 def test_drink_from():
     agent = situation_object(MOM)
     liquid = situation_object(WATER)
@@ -3815,3 +3814,62 @@ def test_order_ba_and_prep_phrase():
         "sya4 lai2",
     )
 
+
+def test_move_should_have_dao():
+    agent = situation_object(MOM)
+    goal = situation_object(BOOK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, goal],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(goal, distance=DISTAL),
+                                reference_destination_object=goal,
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ma1 ma1", "chau2", "shu1", "yi2 dung4")
+
+
+def test_move_should_have_dao_away():
+    agent = situation_object(MOM)
+    goal = situation_object(BOOK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, goal],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_source_object=goal,
+                                reference_destination_object=Region(
+                                    goal, distance=DISTAL
+                                ),
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ma1 ma1", "li2", "shu1", "yi2 dung4")
