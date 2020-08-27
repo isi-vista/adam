@@ -4484,8 +4484,8 @@ def make_verb_with_dynamic_prepositions_curriculum(
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_put_with_prepositions(num_samples, num_noise_objects, language_generator),
-        _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
-        # _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_move_with_prepositions(num_samples, num_noise_objects, language_generator),
+        _make_jump_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fly_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_come_with_prepositions(num_samples, num_noise_objects, language_generator),
     ]
