@@ -3734,6 +3734,7 @@ def test_invalid_relations():
         generated_tokens(situation)
 
 
+
 def test_drink_from():
     agent = situation_object(MOM)
     liquid = situation_object(WATER)
@@ -3815,6 +3816,7 @@ def test_order_ba_and_prep_phrase():
     )
 
 
+
 def test_move_should_have_dao():
     agent = situation_object(MOM)
     goal = situation_object(BOOK)
@@ -3864,6 +3866,7 @@ def test_move_should_have_dao_away():
                                 reference_destination_object=Region(
                                     goal, distance=DISTAL
                                 ),
+
                                 reference_axis=HorizontalAxisOfObject(agent, 1),
                             ),
                         )

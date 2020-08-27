@@ -37,6 +37,7 @@ from adam.ontology.phase1_ontology import (
     CAN_BE_SAT_ON_BY_PEOPLE,
     HAS_SPACE_UNDER,
     PUSH,
+    TO,
     THEME,
     PUSH_SURFACE_AUX,
     ANIMATE,
