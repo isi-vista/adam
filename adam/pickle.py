@@ -41,7 +41,7 @@ class AdamUnpickler(Unpickler):
 
     @staticmethod
     def persistent_load(persistent_id):
-        if not isinstance(persistent_id, tuple) or len(persistent_id) < 1:
+        if not isinstance(persistent_id, tuple) or not persistent_id:
             raise RuntimeError(
                 "Got bad persistent ID {pid}; persistent ID must be a tuple of at least one item"
             )

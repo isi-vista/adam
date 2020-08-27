@@ -16,13 +16,13 @@ from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 from tests.learner.subset_verb_learner_test import drink_test_template
 
 
-T = TypeVar("T")
+T = TypeVar("T")  # pylint:disable=invalid-name
 
 
-def _pickle_and_unpickle_object(object: T) -> T:
+def _pickle_and_unpickle_object(input_object: T) -> T:
     stream = BytesIO()
     pickler = AdamPickler(file=stream, protocol=HIGHEST_PROTOCOL)
-    pickler.dump(object)
+    pickler.dump(input_object)
 
     stream.seek(0, SEEK_SET)
     unpickler = AdamUnpickler(file=stream)

@@ -262,6 +262,7 @@ def build_gaila_m8_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    use_path_instead_of_goal: bool = False,
 ) -> Sequence[Phase1InstanceGroup]:
     return list(
         chain(
@@ -300,7 +301,10 @@ def build_gaila_m8_curriculum(
                 )
             ),  # Imprecise descriptions
             make_verb_with_dynamic_prepositions_curriculum(
-                num_samples, num_noise_objects, language_generator
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                use_path_instead_of_goal,
             ),  # Dynamic prepositions
             make_prepositions_curriculum(
                 num_samples, num_noise_objects, language_generator
@@ -320,6 +324,7 @@ def build_gaila_m13_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    use_path_instead_of_goal: bool = False,
 ) -> Sequence[Phase1InstanceGroup]:
     return list(
         chain(
@@ -347,7 +352,10 @@ def build_gaila_m13_curriculum(
                 )
             ),
             make_verb_with_dynamic_prepositions_curriculum(
-                num_samples, num_noise_objects, language_generator
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                use_path_instead_of_goal,
             ),
             list(
                 make_subtle_verb_distinctions_curriculum(
@@ -367,11 +375,14 @@ def build_m13_shuffled_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    use_path_instead_of_goal: bool = False,
 ) -> Sequence[Phase1InstanceGroup]:
 
     random.seed(0)
     situations = flatten(
-        build_gaila_m13_curriculum(num_samples, num_noise_objects, language_generator)
+        build_gaila_m13_curriculum(
+            num_samples, num_noise_objects, language_generator, use_path_instead_of_goal
+        )
     )
     random.shuffle(situations)
 

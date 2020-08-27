@@ -67,6 +67,7 @@ from adam.language_specific.english.english_syntax import (
 )
 from adam.ontology import IN_REGION, IS_ADDRESSEE, IS_SPEAKER, OntologyNode
 from adam.ontology.phase1_ontology import (
+    SIDE,
     AGENT,
     COLOR,
     FALL,
@@ -705,7 +706,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             ],  # pylint:disable=unused-argument
         ) -> Optional[DependencyTreeToken]:
             moving_thing = self._get_moving_thing(action)
-
             if moving_thing:
                 return DependencyTreeToken("to", ADPOSITION)
             else:
@@ -771,6 +771,20 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             ):
                 return "on"
             elif region.distance == PROXIMAL and not region.direction:
+                # beside hack for dynamic situations
+                if (
+                    self.situation.actions
+                    and self.situation.actions[0].during
+                    and self.situation.actions[0].during.objects_to_paths
+                ):
+                    for _, path in self.situation.actions[
+                        0
+                    ].during.objects_to_paths.items():
+                        if (
+                            path.reference_destination_object == region
+                            and SIDE in path.properties
+                        ):
+                            return "beside"
                 # See: https://github.com/isi-vista/adam/issues/836
                 if USE_NEAR in self.situation.syntax_hints:
                     return "near"
@@ -833,12 +847,27 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             modifiers: List[Tuple[DependencyRole, DependencyTreeToken]] = []
 
             if USE_ADVERBIAL_PATH_MODIFIER in self.situation.syntax_hints:
-                # up and down modifiers
                 if action.during:
                     paths_involving_ground = immutableset(
                         path
                         for (_, path) in action.during.objects_to_paths.items()
-                        if path.reference_object.ontology_node == GROUND
+                        if (
+                            isinstance(path.reference_source_object, SituationObject)
+                            and path.reference_source_object.ontology_node == GROUND
+                        )
+                        or (
+                            isinstance(path.reference_source_object, Region)
+                            and path.reference_source_object.reference_object == GROUND
+                        )
+                        or (
+                            isinstance(path.reference_destination_object, SituationObject)
+                            and path.reference_destination_object.ontology_node == GROUND
+                        )
+                        or (
+                            isinstance(path.reference_destination_object, Region)
+                            and path.reference_destination_object.reference_object
+                            == GROUND
+                        )
                     )
                     if paths_involving_ground:
                         # we just look at the first to determine the direction
@@ -851,6 +880,18 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                             modifiers.append(
                                 (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
                             )
+
+                    # up and down modifiers
+                    elif action.action_type == FALL or action.action_type == SIT:
+                        # hack, awaiting https://github.com/isi-vista/adam/issues/239
+                        modifiers.append(
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("down", ADVERB))
+                        )
+                    elif action.action_type == JUMP:
+                        modifiers.append(
+                            (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
+                        )
+                        # up and down modifiers
                 elif action.action_type == FALL or action.action_type == SIT:
                     # hack, awaiting https://github.com/isi-vista/adam/issues/239
                     modifiers.append(
@@ -860,6 +901,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     modifiers.append(
                         (ADVERBIAL_MODIFIER, DependencyTreeToken("up", ADVERB))
                     )
+
             if action.during:
 
                 # so far we only handle IN_REGION relations which are asserted to hold
@@ -921,6 +963,14 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     )
                 )
                 if fills_legal_argument_role:
+                    region = cast(SituationRegion, relation.second_slot)
+                    # we can only have one relation per object; this is an issue for cases such as having during and after action relations
+                    # in the same VP. To solve this, we check if the reference object node is already in the modifiers and return if it is.
+                    if any(
+                        m[1].token == region.reference_object.debug_handle
+                        for m in modifiers
+                    ):
+                        return
                     prepositional_modifier = self.relation_to_prepositional_modifier(
                         action, relation
                     )
@@ -977,10 +1027,25 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
             elif region.distance == PROXIMAL and not region.direction:
                 # See: https://github.com/isi-vista/adam/issues/836
+
                 if USE_NEAR in self.situation.syntax_hints:
                     preposition = "near"
                 else:
                     preposition = "to"
+                if (
+                    self.situation.actions
+                    and self.situation.actions[0].during
+                    and self.situation.actions[0].during.objects_to_paths
+                ):
+                    for _, path in self.situation.actions[
+                        0
+                    ].during.objects_to_paths.items():
+                        print(region, path.reference_destination_object)
+                        if (
+                            path.reference_destination_object == region
+                            and SIDE in path.properties
+                        ):
+                            preposition = "beside"
 
             elif region.distance == DISTAL and not region.direction:
                 preposition = "far from"
@@ -1044,9 +1109,17 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             spatial_path: SpatialPath[SituationObject],
         ):
             # don't talk about spatial paths to non-salient objects
-            if (
-                spatial_path.reference_object
-                and spatial_path.reference_object not in self.situation.salient_objects
+            if spatial_path.reference_destination_object and (
+                (
+                    isinstance(spatial_path.reference_destination_object, SituationObject)
+                    and spatial_path.reference_destination_object
+                    not in self.situation.salient_objects
+                )
+                or (
+                    isinstance(spatial_path.reference_destination_object, Region)
+                    and spatial_path.reference_destination_object.reference_object
+                    not in self.situation.salient_objects
+                )
             ):
                 return None
 
@@ -1067,7 +1140,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
 
                 if (
                     path_object in core_argument_fillers
-                    and spatial_path.reference_object in core_argument_fillers
+                    and spatial_path.reference_source_object in core_argument_fillers
                 ):
                     return None
 
@@ -1094,13 +1167,13 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     f"Don't know how to translate spatial path {spatial_path}"
                 )
 
-            if isinstance(spatial_path.reference_object, Region):
+            if isinstance(spatial_path.reference_source_object, Region):
                 reference_object_node = self._noun_for_object(
-                    spatial_path.reference_object.reference_object
+                    spatial_path.reference_source_object.reference_object
                 )
             else:
                 reference_object_node = self._noun_for_object(
-                    spatial_path.reference_object
+                    spatial_path.reference_source_object
                 )
 
             if self.dependency_graph.out_degree[reference_object_node]:

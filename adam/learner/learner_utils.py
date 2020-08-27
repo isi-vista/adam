@@ -43,6 +43,8 @@ from adam.perception.perception_graph import (
     IsPathPredicate,
     RegionPredicate,
     REFERENCE_OBJECT_LABEL,
+    REFERENCE_OBJECT_DESTINATION_LABEL,
+    REFERENCE_OBJECT_SOURCE_LABEL,
     NodePredicate,
     RelationTypeIsPredicate,
     PerceptionGraph,
@@ -167,7 +169,11 @@ def pattern_remove_incomplete_region_or_spatial_path(
         for successor in graph.successors(node):
             predicate = graph.edges[node, successor]["predicate"]
             if isinstance(predicate, RelationTypeIsPredicate):
-                if predicate.relation_type == REFERENCE_OBJECT_LABEL:
+                if predicate.relation_type in [
+                    REFERENCE_OBJECT_LABEL,
+                    REFERENCE_OBJECT_DESTINATION_LABEL,
+                    REFERENCE_OBJECT_SOURCE_LABEL,
+                ]:
                     has_reference_edge = True
                     break
         if not has_reference_edge:

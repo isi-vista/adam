@@ -69,6 +69,7 @@ from adam.ontology.phase1_ontology import (
     RED,
     BLACK,
     far,
+    negate,
     WALK,
     HARD_FORCE,
     PASS,
@@ -88,6 +89,7 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
     PROXIMAL,
     VIA,
+    TOWARD,
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation, flatten_relations
@@ -827,7 +829,8 @@ def test_bird_flies_path_beside():
                             bird,
                             SpatialPath(
                                 VIA,
-                                reference_object=car_region,
+                                reference_source_object=car_region,
+                                reference_destination_object=car_region,
                                 reference_axis=HorizontalAxisOfObject(car, index=0),
                             ),
                         )
@@ -854,7 +857,16 @@ def test_bird_flies_up():
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (bird, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
+                            ),
+                        )
                     ]
                 ),
             )
@@ -1707,7 +1719,10 @@ def test_run():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -1733,7 +1748,10 @@ def test_toss():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -1760,7 +1778,10 @@ def test_shove():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_object=table, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=table,
+                                reference_destination_object=table,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -1794,7 +1815,10 @@ def test_grab():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -1819,7 +1843,12 @@ def test_slowly():
                     objects_to_paths=[
                         (
                             mom,
-                            SpatialPath(None, reference_object=GROUND, properties=[SLOW]),
+                            SpatialPath(
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[SLOW],
+                            ),
                         )
                     ]
                 ),
@@ -1843,7 +1872,12 @@ def test_fast():
                     objects_to_paths=[
                         (
                             mom,
-                            SpatialPath(None, reference_object=GROUND, properties=[FAST]),
+                            SpatialPath(
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[FAST],
+                            ),
                         )
                     ]
                 ),
@@ -1894,6 +1928,36 @@ def test_counts_of_objects():
                 "a",
                 object_type.handle,
             )
+
+
+def test_not_toward_on_translation_of_relations():
+    theme = situation_object(MOM)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[theme, ground],
+        actions=[
+            Action(
+                action_type=FALL,
+                argument_roles_to_fillers=[(THEME, theme)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        before_action_relations=[negate(on(theme, ground))],
+        after_action_relations=[on(theme, ground)],
+    )
+    assert generated_tokens(situation) == ("Mom", "falls", "toward", "the", "ground")
 
 
 def generated_tokens(situation):

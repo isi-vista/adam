@@ -301,6 +301,7 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
                 perception_as_digraph, all_object_perception_nodes + other_nodes
             )
             meanings.append(PerceptionGraph(generated_subgraph))
+
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 

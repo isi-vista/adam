@@ -28,6 +28,8 @@ OTHER = PartOfSpeechTag("x")
 # Universal dependencies dependency syntactic relations
 CLAUSAL_MODIFIER_OF_NOUN = DependencyRole("acl")
 ADVERBIAL_CLAUSE_MODIFIER = DependencyRole("advcl")
+# chinese-specific hack since there's two positions where the advcl can be
+PRE_VERBAL_ADVERBIAL_CLAUSE_MODIFIER = DependencyRole("pre-advcl")
 ADVERBIAL_MODIFIER = DependencyRole("advmod")
 ADJECTIVAL_MODIFIER = DependencyRole("amod")
 APPOSITIONAL_MODIFIER = DependencyRole("appos")
