@@ -914,7 +914,12 @@ def _throw_under_template(
                 ],
             )
         ],
-        after_action_relations=[near(theme, goal_reference)],
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_reference, GROUND_OBJECT_TEMPLATE)),
+            near(theme, goal_reference),
+        ],
         constraining_relations=flatten_relations(
             bigger_than([agent, goal_reference], theme)
         ),
@@ -946,7 +951,12 @@ def _throw_path_over_template(
                 ),
             )
         ],
-        after_action_relations=[near(theme, implicit_goal_reference)],
+        asserted_always_relations=[negate(on(theme, GROUND_OBJECT_TEMPLATE))],
+        before_action_relations=[negate(on(theme, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(theme, GROUND_OBJECT_TEMPLATE)),
+            near(theme, implicit_goal_reference),
+        ],
         constraining_relations=flatten_relations(
             bigger_than([agent, object_in_path], theme)
         ),
@@ -978,7 +988,12 @@ def _throw_path_under_template(
                 ),
             )
         ],
-        after_action_relations=[near(theme, implicit_goal_reference)],
+        before_action_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(object_in_path, GROUND_OBJECT_TEMPLATE)),
+            near(theme, implicit_goal_reference),
+        ],
         constraining_relations=flatten_relations(
             bigger_than([agent, object_in_path], theme)
         ),
@@ -4148,24 +4163,6 @@ def _make_throw_with_prepositions(
                         )
                     ]
                 ),
-                # # path under -- currently disabled since we can't learn multiple semantics for one linguistic template
-                #  flatten(
-                #     [
-                #         sampled(
-                #             _throw_path_under_template(
-                #                 agent,
-                #                 theme,
-                #                 goal_under,
-                #                 implicit_goal_reference,
-                #                 background,
-                #             ),
-                #             ontology=GAILA_PHASE_1_ONTOLOGY,
-                #             chooser=PHASE1_CHOOSER_FACTORY(),
-                #             max_to_sample=num_samples if num_samples else 5,
-                #             block_multiple_of_the_same_type=True,
-                #         )
-                #     ]
-                # ),
                 # Towards & Away
                 flatten(
                     [
@@ -4451,13 +4448,13 @@ def make_verb_with_dynamic_prepositions_curriculum(
         #     language_generator,
         #     include_path_instead_of_goal,
         # ),
-        _make_throw_with_prepositions(
-            num_samples,
-            num_noise_objects,
-            language_generator,
-            include_path_instead_of_goal,
-        ),
-        # _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
+        # _make_throw_with_prepositions(
+        #     num_samples,
+        #     num_noise_objects,
+        #     language_generator,
+        #     include_path_instead_of_goal,
+        # ),
+        _make_sit_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_roll_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_take_with_prepositions(num_samples, num_noise_objects, language_generator),
         # _make_fall_with_prepositions(num_samples, num_noise_objects, language_generator),
