@@ -328,43 +328,43 @@ def build_gaila_m13_curriculum(
 ) -> Sequence[Phase1InstanceGroup]:
     return list(
         chain(
-            # build_gaila_phase1_object_curriculum(
-            #     num_samples, num_noise_objects, language_generator
-            # ),
-            # build_gaila_plurals_curriculum(
-            #     num_samples, num_noise_objects, language_generator
-            # ),
-            # build_gaila_phase1_attribute_curriculum(
-            #     num_samples, num_noise_objects, language_generator
-            # ),
-            # build_gaila_generics_curriculum(
-            #     num_samples, num_noise_objects, language_generator
-            # ),
-            # make_prepositions_curriculum(
-            #     num_samples, num_noise_objects, language_generator
-            # ),
-            # build_gaila_phase1_verb_curriculum(
-            #     num_samples, num_noise_objects, language_generator
-            # ),
-            # list(
-            #     make_imprecise_temporal_descriptions(
-            #         num_samples, num_noise_objects, language_generator
-            #     )
-            # ),
+            build_gaila_phase1_object_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_plurals_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_phase1_attribute_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_generics_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            make_prepositions_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_phase1_verb_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            list(
+                make_imprecise_temporal_descriptions(
+                    num_samples, num_noise_objects, language_generator
+                )
+            ),
             make_verb_with_dynamic_prepositions_curriculum(
                 num_samples,
                 num_noise_objects,
                 language_generator,
                 use_path_instead_of_goal,
             ),
-            # list(
-            #     make_subtle_verb_distinctions_curriculum(
-            #         num_samples, num_noise_objects, language_generator
-            #     )
-            # ),
-            # build_functionally_defined_objects_curriculum(
-            #     num_samples, num_noise_objects, language_generator
-            # ),
+            list(
+                make_subtle_verb_distinctions_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                )
+            ),
+            build_functionally_defined_objects_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
         )
     )
 
