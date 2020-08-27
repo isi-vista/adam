@@ -13,12 +13,14 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     make_noise_objects,
 )
+from adam.curriculum.curriculum_utils import GROUND_OBJECT_TEMPLATE
 from adam.language_specific.english.english_language_generator import (
     USE_ABOVE_BELOW,
     USE_NEAR,
 )
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING, OntologyNode
 from adam.ontology.phase1_ontology import (
+    negate,
     BALL,
     BOOK,
     BOX,
@@ -121,7 +123,8 @@ def _under_template(
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            strictly_under(ground, figure, dist=DISTAL if is_distal else PROXIMAL)
+            negate(on(figure, GROUND_OBJECT_TEMPLATE)),
+            strictly_under(ground, figure, dist=DISTAL if is_distal else PROXIMAL),
         ],
         constraining_relations=[bigger_than(ground, figure)],
         gazed_objects=[figure],
@@ -146,7 +149,8 @@ def _over_template(
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            strictly_over(figure, ground, dist=DISTAL if is_distal else PROXIMAL)
+            negate(on(figure, GROUND_OBJECT_TEMPLATE)),
+            strictly_over(figure, ground, dist=DISTAL if is_distal else PROXIMAL),
         ],
         gazed_objects=[figure],
         syntax_hints=syntax_hints,
