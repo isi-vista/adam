@@ -1726,6 +1726,7 @@ _BED_SCHEMA_LEG_3 = SubObject(_INANIMATE_LEG_SCHEMA)
 _BED_SCHEMA_LEG_4 = SubObject(_INANIMATE_LEG_SCHEMA)
 _BED_LEGS = [_BED_SCHEMA_LEG_1, _BED_SCHEMA_LEG_2, _BED_SCHEMA_LEG_3, _BED_SCHEMA_LEG_4]
 _BED_SCHEMA_MATTRESS = SubObject(_MATTRESS_SCHEMA)
+_BED_SCHEMA_HEADBOARD = SubObject(_HEADBOARD_SCHEMA)
 _BED_SCHEMA = ObjectStructuralSchema(
     BED,
     sub_objects=[
@@ -1734,10 +1735,14 @@ _BED_SCHEMA = ObjectStructuralSchema(
         _BED_SCHEMA_LEG_3,
         _BED_SCHEMA_LEG_4,
         _BED_SCHEMA_MATTRESS,
+        _BED_SCHEMA_HEADBOARD,
     ],
     sub_object_relations=flatten_relations(
         [
             contacts(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+            contacts(_BED_SCHEMA_MATTRESS, _BED_SCHEMA_MATTRESS),
+            above(_BED_SCHEMA_HEADBOARD, _BED_SCHEMA_MATTRESS),
+            bigger_than(_BED_SCHEMA_HEADBOARD, _BED_LEGS),
             above(_BED_SCHEMA_MATTRESS, _BED_LEGS),
             bigger_than(_BED_SCHEMA_MATTRESS, _BED_LEGS),
         ]
