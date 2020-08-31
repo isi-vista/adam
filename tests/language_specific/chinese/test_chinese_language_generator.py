@@ -309,7 +309,7 @@ def test_two_items():
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("lyang3", "jr3", "gou3")
+    ).as_token_sequence() == ("lyang3", "jr1", "gou3")
 
 
 # many objects
@@ -462,7 +462,7 @@ def test_two_salient_objects():
     )
     assert only(
         _SIMPLE_GENERATOR.generate_language(situation, FixedIndexChooser(0))
-    ).as_token_sequence() == ("lyang3", "jr3", "gou3")
+    ).as_token_sequence() == ("lyang3", "jr1", "gou3")
 
 
 # many objects, only two are salient

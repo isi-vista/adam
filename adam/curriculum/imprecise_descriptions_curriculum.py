@@ -903,7 +903,9 @@ def make_fall_imprecise_temporal_descriptions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    arbitary_object = standard_object("object_0", THING)
+    arbitary_object = standard_object(
+        "object_0", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
     background = make_noise_objects(noise_objects)
 

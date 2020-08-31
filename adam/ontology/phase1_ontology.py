@@ -328,6 +328,17 @@ WATERMELON = OntologyNode(
     "watermelon", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, EDIBLE, ROLLABLE, GREEN]
 )
 subtype(WATERMELON, INANIMATE_OBJECT)
+PAPER = OntologyNode(
+    "paper",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        PERSON_CAN_HAVE,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        WHITE,
+        TWO_DIMENSIONAL,
+    ],
+)
+subtype(PAPER, INANIMATE_OBJECT)
 BOOK = OntologyNode(
     "book",
     [
@@ -486,6 +497,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
         BABY,
         BALL,
         WATERMELON,
+        PAPER,
         BIRD,
         BOOK,
         BOX,
@@ -1256,6 +1268,27 @@ def _make_table_top_schema() -> ObjectStructuralSchema:
     )
 
 
+def _make_paper_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=PAPER,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    much_bigger_than([front_to_back, side_to_side], bottom_to_top)
+                ],
+            ),
+        ),
+    )
+
+
 def _make_tail_schema() -> ObjectStructuralSchema:
     edge_to_tip = directed("edge-to-tip")
     diameter_0 = symmetric("diameter_0")
@@ -1421,6 +1454,7 @@ def _make_human_arm_segment():
 _DOOR_SCHEMA = _make_door_schema()
 _BALL_SCHEMA = _make_ball_schema()
 _WATERMELON_SCHEMA = _make_watermelon_schema()
+_PAPER_SCHEMA = _make_paper_schema()
 _BOX_SCHEMA = _make_box_schema()
 _HAT_SCHEMA = _make_hat_schema()
 _COOKIE_SCHEMA = _make_cookie_schema()
@@ -2742,7 +2776,7 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
     (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
-    (WATERMELON, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
+    (WATERMELON, PAPER, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
     (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
 )
@@ -2752,6 +2786,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
     _ontology_graph,
     structural_schemata=[
         (BALL, _BALL_SCHEMA),
+        (PAPER, _PAPER_SCHEMA),
         (WATERMELON, _WATERMELON_SCHEMA),
         (CHAIR, _CHAIR_SCHEMA),
         (PERSON, _PERSON_SCHEMA),
