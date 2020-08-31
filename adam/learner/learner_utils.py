@@ -10,10 +10,11 @@ from typing import (
     Iterable,
     Optional,
     Callable,
+    Sequence,
 )
 import itertools
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
-from attr.validators import instance_of
+from attr.validators import instance_of, optional
 from networkx import (
     number_weakly_connected_components,
     DiGraph,
@@ -22,13 +23,16 @@ from networkx import (
 from attr import attrib, attrs
 from enum import Enum, auto
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
-from adam.learner import LearningExample
+from adam.learner import LearningExample, get_largest_matching_pattern
 from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.language_mode import LanguageMode
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.perception import PerceptualRepresentation
+from adam.ontology.ontology import Ontology
+from adam.ontology.phase1_spatial_relations import Region
+from adam.perception import PerceptualRepresentation, MatchMode, ObjectPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
+    RgbColorPerception,
 )
 from adam.learner.surface_templates import (
     STANDARD_SLOT_VARIABLES,
@@ -48,6 +52,8 @@ from adam.perception.perception_graph import (
     NodePredicate,
     RelationTypeIsPredicate,
     PerceptionGraph,
+    DebugCallableType,
+    GraphLogger,
 )
 from adam.semantics import (
     Concept,
@@ -57,6 +63,7 @@ from adam.semantics import (
 )
 from immutablecollections import immutabledict, immutableset, ImmutableSet
 
+from adam.utils import networkx_utils
 from adam.utils.networkx_utils import subgraph
 from vistautils.span import Span
 
@@ -566,3 +573,150 @@ def default_post_process_enrichment(
     immutable_new_nodes: AbstractSet[SemanticNode],
 ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
     return perception_graph_after_matching, immutable_new_nodes
+
+
+@attrs(frozen=True, slots=True)
+class PartialMatchRatio:
+    """
+    See `compute_match_ratio`
+    """
+
+    matching_subgraph: Optional[PerceptionGraphPattern] = attrib(
+        validator=optional(instance_of(PerceptionGraphPattern))
+    )
+    num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
+    num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
+    matched_exactly: bool = attrib(init=False)
+    match_ratio: float = attrib(init=False)
+
+    @matched_exactly.default
+    def matched(self) -> bool:
+        return self.num_nodes_in_pattern == self.num_nodes_matched
+
+    @match_ratio.default
+    def ratio(self) -> float:
+        return self.num_nodes_matched / self.num_nodes_in_pattern
+
+
+def compute_match_ratio(
+    pattern: PerceptionGraphTemplate,
+    graph: PerceptionGraph,
+    ontology: Ontology,
+    *,
+    graph_logger: Optional[GraphLogger] = None,
+    debug_callback: Optional[DebugCallableType] = None,
+) -> PartialMatchRatio:
+    """
+    Computes the fraction of pattern graph nodes of *pattern* which match *graph*.
+    """
+    hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
+        pattern.graph_pattern,
+        graph,
+        debug_callback=debug_callback,
+        graph_logger=graph_logger,
+        ontology=ontology,
+        match_mode=MatchMode.OBJECT,
+    )
+
+    return PartialMatchRatio(
+        hypothesis_pattern_common_subgraph,
+        num_nodes_matched=(
+            len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes)
+            if hypothesis_pattern_common_subgraph
+            else 0
+        ),
+        num_nodes_in_pattern=len(pattern.graph_pattern),
+    )
+
+
+def get_objects_from_perception(
+    observed_perception_graph: PerceptionGraph
+) -> List[PerceptionGraph]:
+    """
+    Utility function to get a list of `PerceptionGraphs` which are independent objects in the scene
+    """
+    perception_as_digraph = observed_perception_graph.copy_as_digraph()
+    perception_as_graph = perception_as_digraph.to_undirected()
+
+    meanings = []
+
+    # 1) Take all of the obj perc that dont have part of relationships with anything else
+    root_object_percetion_nodes = []
+    for node in perception_as_graph.nodes:
+        if isinstance(node, ObjectPerception) and node.debug_handle != "the ground":
+            if not any(
+                [
+                    u == node and str(data["label"]) == "partOf"
+                    for u, v, data in perception_as_digraph.edges.data()
+                ]
+            ):
+                root_object_percetion_nodes.append(node)
+
+    # 2) for each of these, walk along the part of relationships backwards,
+    # i.e find all of the subparts of the root object
+    for root_object_perception_node in root_object_percetion_nodes:
+        # Iteratively get all other object perceptions that connect to a root with a part of
+        # relation
+        all_object_perception_nodes = [root_object_perception_node]
+        frontier = [root_object_perception_node]
+        updated = True
+        while updated:
+            updated = False
+            new_frontier = []
+            for frontier_node in frontier:
+                for node in perception_as_graph.neighbors(frontier_node):
+                    edge_data = perception_as_digraph.get_edge_data(
+                        node, frontier_node, default=-1
+                    )
+                    if edge_data != -1 and str(edge_data["label"]) == "partOf":
+                        new_frontier.append(node)
+
+            if new_frontier:
+                all_object_perception_nodes.extend(new_frontier)
+                updated = True
+                frontier = new_frontier
+
+        # Now we have a list of all perceptions that are connected
+        # 3) For each of these objects including root object, get axes, properties,
+        # and relations and regions which are between these internal object perceptions
+        other_nodes = []
+        for node in all_object_perception_nodes:
+            for neighbor in perception_as_graph.neighbors(node):
+                # Filter out regions that don't have a reference in all object perception nodes
+                # TODO: We currently remove colors to achieve a match - otherwise finding
+                #  patterns fails.
+                if (
+                    isinstance(neighbor, Region)
+                    and neighbor.reference_object not in all_object_perception_nodes
+                    or isinstance(neighbor, RgbColorPerception)
+                ):
+                    continue
+                # Append all other none-object nodes to be kept in the subgraph
+                if not isinstance(neighbor, ObjectPerception):
+                    other_nodes.append(neighbor)
+
+        generated_subgraph = networkx_utils.subgraph(
+            perception_as_digraph, all_object_perception_nodes + other_nodes
+        )
+        meanings.append(PerceptionGraph(generated_subgraph))
+
+    logging.info(f"Got {len(meanings)} candidate meanings")
+    return meanings
+
+
+def candidate_object_hypotheses(
+    language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+) -> Sequence[PerceptionGraphTemplate]:
+    """
+    Given a learning input, returns all possible meaning hypotheses.
+    """
+    return [
+        PerceptionGraphTemplate(
+            graph_pattern=PerceptionGraphPattern.from_graph(
+                object_
+            ).perception_graph_pattern
+        )
+        for object_ in get_objects_from_perception(
+            language_perception_semantic_alignment.perception_semantic_alignment.perception_graph
+        )
+    ]
