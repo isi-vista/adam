@@ -244,7 +244,6 @@ def _jump_over_template(
                 ],
             )
         ],
-        constraining_relations=flatten_relations(bigger_than(agent, object_in_path)),
     )
 
 

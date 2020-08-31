@@ -1275,7 +1275,12 @@ def transitive_roll_with_surface(
 def make_roll_templates(
     noise_objects: Optional[int]
 ) -> Sequence[Phase1SituationTemplate]:
-    animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
+    animate_0 = standard_object(
+        "object_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     rollable_0 = standard_object(
         "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
     )
@@ -1287,7 +1292,7 @@ def make_roll_templates(
     return [
         # rolls intransitively
         intransitive_roll(animate_0, rolling_surface, background=background),
-        # rolls transitively
+        # # rolls transitively
         transitive_roll(animate_0, rollable_0, rolling_surface, background=background),
         # rolls on a surface
         transitive_roll_with_surface(

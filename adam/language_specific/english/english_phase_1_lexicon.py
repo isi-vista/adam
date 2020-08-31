@@ -70,6 +70,7 @@ from adam.ontology.phase1_ontology import (
     PAPER,
     BED,
     CAT,
+    BEAR,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -119,6 +120,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (CHAIR, LexiconEntry("chair", NOUN, plural_form="chairs")),
         (HEAD, LexiconEntry("head", NOUN, plural_form="heads")),
         (PAPER, LexiconEntry("paper", NOUN, plural_form="papers")),
+        (BEAR, LexiconEntry("bear", NOUN, plural_form="bears")),
         (BED, LexiconEntry("bed", NOUN, plural_form="beds")),
         (MILK, LexiconEntry("milk", NOUN, [MASS_NOUN])),
         (HAND, LexiconEntry("hand", NOUN, plural_form="hands")),

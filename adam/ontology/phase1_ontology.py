@@ -509,6 +509,8 @@ CAT = OntologyNode(
     "cat", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
 )
 subtype(CAT, NONHUMAN_ANIMAL)
+BEAR = OntologyNode("bear", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, DARK_BROWN])
+subtype(BEAR, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY, RED, BLUE, BLACK, WHITE])
 subtype(BIRD, NONHUMAN_ANIMAL)
 
@@ -516,6 +518,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
     [
         BABY,
         BALL,
+        BEAR,
         WATERMELON,
         CAT,
         PAPER,
@@ -588,6 +591,8 @@ _DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_DOG_HEAD, _BODY_PART)
 _CAT_HEAD = OntologyNode("cat-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_CAT_HEAD, _BODY_PART)
+_BEAR_HEAD = OntologyNode("bear-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_BEAR_HEAD, _BODY_PART)
 _BIRD_HEAD = OntologyNode("bird-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_BIRD_HEAD, _BODY_PART)
 _LEG_SEGMENT = OntologyNode("leg-segment")
@@ -1090,10 +1095,30 @@ def _make_torso_schema():
     )
 
 
+def _make_bear_head_schema() -> ObjectStructuralSchema:
+    torso_to_nose = directed("bear-head-torso-to-nose")
+    bottom_to_top = directed("bear-head-bottom-to-top")
+    left_to_right = symmetric("bear-head-left-to-right")
+    return ObjectStructuralSchema(
+        _BEAR_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=torso_to_nose,
+                orienting_axes=[bottom_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than(torso_to_nose, [left_to_right, bottom_to_top])
+                ],
+            ),
+        ),
+    )
+
+
 def _make_cat_head_schema() -> ObjectStructuralSchema:
-    torso_to_nose = directed("dog-head-torso-to-nose")
-    bottom_to_top = directed("dog-head-bottom-to-top")
-    left_to_right = symmetric("dog-head-left-to-right")
+    torso_to_nose = directed("cat-head-torso-to-nose")
+    bottom_to_top = directed("cat-head-bottom-to-top")
+    left_to_right = symmetric("cat-head-left-to-right")
     return ObjectStructuralSchema(
         _CAT_HEAD,
         geon=Geon(
@@ -1557,6 +1582,7 @@ _HEAD_SCHEMA = _make_head_schema()
 _TORSO_SCHEMA = _make_torso_schema()
 _DOG_HEAD_SCHEMA = _make_dog_head_schema()
 _CAT_HEAD_SCHEMA = _make_cat_head_schema()
+_BEAR_HEAD_SCHEMA = _make_bear_head_schema()
 _BIRD_HEAD_SCHEMA = _make_bird_head_schema()
 _UPPER_LEG_SEGMENT_SCHEMA = _make_upper_leg_segment_schema()
 _LOWER_LEG_SEGMENT_SCHEMA = _make_lower_leg_segment_schema()
@@ -1777,6 +1803,50 @@ _BED_SCHEMA = ObjectStructuralSchema(
     ),
     axes=_BED_SCHEMA_MATTRESS.schema.axes.copy(),
 )
+
+# bear schemata describing the sub-object structural nature of a bear
+_BEAR_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_TORS0 = SubObject(_TORSO_SCHEMA)
+_BEAR_SCHEMA_HEAD = SubObject(_BEAR_HEAD_SCHEMA)
+_BEAR_LEGS = [
+    _BEAR_SCHEMA_LEG_1,
+    _BEAR_SCHEMA_LEG_2,
+    _BEAR_SCHEMA_LEG_3,
+    _BEAR_SCHEMA_LEG_4,
+]
+_BEAR_APPENDAGES = [
+    _BEAR_SCHEMA_LEG_1,
+    _BEAR_SCHEMA_LEG_2,
+    _BEAR_SCHEMA_LEG_3,
+    _BEAR_SCHEMA_LEG_4,
+    _BEAR_SCHEMA_HEAD,
+]
+
+_BEAR_SCHEMA = ObjectStructuralSchema(
+    BEAR,
+    sub_objects=[
+        _BEAR_SCHEMA_TORS0,
+        _BEAR_SCHEMA_HEAD,
+        _BEAR_SCHEMA_LEG_4,
+        _BEAR_SCHEMA_LEG_3,
+        _BEAR_SCHEMA_LEG_2,
+        _BEAR_SCHEMA_LEG_1,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_BEAR_SCHEMA_TORS0, _BEAR_APPENDAGES),
+            above(_BEAR_SCHEMA_HEAD, _BEAR_SCHEMA_TORS0),
+            above(_BEAR_SCHEMA_TORS0, _BEAR_LEGS),
+            bigger_than(_BEAR_SCHEMA_TORS0, _BEAR_LEGS),
+            bigger_than(_BEAR_SCHEMA_TORS0, _BEAR_SCHEMA_HEAD),
+        ]
+    ),
+    axes=_BEAR_SCHEMA_TORS0.schema.axes.copy(),
+)
+
 
 # cat schemata describing the sub-object structural nature of a cat
 _CAT_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
@@ -2939,7 +3009,7 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_TRAILER, _FLATBED),
     (_TRUCK_CAB,),
     (BED, _MATTRESS),
-    (TABLE, DOOR),
+    (TABLE, DOOR, BEAR),
     (_TABLETOP,),
     (MOM, DAD, PERSON),
     (DOG, BOX, CHAIR, _TIRE),
@@ -2960,6 +3030,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         (BALL, _BALL_SCHEMA),
         (PAPER, _PAPER_SCHEMA),
         (WATERMELON, _WATERMELON_SCHEMA),
+        (BEAR, _BEAR_SCHEMA),
         (CHAIR, _CHAIR_SCHEMA),
         (PERSON, _PERSON_SCHEMA),
         (TABLE, _TABLE_SCHEMA),
