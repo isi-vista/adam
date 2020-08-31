@@ -505,6 +505,10 @@ DOG = OntologyNode(
     "dog", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
 )
 subtype(DOG, NONHUMAN_ANIMAL)
+CAT = OntologyNode(
+    "cat", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
+)
+subtype(CAT, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY, RED, BLUE, BLACK, WHITE])
 subtype(BIRD, NONHUMAN_ANIMAL)
 
@@ -513,6 +517,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
         BABY,
         BALL,
         WATERMELON,
+        CAT,
         PAPER,
         BIRD,
         BOOK,
@@ -581,6 +586,8 @@ _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
 _DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_DOG_HEAD, _BODY_PART)
+_CAT_HEAD = OntologyNode("cat-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_CAT_HEAD, _BODY_PART)
 _BIRD_HEAD = OntologyNode("bird-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_BIRD_HEAD, _BODY_PART)
 _LEG_SEGMENT = OntologyNode("leg-segment")
@@ -1083,6 +1090,26 @@ def _make_torso_schema():
     )
 
 
+def _make_cat_head_schema() -> ObjectStructuralSchema:
+    torso_to_nose = directed("dog-head-torso-to-nose")
+    bottom_to_top = directed("dog-head-bottom-to-top")
+    left_to_right = symmetric("dog-head-left-to-right")
+    return ObjectStructuralSchema(
+        _CAT_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=torso_to_nose,
+                orienting_axes=[bottom_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than([bottom_to_top, left_to_right], torso_to_nose)
+                ],
+            ),
+        ),
+    )
+
+
 def _make_dog_head_schema() -> ObjectStructuralSchema:
     torso_to_nose = directed("dog-head-torso-to-nose")
     bottom_to_top = directed("dog-head-bottom-to-top")
@@ -1529,6 +1556,7 @@ _HAND_SCHEMA = _make_hand_schema()
 _HEAD_SCHEMA = _make_head_schema()
 _TORSO_SCHEMA = _make_torso_schema()
 _DOG_HEAD_SCHEMA = _make_dog_head_schema()
+_CAT_HEAD_SCHEMA = _make_cat_head_schema()
 _BIRD_HEAD_SCHEMA = _make_bird_head_schema()
 _UPPER_LEG_SEGMENT_SCHEMA = _make_upper_leg_segment_schema()
 _LOWER_LEG_SEGMENT_SCHEMA = _make_lower_leg_segment_schema()
@@ -1748,6 +1776,49 @@ _BED_SCHEMA = ObjectStructuralSchema(
         ]
     ),
     axes=_BED_SCHEMA_MATTRESS.schema.axes.copy(),
+)
+
+# cat schemata describing the sub-object structural nature of a cat
+_CAT_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_CAT_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
+_CAT_SCHEMA_HEAD = SubObject(_CAT_HEAD_SCHEMA)
+_CAT_LEGS = [_CAT_SCHEMA_LEG_1, _CAT_SCHEMA_LEG_2, _CAT_SCHEMA_LEG_3, _CAT_SCHEMA_LEG_4]
+_CAT_APPENDAGES = [
+    _CAT_SCHEMA_LEG_1,
+    _CAT_SCHEMA_LEG_2,
+    _CAT_SCHEMA_LEG_3,
+    _CAT_SCHEMA_LEG_4,
+    _CAT_SCHEMA_TAIL,
+    _CAT_SCHEMA_HEAD,
+]
+
+_CAT_SCHEMA = ObjectStructuralSchema(
+    CAT,
+    sub_objects=[
+        _CAT_SCHEMA_TAIL,
+        _CAT_SCHEMA_HEAD,
+        _CAT_SCHEMA_TORSO,
+        _CAT_SCHEMA_LEG_1,
+        _CAT_SCHEMA_LEG_2,
+        _CAT_SCHEMA_LEG_3,
+        _CAT_SCHEMA_LEG_4,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_CAT_SCHEMA_TORSO, _CAT_APPENDAGES),
+            above(_CAT_SCHEMA_HEAD, _CAT_SCHEMA_TORSO),
+            above(_CAT_SCHEMA_TAIL, _CAT_SCHEMA_TORSO),
+            above(_CAT_SCHEMA_TORSO, _CAT_LEGS),
+            bigger_than(_CAT_SCHEMA_TORSO, _CAT_LEGS),
+            bigger_than(_CAT_SCHEMA_TORSO, _CAT_SCHEMA_TAIL),
+            bigger_than(_CAT_SCHEMA_TORSO, _CAT_SCHEMA_HEAD),
+        ]
+    ),
+    axes=_CAT_SCHEMA_TORSO.schema.axes.copy(),
 )
 
 
@@ -2875,7 +2946,7 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (BABY,),
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
-    (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
+    (CAT, _ARM, _ANIMAL_LEG, _INANIMATE_LEG),
     (WATERMELON, PAPER, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
     (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
@@ -2893,6 +2964,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         (PERSON, _PERSON_SCHEMA),
         (TABLE, _TABLE_SCHEMA),
         (DOG, _DOG_SCHEMA),
+        (CAT, _CAT_SCHEMA),
         (BIRD, _BIRD_SCHEMA),
         (BOX, _BOX_SCHEMA),
         (DOOR, _DOOR_SCHEMA),

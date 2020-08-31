@@ -69,6 +69,7 @@ from adam.ontology.phase1_ontology import (
     WALK,
     PAPER,
     BED,
+    CAT,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -128,6 +129,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (DAD, LexiconEntry("Dad", PROPER_NOUN)),
         (BABY, LexiconEntry("baby", NOUN, plural_form="babies")),
         (DOG, LexiconEntry("dog", NOUN, plural_form="dogs")),
+        (CAT, LexiconEntry("cat", NOUN, plural_form="cats")),
         (BIRD, LexiconEntry("bird", NOUN, plural_form="birds")),
         (GO, LexiconEntry("go", VERB, verb_form_sg3_prs="goes")),
         (COME, LexiconEntry("come", VERB, verb_form_sg3_prs="comes")),

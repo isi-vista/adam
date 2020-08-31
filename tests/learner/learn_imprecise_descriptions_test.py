@@ -130,10 +130,10 @@ def test_short(learner, language):
     "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
 )
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-def test_big(learner, language):
+def test_small(learner, language):
     run_imprecise_test(
         learner(language),
-        _big_x_template(background=[]),
+        _little_x_template(background=[]),
         language_generator=phase1_language_generator(language),
     )
 
@@ -142,9 +142,9 @@ def test_big(learner, language):
     "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
 )
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-def test_small(learner, language):
+def test_big(learner, language):
     run_imprecise_test(
         learner(language),
-        _little_x_template(background=[]),
+        _big_x_template(background=[]),
         language_generator=phase1_language_generator(language),
     )

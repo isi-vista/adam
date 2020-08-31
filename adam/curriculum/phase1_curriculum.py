@@ -2051,7 +2051,6 @@ def make_take_template(
                 ),
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
         # this is a hack since "grab" with an adverb doesn't really work in English
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
         if (
@@ -2639,7 +2638,6 @@ def throw_on_ground_template(
             )
         ],
         after_action_relations=[on(theme, ground)],
-        constraining_relations=[bigger_than(agent, theme)],
     )
 
 
@@ -2732,7 +2730,6 @@ def throw_up_down_template(
                 ),
             )
         ],
-        constraining_relations=flatten_relations(bigger_than(agent, theme)),
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
 
@@ -2769,7 +2766,6 @@ def throw_to_template(
             )
         ],
         after_action_relations=[near(theme, goal)],
-        constraining_relations=[bigger_than(agent, theme)],
     )
 
 
