@@ -77,6 +77,7 @@ from adam.ontology.phase1_ontology import (
     PASS,
     WALK,
     PAPER,
+    BED,
 )
 
 ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])
@@ -90,6 +91,7 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
         (GROUND, LexiconEntry("di4 myan4", NOUN, counting_classifier="jang1")),
+        (BED, LexiconEntry("chwang2", NOUN, counting_classifier="jang1")),
         (PAPER, LexiconEntry("jr3", NOUN, counting_classifier="jang1")),
         (MOM, LexiconEntry("ma1 ma1", PROPER_NOUN)),
         (BALL, LexiconEntry("chyou2", NOUN)),

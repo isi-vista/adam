@@ -3574,7 +3574,12 @@ def _make_put_with_prepositions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    agent = standard_object("agent", THING, required_properties=[ANIMATE])
+    agent = standard_object(
+        "agent",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     speaker_agent = standard_object(
         "speaker_agent",
         PERSON,

@@ -319,6 +319,22 @@ TABLE = OntologyNode(
     ],
 )
 subtype(TABLE, INANIMATE_OBJECT)
+
+BED = OntologyNode(
+    "bed",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        HAS_SPACE_UNDER,
+        CAN_BE_SAT_ON_BY_PEOPLE,
+        WHITE,
+        BLUE,
+        BLACK,
+        LIGHT_BROWN,
+        DARK_BROWN,
+    ],
+)
+subtype(BED, INANIMATE_OBJECT)
 BALL = OntologyNode(
     "ball",
     [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, RED, BLUE, GREEN, BLACK, WHITE],
@@ -515,6 +531,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
         JUICE,
         MILK,
         MOM,
+        BED,
         TABLE,
         TRUCK,
         WATER,
@@ -538,6 +555,10 @@ _CHAIR_SEAT = OntologyNode("chairseat")
 subtype(_CHAIR_SEAT, INANIMATE_OBJECT)
 _TABLETOP = OntologyNode("tabletop")
 subtype(_TABLETOP, INANIMATE_OBJECT)
+_MATTRESS = OntologyNode("mattress")
+subtype(_MATTRESS, INANIMATE_OBJECT)
+_HEADBOARD = OntologyNode("headboard")
+subtype(_HEADBOARD, INANIMATE_OBJECT)
 _TAIL = OntologyNode("tail")
 subtype(_TAIL, _BODY_PART)
 _WING = OntologyNode("wing")
@@ -1268,6 +1289,50 @@ def _make_table_top_schema() -> ObjectStructuralSchema:
     )
 
 
+def _make_headboard_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_HEADBOARD,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    bigger_than([side_to_side, bottom_to_top], front_to_back),
+                    bigger_than(side_to_side, bottom_to_top),
+                ],
+            ),
+        ),
+    )
+
+
+def _make_mattress_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_MATTRESS,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    bigger_than([front_to_back, side_to_side], bottom_to_top),
+                    bigger_than(front_to_back, side_to_side),
+                ],
+            ),
+        ),
+    )
+
+
 def _make_paper_schema() -> ObjectStructuralSchema:
     bottom_to_top = straight_up("bottom-to-top")
     side_to_side = directed("side-to-side")
@@ -1473,6 +1538,8 @@ _CHAIRBACK_SCHEMA = _make_chair_back_schema()
 _CHAIR_SEAT_SCHEMA = _make_chair_seat_schema()
 _CHAIR_SQUARE_SEAT_SCHEMA = _make_square_chair_seat_schema()
 _TABLETOP_SCHEMA = _make_table_top_schema()
+_MATTRESS_SCHEMA = _make_mattress_schema()
+_HEADBOARD_SCHEMA = _make_headboard_schema()
 _TAIL_SCHEMA = _make_tail_schema()
 _WING_SCHEMA = _make_wing_schema()
 _ROOF_SCHEMA = _make_roof_schema()
@@ -1651,6 +1718,33 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
     ),
     axes=_TABLE_SCHEMA_LEG_1.schema.axes.copy(),
 )
+
+# schema for a bed
+_BED_SCHEMA_LEG_1 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_SCHEMA_LEG_2 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_SCHEMA_LEG_3 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_SCHEMA_LEG_4 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_LEGS = [_BED_SCHEMA_LEG_1, _BED_SCHEMA_LEG_2, _BED_SCHEMA_LEG_3, _BED_SCHEMA_LEG_4]
+_BED_SCHEMA_MATTRESS = SubObject(_MATTRESS_SCHEMA)
+_BED_SCHEMA = ObjectStructuralSchema(
+    BED,
+    sub_objects=[
+        _BED_SCHEMA_LEG_1,
+        _BED_SCHEMA_LEG_2,
+        _BED_SCHEMA_LEG_3,
+        _BED_SCHEMA_LEG_4,
+        _BED_SCHEMA_MATTRESS,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+            above(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+            bigger_than(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+        ]
+    ),
+    axes=_BED_SCHEMA_MATTRESS.schema.axes.copy(),
+)
+
 
 # schemata describing the sub-object structural nature of a dog
 _DOG_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
@@ -2768,6 +2862,7 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (CAR, TRUCK),
     (_TRAILER, _FLATBED),
     (_TRUCK_CAB,),
+    (BED, _MATTRESS),
     (TABLE, DOOR),
     (_TABLETOP,),
     (MOM, DAD, PERSON),
@@ -2785,6 +2880,7 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
     _ontology_graph,
     structural_schemata=[
+        (BED, _BED_SCHEMA),
         (BALL, _BALL_SCHEMA),
         (PAPER, _PAPER_SCHEMA),
         (WATERMELON, _WATERMELON_SCHEMA),

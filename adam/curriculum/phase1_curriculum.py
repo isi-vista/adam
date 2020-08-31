@@ -1624,7 +1624,6 @@ def make_put_templates(noise_objects: Optional[int]) -> Iterable[Phase1Situation
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
-
     object_put = standard_object("object_0", required_properties=[INANIMATE])
     on_region_object = standard_object(
         "on_region_object", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]

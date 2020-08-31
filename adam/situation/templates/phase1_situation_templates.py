@@ -201,9 +201,7 @@ def _put_in_template(
                 ],
             )
         ],
-        constraining_relations=flatten_relations(
-            bigger_than([agent, goal_reference], theme)
-        ),
+        constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
     )
 
 
