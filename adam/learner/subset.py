@@ -9,6 +9,7 @@ from immutablecollections import ImmutableSet, immutabledict, immutableset
 
 from adam.language import TokenSequenceLinguisticDescription
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
+from adam.learner.learner_utils import pattern_match_to_semantic_node
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
     SurfaceTemplate,
@@ -19,9 +20,14 @@ from adam.learner.template_learner import (
     AbstractTemplateLearnerNew,
 )
 from adam.ontology.ontology import Ontology
+from adam.perception import MatchMode
 from adam.perception.deprecated import LanguageAlignedPerception
-from adam.perception.perception_graph import DebugCallableType
-from adam.semantics import Concept
+from adam.perception.perception_graph import (
+    DebugCallableType,
+    PerceptionGraph,
+    PerceptionGraphPatternMatch,
+)
+from adam.semantics import Concept, SemanticNode
 
 
 @attrs
@@ -359,3 +365,27 @@ class AbstractTemplateSubsetLearnerNew(
                 hypothesis.render_to_file(
                     concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
                 )
+
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Optional[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        """
+        Try to match our model of the semantics to the perception graph
+        """
+        matcher = pattern.graph_pattern.matcher(
+            perception_graph,
+            match_mode=MatchMode.NON_OBJECT,
+            # debug_callback=self._debug_callback,
+        )
+        for match in matcher.matches(use_lookahead_pruning=True):
+            # if there is a match, use that match to describe the situation.
+            semantic_node_for_match = pattern_match_to_semantic_node(
+                concept=concept, pattern=pattern, match=match
+            )
+            # A template only has to match once; we don't care about finding additional matches.
+            return match, semantic_node_for_match
+        return None

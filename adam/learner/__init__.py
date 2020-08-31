@@ -4,18 +4,7 @@ Interfaces for language learning code.
 from adam.learner.language_mode import LanguageMode
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import (
-    Dict,
-    Generic,
-    Mapping,
-    Optional,
-    Callable,
-    Tuple,
-    Iterable,
-    List,
-    AbstractSet,
-)
-from immutablecollections import ImmutableSet, immutableset
+from typing import Dict, Generic, Mapping, Optional, Callable
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
@@ -25,11 +14,7 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from enum import Enum, auto
-import itertools
 from adam.learner.alignments import LanguageConceptAlignment
-from adam.semantics import SemanticNode
-from vistautils.span import Span
 from adam.ontology.ontology import Ontology
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
