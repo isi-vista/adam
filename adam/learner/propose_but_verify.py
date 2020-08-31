@@ -29,6 +29,9 @@ from adam.random_utils import RandomChooser
 from adam.semantics import Concept, SemanticNode
 
 
+# PbV was originally implemented by Ashwin on branch https://github.com/isi-vista/adam/pull/564
+# and was adapted by Jacob Lichtefeld into the new style learner. Due to the age of the branch
+# at time of writing it was simplier to start a new branch than rebase
 @attrs
 class AbstractProposeButVerifyLearner(AbstractTemplateLearnerNew, ABC):
     """
