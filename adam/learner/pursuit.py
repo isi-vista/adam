@@ -4,7 +4,13 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from pathlib import Path
 from random import Random
-from adam.perception.perception_graph import IsOntologyNodePredicate
+
+from adam.learner.learner_utils import pattern_match_to_semantic_node
+from adam.perception import MatchMode
+from adam.perception.perception_graph import (
+    IsOntologyNodePredicate,
+    PerceptionGraphPatternMatch,
+)
 from adam.ontology.phase1_ontology import GAZED_AT
 from typing import (
     Any,
@@ -42,7 +48,7 @@ from adam.perception.perception_graph import (
     GraphLogger,
     PerceptionGraph,
 )
-from adam.semantics import Concept
+from adam.semantics import Concept, SemanticNode
 
 
 @attrs
@@ -1205,3 +1211,27 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         ) in self._concept_to_hypotheses_and_scores.items():
             for (graph_pattern, score) in graph_patterns_to_scores.items():
                 yield (concept, graph_pattern, score)
+
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Optional[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        """
+        Try to match our model of the semantics to the perception graph
+        """
+        matcher = pattern.graph_pattern.matcher(
+            perception_graph,
+            match_mode=MatchMode.NON_OBJECT,
+            # debug_callback=self._debug_callback,
+        )
+        for match in matcher.matches(use_lookahead_pruning=True):
+            # if there is a match, use that match to describe the situation.
+            semantic_node_for_match = pattern_match_to_semantic_node(
+                concept=concept, pattern=pattern, match=match
+            )
+            # A template only has to match once; we don't care about finding additional matches.
+            return match, semantic_node_for_match
+        return None

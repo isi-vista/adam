@@ -2853,12 +2853,6 @@ def make_throw_templates(
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
-    catcher = standard_object(
-        "catcher_0",
-        THING,
-        required_properties=[ANIMATE],
-        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
-    )
 
     object_thrown = standard_object("object_0", required_properties=[INANIMATE])
     implicit_goal_reference = standard_object(
@@ -2867,8 +2861,8 @@ def make_throw_templates(
     background = make_noise_objects(noise_objects)
 
     return [
-        # Dad throws a cookie on the ground
-        throw_on_ground_template(thrower, object_thrown, background=background),
+        # # Dad throws a cookie on the ground -- disabled because we learn this in verbs with dynamic prepositions
+        # throw_on_ground_template(thrower, object_thrown, background=background),
         # A baby throws a truck
         throw_template(
             thrower, object_thrown, implicit_goal_reference, background=background
@@ -2889,8 +2883,8 @@ def make_throw_templates(
             is_up=False,
             background=background,
         ),
-        # Throw To
-        throw_to_template(thrower, object_thrown, catcher, background=background),
+        # Throw To -- disabled because we learn this in verbs with dynamic prepositions
+        # throw_to_template(thrower, object_thrown, catcher, background=background),
     ]
 
 
@@ -3318,9 +3312,9 @@ def build_gaila_phase1_verb_curriculum(
         ),
         _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
         _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
-        # TODO: in Chinese, _make_speaker_addressee_curriculum currently leads to an error in graph matching
+        # TODO: see https://github.com/isi-vista/adam/issues/937
         # _make_speaker_addressee_curriculum(
-        #    num_samples, num_noise_objects, language_generator
+        #     num_samples, num_noise_objects, language_generator
         # ),
         _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
         _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
@@ -3332,6 +3326,7 @@ def build_gaila_phase1_verb_curriculum(
         _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
         _make_go_curriculum(num_samples, num_noise_objects, language_generator),
         _make_push_curriculum(num_samples, num_noise_objects, language_generator),
+        # TODO: fix this based on Deniz's thoughts
         _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
         _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),

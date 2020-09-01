@@ -331,9 +331,6 @@ def build_gaila_m13_curriculum(
             build_gaila_phase1_object_curriculum(
                 num_samples, num_noise_objects, language_generator
             ),
-            build_gaila_plurals_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
             build_gaila_phase1_attribute_curriculum(
                 num_samples, num_noise_objects, language_generator
             ),
@@ -363,6 +360,9 @@ def build_gaila_m13_curriculum(
                 )
             ),
             build_functionally_defined_objects_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_plurals_curriculum(
                 num_samples, num_noise_objects, language_generator
             ),
         )

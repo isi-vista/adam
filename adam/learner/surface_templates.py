@@ -120,6 +120,7 @@ class SurfaceTemplate:
                             slot_filler_span.start : slot_filler_span.end
                         ]
                     )
+                # if there's a slot without a filler, we just don't learn from this instance instead of raising a runtime error
                 else:
                     return None
                     # raise RuntimeError(

@@ -7,6 +7,8 @@ from adam.curriculum.curriculum_utils import GROUND_OBJECT_TEMPLATE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     strictly_above,
+    negate,
+    on,
     AGENT,
     DISTAL,
     FLY,
@@ -108,7 +110,12 @@ def _go_under_template(
                 ],
             )
         ],
-        after_action_relations=[near(agent, goal_object)],
+        before_action_relations=[negate(on(goal_object, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(goal_object, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_object, GROUND_OBJECT_TEMPLATE)),
+            near(agent, goal_object),
+        ],
         constraining_relations=flatten_relations(bigger_than(goal_object, agent)),
     )
 
@@ -244,6 +251,9 @@ def _jump_over_template(
                 ],
             )
         ],
+        asserted_always_relations=[negate(on(agent, GROUND_OBJECT_TEMPLATE))],
+        constraining_relations=flatten_relations(bigger_than(agent, object_in_path)),
+
     )
 
 
@@ -288,5 +298,8 @@ def _fly_under_template(
                 ),
             )
         ],
+        asserted_always_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        before_action_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
         constraining_relations=flatten_relations(bigger_than(object_in_path, agent)),
     )
