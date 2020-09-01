@@ -166,7 +166,6 @@ class LanguageConceptAlignment:
                     #    f"that filler to tokens. Known alignments are: "
                     #    f"{self.node_to_language_span}"
                     # )
-
             covered_token_span = surface_template.match_against_tokens(
                 self.language.as_token_sequence(),
                 slots_to_filler_spans=immutabledict(slots_to_spans),

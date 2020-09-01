@@ -715,6 +715,20 @@ def _throw_to_template(
                     (THEME, theme),
                     (GOAL, Region(goal_reference, distance=PROXIMAL)),
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=goal_reference,
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
         after_action_relations=[near(theme, goal_reference)],
@@ -777,6 +791,25 @@ def _throw_on_template(
                         ),
                     ),
                 ],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                None,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_reference,
+                                    direction=GRAVITATIONAL_UP,
+                                    distance=EXTERIOR_BUT_IN_CONTACT,
+                                ),
+                                properties=[],
+                            ),
+                        )
+                    ]
+                ),
             )
         ],
         after_action_relations=[on(theme, goal_reference)],
