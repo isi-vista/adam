@@ -319,6 +319,22 @@ TABLE = OntologyNode(
     ],
 )
 subtype(TABLE, INANIMATE_OBJECT)
+
+BED = OntologyNode(
+    "bed",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        HAS_SPACE_UNDER,
+        CAN_BE_SAT_ON_BY_PEOPLE,
+        WHITE,
+        BLUE,
+        BLACK,
+        LIGHT_BROWN,
+        DARK_BROWN,
+    ],
+)
+subtype(BED, INANIMATE_OBJECT)
 BALL = OntologyNode(
     "ball",
     [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, RED, BLUE, GREEN, BLACK, WHITE],
@@ -328,6 +344,17 @@ WATERMELON = OntologyNode(
     "watermelon", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, EDIBLE, ROLLABLE, GREEN]
 )
 subtype(WATERMELON, INANIMATE_OBJECT)
+PAPER = OntologyNode(
+    "paper",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        PERSON_CAN_HAVE,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        WHITE,
+        TWO_DIMENSIONAL,
+    ],
+)
+subtype(PAPER, INANIMATE_OBJECT)
 BOOK = OntologyNode(
     "book",
     [
@@ -478,6 +505,12 @@ DOG = OntologyNode(
     "dog", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
 )
 subtype(DOG, NONHUMAN_ANIMAL)
+CAT = OntologyNode(
+    "cat", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
+)
+subtype(CAT, NONHUMAN_ANIMAL)
+BEAR = OntologyNode("bear", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, DARK_BROWN])
+subtype(BEAR, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY, RED, BLUE, BLACK, WHITE])
 subtype(BIRD, NONHUMAN_ANIMAL)
 
@@ -485,7 +518,10 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
     [
         BABY,
         BALL,
+        BEAR,
         WATERMELON,
+        CAT,
+        PAPER,
         BIRD,
         BOOK,
         BOX,
@@ -503,6 +539,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
         JUICE,
         MILK,
         MOM,
+        BED,
         TABLE,
         TRUCK,
         WATER,
@@ -526,6 +563,10 @@ _CHAIR_SEAT = OntologyNode("chairseat")
 subtype(_CHAIR_SEAT, INANIMATE_OBJECT)
 _TABLETOP = OntologyNode("tabletop")
 subtype(_TABLETOP, INANIMATE_OBJECT)
+_MATTRESS = OntologyNode("mattress")
+subtype(_MATTRESS, INANIMATE_OBJECT)
+_HEADBOARD = OntologyNode("headboard")
+subtype(_HEADBOARD, INANIMATE_OBJECT)
 _TAIL = OntologyNode("tail")
 subtype(_TAIL, _BODY_PART)
 _WING = OntologyNode("wing")
@@ -548,6 +589,10 @@ _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
 _DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_DOG_HEAD, _BODY_PART)
+_CAT_HEAD = OntologyNode("cat-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_CAT_HEAD, _BODY_PART)
+_BEAR_HEAD = OntologyNode("bear-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_BEAR_HEAD, _BODY_PART)
 _BIRD_HEAD = OntologyNode("bird-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_BIRD_HEAD, _BODY_PART)
 _LEG_SEGMENT = OntologyNode("leg-segment")
@@ -1050,6 +1095,46 @@ def _make_torso_schema():
     )
 
 
+def _make_bear_head_schema() -> ObjectStructuralSchema:
+    torso_to_nose = directed("bear-head-torso-to-nose")
+    bottom_to_top = directed("bear-head-bottom-to-top")
+    left_to_right = symmetric("bear-head-left-to-right")
+    return ObjectStructuralSchema(
+        _BEAR_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=torso_to_nose,
+                orienting_axes=[bottom_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than(torso_to_nose, [left_to_right, bottom_to_top])
+                ],
+            ),
+        ),
+    )
+
+
+def _make_cat_head_schema() -> ObjectStructuralSchema:
+    torso_to_nose = directed("cat-head-torso-to-nose")
+    bottom_to_top = directed("cat-head-bottom-to-top")
+    left_to_right = symmetric("cat-head-left-to-right")
+    return ObjectStructuralSchema(
+        _CAT_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=torso_to_nose,
+                orienting_axes=[bottom_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than([bottom_to_top, left_to_right], torso_to_nose)
+                ],
+            ),
+        ),
+    )
+
+
 def _make_dog_head_schema() -> ObjectStructuralSchema:
     torso_to_nose = directed("dog-head-torso-to-nose")
     bottom_to_top = directed("dog-head-bottom-to-top")
@@ -1256,6 +1341,71 @@ def _make_table_top_schema() -> ObjectStructuralSchema:
     )
 
 
+def _make_headboard_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_HEADBOARD,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    bigger_than([side_to_side, bottom_to_top], front_to_back),
+                    bigger_than(side_to_side, bottom_to_top),
+                ],
+            ),
+        ),
+    )
+
+
+def _make_mattress_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_MATTRESS,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    bigger_than([front_to_back, side_to_side], bottom_to_top),
+                    bigger_than(front_to_back, side_to_side),
+                ],
+            ),
+        ),
+    )
+
+
+def _make_paper_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=PAPER,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    much_bigger_than([front_to_back, side_to_side], bottom_to_top)
+                ],
+            ),
+        ),
+    )
+
+
 def _make_tail_schema() -> ObjectStructuralSchema:
     edge_to_tip = directed("edge-to-tip")
     diameter_0 = symmetric("diameter_0")
@@ -1421,6 +1571,7 @@ def _make_human_arm_segment():
 _DOOR_SCHEMA = _make_door_schema()
 _BALL_SCHEMA = _make_ball_schema()
 _WATERMELON_SCHEMA = _make_watermelon_schema()
+_PAPER_SCHEMA = _make_paper_schema()
 _BOX_SCHEMA = _make_box_schema()
 _HAT_SCHEMA = _make_hat_schema()
 _COOKIE_SCHEMA = _make_cookie_schema()
@@ -1430,6 +1581,8 @@ _HAND_SCHEMA = _make_hand_schema()
 _HEAD_SCHEMA = _make_head_schema()
 _TORSO_SCHEMA = _make_torso_schema()
 _DOG_HEAD_SCHEMA = _make_dog_head_schema()
+_CAT_HEAD_SCHEMA = _make_cat_head_schema()
+_BEAR_HEAD_SCHEMA = _make_bear_head_schema()
 _BIRD_HEAD_SCHEMA = _make_bird_head_schema()
 _UPPER_LEG_SEGMENT_SCHEMA = _make_upper_leg_segment_schema()
 _LOWER_LEG_SEGMENT_SCHEMA = _make_lower_leg_segment_schema()
@@ -1439,6 +1592,8 @@ _CHAIRBACK_SCHEMA = _make_chair_back_schema()
 _CHAIR_SEAT_SCHEMA = _make_chair_seat_schema()
 _CHAIR_SQUARE_SEAT_SCHEMA = _make_square_chair_seat_schema()
 _TABLETOP_SCHEMA = _make_table_top_schema()
+_MATTRESS_SCHEMA = _make_mattress_schema()
+_HEADBOARD_SCHEMA = _make_headboard_schema()
 _TAIL_SCHEMA = _make_tail_schema()
 _WING_SCHEMA = _make_wing_schema()
 _ROOF_SCHEMA = _make_roof_schema()
@@ -1617,6 +1772,125 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
     ),
     axes=_TABLE_SCHEMA_LEG_1.schema.axes.copy(),
 )
+
+# schema for a bed
+_BED_SCHEMA_LEG_1 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_SCHEMA_LEG_2 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_SCHEMA_LEG_3 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_SCHEMA_LEG_4 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_LEGS = [_BED_SCHEMA_LEG_1, _BED_SCHEMA_LEG_2, _BED_SCHEMA_LEG_3, _BED_SCHEMA_LEG_4]
+_BED_SCHEMA_MATTRESS = SubObject(_MATTRESS_SCHEMA)
+_BED_SCHEMA_HEADBOARD = SubObject(_HEADBOARD_SCHEMA)
+_BED_SCHEMA = ObjectStructuralSchema(
+    BED,
+    sub_objects=[
+        _BED_SCHEMA_LEG_1,
+        _BED_SCHEMA_LEG_2,
+        _BED_SCHEMA_LEG_3,
+        _BED_SCHEMA_LEG_4,
+        _BED_SCHEMA_MATTRESS,
+        _BED_SCHEMA_HEADBOARD,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+            contacts(_BED_SCHEMA_MATTRESS, _BED_SCHEMA_MATTRESS),
+            above(_BED_SCHEMA_HEADBOARD, _BED_SCHEMA_MATTRESS),
+            bigger_than(_BED_SCHEMA_HEADBOARD, _BED_LEGS),
+            above(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+            bigger_than(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+        ]
+    ),
+    axes=_BED_SCHEMA_MATTRESS.schema.axes.copy(),
+)
+
+# bear schemata describing the sub-object structural nature of a bear
+_BEAR_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_TORS0 = SubObject(_TORSO_SCHEMA)
+_BEAR_SCHEMA_HEAD = SubObject(_BEAR_HEAD_SCHEMA)
+_BEAR_LEGS = [
+    _BEAR_SCHEMA_LEG_1,
+    _BEAR_SCHEMA_LEG_2,
+    _BEAR_SCHEMA_LEG_3,
+    _BEAR_SCHEMA_LEG_4,
+]
+_BEAR_APPENDAGES = [
+    _BEAR_SCHEMA_LEG_1,
+    _BEAR_SCHEMA_LEG_2,
+    _BEAR_SCHEMA_LEG_3,
+    _BEAR_SCHEMA_LEG_4,
+    _BEAR_SCHEMA_HEAD,
+]
+
+_BEAR_SCHEMA = ObjectStructuralSchema(
+    BEAR,
+    sub_objects=[
+        _BEAR_SCHEMA_TORS0,
+        _BEAR_SCHEMA_HEAD,
+        _BEAR_SCHEMA_LEG_4,
+        _BEAR_SCHEMA_LEG_3,
+        _BEAR_SCHEMA_LEG_2,
+        _BEAR_SCHEMA_LEG_1,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_BEAR_SCHEMA_TORS0, _BEAR_APPENDAGES),
+            above(_BEAR_SCHEMA_HEAD, _BEAR_SCHEMA_TORS0),
+            above(_BEAR_SCHEMA_TORS0, _BEAR_LEGS),
+            bigger_than(_BEAR_SCHEMA_TORS0, _BEAR_LEGS),
+            bigger_than(_BEAR_SCHEMA_TORS0, _BEAR_SCHEMA_HEAD),
+        ]
+    ),
+    axes=_BEAR_SCHEMA_TORS0.schema.axes.copy(),
+)
+
+
+# cat schemata describing the sub-object structural nature of a cat
+_CAT_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_CAT_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
+_CAT_SCHEMA_HEAD = SubObject(_CAT_HEAD_SCHEMA)
+_CAT_LEGS = [_CAT_SCHEMA_LEG_1, _CAT_SCHEMA_LEG_2, _CAT_SCHEMA_LEG_3, _CAT_SCHEMA_LEG_4]
+_CAT_APPENDAGES = [
+    _CAT_SCHEMA_LEG_1,
+    _CAT_SCHEMA_LEG_2,
+    _CAT_SCHEMA_LEG_3,
+    _CAT_SCHEMA_LEG_4,
+    _CAT_SCHEMA_TAIL,
+    _CAT_SCHEMA_HEAD,
+]
+
+_CAT_SCHEMA = ObjectStructuralSchema(
+    CAT,
+    sub_objects=[
+        _CAT_SCHEMA_TAIL,
+        _CAT_SCHEMA_HEAD,
+        _CAT_SCHEMA_TORSO,
+        _CAT_SCHEMA_LEG_1,
+        _CAT_SCHEMA_LEG_2,
+        _CAT_SCHEMA_LEG_3,
+        _CAT_SCHEMA_LEG_4,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_CAT_SCHEMA_TORSO, _CAT_APPENDAGES),
+            above(_CAT_SCHEMA_HEAD, _CAT_SCHEMA_TORSO),
+            above(_CAT_SCHEMA_TAIL, _CAT_SCHEMA_TORSO),
+            above(_CAT_SCHEMA_TORSO, _CAT_LEGS),
+            bigger_than(_CAT_SCHEMA_TORSO, _CAT_LEGS),
+            bigger_than(_CAT_SCHEMA_TORSO, _CAT_SCHEMA_TAIL),
+            bigger_than(_CAT_SCHEMA_TORSO, _CAT_SCHEMA_HEAD),
+        ]
+    ),
+    axes=_CAT_SCHEMA_TORSO.schema.axes.copy(),
+)
+
 
 # schemata describing the sub-object structural nature of a dog
 _DOG_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
@@ -2734,15 +3008,16 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (CAR, TRUCK),
     (_TRAILER, _FLATBED),
     (_TRUCK_CAB,),
-    (TABLE, DOOR),
+    (BED, _MATTRESS),
+    (TABLE, DOOR, BEAR),
     (_TABLETOP,),
     (MOM, DAD, PERSON),
     (DOG, BOX, CHAIR, _TIRE),
     (BABY,),
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
-    (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
-    (WATERMELON, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
+    (CAT, _ARM, _ANIMAL_LEG, _INANIMATE_LEG),
+    (WATERMELON, PAPER, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
     (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
 )
@@ -2751,12 +3026,16 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
     _ontology_graph,
     structural_schemata=[
+        (BED, _BED_SCHEMA),
         (BALL, _BALL_SCHEMA),
+        (PAPER, _PAPER_SCHEMA),
         (WATERMELON, _WATERMELON_SCHEMA),
+        (BEAR, _BEAR_SCHEMA),
         (CHAIR, _CHAIR_SCHEMA),
         (PERSON, _PERSON_SCHEMA),
         (TABLE, _TABLE_SCHEMA),
         (DOG, _DOG_SCHEMA),
+        (CAT, _CAT_SCHEMA),
         (BIRD, _BIRD_SCHEMA),
         (BOX, _BOX_SCHEMA),
         (DOOR, _DOOR_SCHEMA),

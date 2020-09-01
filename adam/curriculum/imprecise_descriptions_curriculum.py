@@ -73,6 +73,7 @@ from adam.ontology.phase1_ontology import (
     SPIN,
     HEAD,
     HAND,
+    GROUND,
 )
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -93,7 +94,7 @@ NODES_TO_CHOOSE_FROM = [
     for x in GAILA_PHASE_1_ENGLISH_LEXICON._ontology_node_to_word.items()  # pylint:disable=protected-access
     if x[1].part_of_speech in [NOUN]
     and MASS_NOUN not in x[1].properties
-    and x[0] not in [BABY, HEAD, HAND]
+    and x[0] not in [BABY, HEAD, HAND, GROUND]
 ]
 # differentiate between the nodes that can be modified with tall and those that can't
 TALL_ELIGIBLE_NODES = [
@@ -605,7 +606,12 @@ def make_take_grab_subtle_verb_distinction(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    taker = standard_object("tosser_passer_0", THING, required_properties=[ANIMATE])
+    taker = standard_object(
+        "tosser_passer_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     takee = standard_object("tossee_passee_0", THING, required_properties=[INANIMATE])
     background = make_noise_objects(noise_objects)
     return phase1_instances(
@@ -903,7 +909,9 @@ def make_fall_imprecise_temporal_descriptions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    arbitary_object = standard_object("object_0", THING)
+    arbitary_object = standard_object(
+        "object_0", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
     background = make_noise_objects(noise_objects)
 
