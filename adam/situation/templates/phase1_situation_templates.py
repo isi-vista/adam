@@ -252,8 +252,6 @@ def _jump_over_template(
             )
         ],
         asserted_always_relations=[negate(on(agent, GROUND_OBJECT_TEMPLATE))],
-        constraining_relations=flatten_relations(bigger_than(agent, object_in_path)),
-
     )
 
 
