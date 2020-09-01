@@ -1030,7 +1030,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     IGNORE_HAS_AS_VERB not in self.situation.syntax_hints
                     and not self.situation.is_dynamic
                 ):
-                    return
+                    pass
                     # TODO: we currently return here since we can't handle one possessive node and one not for the third person (i.e. I have my ball, you have your ball
                     # but right now, we just have "Dad has a ball" since otherwise we'll end up adding "de" (equivalent of 's in English) to both instances (e.g. Dad's has Dad's ball)
                     # since the nodes aren't unique). https://github.com/isi-vista/adam/issues/55
@@ -1206,6 +1206,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
             # get a noun for the second object and add it to the tree
             if isinstance(relation.second_slot, SituationObject):
+                print("IS OBJECT")
                 second_slot_dependency_node = self._noun_for_object(relation.second_slot)
             elif isinstance(relation.second_slot, Region):
                 second_slot_dependency_node = self._noun_for_object(
