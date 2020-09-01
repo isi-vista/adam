@@ -41,7 +41,7 @@ class LanguageLearnerNew:
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         pass
 
@@ -87,20 +87,14 @@ class IntegratedTemplateLearner(
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
-        if observation_num >= 0:
-            logging.info(
-                "Observation %s: %s",
-                observation_num,
-                learning_example.linguistic_description.as_token_string(),
-            )
-        else:
-            logging.info(
-                "Observation %s: %s",
-                self._observation_num,
-                learning_example.linguistic_description.as_token_string(),
-            )
+
+        logging.info(
+            "Observation %s: %s",
+            self._observation_num + offset,
+            learning_example.linguistic_description.as_token_string(),
+        )
 
         self._observation_num += 1
 
@@ -133,9 +127,7 @@ class IntegratedTemplateLearner(
                 # perception graph edge wrappers.
                 # See https://github.com/isi-vista/adam/issues/792 .
                 if not learning_example.perception.is_dynamic():
-                    sub_learner.learn_from(
-                        current_learner_state, observation_num=observation_num
-                    )
+                    sub_learner.learn_from(current_learner_state, offset=offset)
                 current_learner_state = sub_learner.enrich_during_learning(
                     current_learner_state
                 )
@@ -146,9 +138,7 @@ class IntegratedTemplateLearner(
             )
 
             if self.functional_learner:
-                self.functional_learner.learn_from(
-                    current_learner_state, observation_num=observation_num
-                )
+                self.functional_learner.learn_from(current_learner_state, offset=offset)
 
         # Engage generics learner if the utterance has a plural marker and isn't recognized
         if self.generics_learner and self.is_mass_noun(learning_example.linguistic_description):

@@ -2,12 +2,15 @@
 This contains methods that create common situation templates.
 """
 from typing import Iterable
-
+from adam.ontology.phase1_spatial_relations import SpatialPath, VIA
 from adam.curriculum.curriculum_utils import GROUND_OBJECT_TEMPLATE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     strictly_above,
+    negate,
+    on,
     AGENT,
+    DISTAL,
     FLY,
     bigger_than,
     JUMP_INITIAL_SUPPORTER_AUX,
@@ -18,6 +21,7 @@ from adam.ontology.phase1_ontology import (
     has,
     GO,
     near,
+    inside,
 )
 from adam.ontology.phase1_spatial_relations import (
     INTERIOR,
@@ -26,7 +30,6 @@ from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
     GRAVITATIONAL_DOWN,
     PROXIMAL,
-    DISTAL,
 )
 from adam.relation import flatten_relations
 from adam.situation import Action
@@ -55,7 +58,7 @@ def _go_in_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_object, agent)),
-        after_action_relations=[near(agent, goal_object)],
+        after_action_relations=[inside(agent, goal_object)],
     )
 
 
@@ -87,7 +90,7 @@ def _go_under_template(
     goal_object: TemplateObjectVariable,
     background: Iterable[TemplateObjectVariable],
     *,
-    is_distal: bool,
+    is_distal: bool,  # pylint:disable=unused-argument
 ) -> Phase1SituationTemplate:
     return Phase1SituationTemplate(
         f"go_under-{agent.handle}-under-{goal_object.handle}",
@@ -101,15 +104,18 @@ def _go_under_template(
                     (
                         GOAL,
                         Region(
-                            goal_object,
-                            distance=DISTAL if is_distal else PROXIMAL,
-                            direction=GRAVITATIONAL_DOWN,
+                            goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN
                         ),
                     ),
                 ],
             )
         ],
-        after_action_relations=[near(agent, goal_object)],
+        before_action_relations=[negate(on(goal_object, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(goal_object, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_object, GROUND_OBJECT_TEMPLATE)),
+            near(agent, goal_object),
+        ],
         constraining_relations=flatten_relations(bigger_than(goal_object, agent)),
     )
 
@@ -223,13 +229,30 @@ def _jump_over_template(
                 JUMP,
                 argument_roles_to_fillers=[(AGENT, agent)],
                 during=DuringAction(
-                    at_some_point=flatten_relations(strictly_above(agent, object_in_path))
+                    at_some_point=flatten_relations(
+                        strictly_above(agent, object_in_path)
+                    ),
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=VIA,
+                                reference_source_object=Region(
+                                    object_in_path,
+                                    direction=GRAVITATIONAL_UP,
+                                    distance=DISTAL,
+                                ),
+                                reference_destination_object=GROUND_OBJECT_TEMPLATE,
+                            ),
+                        )
+                    ],
                 ),
                 auxiliary_variable_bindings=[
                     (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
                 ],
             )
         ],
+        asserted_always_relations=[negate(on(agent, GROUND_OBJECT_TEMPLATE))],
         constraining_relations=flatten_relations(bigger_than(agent, object_in_path)),
     )
 
@@ -275,5 +298,8 @@ def _fly_under_template(
                 ),
             )
         ],
+        asserted_always_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        before_action_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
         constraining_relations=flatten_relations(bigger_than(object_in_path, agent)),
     )

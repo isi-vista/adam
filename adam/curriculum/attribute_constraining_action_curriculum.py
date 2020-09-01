@@ -45,6 +45,7 @@ def make_human_eat_curriculum(
             max_to_sample=num_samples if num_samples else 5,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -69,6 +70,7 @@ def make_animal_eat_curriculum(
             max_to_sample=num_samples if num_samples else 5,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -100,6 +102,7 @@ def make_german_eat_test_curriculum(
                     max_to_sample=num_samples if num_samples else 5,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),

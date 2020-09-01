@@ -3,7 +3,18 @@ import logging
 from attr.validators import instance_of
 from abc import ABC, abstractmethod
 
-from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
+from typing import (
+    AbstractSet,
+    Iterable,
+    List,
+    Mapping,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    Set,
+    Optional,
+)
 
 from more_itertools import one
 
@@ -14,10 +25,7 @@ from adam.learner.alignments import (
     PerceptionSemanticAlignment,
 )
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_utils import (
-    pattern_match_to_description,
-    pattern_match_to_semantic_node,
-)
+from adam.learner.learner_utils import pattern_match_to_description
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
     replace_match_root_with_object_semantic_node,
@@ -63,20 +71,14 @@ class AbstractTemplateLearner(
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
-        if observation_num >= 0:
-            logging.info(
-                "Observation %s: %s",
-                observation_num,
-                learning_example.linguistic_description.as_token_string(),
-            )
-        else:
-            logging.info(
-                "Observation %s: %s",
-                self._observation_num,
-                learning_example.linguistic_description.as_token_string(),
-            )
+
+        logging.info(
+            "Observation %s: %s",
+            self._observation_num + offset,
+            learning_example.linguistic_description.as_token_string(),
+        )
         self._observation_num += 1
 
         self._assert_valid_input(learning_example)
@@ -274,20 +276,13 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
-        if observation_num >= 0:
-            logging.info(
-                "Observation %s: %s",
-                observation_num,
-                language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
-            )
-        else:
-            logging.info(
-                "Observation %s: %s",
-                self._observation_num,
-                language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
-            )
+        logging.info(
+            "Observation %s: %s",
+            self._observation_num + offset,
+            language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
+        )
 
         self._observation_num += 1
 
@@ -317,6 +312,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         ) = self._enrich_common(
             language_perception_semantic_alignment.perception_semantic_alignment
         )
+        # we try to learn from the given instance
         return LanguagePerceptionSemanticAlignment(
             # We need to link the things we found to the language
             # so later learning stages can (a) know they are already covered
@@ -359,6 +355,18 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         Allows a learner to do specific enrichment post-processing if needed
         """
 
+    @abstractmethod
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Optional[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        """
+        Try to match our model of the semantics to the perception graph
+        """
+
     def _enrich_common(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> Tuple[PerceptionSemanticAlignment, AbstractSet[SemanticNode]]:
@@ -383,27 +391,24 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         def match_template(
             *, concept: Concept, pattern: PerceptionGraphTemplate, score: float
         ) -> None:
-            # try to see if (our model of) its semantics is present in the situation.
-            matcher = pattern.graph_pattern.matcher(
-                preprocessed_perception_graph,
-                match_mode=MatchMode.NON_OBJECT,
-                # debug_callback=self._debug_callback,
+            rtrn = self._match_template(
+                concept=concept,
+                pattern=pattern,
+                perception_graph=preprocessed_perception_graph,
             )
-            for match in matcher.matches(use_lookahead_pruning=True):
-                # if there is a match, use that match to describe the situation.
-                semantic_node_for_match = pattern_match_to_semantic_node(
-                    concept=concept, pattern=pattern, match=match
-                )
+            # Its possible there is no match for the template in the graph
+            # So we handle a None return here
+            if rtrn:
+                (match, semantic_node_for_match) = rtrn
                 match_to_score.append((semantic_node_for_match, score))
                 # We want to replace object matches with their semantic nodes,
                 # but we don't want to alter the graph while matching it,
                 # so we accumulate these to replace later.
                 if isinstance(concept, ObjectConcept):
                     matched_objects.append((semantic_node_for_match, match))
-                # A template only has to match once; we don't care about finding additional matches.
-                return
 
-        # For each template whose semantics we are certain of (=have been added to the lexicon)
+            # For each template whose semantics we are certain of (=have been added to the lexicon)
+
         for (concept, graph_pattern, score) in self._primary_templates():
             check_state(isinstance(graph_pattern, PerceptionGraphTemplate))
             if (

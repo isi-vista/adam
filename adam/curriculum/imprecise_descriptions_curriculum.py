@@ -1,9 +1,10 @@
 from itertools import chain
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Iterable
 from immutablecollections import immutableset
 from more_itertools import flatten
 from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
+from adam.ontology import OntologyNode
 from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     PHASE1_CHOOSER_FACTORY,
@@ -12,6 +13,9 @@ from adam.curriculum.curriculum_utils import (
     learner_template_factory,
     make_noise_objects,
 )
+from adam.language_specific import MASS_NOUN
+from adam.language.dependency.universal_dependencies import NOUN
+from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.curriculum.phase1_curriculum import (
     make_pass_template,
@@ -34,7 +38,6 @@ from adam.curriculum.phase1_curriculum import (
 )
 from adam.language_specific.english.english_language_generator import (
     USE_ADVERBIAL_PATH_MODIFIER,
-    USE_VERTICAL_MODIFIERS,
 )
 from adam.ontology import THING
 from adam.ontology.phase1_ontology import (
@@ -68,6 +71,8 @@ from adam.ontology.phase1_ontology import (
     TABLE,
     THEME,
     SPIN,
+    HEAD,
+    HAND,
 )
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -76,72 +81,30 @@ from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
     Phase1SituationTemplate,
 )
+from adam.language_specific.english.english_phase_1_lexicon import (
+    GAILA_PHASE_1_ENGLISH_LEXICON,
+)
 
 BOOL_SET = immutableset([True, False])
 
-
-def _big_x_template(
-    theme: TemplateObjectVariable, noise_objects: Optional[int]
-) -> Phase1SituationTemplate:
-    learner = learner_template_factory()
-    computed_background = [learner]
-    computed_background.extend(make_noise_objects(noise_objects))
-    return Phase1SituationTemplate(
-        f"big-{theme.handle}",
-        salient_object_variables=[theme],
-        background_object_variables=computed_background,
-        asserted_always_relations=[bigger_than(theme, learner)],
-    )
-
-
-def _little_x_template(
-    theme: TemplateObjectVariable, noise_objects: Optional[int]
-) -> Phase1SituationTemplate:
-    learner = learner_template_factory()
-    computed_background = [learner]
-    computed_background.extend(make_noise_objects(noise_objects))
-    return Phase1SituationTemplate(
-        f"small-{theme.handle}",
-        salient_object_variables=[theme],
-        background_object_variables=computed_background,
-        asserted_always_relations=[bigger_than(learner, theme)],
-    )
-
-
-def _tall_x_template(
-    theme: TemplateObjectVariable, noise_objects: Optional[int]
-) -> Phase1SituationTemplate:
-    learner = learner_template_factory()
-    computed_background = [learner]
-    computed_background.extend(make_noise_objects(noise_objects))
-
-    # TODO: This difference should be an axis size but we can't yet
-    # implement that. See: https://github.com/isi-vista/adam/issues/832
-    return Phase1SituationTemplate(
-        f"tall-{theme.handle}",
-        salient_object_variables=[theme],
-        background_object_variables=computed_background,
-        asserted_always_relations=[bigger_than(theme, learner)],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
-    )
-
-
-def _short_x_template(
-    theme: TemplateObjectVariable, noise_objects: Optional[int]
-) -> Phase1SituationTemplate:
-    learner = learner_template_factory()
-    computed_background = [learner]
-    computed_background.extend(make_noise_objects(noise_objects))
-
-    # TODO: This difference should be an axis size but we can't yet
-    # implement that. See: https://github.com/isi-vista/adam/issues/832
-    return Phase1SituationTemplate(
-        f"tall-{theme.handle}",
-        salient_object_variables=[theme],
-        background_object_variables=computed_background,
-        asserted_always_relations=[bigger_than(learner, theme)],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
-    )
+# easy hack to get all nouns that aren't recognized particulars, body parts, or mass nouns -- i.e. the ones that can be big or small
+NODES_TO_CHOOSE_FROM = [
+    x[0]
+    for x in GAILA_PHASE_1_ENGLISH_LEXICON._ontology_node_to_word.items()  # pylint:disable=protected-access
+    if x[1].part_of_speech in [NOUN]
+    and MASS_NOUN not in x[1].properties
+    and x[0] not in [BABY, HEAD, HAND]
+]
+# differentiate between the nodes that can be modified with tall and those that can't
+TALL_ELIGIBLE_NODES = [
+    node
+    for node in NODES_TO_CHOOSE_FROM
+    if gravitationally_aligned_axis_is_largest(node, GAILA_PHASE_1_ONTOLOGY)
+]
+BIG_ELIGIBLE_NODES = [
+    node for node in NODES_TO_CHOOSE_FROM if node not in TALL_ELIGIBLE_NODES
+]
+CHOOSER = PHASE1_CHOOSER_FACTORY()
 
 
 def make_eat_big_small_curriculum(  # pylint: disable=unused-argument
@@ -170,7 +133,12 @@ def make_eat_big_small_curriculum(  # pylint: disable=unused-argument
         for _object in [COOKIE, WATERMELON]:
             object_to_eat = SituationObject.instantiate_ontology_node(
                 ontology_node=_object,
-                debug_handle=_object.handle,
+                debug_handle=_object.handle + "_salient",
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+            object_to_eat2 = SituationObject.instantiate_ontology_node(
+                ontology_node=_object,
+                debug_handle=_object.handle + "_non_salient",
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             )
             other_edibles = [
@@ -183,15 +151,16 @@ def make_eat_big_small_curriculum(  # pylint: disable=unused-argument
             ]
             computed_background = [learner]
             computed_background.extend(other_edibles)
+            computed_background.extend([object_to_eat2])
 
             # Big
             for relation_list in [
                 [
-                    bigger_than(object_to_eat, learner),
+                    bigger_than(object_to_eat, object_to_eat2),
                     bigger_than(object_to_eat, other_edibles),
                 ],
                 [
-                    bigger_than(learner, object_to_eat),
+                    bigger_than(object_to_eat2, object_to_eat),
                     bigger_than(other_edibles, object_to_eat),
                 ],
             ]:
@@ -218,9 +187,82 @@ def make_eat_big_small_curriculum(  # pylint: disable=unused-argument
     )
 
 
-# TODO: Refactor this curriculum
-# See: https://github.com/isi-vista/adam/issues/898
-def make_spin_tall_short_curriculum(  # pylint: disable=unused-argument
+def _tall_x_template(
+    background: Iterable[TemplateObjectVariable],
+    random_node: OntologyNode = CHOOSER.choice(TALL_ELIGIBLE_NODES),
+) -> Phase1SituationTemplate:
+    # hack to pick a random node that will yield "tall"
+    theme1 = standard_object("theme1", random_node)
+    theme2 = standard_object("theme2", random_node)
+    computed_background = [theme2]
+    computed_background.extend(background)
+    return Phase1SituationTemplate(
+        f"tall-{theme1.handle}",
+        salient_object_variables=[theme1],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme1, theme2)],
+        gazed_objects=[theme1],
+    )
+
+
+def _big_x_template(
+    background: Iterable[TemplateObjectVariable],
+    random_node: OntologyNode = CHOOSER.choice(BIG_ELIGIBLE_NODES),
+) -> Phase1SituationTemplate:
+    # hack to pick a random node that will yield "big"
+    theme1 = standard_object("theme1", random_node)
+    theme2 = standard_object("theme2", random_node)
+    computed_background = [theme2, learner_template_factory()]
+    computed_background.extend(background)
+    return Phase1SituationTemplate(
+        f"big-{theme1.handle}",
+        salient_object_variables=[theme1],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme1, theme2)],
+        gazed_objects=[theme1],
+    )
+
+
+def _little_x_template(
+    background: Iterable[TemplateObjectVariable],
+    random_node: OntologyNode = CHOOSER.choice(BIG_ELIGIBLE_NODES),
+) -> Phase1SituationTemplate:
+    # hack to pick a random node that will yield "little"
+    theme1 = standard_object("theme1", random_node)
+    theme2 = standard_object("theme2", random_node)
+    computed_background = [theme2]
+    computed_background.extend(background)
+    return Phase1SituationTemplate(
+        f"little-{theme1.handle}",
+        salient_object_variables=[theme1],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme2, theme1)],
+        gazed_objects=[theme1],
+    )
+
+
+def _short_x_template(
+    background: Iterable[TemplateObjectVariable],
+    random_node: OntologyNode = CHOOSER.choice(TALL_ELIGIBLE_NODES),
+) -> Phase1SituationTemplate:
+    # hack to pick a random node that will yield "short"
+    theme1 = standard_object("theme1", random_node)
+    theme2 = standard_object("theme2", random_node)
+    computed_background = [theme2]
+    computed_background.extend(background)
+    return Phase1SituationTemplate(
+        f"short-{theme1.handle}",
+        salient_object_variables=[theme1],
+        background_object_variables=computed_background,
+        asserted_always_relations=[bigger_than(theme2, theme1)],
+        gazed_objects=[theme1],
+    )
+
+
+def make_spin_tall_short_curriculum(
+    # TODO: Refactor this curriculum
+    # See: https://github.com/isi-vista/adam/issues/898
+    # pylint: disable=unused-argument
     num_samples: Optional[int],
     noise_objects: Optional[int],
     language_generator: LanguageGenerator[
@@ -245,7 +287,12 @@ def make_spin_tall_short_curriculum(  # pylint: disable=unused-argument
         for _object in [CHAIR, TABLE]:
             theme = SituationObject.instantiate_ontology_node(
                 ontology_node=_object,
-                debug_handle=_object.handle,
+                debug_handle=_object.handle + "_salient",
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+            )
+            theme2 = SituationObject.instantiate_ontology_node(
+                ontology_node=_object,
+                debug_handle=_object.handle + "_non_salient",
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             )
             other_objs = [
@@ -258,11 +305,12 @@ def make_spin_tall_short_curriculum(  # pylint: disable=unused-argument
             ]
             computed_background = [learner]
             computed_background.extend(other_objs)
+            computed_background.extend([theme2])
 
             # Tall and short
             for relation_list in [
-                [bigger_than(learner, theme), bigger_than(other_objs, theme)],
-                [bigger_than(theme, learner), bigger_than(theme, other_objs)],
+                [bigger_than(theme2, theme), bigger_than(other_objs, theme)],
+                [bigger_than(theme, theme2), bigger_than(theme, other_objs)],
             ]:
                 situations.append(
                     HighLevelSemanticsSituation(
@@ -279,7 +327,6 @@ def make_spin_tall_short_curriculum(  # pylint: disable=unused-argument
                             )
                         ],
                         always_relations=relation_list,
-                        syntax_hints=[USE_VERTICAL_MODIFIERS],
                     )
                 )
 
@@ -295,31 +342,51 @@ def make_imprecise_size_descriptions(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    theme_0 = standard_object("theme", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
-    theme_1 = standard_object(
-        "theme-thing", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    # we choose random tall and short nodes here
+    random_tall_nodes = (
+        [CHOOSER.choice(TALL_ELIGIBLE_NODES) for i in range(num_samples)]
+        if num_samples
+        else [CHOOSER.choice(TALL_ELIGIBLE_NODES) for i in range(5)]
     )
+    random_big_nodes = (
+        [CHOOSER.choice(BIG_ELIGIBLE_NODES) for i in range(num_samples)]
+        if num_samples
+        else [CHOOSER.choice(BIG_ELIGIBLE_NODES) for i in range(5)]
+    )
+
+    background = make_noise_objects(noise_objects)
 
     return phase1_instances(
         "Imprecise Size",
         chain(
             flatten(
+                # generate big and small for all eligible nodes
                 [
                     sampled(
-                        template(theme, noise_objects),
+                        template(random_node=node, background=background),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
+                        block_multiple_of_the_same_type=False,
                         max_to_sample=num_samples if num_samples else 5,
                     )
-                    for template in [
-                        _big_x_template,
-                        _little_x_template,
-                        _tall_x_template,
-                        _short_x_template,
-                    ]
-                    for theme in [theme_0, theme_1]
+                    for node in random_big_nodes
+                    for template in [_big_x_template, _little_x_template]
                 ]
-            )
+            ),
+            flatten(
+                # generate tall and short for all eligible nodes
+                [
+                    sampled(
+                        template(random_node=node, background=background),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=1,
+                        block_multiple_of_the_same_type=False,
+                    )
+                    for node in random_tall_nodes
+                    for template in [_tall_x_template, _short_x_template]
+                ]
+            ),
         ),
         language_generator=language_generator,
     )
@@ -363,6 +430,7 @@ def make_throw_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -379,6 +447,7 @@ def make_throw_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -396,6 +465,7 @@ def make_throw_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
                 for is_up in BOOL_SET
@@ -413,6 +483,7 @@ def make_throw_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -457,6 +528,7 @@ def make_move_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -473,6 +545,7 @@ def make_move_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -514,6 +587,7 @@ def make_jump_imprecise_temporal_descriptions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for use_adverbial_path_modifier in (True, False)
                     for is_fast in BOOL_SET
@@ -553,6 +627,7 @@ def make_take_grab_subtle_verb_distinction(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
@@ -611,6 +686,7 @@ def make_push_shove_subtle_verb_distinctions(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in templates
                 ]
@@ -654,6 +730,7 @@ def make_walk_run_subtle_verb_distinction(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for use_adverbial_path_modifier in BOOL_SET
                     for hard_force in BOOL_SET
@@ -694,6 +771,7 @@ def make_pass_toss_subtle_verb_distinction(
                             else [SOFT_FORCE],
                             background=background,
                         ),
+                        block_multiple_of_the_same_type=True,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 5,
@@ -737,6 +815,7 @@ def make_roll_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -753,6 +832,7 @@ def make_roll_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -769,6 +849,7 @@ def make_roll_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),
@@ -804,6 +885,7 @@ def make_fly_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_up in BOOL_SET
                 for syntax_hints in syntax_hints_options
@@ -841,6 +923,7 @@ def make_fall_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for object_ends_up_on_ground in BOOL_SET
                 for syntax_hints in syntax_hints_options
@@ -857,6 +940,7 @@ def make_fall_imprecise_temporal_descriptions(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for is_fast in BOOL_SET
             ),

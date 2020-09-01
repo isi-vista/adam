@@ -111,7 +111,7 @@ class PerceptionGraphFromObjectRecognizer:
             self.description_to_matched_object_node.values()
         )
         if matched_object_nodes != described_matched_object_nodes:
-            raise RuntimeError(
+            logging.warning(
                 f"A matched object node should be present in the graph"
                 f"if and only if it is described. Got matches objects "
                 f"{matched_object_nodes} but those described were {described_matched_object_nodes}"
@@ -319,7 +319,9 @@ class ObjectRecognizer:
                     matched_object_node, graph_to_return, pattern_match
                 )
 
-        candidate_object_subgraphs = extract_candidate_objects(perception_graph)
+        candidate_object_subgraphs = extract_candidate_objects(
+            perception_graph, sort_by_increasing_size=True
+        )
 
         for candidate_object_graph in candidate_object_subgraphs:
             num_object_nodes = candidate_object_graph.count_nodes_matching(
@@ -333,7 +335,6 @@ class ObjectRecognizer:
                 # and we can bail out early.
                 if num_object_nodes != self._concept_to_num_subobjects[concept]:
                     continue
-
                 with Timer(factor=1000) as t:
                     matcher = pattern.matcher(
                         candidate_object_graph, match_mode=MatchMode.OBJECT
@@ -374,6 +375,7 @@ class ObjectRecognizer:
                     break
                 else:
                     cumulative_millis_in_failed_matches_ms += t.elapsed
+
         if object_nodes:
             logging.info(
                 "Object recognizer recognized: %s",
@@ -539,7 +541,7 @@ class ObjectRecognizer:
 
 
 def extract_candidate_objects(
-    whole_scene_perception_graph: PerceptionGraph
+    whole_scene_perception_graph: PerceptionGraph, sort_by_increasing_size: bool
 ) -> Sequence[PerceptionGraph]:
 
     """
@@ -638,6 +640,13 @@ def extract_candidate_objects(
             whole_scene_perception_graph.subgraph_by_nodes(
                 immutableset(candidate_subgraph_nodes)
             )
+        )
+    # we sort the candidate objects' graphs from least to greatest number of nodes in the graph. This allows us to match objects
+    # with less cost before objects with greater cost, and also causes us to match gazed objects after non-gazed objects, which is the
+    # order needed to ensure that gaze is assigned to the correct object if there are multiple in the scene
+    if sort_by_increasing_size:
+        candidate_objects.sort(
+            key=lambda x: len(x._graph.node)  # pylint:disable=protected-access
         )
     return candidate_objects
 

@@ -18,7 +18,10 @@ from adam.learner.alignments import (
     PerceptionSemanticAlignment,
 )
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_utils import assert_static_situation
+from adam.learner.learner_utils import (
+    assert_static_situation,
+    candidate_object_hypotheses,
+)
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
@@ -27,6 +30,7 @@ from adam.learner.object_recognizer import (
     replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
+from adam.learner.propose_but_verify import AbstractProposeButVerifyLearner
 from adam.learner.pursuit import (
     AbstractPursuitLearner,
     HypothesisLogger,
@@ -57,7 +61,9 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
     PerceptionGraphPatternMatch,
+    GraphLogger,
 )
+from adam.random_utils import RandomChooser
 from adam.semantics import (
     Concept,
     ObjectConcept,
@@ -301,6 +307,7 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
                 perception_as_digraph, all_object_perception_nodes + other_nodes
             )
             meanings.append(PerceptionGraph(generated_subgraph))
+
         logging.info(f"Got {len(meanings)} candidate meanings")
         return meanings
 
@@ -490,7 +497,8 @@ class SubsetObjectLearnerNew(
                 template_variable_to_pattern_node=immutabledict(),
             )
             for candidate_object in extract_candidate_objects(
-                learning_state.perception_semantic_alignment.perception_graph
+                learning_state.perception_semantic_alignment.perception_graph,
+                sort_by_increasing_size=False,
             )
         )
 
@@ -529,6 +537,58 @@ class SubsetObjectLearnerNew(
         )
 
 
+@attrs(slots=True)
+class ProposeButVerifyObjectLearner(
+    AbstractObjectTemplateLearnerNew, AbstractProposeButVerifyLearner
+):
+    """
+    An implementation of `LanguageLearner` for Propose but Verify learning based approach for single object detection.
+    """
+
+    @staticmethod
+    def from_params(
+        params: Parameters, *, graph_logger: Optional[GraphLogger] = None
+    ) -> "ProposeButVerifyObjectLearner":
+        rng = RandomChooser.for_seed(params.optional_integer("random_seed", default=0))
+
+        return ProposeButVerifyObjectLearner(
+            graph_match_confirmation_threshold=params.floating_point(
+                "graph_match_confirmation_threshold", default=0.8
+            ),
+            graph_logger=graph_logger,
+            rng=rng,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            language_mode=params.enum(
+                "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+            ),
+        )
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        logging.info(
+            "Logging %s hypotheses to %s",
+            len(self._concept_to_hypotheses),
+            log_output_path,
+        )
+        for (concept, hypotheses) in self._concept_to_hypotheses.items():
+            for (i, hypothesis) in enumerate(hypotheses):
+                hypothesis.render_to_file(
+                    concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
+                )
+
+    def _hypotheses_from_perception(
+        self,
+        learning_state: LanguagePerceptionSemanticAlignment,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+    ) -> AbstractSet[PerceptionGraphTemplate]:
+        potential_meanings = candidate_object_hypotheses(learning_state)
+
+        # Pick a random meaning for our hypothesis (Independent of any prior data)
+        return immutableset([self._rng.choice(potential_meanings)])
+
+    def _new_concept(self, debug_string: str) -> Concept:
+        return ObjectConcept(debug_string)
+
+
 @attrs(frozen=True, kw_only=True)
 class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     _object_recognizer: ObjectRecognizer = attrib(validator=instance_of(ObjectRecognizer))
@@ -542,7 +602,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         # The object recognizer doesn't learn anything.
         # It just recognizes predefined object patterns.
@@ -556,7 +616,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         new_nodes = []
         perception_graph_after_processing = perception_graph_after_matching
         for candiate_object_graph in extract_candidate_objects(
-            perception_graph_after_matching
+            perception_graph_after_matching, sort_by_increasing_size=False
         ):
             fake_pattern_graph = PerceptionGraphPattern.from_graph(candiate_object_graph)
             fake_object_semantic_node = ObjectSemanticNode(
@@ -685,7 +745,8 @@ class PursuitObjectLearnerNew(
                 template_variable_to_pattern_node=immutabledict(),
             )
             for candidate_object in extract_candidate_objects(
-                learning_state.perception_semantic_alignment.perception_graph
+                learning_state.perception_semantic_alignment.perception_graph,
+                sort_by_increasing_size=False,
             )
         )
 

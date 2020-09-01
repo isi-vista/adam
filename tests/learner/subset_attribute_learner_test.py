@@ -114,6 +114,7 @@ def test_subset_color_attribute(
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=2,
+                            block_multiple_of_the_same_type=True,
                         )
                         for template in templates
                     ]
@@ -129,6 +130,7 @@ def test_subset_color_attribute(
             chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -189,6 +191,7 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 chooser=PHASE1_CHOOSER_FACTORY(),
                 max_to_sample=5,
+                block_multiple_of_the_same_type=True,
             )
             for person in [MOM, DAD, BABY]
         ),
@@ -208,6 +211,7 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
                 inanimate_object,
                 syntax_hints=[IGNORE_HAS_AS_VERB],
             ),
+            block_multiple_of_the_same_type=True,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             max_to_sample=1,
@@ -278,6 +282,7 @@ def test_your_attribute_learner(language_mode, learner):
                 background=[person_0],
                 syntax_hints=[IGNORE_HAS_AS_VERB],
             ),
+            block_multiple_of_the_same_type=True,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
             max_to_sample=5,
@@ -294,6 +299,7 @@ def test_your_attribute_learner(language_mode, learner):
                 background=[person_0],
                 syntax_hints=[IGNORE_HAS_AS_VERB],
             ),
+            block_multiple_of_the_same_type=True,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             max_to_sample=1,

@@ -124,6 +124,7 @@ def _make_sit_on_chair_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -180,6 +181,7 @@ def _make_drink_cups_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -218,6 +220,7 @@ def _make_put_in_curriculum(
             ontology=GAILA_PHASE_1_ONTOLOGY,
             chooser=PHASE1_CHOOSER_FACTORY(),
             max_to_sample=num_samples if num_samples else 20,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -259,6 +262,7 @@ def build_gaila_m8_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    use_path_instead_of_goal: bool = False,
 ) -> Sequence[Phase1InstanceGroup]:
     return list(
         chain(
@@ -297,7 +301,10 @@ def build_gaila_m8_curriculum(
                 )
             ),  # Imprecise descriptions
             make_verb_with_dynamic_prepositions_curriculum(
-                num_samples, num_noise_objects, language_generator
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                use_path_instead_of_goal,
             ),  # Dynamic prepositions
             make_prepositions_curriculum(
                 num_samples, num_noise_objects, language_generator
@@ -317,13 +324,11 @@ def build_gaila_m13_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    use_path_instead_of_goal: bool = False,
 ) -> Sequence[Phase1InstanceGroup]:
     return list(
         chain(
             build_gaila_phase1_object_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
-            build_gaila_plurals_curriculum(
                 num_samples, num_noise_objects, language_generator
             ),
             build_gaila_phase1_attribute_curriculum(
@@ -344,7 +349,10 @@ def build_gaila_m13_curriculum(
                 )
             ),
             make_verb_with_dynamic_prepositions_curriculum(
-                num_samples, num_noise_objects, language_generator
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                use_path_instead_of_goal,
             ),
             list(
                 make_subtle_verb_distinctions_curriculum(
@@ -352,6 +360,9 @@ def build_gaila_m13_curriculum(
                 )
             ),
             build_functionally_defined_objects_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_plurals_curriculum(
                 num_samples, num_noise_objects, language_generator
             ),
         )
@@ -364,11 +375,14 @@ def build_m13_shuffled_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    use_path_instead_of_goal: bool = False,
 ) -> Sequence[Phase1InstanceGroup]:
 
     random.seed(0)
     situations = flatten(
-        build_gaila_m13_curriculum(num_samples, num_noise_objects, language_generator)
+        build_gaila_m13_curriculum(
+            num_samples, num_noise_objects, language_generator, use_path_instead_of_goal
+        )
     )
     random.shuffle(situations)
 

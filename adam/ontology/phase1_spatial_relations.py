@@ -199,6 +199,38 @@ class Region(Generic[ReferenceObjectT]):
                     object_accumulator
                 )
 
+    def unify(
+        self, other_region: "Region[ReferenceObjectT]"
+    ) -> "Region[ReferenceObjectT]":
+        """
+        Unifies two regions together if the reference object is the same.
+        """
+        if self.reference_object != other_region.reference_object:
+            raise RuntimeError(
+                f"Can't unify regions with different reference objects. Got {self} and {other_region}"
+            )
+        if (
+            self.distance
+            and other_region.distance
+            and self.distance != other_region.distance
+        ):
+            raise RuntimeError(
+                f"Can't unify regions with different distances. Got {self} and {other_region}"
+            )
+        if (
+            self.direction
+            and other_region.direction
+            and self.direction != other_region.direction
+        ):
+            raise RuntimeError(
+                f"Can't unify regions with different directions. Got {self} and {other_region}"
+            )
+        return Region(
+            reference_object=self.reference_object,
+            distance=self.distance if self.distance else other_region.distance,
+            direction=self.direction if self.direction else other_region.direction,
+        )
+
     def __attrs_post_init__(self) -> None:
         check_arg(
             self.distance or self.direction,
@@ -231,7 +263,10 @@ class SpatialPath(Generic[ReferenceObjectT]):
     operator: Optional[PathOperator] = attrib(
         validator=optional(instance_of(PathOperator))
     )
-    reference_object: Union[ReferenceObjectT, Region[ReferenceObjectT]] = attrib()
+    reference_source_object: Union[ReferenceObjectT, Region[ReferenceObjectT]] = attrib()
+    reference_destination_object: Union[
+        ReferenceObjectT, Region[ReferenceObjectT]
+    ] = attrib()
     reference_axis: Optional[Union[GeonAxis, AxisFunction[ReferenceObjectT]]] = attrib(
         # Ignored due to https://github.com/python/mypy/issues/5374
         validator=optional(instance_of(AxisFunction)),
@@ -251,14 +286,15 @@ class SpatialPath(Generic[ReferenceObjectT]):
         #  (e.g. for rotation without translation)
         # weird conditional to make mypy happy
         if (
-            not self.reference_object
+            (not self.reference_source_object or not self.reference_destination_object)
             and not self.reference_axis
             and not self.orientation_changed
         ):
             raise RuntimeError(
-                "A path must have at least one of a reference objects, "
+                "A path must have both reference objects, "
                 "a reference axis, or an orientation change"
             )
+
         if self.reference_axis:
             check_arg(isinstance(self.reference_axis, (GeonAxis, AxisFunction)))
 
@@ -277,9 +313,16 @@ class SpatialPath(Generic[ReferenceObjectT]):
 
         return SpatialPath(
             self.operator,
-            self.reference_object.copy_remapping_objects(object_mapping)
-            if isinstance(self.reference_object, Region)
-            else object_mapping[self.reference_object],
+            reference_source_object=self.reference_source_object.copy_remapping_objects(
+                object_mapping
+            )
+            if isinstance(self.reference_source_object, Region)
+            else object_mapping[self.reference_source_object],
+            reference_destination_object=self.reference_destination_object.copy_remapping_objects(
+                object_mapping
+            )
+            if isinstance(self.reference_destination_object, Region)
+            else object_mapping[self.reference_destination_object],
             reference_axis=new_reference_axis,
             orientation_changed=self.orientation_changed,
             properties=self.properties,
@@ -291,20 +334,50 @@ class SpatialPath(Generic[ReferenceObjectT]):
         r"""
         Adds all objects referenced by this `Region` to *object_accumulator*.
         """
-        if isinstance(self.reference_object, Region):
-            self.reference_object.accumulate_referenced_objects(object_accumulator)
+        if isinstance(self.reference_source_object, Region):
+            self.reference_source_object.accumulate_referenced_objects(object_accumulator)
         else:
-            object_accumulator.append(self.reference_object)
+            object_accumulator.append(self.reference_source_object)
+        if isinstance(self.reference_destination_object, Region):
+            self.reference_destination_object.accumulate_referenced_objects(
+                object_accumulator
+            )
+        else:
+            object_accumulator.append(self.reference_destination_object)
         if self.reference_axis and not isinstance(self.reference_axis, GeonAxis):
             self.reference_axis.accumulate_referenced_objects(object_accumulator)
 
     def unify(
         self, other_path: "SpatialPath[ReferenceObjectT]", *, override: bool = False
     ) -> "SpatialPath[ReferenceObjectT]":
-        if self.reference_object != other_path.reference_object:
-            raise RuntimeError(
-                f"Can not unify two spatial paths with different reference objects, {self} and {other_path}"
+        output_reference_source = None
+        output_reference_destination = None
+        if isinstance(self.reference_source_object, Region) and isinstance(
+            other_path.reference_source_object, Region
+        ):
+            output_reference_source = self.reference_source_object.unify(
+                other_path.reference_source_object
             )
+        else:
+            if self.reference_source_object != other_path.reference_source_object:
+                raise RuntimeError(
+                    f"Can not unify two spatial paths with different reference source objects, {self} and {other_path}"
+                )
+
+        if isinstance(self.reference_destination_object, Region) and isinstance(
+            other_path.reference_destination_object, Region
+        ):
+            output_reference_destination = self.reference_destination_object.unify(
+                other_path.reference_destination_object
+            )
+        else:
+            if (
+                self.reference_destination_object
+                != other_path.reference_destination_object
+            ):
+                raise RuntimeError(
+                    f"Can not unify two spatial paths with different reference destination objects, {self} and {other_path}"
+                )
 
         if self.operator and other_path.operator and not override:
             if self.operator != other_path.operator:
@@ -326,7 +399,12 @@ class SpatialPath(Generic[ReferenceObjectT]):
 
         return SpatialPath(
             operator=self.operator if self.operator else other_path.operator,
-            reference_object=self.reference_object,
+            reference_source_object=output_reference_source
+            if output_reference_source
+            else self.reference_source_object,
+            reference_destination_object=output_reference_destination
+            if output_reference_destination
+            else self.reference_destination_object,
             reference_axis=self.reference_axis
             if self.reference_axis
             else other_path.reference_axis,
@@ -335,3 +413,7 @@ class SpatialPath(Generic[ReferenceObjectT]):
             else other_path.orientation_changed,
             properties=chain(self.properties, other_path.properties),
         )
+
+    # @reference_destination_object.default
+    # def _assume_dest_is_source(self) -> Union[ReferenceObjectT, Region[ReferenceObjectT]]:
+    #    return self.reference_source_object

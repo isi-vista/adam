@@ -10,6 +10,7 @@ from adam.axes import (
     AxesInfo,
     GRAVITATIONAL_AXIS_FUNCTION,
 )
+from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from adam.language_specific.chinese.chinese_language_generator import (
     PREFER_DITRANSITIVE,
     SimpleRuleBasedChineseLanguageGenerator,
@@ -17,7 +18,6 @@ from adam.language_specific.chinese.chinese_language_generator import (
     IGNORE_HAS_AS_VERB,
     ATTRIBUTES_AS_X_IS_Y,
     IGNORE_GOAL,
-    USE_VERTICAL_MODIFIERS,
     USE_ABOVE_BELOW,
     USE_NEAR,
 )
@@ -1716,7 +1716,8 @@ def test_bird_flies_path_beside():
                             bird,
                             SpatialPath(
                                 VIA,
-                                reference_object=car_region,
+                                reference_source_object=car_region,
+                                reference_destination_object=car_region,
                                 reference_axis=HorizontalAxisOfObject(car, index=0),
                             ),
                         )
@@ -1827,7 +1828,16 @@ def test_sitting_up():
                 argument_roles_to_fillers=[(AGENT, mum)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (mum, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                        (
+                            mum,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
+                            ),
+                        )
                     ]
                 ),
             )
@@ -1851,7 +1861,16 @@ def test_bird_flies_up():
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (bird, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
+                            ),
+                        )
                     ]
                 ),
             )
@@ -1875,7 +1894,14 @@ def test_bird_flies_down():
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (bird, SpatialPath(operator=TOWARD, reference_object=ground))
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
+                        )
                     ]
                 ),
             )
@@ -1900,7 +1926,16 @@ def test_going_up():
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (bird, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
+                            ),
+                        )
                     ]
                 ),
             )
@@ -1923,7 +1958,14 @@ def test_going_down():
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (bird, SpatialPath(operator=TOWARD, reference_object=ground))
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
+                        )
                     ]
                 ),
             )
@@ -1946,7 +1988,16 @@ def test_coming_up():
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (bird, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
+                            ),
+                        )
                     ]
                 ),
             )
@@ -1969,7 +2020,14 @@ def test_coming_down():
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (bird, SpatialPath(operator=TOWARD, reference_object=ground))
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
+                        )
                     ]
                 ),
             )
@@ -2012,7 +2070,14 @@ def test_jump_down():
                 auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (dad, SpatialPath(operator=TOWARD, reference_object=ground))
+                        (
+                            dad,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
+                        )
                     ]
                 ),
             )
@@ -2342,7 +2407,8 @@ def test_dad_moves_towards_cookie():
                             dad,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_object=cookie,
+                                reference_source_object=Region(cookie, distance=DISTAL),
+                                reference_destination_object=cookie,
                                 reference_axis=HorizontalAxisOfObject(dad, 1),
                             ),
                         )
@@ -2375,7 +2441,10 @@ def test_dad_moves_away_from_cookie():
                             dad,
                             SpatialPath(
                                 operator=AWAY_FROM,
-                                reference_object=cookie,
+                                reference_source_object=cookie,
+                                reference_destination_object=Region(
+                                    cookie, distance=DISTAL
+                                ),
                                 reference_axis=HorizontalAxisOfObject(dad, 1),
                             ),
                         )
@@ -2410,7 +2479,8 @@ def test_jump_fast():
                             mum,
                             SpatialPath(
                                 None,
-                                reference_object=situation_object(GROUND),
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[FAST],
                             ),
                         )
@@ -2440,7 +2510,8 @@ def test_I_walk_fast():
                             mum,
                             SpatialPath(
                                 None,
-                                reference_object=situation_object(GROUND),
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[FAST],
                             ),
                         )
@@ -2470,7 +2541,8 @@ def test_I_walk_slowly():
                             mum,
                             SpatialPath(
                                 None,
-                                reference_object=situation_object(GROUND),
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[SLOW],
                             ),
                         )
@@ -2507,50 +2579,56 @@ def test_I_walk_out_of_house():
     assert generated_tokens(situation) == ("wo3", "bu4 sying2", "chu1", "wu1")
 
 
-def test_big_truck():
-    learner = situation_object(LEARNER)
-    truck = situation_object(TRUCK)
+def test_big_truck_updated():
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[truck],
-        always_relations=[(bigger_than(truck, learner))],
+        salient_objects=[truck1],
+        other_objects=[truck2],
+        always_relations=[(bigger_than(truck1, truck2))],
     )
+    assert not gravitationally_aligned_axis_is_largest(TRUCK, GAILA_PHASE_1_ONTOLOGY)
     assert generated_tokens(situation) == ("da4", "ka3 che1")
 
 
-def test_tall_truck():
-    learner = situation_object(LEARNER)
-    truck = situation_object(TRUCK)
+def test_tall_book_updated():
+    book1 = situation_object(BOOK, debug_handle="book1")
+    book2 = situation_object(BOOK, debug_handle="book2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[truck],
-        always_relations=[(bigger_than(truck, learner))],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        salient_objects=[book1],
+        other_objects=[book2],
+        always_relations=[(bigger_than(book1, book2))],
     )
-    assert generated_tokens(situation) == ("gau1 da4", "ka3 che1")
+    assert gravitationally_aligned_axis_is_largest(BOOK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("gau1 da4", "shu1")
 
 
-def test_small_truck():
-    learner = situation_object(LEARNER)
-    truck = situation_object(TRUCK)
+def test_small_truck_updated():
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[truck],
-        always_relations=[(bigger_than(learner, truck))],
+        salient_objects=[truck1],
+        other_objects=[truck2],
+        always_relations=[(bigger_than(truck2, truck1))],
     )
+    assert not gravitationally_aligned_axis_is_largest(TRUCK, GAILA_PHASE_1_ONTOLOGY)
     assert generated_tokens(situation) == ("syau3", "ka3 che1")
 
 
-def test_short_truck():
-    learner = situation_object(LEARNER)
-    truck = situation_object(TRUCK)
+def test_short_book_updated():
+    book1 = situation_object(BOOK, debug_handle="book1")
+    book2 = situation_object(BOOK, debug_handle="book2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[truck],
-        always_relations=[(bigger_than(learner, truck))],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        salient_objects=[book1],
+        other_objects=[book2],
+        always_relations=[(bigger_than(book2, book1))],
     )
-    assert generated_tokens(situation) == ("dwan3", "ka3 che1")
+    assert gravitationally_aligned_axis_is_largest(BOOK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("dwan3", "shu1")
 
 
 # there is no under/below distinction in Chinese
@@ -2638,7 +2716,10 @@ def test_run():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -2665,7 +2746,8 @@ def test_run_fast():
                             mom,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE, FAST],
                             ),
                         )
@@ -2693,7 +2775,8 @@ def test_run_slow():
                             mom,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE, SLOW],
                             ),
                         )
@@ -2725,7 +2808,8 @@ def test_I_run_out_of_car_slowly():
                             dad,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE, SLOW],
                             ),
                         )
@@ -2758,7 +2842,8 @@ def test_dad_slowly_grabs_cookie():
                             dad,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
                                 properties=[HARD_FORCE, SLOW],
                             ),
                         )
@@ -2803,7 +2888,10 @@ def test_i_shove_a_ball_on_a_table_dao():
                         (
                             mum,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -2838,7 +2926,10 @@ def test_i_shove_a_table():
                         (
                             mum,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -2880,7 +2971,8 @@ def test_i_push_table_down_slowly():
                             mum,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_object=situation_object(GROUND),
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[SLOW],
                             ),
                         )
@@ -2915,7 +3007,11 @@ def test_i_throw_ball_down():
                         (
                             mum,
                             SpatialPath(
-                                operator=TOWARD, reference_object=situation_object(GROUND)
+                                operator=TOWARD,
+                                reference_source_object=Region(
+                                    situation_object(GROUND), distance=DISTAL
+                                ),
+                                reference_destination_object=situation_object(GROUND),
                             ),
                         )
                     ]
@@ -2943,7 +3039,12 @@ def test_dad_passes_the_cookie_down_to_me():
                         (
                             dad,
                             SpatialPath(
-                                operator=TOWARD, reference_object=situation_object(GROUND)
+                                operator=TOWARD,
+                                # TODO : fix ground checking in language generator
+                                reference_source_object=Region(
+                                    situation_object(GROUND), distance=DISTAL
+                                ),
+                                reference_destination_object=situation_object(GROUND),
                             ),
                         )
                     ]
@@ -2977,7 +3078,10 @@ def test_toss():
                         (
                             dad,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -3005,7 +3109,10 @@ def test_dad_tosses_the_cookie_up_to_me():
                             dad,
                             SpatialPath(
                                 operator=AWAY_FROM,
-                                reference_object=situation_object(GROUND),
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=Region(
+                                    situation_object(GROUND), distance=DISTAL
+                                ),
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -3042,7 +3149,8 @@ def test_bird_flies_up_towards_mum():
                             bird,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_object=mum,
+                                reference_source_object=Region(mum, distance=DISTAL),
+                                reference_destination_object=mum,
                                 reference_axis=HorizontalAxisOfObject(bird, 1),
                             ),
                         ),
@@ -3050,7 +3158,10 @@ def test_bird_flies_up_towards_mum():
                             bird,
                             SpatialPath(
                                 operator=AWAY_FROM,
-                                reference_object=situation_object(GROUND),
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=Region(
+                                    situation_object(GROUND), distance=DISTAL
+                                ),
                             ),
                         ),
                     ]
@@ -3084,7 +3195,8 @@ def test_bird_flies_away_from_mum():
                             bird,
                             SpatialPath(
                                 operator=AWAY_FROM,
-                                reference_object=mum,
+                                reference_source_object=mum,
+                                reference_destination_object=Region(mum, distance=DISTAL),
                                 reference_axis=HorizontalAxisOfObject(bird, 1),
                             ),
                         )
@@ -3138,7 +3250,8 @@ def test_you_toss_me_cookie():
                             dad,
                             SpatialPath(
                                 operator=None,
-                                reference_object=situation_object(GROUND),
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                                 properties=[HARD_FORCE],
                             ),
                         )
@@ -3173,7 +3286,9 @@ def test_you_toss_mum_cookie():
                         (
                             dad,
                             SpatialPath(
-                                operator=None, reference_object=situation_object(GROUND)
+                                operator=None,
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
                             ),
                         )
                     ]
@@ -3262,7 +3377,14 @@ def test_non_salient_in_path():
                 argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (mum, SpatialPath(operator=None, reference_object=cookie))
+                        (
+                            mum,
+                            SpatialPath(
+                                operator=None,
+                                reference_source_object=cookie,
+                                reference_destination_object=cookie,
+                            ),
+                        )
                     ]
                 ),
             )
@@ -3284,7 +3406,14 @@ def test_not_yet_used_operator():
                 argument_roles_to_fillers=[(AGENT, dad), (THEME, cookie)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (mum, SpatialPath(operator=FROM, reference_object=cookie))
+                        (
+                            mum,
+                            SpatialPath(
+                                operator=FROM,
+                                reference_source_object=cookie,
+                                reference_destination_object=cookie,
+                            ),
+                        )
                     ]
                 ),
             )
@@ -3310,7 +3439,8 @@ def test_bird_flies_away_from_mum_region():
                             bird,
                             SpatialPath(
                                 operator=AWAY_FROM,
-                                reference_object=Region(mum, distance=PROXIMAL),
+                                reference_source_object=Region(mum, distance=PROXIMAL),
+                                reference_destination_object=Region(mum, distance=DISTAL),
                                 reference_axis=HorizontalAxisOfObject(bird, 1),
                             ),
                         )
@@ -3602,3 +3732,144 @@ def test_invalid_relations():
     )
     with pytest.raises(RuntimeError):
         generated_tokens(situation)
+
+
+def test_drink_from():
+    agent = situation_object(MOM)
+    liquid = situation_object(WATER)
+    container = situation_object(CUP)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, liquid, container],
+        actions=[
+            Action(
+                DRINK,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, liquid)],
+                auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, container)],
+            )
+        ],
+        always_relations=[inside(liquid, container)],
+    )
+    assert generated_tokens(situation) == (
+        "ma1 ma1",
+        "tsung2",
+        "bei1 dz",
+        "he1",
+        "shwei3",
+    )
+
+
+def test_order_ba_and_prep_phrase():
+    agent = situation_object(MOM)
+    theme = situation_object(BOOK)
+    push_surface = situation_object(TABLE)
+    push_goal = situation_object(DAD)
+    situation = HighLevelSemanticsSituation(
+        salient_objects=[agent, theme, push_surface],
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        actions=[
+            Action(
+                PUSH,
+                argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[
+                    (PUSH_SURFACE_AUX, push_surface),
+                    (PUSH_GOAL, push_goal),
+                ],
+                during=DuringAction(
+                    continuously=[on(theme, push_surface)],
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                None,
+                                reference_source_object=Region(
+                                    push_goal, distance=DISTAL
+                                ),
+                                reference_destination_object=push_goal,
+                            ),
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=situation_object(GROUND),
+                                reference_destination_object=situation_object(GROUND),
+                            ),
+                        ),
+                    ],
+                ),
+            )
+        ],
+        always_relations=[on(theme, push_surface)],
+        syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
+    )
+    assert generated_tokens(situation) == (
+        "ma1 ma1",
+        "dzai4",
+        "jwo1 dz",
+        "shang4",
+        "ba3",
+        "shu1",
+        "twei1",
+        "sya4 lai2",
+    )
+
+
+def test_move_should_have_dao():
+    agent = situation_object(MOM)
+    goal = situation_object(BOOK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, goal],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=TOWARD,
+                                reference_source_object=Region(goal, distance=DISTAL),
+                                reference_destination_object=goal,
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ma1 ma1", "chau2", "shu1", "yi2 dung4")
+
+
+def test_move_should_have_dao_away():
+    agent = situation_object(MOM)
+    goal = situation_object(BOOK)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[agent, goal],
+        actions=[
+            Action(
+                MOVE,
+                argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            agent,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_source_object=goal,
+                                reference_destination_object=Region(
+                                    goal, distance=DISTAL
+                                ),
+                                reference_axis=HorizontalAxisOfObject(agent, 1),
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+    )
+    assert generated_tokens(situation) == ("ma1 ma1", "li2", "shu1", "yi2 dung4")

@@ -69,7 +69,6 @@ from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
-    FROM,
     GRAVITATIONAL_DOWN,
     GRAVITATIONAL_UP,
     INTERIOR,
@@ -215,6 +214,12 @@ FAST = OntologyNode("fast")
 subtype(FAST, PROPERTY)
 SLOW = OntologyNode("slow")
 subtype(SLOW, PROPERTY)
+SIDE = OntologyNode("side")
+subtype(SIDE, PROPERTY)
+LEFT = OntologyNode("left")
+subtype(LEFT, PROPERTY)
+RIGHT = OntologyNode("right")
+subtype(RIGHT, PROPERTY)
 
 # forcefulness distinctions
 HARD_FORCE = OntologyNode("hard-force")
@@ -620,6 +625,7 @@ def _on_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     )
 
 
+on_region = _on_region_factory  # pylint:disable=invalid-name
 on = make_dsl_region_relation(_on_region_factory)  # pylint:disable=invalid-name
 
 
@@ -631,6 +637,7 @@ def _near_region_factory(
     )
 
 
+near_region = _near_region_factory  # pylint:disable=invalid-name
 near = make_dsl_region_relation(_near_region_factory)  # pylint:disable=invalid-name
 
 
@@ -640,6 +647,7 @@ def _far_region_factory(
     return Region(reference_object=reference_object, distance=DISTAL, direction=direction)
 
 
+far_region = _far_region_factory  # pylint:disable=invalid-name
 far = make_dsl_region_relation(_far_region_factory)  # pylint:disable=invalid-name
 
 
@@ -654,6 +662,11 @@ SIZE_RELATION = OntologyNode("size-relation")
 subtype(SIZE_RELATION, RELATION)
 
 BIGGER_THAN = OntologyNode("biggerThan")
+BIGGER_THAN_SAME_TYPE = OntologyNode(
+    "biggerThanSameType"
+)  # For relative size between objects of same type
+
+SAME_TYPE = OntologyNode("same-type")
 """
 A relation indicating that one object is bigger than another object.
 
@@ -661,18 +674,26 @@ This is a placeholder for a more sophisticated representation of size:
 https://github.com/isi-vista/adam/issues/70
 """
 subtype(BIGGER_THAN, SIZE_RELATION)
+subtype(BIGGER_THAN_SAME_TYPE, SIZE_RELATION)
 
 SMALLER_THAN = OntologyNode("smallerThan")
+SMALLER_THAN_SAME_TYPE = OntologyNode(
+    "smallerThanSameType"
+)  # For relative size between objects of same type
 """
 A relation indicating that one object is smaller than another object.
 
 This is a placeholder for a more sophisticated representation of size:
 https://github.com/isi-vista/adam/issues/70
 """
+subtype(SMALLER_THAN_SAME_TYPE, SIZE_RELATION)
 subtype(SMALLER_THAN, SIZE_RELATION)
 
 bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     BIGGER_THAN, opposite_type=SMALLER_THAN
+)
+bigger_than_same = make_opposite_dsl_relation(  # pylint:disable=invalid-name
+    BIGGER_THAN_SAME_TYPE, opposite_type=SMALLER_THAN_SAME_TYPE
 )
 
 AXIS_RELATION = OntologyNode("axis-relation")
@@ -1831,8 +1852,14 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL}),
     during=DuringAction(
         objects_to_paths=[
-            (_PUT_THEME, SpatialPath(FROM, _CONTACTING_MANIPULATOR)),
-            (_PUT_THEME, SpatialPath(TO, _PUT_GOAL)),
+            (
+                _PUT_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=_CONTACTING_MANIPULATOR,
+                    reference_destination_object=_PUT_GOAL,
+                ),
+            )
         ]
     ),
     enduring_conditions=[
@@ -1871,15 +1898,17 @@ PUSH_SURFACE_AUX = ActionDescriptionVariable(
 
 def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
+        objects_to_paths=[
+            (
+                _PUSH_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(PUSH_GOAL, distance=DISTAL),
+                    reference_destination_object=PUSH_GOAL,
+                ),
+            )
+        ]
     )
-    enduring = [
-        partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
-        bigger_than(_PUSH_AGENT, _PUSH_THEME),
-        bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
-        contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
-        on(_PUSH_THEME, PUSH_SURFACE_AUX),
-    ]
     preconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL, negated=True)]
     postconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL)]
     asserted_properties = [
@@ -1893,7 +1922,13 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
             {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: PUSH_GOAL}
         ),
         during=during,
-        enduring_conditions=enduring,
+        enduring_conditions=[
+            partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+            bigger_than(_PUSH_AGENT, _PUSH_THEME),
+            bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
+            contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
+            on(_PUSH_THEME, PUSH_SURFACE_AUX),
+        ],
         preconditions=preconditions,
         postconditions=postconditions,
         asserted_properties=asserted_properties,
@@ -1902,7 +1937,13 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     yield PUSH, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME}),
         during=during,
-        enduring_conditions=enduring,
+        enduring_conditions=[
+            partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+            bigger_than(_PUSH_AGENT, _PUSH_THEME),
+            bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
+            contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
+            on(_PUSH_THEME, PUSH_SURFACE_AUX),
+        ],
         preconditions=preconditions,
         postconditions=postconditions,
         asserted_properties=asserted_properties,
@@ -1916,7 +1957,16 @@ _GO_GOAL = ActionDescriptionVariable(THING)
 def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     postconditions = [Relation(IN_REGION, _GO_AGENT, _GO_GOAL)]
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]
+        objects_to_paths=[
+            (
+                _GO_AGENT,
+                SpatialPath(
+                    TO,
+                    reference_source_object=Region(_GO_GOAL, distance=DISTAL),
+                    reference_destination_object=_GO_GOAL,
+                ),
+            )
+        ]
     )
     asserted_properties = [(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)]
 
@@ -1938,7 +1988,19 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
         {AGENT: _COME_AGENT, GOAL: _COME_GOAL}
     ),
     preconditions=[Relation(IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=DISTAL))],
-    during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
+    during=DuringAction(
+        objects_to_paths=[
+            (
+                _COME_AGENT,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(_COME_GOAL, distance=DISTAL),
+                    reference_destination_object=Region(_COME_GOAL, distance=PROXIMAL),
+                ),
+            )
+        ]
+    ),
+    # during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
     postconditions=[
         Relation(IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=PROXIMAL))
     ],
@@ -1959,11 +2021,7 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
     postconditions=[
         has(_TAKE_AGENT, _TAKE_THEME),
-        Relation(
-            IN_REGION,
-            _TAKE_THEME,
-            Region(_TAKE_MANIPULATOR, distance=EXTERIOR_BUT_IN_CONTACT),
-        ),
+        contacts(_TAKE_THEME, _TAKE_MANIPULATOR),
     ],
     asserted_properties=[
         (_TAKE_AGENT, VOLITIONALLY_INVOLVED),
@@ -2003,7 +2061,7 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
         {AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL}
     ),
     enduring_conditions=[
-        bigger_than(_GIVE_AGENT, _GIVE_THEME),
+        # bigger_than(_GIVE_AGENT, _GIVE_THEME),
         bigger_than(_GIVE_GOAL, _GIVE_THEME),
         partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
         partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
@@ -2069,7 +2127,8 @@ def _make_spin_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
 def spin_around_primary_axis(object_):
     return SpatialPath(
         operator=None,
-        reference_object=object_,
+        reference_source_object=object_,
+        reference_destination_object=object_,
         reference_axis=PrimaryAxisOfObject(object_),
         orientation_changed=True,
     )
@@ -2131,7 +2190,14 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({THEME: _FALL_THEME}),
     during=DuringAction(
         objects_to_paths=[
-            (_FALL_THEME, SpatialPath(operator=TOWARD, reference_object=_FALL_GROUND))
+            (
+                _FALL_THEME,
+                SpatialPath(
+                    operator=TOWARD,
+                    reference_source_object=_far_region_factory(_FALL_GROUND),
+                    reference_destination_object=_FALL_GROUND,
+                ),
+            )
         ]
     ),
     # You can't fall if you start on the ground.
@@ -2151,7 +2217,16 @@ _THROW_GROUND = ActionDescriptionVariable(GROUND)
 
 def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_THROW_THEME, SpatialPath(TO, THROW_GOAL))],
+        objects_to_paths=[
+            (
+                _THROW_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=_THROW_MANIPULATOR,
+                    reference_destination_object=THROW_GOAL,
+                ),
+            )
+        ],
         # must be above the ground at some point during the action
         at_some_point=[
             Relation(
@@ -2177,7 +2252,7 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     postconditions = flatten_relations(
         [
             Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
-            on(_THROW_THEME, THROW_GOAL),
+            near(_THROW_THEME, THROW_GOAL),
             # negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
             negate(contacts(_THROW_AGENT, _THROW_THEME)),
         ]
@@ -2244,28 +2319,20 @@ _PASS_GROUND = ActionDescriptionVariable(GROUND)
 
 def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_PASS_THEME, SpatialPath(TO, PASS_GOAL))],
-        # must be above the ground at some point during the action
-        at_some_point=[
-            Relation(
-                IN_REGION,
+        objects_to_paths=[
+            (
                 _PASS_THEME,
-                Region(
-                    reference_object=_PASS_GROUND,
-                    distance=DISTAL,
-                    direction=GRAVITATIONAL_UP,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=_PASS_MANIPULATOR,
+                    reference_destination_object=PASS_GOAL,
                 ),
             )
-        ],
+        ]
     )
     enduring = [
         partOf(_PASS_MANIPULATOR, _PASS_AGENT),
         bigger_than(_PASS_AGENT, _PASS_THEME),
-    ]
-    preconditions = [
-        has(_PASS_AGENT, _PASS_THEME),
-        # contacts(_PASS_MANIPULATOR, _PASS_THEME),
-        contacts(_PASS_AGENT, _PASS_THEME),
     ]
     postconditions = flatten_relations(
         [
@@ -2298,7 +2365,10 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ),
         during=during,
         enduring_conditions=enduring,
-        preconditions=preconditions,
+        preconditions=[
+            contacts(_PASS_MANIPULATOR, _PASS_THEME),
+            has(_PASS_AGENT, _PASS_THEME),
+        ],
         postconditions=postconditions_manipulator,
         asserted_properties=asserted_properties,
     )
@@ -2309,7 +2379,10 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ),
         during=during,
         enduring_conditions=enduring,
-        preconditions=preconditions,
+        preconditions=[
+            contacts(_PASS_MANIPULATOR, _PASS_THEME),
+            has(_PASS_AGENT, _PASS_THEME),
+        ],
         postconditions=postconditions,
         asserted_properties=asserted_properties,
     )
@@ -2318,7 +2391,10 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         frame=ActionDescriptionFrame({AGENT: _PASS_AGENT, THEME: _PASS_THEME}),
         during=during,
         enduring_conditions=enduring,
-        preconditions=preconditions,
+        preconditions=[
+            contacts(_PASS_MANIPULATOR, _PASS_THEME),
+            has(_PASS_AGENT, _PASS_THEME),
+        ],
         postconditions=postconditions,
         asserted_properties=asserted_properties,
     )
@@ -2332,12 +2408,35 @@ _MOVE_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_
 
 def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during_move_self: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL))]
+        objects_to_paths=[
+            (
+                _MOVE_AGENT,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
+                    reference_destination_object=MOVE_GOAL,
+                ),
+            )
+        ]
     )
     during_move_object: DuringAction[ActionDescriptionVariable] = DuringAction(
         objects_to_paths=[
-            (_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL)),
-            (_MOVE_THEME, SpatialPath(TO, MOVE_GOAL)),
+            (
+                _MOVE_AGENT,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
+                    reference_destination_object=MOVE_GOAL,
+                ),
+            ),
+            (
+                _MOVE_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
+                    reference_destination_object=MOVE_GOAL,
+                ),
+            ),
         ]
     )
     enduring = [
@@ -2349,7 +2448,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT}),
         during=during_move_self,
-        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        postconditions=[near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2362,10 +2461,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME}),
         during=during_move_object,
         enduring_conditions=enduring,
-        postconditions=[
-            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
-            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
-        ],
+        postconditions=[near(_MOVE_THEME, MOVE_GOAL), near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2377,7 +2473,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, GOAL: MOVE_GOAL}),
         during=during_move_self,
-        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        postconditions=[near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2393,10 +2489,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ),
         during=during_move_object,
         enduring_conditions=enduring,
-        postconditions=[
-            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
-            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
-        ],
+        postconditions=[near(_MOVE_THEME, MOVE_GOAL), near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2424,8 +2517,22 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
             preconditions=preconditions,
             during=DuringAction(
                 objects_to_paths=[
-                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
-                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=JUMP_INITIAL_SUPPORTER_AUX,
+                            reference_destination_object=JUMP_INITIAL_SUPPORTER_AUX,
+                        ),
+                    ),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=jump_ground,
+                            reference_destination_object=jump_ground,
+                        ),
+                    ),
                 ],
                 # must be above the ground at some point during the action
                 at_some_point=[
@@ -2452,8 +2559,30 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
             preconditions=preconditions,
             during=DuringAction(
                 objects_to_paths=[
-                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
-                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                            reference_destination_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                        ),
+                    ),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=Region(
+                                jump_ground, distance=PROXIMAL
+                            ),
+                            reference_destination_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                        ),
+                    ),
                 ],
                 # must be above the ground at some point during the action
                 at_some_point=[
@@ -2468,7 +2597,8 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     )
                 ],
             ),
-            postconditions=[on(jump_agent, jump_goal)],
+            # this breaks for regions so is currently disabled and specified in the curricula instead
+            # postconditions=[on(jump_agent, jump_goal)],
             asserted_properties=asserted_properties,
         ),
     )
@@ -2511,7 +2641,8 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         roll_theme,
                         SpatialPath(
                             operator=AWAY_FROM,
-                            reference_object=roll_agent,
+                            reference_source_object=roll_agent,
+                            reference_destination_object=roll_agent,
                             reference_axis=HorizontalAxisOfObject(roll_theme, index=0),
                             orientation_changed=True,
                         ),
@@ -2539,8 +2670,9 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     (
                         roll_agent,
                         SpatialPath(
-                            operator=AWAY_FROM,
-                            reference_object=roll_agent,
+                            operator=None,
+                            reference_source_object=roll_agent,
+                            reference_destination_object=roll_agent,
                             reference_axis=HorizontalAxisOfObject(roll_agent, index=0),
                             orientation_changed=True,
                         ),
