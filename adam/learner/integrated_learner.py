@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Iterator, Mapping, Optional, Tuple, List
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
-from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
+from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS, ENGLISH_DETERMINERS
 from adam.learner import LearningExample, TopLevelLanguageLearner
 from adam.learner.alignments import (
     LanguageConceptAlignment,
@@ -151,13 +151,7 @@ class IntegratedTemplateLearner(
                 )
 
         # Engage generics learner if the utterance has a plural marker and isn't recognized
-        if (
-            self.generics_learner
-            and isinstance(self.attribute_learner, SubsetPluralLearnerNew)
-            and self.attribute_learner.is_plural_utterance(
-                learning_example.linguistic_description
-            )
-        ):
+        if self.generics_learner and self.is_mass_noun(learning_example.linguistic_description):
             # plural marker could be marking a generic statment
             descs = self._linguistic_descriptions_from_semantics(
                 current_learner_state.perception_semantic_alignment
@@ -412,3 +406,23 @@ class IntegratedTemplateLearner(
         if self.generics_learner:
             valid_sub_learners.append(self.generics_learner)
         return valid_sub_learners
+
+    def is_mass_noun(self, linguistic_description: LinguisticDescription):
+        # If has a plural marker, it's definitely a mass noun
+        if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
+            potential_markers = [t[0] for t in self.attribute_learner.potential_plural_markers.most_common(3)]
+            return any([t in potential_markers for t in linguistic_description.as_token_sequence()])
+
+        # If it does not have a plural marker, it could still be a mass noun if it doesn't have a quantifier.
+
+
+
+        # Case for English - might be unnecessary
+        # elif any([det in linguistic_description.as_token_sequence() for det in ENGLISH_DETERMINERS]):
+        #     return False
+
+        elif any([det in linguistic_description.as_token_sequence() for det in ENGLISH_DETERMINERS]):
+            return False
+            # Return true if there is no quantifier
+        return True
+

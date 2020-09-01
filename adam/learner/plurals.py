@@ -165,7 +165,3 @@ class SubsetPluralLearnerNew(
             ),
             trim_after_match=pattern_remove_incomplete_region_or_spatial_path,
         )
-
-    def is_plural_utterance(self, desc: LinguisticDescription) -> bool:
-        potential_markers = [t[0] for t in self.potential_plural_markers.most_common(3)]
-        return any([t in potential_markers for t in desc.as_token_sequence()])

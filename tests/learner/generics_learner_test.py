@@ -1,4 +1,5 @@
 import random
+from pathlib import Path
 from typing import Iterable
 
 import pytest
@@ -110,7 +111,7 @@ def run_generics_test(learner, language_mode):
             LearningExample(perceptual_representation, linguistic_description)
         )
 
-    # learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
+    learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
