@@ -95,4 +95,3 @@ class SimpleGenericsLearner(TemplateLearner):
                     action_concepts,
                 )
 
-        print(self.learned_representations)

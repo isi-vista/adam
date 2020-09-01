@@ -1,5 +1,7 @@
+import collections
 import itertools
 import logging
+import typing
 from itertools import chain, combinations
 from pathlib import Path
 from typing import Iterator, Mapping, Optional, Tuple, List
@@ -82,6 +84,10 @@ class IntegratedTemplateLearner(
     _observation_num: int = attrib(init=False, default=0)
     _sub_learners: List[TemplateLearner] = attrib(init=False)
 
+    potential_definiteness_markers: typing.Counter[str] = attrib(
+        init=False, default=collections.Counter()
+    )
+
     def observe(
         self,
         learning_example: LearningExample[
@@ -131,6 +137,17 @@ class IntegratedTemplateLearner(
                 current_learner_state = sub_learner.enrich_during_learning(
                     current_learner_state
                 )
+                # Check definiteness after recognizing objects
+                if sub_learner == self.object_learner:
+                    sequence = current_learner_state.language_concept_alignment.language.as_token_sequence()
+                    for node, span in current_learner_state.language_concept_alignment.node_to_language_span.items():
+                        # Special case: Could be a object with a determiner included in the span
+                        if span.end - span.start > 1:
+                            self.potential_definiteness_markers.update([sequence[span.start]])
+                        # Standard case - add token preceeding the noun
+                        elif span.start > 0:
+                            self.potential_definiteness_markers.update([sequence[span.start-1]])
+
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
             current_learner_state = self.action_learner.enrich_during_learning(
@@ -140,16 +157,17 @@ class IntegratedTemplateLearner(
             if self.functional_learner:
                 self.functional_learner.learn_from(current_learner_state, offset=offset)
 
-        # Engage generics learner if the utterance has a plural marker and isn't recognized
-        if self.generics_learner and self.is_mass_noun(learning_example.linguistic_description):
-            # plural marker could be marking a generic statment
+        # Engage generics learner if the utterance is indefinite
+        if self.generics_learner and not self.is_definite(current_learner_state):
+            # Lack of definiteness could me marking a generic statement
+            # Check if the known descriptions match the utterance
             descs = self._linguistic_descriptions_from_semantics(
                 current_learner_state.perception_semantic_alignment
             )
+            # If the statement isn't a recognized sentence, run learner
             if not learning_example.linguistic_description.as_token_sequence() in [
                 desc.as_token_sequence() for desc in descs
             ]:
-                # if the statement isn't a recognized sentence
                 self.generics_learner.learn_from(current_learner_state)
 
     def describe(
@@ -397,22 +415,19 @@ class IntegratedTemplateLearner(
             valid_sub_learners.append(self.generics_learner)
         return valid_sub_learners
 
-    def is_mass_noun(self, linguistic_description: LinguisticDescription):
-        # If has a plural marker, it's definitely a mass noun
-        if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
-            potential_markers = [t[0] for t in self.attribute_learner.potential_plural_markers.most_common(3)]
-            return any([t in potential_markers for t in linguistic_description.as_token_sequence()])
-
-        # If it does not have a plural marker, it could still be a mass noun if it doesn't have a quantifier.
-
-
-
-        # Case for English - might be unnecessary
-        # elif any([det in linguistic_description.as_token_sequence() for det in ENGLISH_DETERMINERS]):
-        #     return False
-
-        elif any([det in linguistic_description.as_token_sequence() for det in ENGLISH_DETERMINERS]):
-            return False
-            # Return true if there is no quantifier
-        return True
-
+    def is_definite(self, current_learner_state: LanguagePerceptionSemanticAlignment):
+        # Check if it contains any potential definiteness marker
+        sequence = current_learner_state.language_concept_alignment.language.as_token_sequence()
+        definite_marker_matches = []
+        most_common = self.potential_definiteness_markers.most_common(3)
+        for node, span in current_learner_state.language_concept_alignment.node_to_language_span.items():
+            if isinstance(node, ObjectSemanticNode):
+                # Special case: Could be a object with a determiner included in the span
+                if span.end - span.start > 1:
+                    definite_marker_matches.append(sequence[span.start] in most_common)
+                # Standard case - add token preceding the noun
+                elif span.start > 0:
+                    definite_marker_matches.append(sequence[span.start - 1] in most_common)
+        print(sequence)
+        print(definite_marker_matches)
+        return any(definite_marker_matches)

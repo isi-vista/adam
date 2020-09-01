@@ -111,10 +111,14 @@ def run_generics_test(learner, language_mode):
             LearningExample(perceptual_representation, linguistic_description)
         )
 
+    print(learner.potential_definiteness_markers)
     learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
 
 
-@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize("learner", [integrated_learner_factory])
-def test_generics(language_mode, learner):
-    run_generics_test(learner(language_mode), language_mode)
+@pytest.mark.parametrize("language_mode", [
+    LanguageMode.ENGLISH,
+    LanguageMode.CHINESE
+])
+def test_generics(language_mode):
+    learner = integrated_learner_factory(language_mode)
+    run_generics_test(learner, language_mode)
