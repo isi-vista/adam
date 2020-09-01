@@ -941,10 +941,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
             )
             self.dependency_graph.add_node(dependency_node)
 
-            # add a classifier if necessary
-            self.add_classifier(
-                _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
-            )
+            # add a classifier if necessary; we don't add them for pronouns
+            if noun_lexicon_entry not in [YOU, ME]:
+                self.add_classifier(
+                    _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
+                )
 
             # handle sentences of the form 'the ball is red'
             if ATTRIBUTES_AS_X_IS_Y in self.situation.syntax_hints:
@@ -1051,10 +1052,24 @@ class SimpleRuleBasedChineseLanguageGenerator(
             if count == 0:
                 raise RuntimeError(f"Invalid count for object {noun_lexicon_entry}")
             if (
-                count == 1
+                noun_dependency_node.part_of_speech == PROPER_NOUN
                 or _object.ontology_node == GROUND
-                or PROPER_NOUN in _object.properties
+                or MASS_NOUN in noun_lexicon_entry.properties
             ):
+                return
+            if count == 1:
+                one = DependencyTreeToken("yi1", NUMERAL)
+                classifier = noun_lexicon_entry.counting_classifier
+                if not classifier:
+                    classifier = "ge4"
+                self.dependency_graph.add_edge(
+                    one, noun_dependency_node, role=NUMERIC_MODIFIER
+                )
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(classifier, PARTICLE),
+                    noun_dependency_node,
+                    role=CLASSIFIER,
+                )
                 return
             elif count == 2:
                 two = DependencyTreeToken("lyang3", NUMERAL)
@@ -1069,6 +1084,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     noun_dependency_node,
                     role=CLASSIFIER,
                 )
+                return
             # if the count is many, we don't need a CLF, and we just use many (this will be checked by a native speaker in the next round of checks)
             else:
                 many = DependencyTreeToken("hen3 dwo1", NUMERAL)

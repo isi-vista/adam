@@ -201,7 +201,7 @@ def test_common_noun():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[situation_object(BALL)]
     )
-    assert generated_tokens(situation) == ("chyou2",)
+    assert generated_tokens(situation) == ("yi1", "ge4", "chyou2")
 
 
 # a single mass noun. The distinction isn't nearly as salient in Chinese
@@ -246,7 +246,7 @@ def test_green_ball():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[ball]
     )
-    assert generated_tokens(situation) == ("lyu4 se4", "chyou2")
+    assert generated_tokens(situation) == ("yi1", "ge4", "lyu4 se4", "chyou2")
 
 
 # possession for NP's: first person
@@ -259,7 +259,7 @@ def test_my_green_ball():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB],
     )
-    assert generated_tokens(situation) == ("wo3 de", "lyu4 se4", "chyou2")
+    assert generated_tokens(situation) == ("wo3 de", "yi1", "ge4", "lyu4 se4", "chyou2")
 
 
 # possession for NP's: second person
@@ -272,7 +272,7 @@ def test_your_green_ball():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB],
     )
-    assert generated_tokens(situation) == ("ni3 de", "lyu4 se4", "chyou2")
+    assert generated_tokens(situation) == ("ni3 de", "yi1", "ge4", "lyu4 se4", "chyou2")
 
 
 # possession for NP's: third person
@@ -285,7 +285,14 @@ def test_babade_green_ball():
         always_relations=[Relation(HAS, dad, ball)],
         syntax_hints=[IGNORE_HAS_AS_VERB],
     )
-    assert generated_tokens(situation) == ("ba4 ba4", "de", "lyu4 se4", "chyou2")
+    assert generated_tokens(situation) == (
+        "ba4 ba4",
+        "de",
+        "yi1",
+        "ge4",
+        "lyu4 se4",
+        "chyou2",
+    )
 
 
 """COUNTING NOUN PHRASE TESTS (WITH CLASSIFIERS) -- CHECKED BY NATIVE SPEAKER"""
@@ -297,7 +304,7 @@ def test_single_item():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[dog]
     )
-    assert generated_tokens(situation) == ("gou3",)
+    assert generated_tokens(situation) == ("yi1", "jr1", "gou3")
 
 
 # two objects, which can be counted distinctly
@@ -376,13 +383,13 @@ def test_house_classifier():
 
 
 # test the classifier for cups of liquid
-def test_cups_of_liquid():
+def test_no_classifiers_for_mass_nouns():
     water1 = situation_object(WATER, debug_handle="water1")
     water2 = situation_object(WATER, debug_handle="water2")
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[water1, water2]
     )
-    assert generated_tokens(situation) == ("lyang3", "bei1", "shwei3")
+    assert generated_tokens(situation) == ("shwei3",)
 
 
 # test the classifier for chairs
@@ -444,7 +451,7 @@ def test_one_salient_object():
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[truck1], other_objects=[truck2]
     )
-    assert generated_tokens(situation) == ("ka3 che1",)
+    assert generated_tokens(situation) == ("yi1", "lyang4", "ka3 che1")
 
 
 # many objects, only two are salient
@@ -500,6 +507,8 @@ def test_noun_with_spatial_modifier():
         "di4 myan4",
         "shang4",
         "de",
+        "yi1",
+        "jang1",
         "jwo1 dz",
     )
 
@@ -528,6 +537,8 @@ def test_two_objects_with_mum_no_extra():
     )
     assert generated_tokens(situation) == (
         "dzai4",
+        "yi1",
+        "jr1",
         "nyau3",
         "pang2 byan1",
         "de",
@@ -561,6 +572,8 @@ def test_two_objects_with_mum():
     )
     assert generated_tokens(situation) == (
         "dzai4",
+        "yi1",
+        "jr1",
         "nyau3",
         "pang2 byan1",
         "de",
@@ -587,6 +600,8 @@ def test_mum_under_object():
     )
     assert generated_tokens(situation) == (
         "dzai4",
+        "yi1",
+        "jr1",
         "nyau3",
         "sya4 myan4",
         "de",
@@ -611,6 +626,8 @@ def test_mum_above_object():
     )
     assert generated_tokens(situation) == (
         "dzai4",
+        "yi1",
+        "jr1",
         "nyau3",
         "shang4 myan4",
         "de",
@@ -643,9 +660,13 @@ def test_object_beside_object():
     )
     assert generated_tokens(situation) == (
         "dzai4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "pang2 byan1",
         "de",
+        "yi1",
+        "ge4",
         "chyou2",
     )
 
@@ -692,9 +713,13 @@ def test_object_behind_in_front_object():
     )
     assert generated_tokens(front_situation) == (
         "dzai4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "chyan2 myan4",
         "de",
+        "yi1",
+        "ge4",
         "syang1 dz",
     )
 
@@ -732,9 +757,13 @@ def test_object_behind_in_front_object():
     )
     assert generated_tokens(behind_situation) == (
         "dzai4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "hou4 myan4",
         "de",
+        "yi1",
+        "ge4",
         "syang1 dz",
     )
 
@@ -750,7 +779,7 @@ def test_falling():
         salient_objects=[ball],
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
     )
-    assert generated_tokens(situation) == ("chyou2", "dye2 dau3")
+    assert generated_tokens(situation) == ("yi1", "ge4", "chyou2", "dye2 dau3")
 
 
 # test the simple subject-verb phrase "mum eats"
@@ -777,7 +806,13 @@ def test_simple_SVO():
             )
         ],
     )
-    assert generated_tokens(situation) == ("ma1 ma1", "chr1", "chyu1 chi2 bing3")
+    assert generated_tokens(situation) == (
+        "ma1 ma1",
+        "chr1",
+        "yi1",
+        "kwai4",
+        "chyu1 chi2 bing3",
+    )
 
 
 # test SVIO transfer of possession
@@ -799,7 +834,11 @@ def test_simple_SVIO_transfer():
     assert generated_tokens(situation) == (
         "ma1 ma1",
         "gei3",
+        "yi1",
+        "ge4",
         "bau3 bau3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
     )
 
@@ -844,7 +883,14 @@ def test_simple_SVIO_transfer_with_personal_pronouns():
         ],
         syntax_hints=[PREFER_DITRANSITIVE],
     )
-    assert generated_tokens(situation) == ("wo3", "gei3", "ni3", "chyu1 chi2 bing3")
+    assert generated_tokens(situation) == (
+        "wo3",
+        "gei3",
+        "ni3",
+        "yi1",
+        "kwai4",
+        "chyu1 chi2 bing3",
+    )
 
 
 # test SVIO transfer of possession with personal pronouns
@@ -865,6 +911,8 @@ def test_simple_SVIO_transfer_with_personal_pronouns_and_ba():
     assert generated_tokens(situation) == (
         "wo3",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "gei3",
         "ni3",
@@ -884,7 +932,7 @@ def test_simple_SVO_movement():
             )
         ],
     )
-    assert generated_tokens(situation) == ("ba4 ba4", "twei1", "yi3 dz")
+    assert generated_tokens(situation) == ("ba4 ba4", "twei1", "yi1", "ba3", "yi3 dz")
 
 
 # SVIO with pronouns
@@ -907,6 +955,8 @@ def test_you_give_me_a_cookie():
         "ni3",
         "gei3",
         "wo3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
     )
 
@@ -944,9 +994,13 @@ def test_mom_put_a_ball_on_a_table_zai():
     assert generated_tokens(situation) == (
         "ma1 ma1",
         "ba3",
+        "yi1",
+        "ge4",
         "chyou2",
         "fang4",
         "dzai4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "shang4",
     )
@@ -983,9 +1037,13 @@ def test_mom_put_a_ball_on_a_table_dao():
     assert generated_tokens(situation) == (
         "ma1 ma1",
         "ba3",
+        "yi1",
+        "ge4",
         "chyou2",
         "fang4",
         "dau4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "shang4",
     )
@@ -1021,9 +1079,13 @@ def test_I_put_a_ball_on_a_table_zai():
     assert generated_tokens(situation) == (
         "wo3",
         "ba3",
+        "yi1",
+        "ge4",
         "chyou2",
         "fang4",
         "dzai4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "shang4",
     )
@@ -1059,9 +1121,13 @@ def test_i_put_a_ball_on_a_table_dao():
     assert generated_tokens(situation) == (
         "wo3",
         "ba3",
+        "yi1",
+        "ge4",
         "chyou2",
         "fang4",
         "dau4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "shang4",
     )
@@ -1097,9 +1163,13 @@ def test_you_put_a_ball_on_a_table_zai():
     assert generated_tokens(situation) == (
         "ni3",
         "ba3",
+        "yi1",
+        "ge4",
         "chyou2",
         "fang4",
         "dzai4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "shang4",
     )
@@ -1135,9 +1205,13 @@ def test_you_put_a_ball_on_a_table_dao():
     assert generated_tokens(situation) == (
         "ni3",
         "ba3",
+        "yi1",
+        "ge4",
         "chyou2",
         "fang4",
         "dau4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "shang4",
     )
@@ -1165,9 +1239,13 @@ def test_dad_put_a_cookie_in_a_box_zai():
     assert generated_tokens(situation) == (
         "ba4 ba4",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1197,9 +1275,13 @@ def test_dad_put_a_cookie_in_a_box_dao():
     assert generated_tokens(situation) == (
         "ba4 ba4",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dau4",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1227,9 +1309,13 @@ def test_i_put_cookie_in_box_zai():
     assert generated_tokens(situation) == (
         "wo3",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1257,9 +1343,13 @@ def test_you_put_cookie_in_box_zai():
     assert generated_tokens(situation) == (
         "ni3",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1283,11 +1373,17 @@ def test_take_to_car():
     )
 
     assert generated_tokens(situation) == (
+        "yi1",
+        "ge4",
         "bau3 bau3",
         "ba3",
+        "yi1",
+        "ge4",
         "chyou2",
         "na2",
         "dau4",
+        "yi1",
+        "lyang4",
         "chi4 che1",
         "shang4",
     )
@@ -1318,10 +1414,14 @@ def test_i_put_cookie_in_my_box():
     assert generated_tokens(situation) == (
         "wo3",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
         "wo3 de",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1351,10 +1451,14 @@ def test_i_put_cookie_in_my_box_dao():
     assert generated_tokens(situation) == (
         "wo3",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dau4",
         "wo3 de",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1383,9 +1487,13 @@ def test_third_person_cookie_in_his_box():
     assert generated_tokens(situation) == (
         "ba4 ba4",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1414,10 +1522,14 @@ def test_you_put_cookie_in_your_box():
     assert generated_tokens(situation) == (
         "ni3",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
         "ni3 de",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1447,10 +1559,14 @@ def test_speaker_owner_of_box():
     assert generated_tokens(situation) == (
         "ba4 ba4",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
         "wo3 de",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1480,10 +1596,14 @@ def test_addressee_owner_of_box():
     assert generated_tokens(situation) == (
         "ba4 ba4",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
         "ni3 de",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1513,11 +1633,15 @@ def test_speaker_not_owner_of_box():
     assert generated_tokens(situation) == (
         "wo3",
         "ba3",
+        "yi1",
+        "kwai4",
         "chyu1 chi2 bing3",
         "fang4",
         "dzai4",
         "ba4 ba4",
         "de",
+        "yi1",
+        "ge4",
         "syang1 dz",
         "li3",
     )
@@ -1535,10 +1659,18 @@ def test_i_have_my_ball():
         always_relations=[Relation(HAS, baby, ball)],
         actions=[],
     )
-    assert generated_tokens(situation) == ("wo3", "you3", "wo3 de", "chyou2")
+    assert generated_tokens(situation) == (
+        "wo3",
+        "you3",
+        "wo3 de",
+        "yi1",
+        "ge4",
+        "chyou2",
+    )
 
 
 # this tests possession when a non-speaker has something that they possess
+# TODO: fix this
 def test_dad_has_cookie():
     dad = situation_object(DAD)
     cookie = situation_object(COOKIE)
@@ -1546,7 +1678,7 @@ def test_dad_has_cookie():
         ontology=GAILA_PHASE_1_ONTOLOGY,
         salient_objects=[dad, cookie],
         always_relations=[Relation(HAS, dad, cookie)],
-        # actions=[],
+        actions=[],
     )
     assert generated_tokens(situation) == ("ba4 ba4", "you3", "chyu1 chi2 bing3")
 
@@ -1561,7 +1693,14 @@ def test_you_have_your_ball():
         always_relations=[Relation(HAS, baby, ball)],
         actions=[],
     )
-    assert generated_tokens(situation) == ("ni3", "you3", "ni3 de", "chyou2")
+    assert generated_tokens(situation) == (
+        "ni3",
+        "you3",
+        "ni3 de",
+        "yi1",
+        "ge4",
+        "chyou2",
+    )
 
 
 """PATH MODIFIERS -- CHECKED BY NATIVE SPEAKER"""
@@ -1596,9 +1735,20 @@ def test_path_modifier():
             )
         ],
     )
-    assert generated_tokens(situation) == ("nyau3", "fei1", "gwo4", "wu1", "shang4 myan4")
+    assert generated_tokens(situation) == (
+        "yi1",
+        "jr1",
+        "nyau3",
+        "fei1",
+        "gwo4",
+        "yi1",
+        "jyan1",
+        "wu1",
+        "shang4 myan4",
+    )
 
 
+# TODO: fix this
 # a slightly different test for over
 def test_jumps_over():
     dad = situation_object(DAD)
@@ -1620,6 +1770,8 @@ def test_jumps_over():
         "ba4 ba4",
         "tyau4",
         "gwo4",
+        "yi1",
+        "ba3",
         "yi3 dz",
         "shang4 myan4",
     )
@@ -1662,9 +1814,13 @@ def test_path_modifier_under():
         ],
     )
     assert generated_tokens(situation) == (
+        "yi1",
+        "jr1",
         "nyau3",
         "fei1",
         "dau4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "sya4 myan4",
     )
@@ -1684,9 +1840,13 @@ def test_path_modifier_on():
     assert generated_tokens(situation) == (
         "ma1 ma1",
         "dzai4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "shang4",
         "gwun3",
+        "yi1",
+        "ge4",
         "chyou2",
     )
 
