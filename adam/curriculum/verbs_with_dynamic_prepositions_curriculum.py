@@ -204,10 +204,16 @@ def _push_under_template(
                 during=DuringAction(continuously=[on(theme, surface)]),
             )
         ],
-        after_action_relations=[near(theme, goal_reference)],
+        # for some reason, we have to declare that slot 3 isn't on the ground before, after, and always
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_reference, GROUND_OBJECT_TEMPLATE)),
+            near(theme, goal_reference),
+        ],
         constraining_relations=flatten_relations(
             [bigger_than(surface, [agent]), bigger_than(goal_reference, theme)]
         ),
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
     )
 
 
@@ -512,7 +518,12 @@ def _go_over_template(
                 ],
             )
         ],
-        after_action_relations=[near(agent, goal_object)],
+        before_action_relations=[negate(on(agent, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(agent, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(agent, GROUND_OBJECT_TEMPLATE)),
+            near(agent, goal_object),
+        ],
     )
 
 
@@ -589,6 +600,15 @@ def _go_over_under_path_template(
                     ]
                 ),
             )
+        ],
+        after_action_relations=[
+            negate(on(agent if is_over else path_object, GROUND_OBJECT_TEMPLATE))
+        ],
+        before_action_relations=[
+            negate(on(agent if is_over else path_object, GROUND_OBJECT_TEMPLATE))
+        ],
+        asserted_always_relations=[
+            negate(on(agent if is_over else path_object, GROUND_OBJECT_TEMPLATE))
         ],
         gazed_objects=[agent],
         syntax_hints=[IGNORE_GOAL],
@@ -927,7 +947,12 @@ def _throw_under_template(
                 ],
             )
         ],
-        after_action_relations=[near(theme, goal_reference)],
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_reference, GROUND_OBJECT_TEMPLATE)),
+            near(theme, goal_reference),
+        ],
         constraining_relations=flatten_relations(
             bigger_than([agent, goal_reference], theme)
         ),
@@ -959,7 +984,12 @@ def _throw_path_over_template(
                 ),
             )
         ],
-        after_action_relations=[near(theme, implicit_goal_reference)],
+        asserted_always_relations=[negate(on(theme, GROUND_OBJECT_TEMPLATE))],
+        before_action_relations=[negate(on(theme, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(theme, GROUND_OBJECT_TEMPLATE)),
+            near(theme, implicit_goal_reference),
+        ],
         constraining_relations=flatten_relations(
             bigger_than([agent, object_in_path], theme)
         ),
@@ -991,7 +1021,12 @@ def _throw_path_under_template(
                 ),
             )
         ],
-        after_action_relations=[near(theme, implicit_goal_reference)],
+        before_action_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(object_in_path, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(object_in_path, GROUND_OBJECT_TEMPLATE)),
+            near(theme, implicit_goal_reference),
+        ],
         constraining_relations=flatten_relations(
             bigger_than([agent, object_in_path], theme)
         ),
@@ -1228,7 +1263,12 @@ def _x_roll_under_y_template(
                 auxiliary_variable_bindings=[(ROLL_SURFACE_AUXILIARY, surface)],
             )
         ],
-        after_action_relations=flatten_relations(above(goal_reference, agent)),
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_reference, GROUND_OBJECT_TEMPLATE)),
+            above(goal_reference, agent),
+        ],
         gazed_objects=[agent],
     )
 
@@ -1358,9 +1398,16 @@ def _x_rolls_y_over_under_z_template(
             )
         ],
         constraining_relations=flatten_relations([bigger_than(agent, theme)]),
-        after_action_relations=flatten_relations(
-            above(theme, goal_reference) if is_over else above(goal_reference, theme)
-        ),
+        asserted_always_relations=[
+            negate(on(theme if is_over else goal_reference, GROUND_OBJECT_TEMPLATE))
+        ],
+        before_action_relations=[
+            negate(on(theme if is_over else goal_reference, GROUND_OBJECT_TEMPLATE))
+        ],
+        after_action_relations=[
+            negate(on(theme if is_over else goal_reference, GROUND_OBJECT_TEMPLATE)),
+            above(theme, goal_reference) if is_over else above(goal_reference, theme),
+        ],
         gazed_objects=[theme],
     )
 
@@ -1719,6 +1766,9 @@ def _put_under_template(
                 ],
             )
         ],
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
         constraining_relations=flatten_relations(
             bigger_than([agent, goal_reference], theme)
         ),
@@ -1920,7 +1970,12 @@ def _x_move_under_y_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, agent)),
-        after_action_relations=[near(agent, goal_reference)],
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_reference, GROUND_OBJECT_TEMPLATE)),
+            near(agent, goal_reference),
+        ],
     )
 
 
@@ -2027,7 +2082,12 @@ def _x_move_y_under_z_template(
             )
         ],
         constraining_relations=flatten_relations(bigger_than(goal_reference, theme)),
-        after_action_relations=[near(theme, goal_reference)],
+        asserted_always_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        before_action_relations=[negate(on(goal_reference, GROUND_OBJECT_TEMPLATE))],
+        after_action_relations=[
+            negate(on(goal_reference, GROUND_OBJECT_TEMPLATE)),
+            near(theme, goal_reference),
+        ],
     )
 
 
@@ -4161,24 +4221,6 @@ def _make_throw_with_prepositions(
                         )
                     ]
                 ),
-                # # path under -- currently disabled since we can't learn multiple semantics for one linguistic template
-                #  flatten(
-                #     [
-                #         sampled(
-                #             _throw_path_under_template(
-                #                 agent,
-                #                 theme,
-                #                 goal_under,
-                #                 implicit_goal_reference,
-                #                 background,
-                #             ),
-                #             ontology=GAILA_PHASE_1_ONTOLOGY,
-                #             chooser=PHASE1_CHOOSER_FACTORY(),
-                #             max_to_sample=num_samples if num_samples else 5,
-                #             block_multiple_of_the_same_type=True,
-                #         )
-                #     ]
-                # ),
                 # Towards & Away
                 flatten(
                     [
