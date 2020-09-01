@@ -133,7 +133,6 @@ def run_verb_test(learner, situation_template, language_generator):
         linguistic_description,
         perceptual_representation,
     ) in train_curriculum.instances():
-        print(linguistic_description)
         # Get the object matches first - preposition learner can't learn without already recognized objects
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
