@@ -1888,9 +1888,13 @@ def test_bird_flies_path_beside():
         ],
     )
     assert generated_tokens(situation) == (
+        "yi1",
+        "jr1",
         "nyau3",
         "fei1",
         "gwo4",
+        "yi1",
+        "lyang4",
         "chi4 che1",
         "pang2 byan1",
     )
@@ -1907,6 +1911,8 @@ def test_ball_fell_on_ground():
         after_action_relations=[on(ball, ground)],
     )
     assert generated_tokens(situation) == (
+        "yi1",
+        "ge4",
         "chyou2",
         "dye2 dau3",
         "dau4",
@@ -1943,6 +1949,8 @@ def test_mom_sits_on_a_table():
         "ma1 ma1",
         "dzwo4",
         "dzai4",
+        "yi1",
+        "jang1",
         "jwo1 dz",
         "shang4",
     )
@@ -1959,7 +1967,13 @@ def test_falling_down():
         actions=[Action(FALL, argument_roles_to_fillers=[(THEME, ball)])],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("chyou2", "dye2 dau3", "sya4 lai2")
+    assert generated_tokens(situation) == (
+        "yi1",
+        "ge4",
+        "chyou2",
+        "dye2 dau3",
+        "sya4 lai2",
+    )
 
 
 # sit down testing
@@ -2037,7 +2051,7 @@ def test_bird_flies_up():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("nyau3", "fei1", "chi3 lai2")
+    assert generated_tokens(situation) == ("yi1", "jr1", "nyau3", "fei1", "chi3 lai2")
 
 
 # direction of flight = up
@@ -2068,7 +2082,7 @@ def test_bird_flies_down():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("nyau3", "fei1", "sya4 lai2")
+    assert generated_tokens(situation) == ("yi1", "jr1", "nyau3", "fei1", "sya4 lai2")
 
 
 """GO/COME BEHAVE DIFFERENTLY IN CHINESE WITH ADVMODS -- CHECKED BY NATIVE SPEAKER"""
@@ -2102,7 +2116,7 @@ def test_going_up():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("nyau3", "shang4", "chyu4")
+    assert generated_tokens(situation) == ("yi1", "jr1", "nyau3", "shang4", "chyu4")
 
 
 # testing going down
@@ -2132,7 +2146,7 @@ def test_going_down():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("nyau3", "sya4", "chyu4")
+    assert generated_tokens(situation) == ("yi1", "jr1", "nyau3", "sya4", "chyu4")
 
 
 # testing coming up
@@ -2164,7 +2178,7 @@ def test_coming_up():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("nyau3", "shang4", "lai2")
+    assert generated_tokens(situation) == ("yi1", "jr1", "nyau3", "shang4", "lai2")
 
 
 # testing going down
@@ -2194,7 +2208,7 @@ def test_coming_down():
         ],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
-    assert generated_tokens(situation) == ("nyau3", "sya4", "lai2")
+    assert generated_tokens(situation) == ("yi1", "jr1", "nyau3", "sya4", "lai2")
 
 
 # direction of jumping
@@ -2249,13 +2263,14 @@ def test_jump_down():
 
 """GO WITH GOAL -- CHECKED BY NATIVE SPEAKER"""
 
+# TODO: check/fix this
 
 # this tests dao for going to a region, in which case we use the bare NP instead of a localiser phrase
 def test_to_regions_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation(Region(goal_object, distance=PROXIMAL), goal_object)
-    ) == ("gou3", "chyu4", "syang1 dz")
+    ) == ("yi1", "jr1", "gou3", "chyu4", "yi1", "ge4", "syang1 dz")
 
 
 # this tests being inside a region
@@ -2263,7 +2278,7 @@ def test_in_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation(Region(goal_object, distance=INTERIOR), goal_object)
-    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "li3")
+    ) == ("yi1", "jr1", "gou3", "chyu4", "dau4", "yi1", "ge4", "syang1 dz", "li3")
 
 
 # this tests being next to a region
@@ -2282,7 +2297,7 @@ def test_beside_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "pang2 byan1")
+    ) == ("yi1", "jr1", "gou3", "chyu4", "dau4", "yi1", "ge4", "syang1 dz", "pang2 byan1")
 
 
 # this tests going behind a region
@@ -2300,7 +2315,7 @@ def test_behind_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "hou4 myan4")
+    ) == ("yi1", "jr1", "gou3", "chyu4", "dau4", "yi1", "ge4", "syang1 dz", "hou4 myan4")
 
 
 # this tests going in front of a region
@@ -2318,7 +2333,17 @@ def test_in_front_of_region_as_goal():
             ),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dau4", "syang1 dz", "chyan2 myan4")
+    ) == (
+        "yi1",
+        "jr1",
+        "gou3",
+        "chyu4",
+        "dau4",
+        "yi1",
+        "ge4",
+        "syang1 dz",
+        "chyan2 myan4",
+    )
 
 
 # this tests going over a region
@@ -2330,7 +2355,17 @@ def test_over_region_as_goal():
             Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dau4", "jwo1 dz", "shang4 myan4")
+    ) == (
+        "yi1",
+        "jr1",
+        "gou3",
+        "chyu4",
+        "dau4",
+        "yi1",
+        "jang1",
+        "jwo1 dz",
+        "shang4 myan4",
+    )
 
 
 # this tests going under a region
@@ -2342,7 +2377,7 @@ def test_under_region_as_goal():
             Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
             goal_object,
         )
-    ) == ("gou3", "chyu4", "dau4", "jwo1 dz", "sya4 myan4")
+    ) == ("yi1", "jr1", "gou3", "chyu4", "dau4", "yi1", "jang1", "jwo1 dz", "sya4 myan4")
 
 
 """COME WITH GOAL-- CHECKED BY NATIVE SPEAKER"""
@@ -2353,15 +2388,16 @@ def test_to_regions_as_goal_come():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation_come(Region(goal_object, distance=PROXIMAL), goal_object)
-    ) == ("gou3", "lai2", "syang1 dz")
+    ) == ("yi1", "jr1", "gou3", "lai2", "syang1 dz")
 
 
+# TODO: fix this
 # this tests being inside a region
 def test_in_region_as_goal_come():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     assert generated_tokens(
         region_as_goal_situation_come(Region(goal_object, distance=INTERIOR), goal_object)
-    ) == ("gou3", "lai2", "dau4", "syang1 dz", "li3")
+    ) == ("yi1", "jr1", "gou3", "lai2", "dau4", "syang1 dz", "li3")
 
 
 # this tests being next to a region
@@ -2380,7 +2416,7 @@ def test_beside_region_as_goal_come():
             ),
             goal_object,
         )
-    ) == ("gou3", "lai2", "dau4", "syang1 dz", "pang2 byan1")
+    ) == ("yi1", "jr1", "gou3", "lai2", "dau4", "yi1", "ge4", "syang1 dz", "pang2 byan1")
 
 
 # this tests going behind a region
@@ -2398,7 +2434,7 @@ def test_behind_region_as_goal_come():
             ),
             goal_object,
         )
-    ) == ("gou3", "lai2", "dau4", "syang1 dz", "hou4 myan4")
+    ) == ("yi1", "jr1", "gou3", "lai2", "dau4", "yi1", "ge4", "syang1 dz", "hou4 myan4")
 
 
 # this tests going in front of a region
@@ -2416,7 +2452,7 @@ def test_in_front_of_region_as_goal_come():
             ),
             goal_object,
         )
-    ) == ("gou3", "lai2", "dau4", "syang1 dz", "chyan2 myan4")
+    ) == ("yi1", "jr1", "gou3", "lai2", "dau4", "yi1", "ge4", "syang1 dz", "chyan2 myan4")
 
 
 # this tests going over a region
