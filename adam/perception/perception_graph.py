@@ -15,6 +15,7 @@ reading other parts of this module.
 import logging
 import pickle
 from abc import ABC, abstractmethod
+from collections import defaultdict, deque
 from enum import Enum
 from itertools import chain, product, repeat
 from pathlib import Path
@@ -23,6 +24,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Collection,
     Dict,
     Iterable,
     List,
@@ -35,7 +37,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
-)
+    Deque)
 from uuid import uuid4
 
 import graphviz
@@ -1362,6 +1364,191 @@ class PatternMatching:
         # no relaxation could successfully match
         return None
 
+    @attrs(slots=True)
+    class _MatchingOrderSorter:
+        """
+        Implements an algorithm for sorting our pattern nodes into a matching order.
+
+        This algorithm comes from
+
+        Alpár Jüttner and Péter Madarasi. "VF2++ — An improved subgraph isomorphism algorithm."
+        Discrete Applied Mathematics (2018) 242.
+        """
+        _graph: DiGraph = attrib(validator=instance_of(DiGraph), kw_only=True)
+        _pattern: DiGraph = attrib(validator=instance_of(DiGraph), kw_only=True)
+        _graph_node_order: Callable[[Tuple[Any, Dict[Any, Any]]], int] = attrib(kw_only=True)
+
+        """
+        Our working list of pairs (node, node_data)
+        """
+        _ordered_nodes: List[Tuple[Any, Dict[Any, Any]]] = attrib(init=False, factory=list)
+        _to_process: Set[Any] = attrib(init=False, factory=set)
+        _effective_graph_label_frequency: Dict[Any, int] = attrib(init=False, factory=defaultdict)
+        _connections_to_ordered_nodes: Dict[Any, int] = attrib(init=False, factory=defaultdict)
+
+        def _get_matching_order_root_candidate(self) -> Any:
+            """
+            Return the next candidate root node for the purposes of sorting the pattern into
+            matching order.
+
+            The candidate root node should be
+            the pattern node of maximal degree
+            among the pattern nodes with the "effectively" rarest labels
+            within the set of pattern nodes that still need to be processed.
+
+            The effective rarity of a label
+            is the number of graph nodes with that label,
+            minus the number of already-sorted pattern nodes with that label.
+            """
+            if not self._to_process:
+                raise RuntimeError("Cannot get root node; no nodes provided to process!")
+
+            def node_key(node):
+                # The type of pattern.degree is incorrect, so we disable type inspections for
+                # this line
+                # noinspection PyCallingNonCallable
+                return (
+                    -self._effective_graph_label_frequency[node],
+                    self._pattern.degree(node),
+                )  # type: ignore
+
+            root_node_candidate = max(self._to_process, key=node_key)
+
+            return root_node_candidate
+
+        def _breadth_first_traversal_levels(self, *, root_node: Any) -> List[List[Any]]:
+            """
+            Perform a breadth-first traversal of the pattern starting from root node root_node,
+            returning a sequence of lists V[d] each of which lists the nodes at traversal depth d.
+
+            The resulting list will look like:
+
+            ```
+            [[root_node],
+             [neighbors_of_root_node, ...],
+             [neighbors_of_neighbors_of_root_node, ...],
+             ...]
+            ```
+            """
+            if not self._pattern:
+                raise RuntimeError("Pattern is empty")
+
+            levels: List[List[Any]] = []
+            nodes_to_visit: Deque[Tuple[Any, int]] = deque([(root_node, 0)])
+            seen: Set[Any] = set()
+            overall_depth: int = -1
+            while nodes_to_visit:
+                node, depth = nodes_to_visit.popleft()
+                if node in seen:
+                    continue
+
+                if depth == overall_depth + 1:
+                    levels.append([])
+                    overall_depth += 1
+                elif depth > overall_depth + 1:
+                    raise RuntimeError("Depth increased by more than one! Something is wrong with this BFS!")
+                elif depth < overall_depth:
+                    raise RuntimeError("Depth decreased! This should never happen in a BFS!")
+
+                current_level = levels[-1]
+                current_level.append(node)
+                seen.add(node)
+                # for neighbor in self._pattern.successors(node):
+                for neighbor in self._pattern.neighbors(node):
+                    if neighbor not in seen:
+                        nodes_to_visit.append((neighbor, depth + 1))
+
+            return levels
+
+        def _append_node_to_matching_order(self, node):
+            """
+            Append the given node to the current matching order, updating other data structures as
+            needed.
+            """
+            node_data = self._pattern.nodes[node]
+            self._ordered_nodes.append((node, node_data))
+            self._to_process.remove(node)
+
+            # Update data structures that depend on the set of nodes that have already been ordered
+
+            # Update effective label frequencies
+            label = _pattern_matching_node_order((node, self._pattern.nodes[node]))
+            self._effective_graph_label_frequency[label] -= 1
+
+            # Update number of connections to already-ordered nodes
+            for neighbor in self._pattern.neighbors(node):
+                self._connections_to_ordered_nodes[neighbor] += 1
+                # Alternative way of doing things that might or might not make sense
+                # 2 edges to the same node count as 2 separate connections -- not sure if this makes sense
+                # if neighbor in self._pattern.successors(node):
+                #     self._connections_to_ordered_nodes[neighbor] += 1
+                # if neighbor in self._pattern.predecessors(node):
+                #     self._connections_to_ordered_nodes[neighbor] += 1
+
+        def _process_matching_order_level(
+            self,
+            level: List[Any],
+        ):
+            """
+            Process a single level of a breadth-first search tree, adding the nodes to the list of
+            already-ordered nodes
+            """
+            # NOTE This should function, but to implement this efficiently I suspect I am going to
+            #   have to actually understand section 5.4 of the VF2++ paper. bummer. it's confusing.
+            #   guess I'll just have to Figure It Out.
+
+            def node_order_key(node):
+                # The type of pattern.degree is incorrect, so we disable type inspections for
+                # this line
+                # noinspection PyCallingNonCallable
+                return (
+                    self._connections_to_ordered_nodes[node],
+                    self._pattern.degree(node),  # type: ignore
+                    -self._effective_graph_label_frequency[node],
+                )
+
+            pattern_nodes_to_process = set(level)
+            while pattern_nodes_to_process:
+                next_node = max(pattern_nodes_to_process, key=node_order_key)
+                self._append_node_to_matching_order(next_node)
+                pattern_nodes_to_process.remove(next_node)
+
+        def sort_pattern_into_matching_order(self) -> DiGraph:
+            """
+            Return this sorter's associated pattern digraph with the pattern's nodes sorted in
+            matching order.
+            """
+            # Initialize data structures
+            pattern_with_nodes_sorted = DiGraph()
+            self._ordered_nodes = []
+            self._effective_graph_label_frequency = defaultdict(int)
+            # GRAPH_OR_PATTERN_NODE_TO_VF2PP_LABEL = immutabledict([])
+            for node in self._graph.nodes:
+                label = self._graph_node_order((node, self._graph.nodes[node]))
+                self._effective_graph_label_frequency[label] += 1
+
+            self._connections_to_ordered_nodes = defaultdict(int)
+
+            # Order the nodes
+            self._to_process: Set[Any] = set(self._pattern.nodes)
+            while self._to_process:
+                root_node = self._get_matching_order_root_candidate()
+
+                for level in self._breadth_first_traversal_levels(root_node=root_node):
+                    self._process_matching_order_level(
+                        # We filter out nodes we've already processed.
+                        # Note that we don't need to do this if we treat the pattern as an
+                        # undirected graph.
+                        [node for node in level if node in self._to_process],
+                    )
+
+            pattern_with_nodes_sorted.add_nodes_from(self._ordered_nodes)
+
+            edges = [(source, dest, data) for (source, dest, data) in self._pattern.edges(data=True)]
+            pattern_with_nodes_sorted.add_edges_from(edges)
+
+            return pattern_with_nodes_sorted
+
     def _internal_matches(
         self,
         *,
@@ -1383,9 +1570,14 @@ class PatternMatching:
             if not self.matching_pattern_against_pattern
             else _pattern_matching_node_order,
         )
-        sorted_pattern = digraph_with_nodes_sorted_by(
-            pattern._graph, _pattern_matching_node_order  # pylint: disable=W0212
+        pattern_sorter = self._MatchingOrderSorter(
+            graph=sorted_graph_to_match_against,
+            pattern=pattern._graph,  # pylint: disable=W0212
+            graph_node_order=_graph_node_order
+            if not self.matching_pattern_against_pattern
+            else _pattern_matching_node_order,
         )
+        sorted_pattern = pattern_sorter.sort_pattern_into_matching_order()
 
         matching = GraphMatching(
             sorted_graph_to_match_against,
