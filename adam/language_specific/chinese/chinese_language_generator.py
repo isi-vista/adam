@@ -1058,13 +1058,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
             ):
                 return
             if count == 1:
-                one = DependencyTreeToken("yi1", NUMERAL)
                 classifier = noun_lexicon_entry.counting_classifier
                 if not classifier:
                     classifier = "ge4"
-                self.dependency_graph.add_edge(
-                    one, noun_dependency_node, role=NUMERIC_MODIFIER
-                )
+                # add "one" to the same string as the classifier as a hack for Chinese classifier "learning"
+                classifier = "yi1_" + classifier
                 self.dependency_graph.add_edge(
                     DependencyTreeToken(classifier, PARTICLE),
                     noun_dependency_node,
