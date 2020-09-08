@@ -64,6 +64,35 @@ class SurfaceTemplate:
                     and filler_words[0] not in MASS_NOUNS
                 ):
                     output_tokens.append("a")
+                elif self._language_mode == LanguageMode.CHINESE:
+                    # casing on classifiers in Chinese -- this is a hack that's basically the same as the English one
+                    if filler_words[0] in ["di4 myan4", "chwang2", "jr3", "jwo1 dz"]:
+                        output_tokens.append("yi1_jang1")
+                    elif filler_words[0] in ["shu1"]:
+                        output_tokens.append("yi1_ben3")
+                    elif filler_words[0] in ["wu1"]:
+                        output_tokens.append("yi1_jyan1")
+                    elif filler_words[0] in ["chi4 che1", "ka3 che1"]:
+                        output_tokens.append("yi1_lyang4")
+                    elif filler_words[0] in ["yi3 dz"]:
+                        output_tokens.append("yi1_ba3")
+                    elif filler_words[0] in ["shou3", "gou3", "mau1", "nyau3", "syung2"]:
+                        output_tokens.append("yi1_jr1")
+                    elif filler_words[0] in ["men2"]:
+                        output_tokens.append("yi1_shan4")
+                    elif filler_words[0] in ["mau4 dz"]:
+                        output_tokens.append("yi1_ding3")
+                    elif filler_words[0] in ["chyu1 chi2 bing3"]:
+                        output_tokens.append("yi1_kwai4")
+                    # eliminate mass and proper nouns and use the default classifier
+                    elif filler_words[0] not in [
+                        "ba4 ba4",
+                        "ma1 ma1",
+                        "shwei3",
+                        "gwo3 jr1",
+                        "nyou2 nai3",
+                    ]:
+                        output_tokens.append("yi1_ge4")
                 output_tokens.extend(filler_words)
             else:
                 # element must be a single token str due to object validity checks.

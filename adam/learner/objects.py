@@ -129,7 +129,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             )
             if not language_alignment.token_index_is_aligned(tok_idx)
             # ignore determiners
-            and token not in ["a", "the"] and not token[:3] == "yi1"
+            and token not in ["a", "the", "yi1_ge4"] and not token[:3] == "yi1"
         )
 
     def _enrich_post_process(
