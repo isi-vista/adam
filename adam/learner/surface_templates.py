@@ -64,7 +64,9 @@ class SurfaceTemplate:
                     and filler_words[0] not in MASS_NOUNS
                 ):
                     output_tokens.append("a")
-                elif self._language_mode == LanguageMode.CHINESE:
+                elif (
+                    self._language_mode == LanguageMode.CHINESE and len(filler_words) == 1
+                ):
                     # casing on classifiers in Chinese -- this is a hack that's basically the same as the English one
                     if filler_words[0] in ["di4 myan4", "chwang2", "jr3", "jwo1 dz"]:
                         output_tokens.append("yi1_jang1")
@@ -84,7 +86,7 @@ class SurfaceTemplate:
                         output_tokens.append("yi1_ding3")
                     elif filler_words[0] in ["chyu1 chi2 bing3"]:
                         output_tokens.append("yi1_kwai4")
-                    # eliminate mass and proper nouns and use the default classifier
+                    # eliminate mass and proper nouns and use the default classifier if another one hasn't already been used
                     elif filler_words[0] not in [
                         "ba4 ba4",
                         "ma1 ma1",
