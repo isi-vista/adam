@@ -236,7 +236,11 @@ def covers_entire_utterance(
             # we need to check here that the determiners aren't getting aligned; otherwise it can mess up our count
             if ignore_determiners:
                 num_covered_tokens += len(
-                    [x for x in aligned_strings_for_slot if x not in ["a", "the"]]
+                    [
+                        x
+                        for x in aligned_strings_for_slot
+                        if x not in ["a", "the"] and x[:3] != "yi1"
+                    ]
                 )
             else:
                 num_covered_tokens += len(aligned_strings_for_slot)
@@ -251,7 +255,7 @@ def covers_entire_utterance(
             [
                 token
                 for token in language_concept_alignment.language.as_token_sequence()
-                if token not in ["a", "the"]
+                if token not in ["a", "the"] and token[:3] != "yi1"
             ]
         )
     )

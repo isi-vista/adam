@@ -118,7 +118,11 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             # later learning of attributes since the learner may consider both the attribute and the object to be objects initially,
             # leading it to try to match two objects with a template that only has one slot
             and not all(
-                (e in ["a", "the"] or isinstance(e, SyntaxSemanticsVariable))
+                (
+                    e in ["a", "the"]
+                    or isinstance(e, SyntaxSemanticsVariable)
+                    or e[:3] == "yi1"
+                )
                 for e in bound_surface_template.surface_template.elements
             )
         )
