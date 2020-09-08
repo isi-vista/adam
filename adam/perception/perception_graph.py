@@ -1410,7 +1410,8 @@ class PatternMatching:
                 # noinspection PyCallingNonCallable
                 return (
                     -self._effective_graph_label_frequency[label],
-                    self._pattern.degree(node),
+                    self._pattern.out_degree(node),
+                    self._pattern.in_degree(node),
                 )  # type: ignore
 
             root_node_candidate = max(self._to_process, key=node_key)
@@ -1498,7 +1499,8 @@ class PatternMatching:
                 # noinspection PyCallingNonCallable
                 return (
                     self._connections_to_ordered_nodes[node],
-                    self._pattern.degree(node),  # type: ignore
+                    self._pattern.out_degree(node),  # type: ignore
+                    self._pattern.in_degree(node),  # type: ignore
                     -self._effective_graph_label_frequency[label],
                 )
 
