@@ -1453,7 +1453,6 @@ class PatternMatching:
                 current_level = levels[-1]
                 current_level.append(node)
                 seen.add(node)
-                # for neighbor in self._pattern.successors(node):
                 for neighbor in self._pattern.neighbors(node):
                     if neighbor not in seen:
                         nodes_to_visit.append((neighbor, depth + 1))
@@ -1478,12 +1477,6 @@ class PatternMatching:
             # Update number of connections to already-ordered nodes
             for neighbor in self._pattern.neighbors(node):
                 self._connections_to_ordered_nodes[neighbor] += 1
-                # Alternative way of doing things that might or might not make sense
-                # 2 edges to the same node count as 2 separate connections -- not sure if this makes sense
-                # if neighbor in self._pattern.successors(node):
-                #     self._connections_to_ordered_nodes[neighbor] += 1
-                # if neighbor in self._pattern.predecessors(node):
-                #     self._connections_to_ordered_nodes[neighbor] += 1
 
         def _process_matching_order_level(
             self,
@@ -1522,7 +1515,6 @@ class PatternMatching:
             pattern_with_nodes_sorted = DiGraph()
             self._ordered_nodes = []
             self._effective_graph_label_frequency = defaultdict(int)
-            # GRAPH_OR_PATTERN_NODE_TO_VF2PP_LABEL = immutabledict([])
             for node in self._graph.nodes:
                 label = self._graph_node_order((node, self._graph.nodes[node]))
                 self._effective_graph_label_frequency[label] += 1
