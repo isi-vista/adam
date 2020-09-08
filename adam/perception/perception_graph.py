@@ -1406,9 +1406,10 @@ class PatternMatching:
             def node_key(node):
                 # The type of pattern.degree is incorrect, so we disable type inspections for
                 # this line
+                label = _graph_or_pattern_node_label((node, self._pattern.nodes[node]))
                 # noinspection PyCallingNonCallable
                 return (
-                    -self._effective_graph_label_frequency[node],
+                    -self._effective_graph_label_frequency[label],
                     self._pattern.degree(node),
                 )  # type: ignore
 
@@ -1471,7 +1472,7 @@ class PatternMatching:
             # Update data structures that depend on the set of nodes that have already been ordered
 
             # Update effective label frequencies
-            label = _pattern_matching_node_order((node, self._pattern.nodes[node]))
+            label = _graph_or_pattern_node_label((node, self._pattern.nodes[node]))
             self._effective_graph_label_frequency[label] -= 1
 
             # Update number of connections to already-ordered nodes
@@ -1491,13 +1492,14 @@ class PatternMatching:
             #   guess I'll just have to Figure It Out.
 
             def node_order_key(node):
+                label = _graph_or_pattern_node_label((node, self._pattern.nodes[node]))
                 # The type of pattern.degree is incorrect, so we disable type inspections for
                 # this line
                 # noinspection PyCallingNonCallable
                 return (
                     self._connections_to_ordered_nodes[node],
                     self._pattern.degree(node),  # type: ignore
-                    -self._effective_graph_label_frequency[node],
+                    -self._effective_graph_label_frequency[label],
                 )
 
             pattern_nodes_to_process = set(level)
@@ -1516,7 +1518,7 @@ class PatternMatching:
             self._ordered_nodes = []
             self._effective_graph_label_frequency = defaultdict(int)
             for node in self._graph.nodes:
-                label = self._graph_node_order((node, self._graph.nodes[node]))
+                label = _graph_or_pattern_node_label((node, self._graph.nodes[node]))
                 self._effective_graph_label_frequency[label] += 1
 
             self._connections_to_ordered_nodes = defaultdict(int)
@@ -2730,6 +2732,24 @@ _PATTERN_PREDICATE_NODE_ORDER = list(  # type: ignore
 def _pattern_matching_node_order(node_node_data_tuple) -> int:
     (node, _) = node_node_data_tuple
     return _PATTERN_PREDICATE_NODE_ORDER.index(node.__class__)
+
+
+_PATTERN_OR_GRAPH_NODE_TO_LABEL = immutabledict(chain([
+    (node_type, index) for index, node_type in enumerate(_GRAPH_NODE_ORDER)
+], [
+    (node_type, index) for index, node_type in enumerate(_PATTERN_PREDICATE_NODE_ORDER)
+]))
+
+
+def _graph_or_pattern_node_label(node_node_data_tuple) -> int:
+    (node, _) = node_node_data_tuple
+    if isinstance(node, tuple):
+        # some node types are wrapped in tuples with unique ids to keep them distinct
+        # (e.g. otherwise identical Geon objects).
+        # We need to unwrap these before comparing types.
+        node = node[0]
+
+    return _PATTERN_OR_GRAPH_NODE_TO_LABEL[node.__class__]
 
 
 GOVERNED = OntologyNode("governed")
