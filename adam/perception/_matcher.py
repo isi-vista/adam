@@ -17,9 +17,9 @@ This code should not be used by anything except the perception_graph module.
 """
 import logging
 import sys
-from collections import defaultdict
+from collections import defaultdict, Counter
 from itertools import chain
-from typing import Mapping, Any, Dict, Callable, Optional
+from typing import Mapping, Any, Dict, Callable, Optional, Tuple, AbstractSet
 
 from immutablecollections import immutableset, ImmutableSet, immutabledict
 from more_itertools import flatten
@@ -27,6 +27,10 @@ from networkx import DiGraph
 
 from adam.ontology.phase1_ontology import PART_OF
 from adam.perception import ObjectPerception, MatchMode
+
+
+class InitialMatchError(RuntimeError):
+    pass
 
 
 class GraphMatching:
@@ -43,6 +47,7 @@ class GraphMatching:
         use_lookahead_pruning: bool,
         matching_pattern_against_pattern: bool = False,
         match_mode: MatchMode,
+        label_fn: Callable[[Tuple[Any, Dict[Any, Any]]], int],
     ) -> None:
         """
         *matching_pattern_against_pattern* should be indicated as true if the two graphs
@@ -61,6 +66,7 @@ class GraphMatching:
             pattern.nodes(), disable_order_check=True
         )
         self.pattern_node_order = {n: i for i, n in enumerate(pattern)}
+        self.label_fn = label_fn
 
         # Set recursion limit.
         self.old_recursion_limit = sys.getrecursionlimit()
@@ -262,13 +268,13 @@ class GraphMatching:
             # match() recursively (as we do in a normal match)
             # and just happened to make exactly this sequence of alignment choices.
             if not self.semantic_feasibility(aligned_graph_node, pattern_node):
-                raise RuntimeError(
+                raise InitialMatchError(
                     f"Requested to begin matching from an alignment which aligns "
                     f"semantically infeasible nodes: "
                     f"{pattern_node} to {aligned_graph_node}"
                 )
             if not self.syntactic_feasibility(aligned_graph_node, pattern_node):
-                raise RuntimeError(
+                raise InitialMatchError(
                     f"Requested to begin matching from an alignment which aligns "
                     f"syntactically infeasible nodes: "
                     f"{pattern_node} to {aligned_graph_node}"
@@ -598,6 +604,28 @@ class GraphMatching:
 
         # R_pred
 
+        # Test that the pattern and graph node have compatible numbers of predecessors with each
+        # label
+        #
+        # Alpár Jüttner and Péter Madarasi. "VF2++ — An improved subgraph isomorphism algorithm."
+        # Discrete Applied Mathematics (2018) 242.
+        graph_node_predecessor_label_counts = Counter([
+            self.label_fn((predecessor, self.graph.nodes[predecessor])) for predecessor in self.graph.pred[graph_node]
+            if predecessor in (self.graph_nodes_in_or_succeeding_match.keys() | self.graph_nodes_in_or_preceding_match.keys())
+        ])
+        pattern_node_predecessor_label_counts = Counter([
+            self.label_fn((predecessor, self.pattern.nodes[predecessor])) for predecessor in self.pattern.pred[pattern_node]
+            if predecessor in (self.pattern_nodes_in_or_succeeding_match.keys() | self.pattern_nodes_in_or_preceding_match.keys())
+        ])
+
+        for label in graph_node_predecessor_label_counts.keys() | pattern_node_predecessor_label_counts.keys():
+            if self.test == "mono":
+                if graph_node_predecessor_label_counts[label] < pattern_node_predecessor_label_counts[label]:
+                    return False
+            # Cutting rules not implemented for others yet
+
+        # The following tests should be redundant with the previous one -- not sure
+
         # For each predecessor n' of n in the partial mapping, the
         # corresponding node m' is a predecessor of m, and vice versa. Also,
         # the number of edges must be equal
@@ -635,6 +663,26 @@ class GraphMatching:
                         return False
 
         # R_succ
+
+        # Test that the pattern and graph node have compatible numbers of predecessors with each
+        # label
+        #
+        # Alpár Jüttner and Péter Madarasi. "VF2++ — An improved subgraph isomorphism algorithm."
+        # Discrete Applied Mathematics (2018) 242.
+        graph_node_successor_label_counts = Counter([
+            self.label_fn((successor, self.graph.nodes[successor])) for successor in self.graph.succ[graph_node]
+            if successor in (self.graph_nodes_in_or_succeeding_match.keys() | self.graph_nodes_in_or_preceding_match.keys())
+        ])
+        pattern_node_successor_label_counts = Counter([
+            self.label_fn((successor, self.pattern.nodes[successor])) for successor in self.pattern.succ[pattern_node]
+            if successor in (self.pattern_nodes_in_or_succeeding_match.keys() | self.pattern_nodes_in_or_preceding_match.keys())
+        ])
+
+        for label in graph_node_successor_label_counts.keys() | pattern_node_successor_label_counts.keys():
+            if self.test == "mono":
+                if graph_node_successor_label_counts[label] < pattern_node_successor_label_counts[label]:
+                    return False
+            # Cutting rules not implemented for others yet
 
         # For each successor n' of n in the partial mapping, the corresponding
         # node m' is a successor of m, and vice versa. Also, the number of
