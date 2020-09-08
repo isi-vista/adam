@@ -67,7 +67,7 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
-from adam.perception._matcher import GraphMatching, InitialMatchError
+from adam.perception._matcher import GraphMatching
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     HasBinaryProperty,
@@ -1579,7 +1579,6 @@ class PatternMatching:
             use_lookahead_pruning=use_lookahead_pruning,
             matching_pattern_against_pattern=self.matching_pattern_against_pattern,
             match_mode=self._match_mode,
-            label_fn=_graph_or_pattern_node_label,
         )
 
         sets_of_nodes_matched: Set[ImmutableSet[PerceptionGraphNode]] = set()
@@ -1627,18 +1626,13 @@ class PatternMatching:
                 chain(allowed_matching.items(), initial_partial_match.items())
             )
 
-            iterator = matching.subgraph_monomorphisms_iter(
+            for (
+                graph_node_to_matching_pattern_node
+            ) in matching.subgraph_monomorphisms_iter(
                 collect_debug_statistics=collect_debug_statistics,
                 debug_callback=debug_callback,
                 initial_partial_match=merged_initial_partial_match,
-            )
-            while True:
-                try:
-                    graph_node_to_matching_pattern_node = next(iterator)
-                except StopIteration:
-                    break
-                except InitialMatchError:
-                    continue
+            ):
                 matched_graph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
                     graph_node_to_matching_pattern_node
                 )
