@@ -37,7 +37,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    Deque)
+    Deque,
+)
 from uuid import uuid4
 
 import graphviz
@@ -1098,7 +1099,10 @@ class DumpPartialMatchCallback:
                 + "_call_"
                 + str(self.calls_to_match_counter).zfill(4)
             )
-            mapping = {k: f"match on {{{v.dot_label()}}}" for k, v in graph_node_to_pattern_node.items()}
+            mapping = {
+                k: f"match on {{{v.dot_label()}}}"
+                for k, v in graph_node_to_pattern_node.items()
+            }
             perception_graph.render_to_file(
                 graph_name=title,
                 output_file=Path(self.render_path + title),
@@ -1374,17 +1378,26 @@ class PatternMatching:
         Alpár Jüttner and Péter Madarasi. "VF2++ — An improved subgraph isomorphism algorithm."
         Discrete Applied Mathematics (2018) 242.
         """
+
         _graph: DiGraph = attrib(validator=instance_of(DiGraph), kw_only=True)
         _pattern: DiGraph = attrib(validator=instance_of(DiGraph), kw_only=True)
-        _graph_node_order: Callable[[Tuple[Any, Dict[Any, Any]]], int] = attrib(kw_only=True)
+        _graph_node_order: Callable[[Tuple[Any, Dict[Any, Any]]], int] = attrib(
+            kw_only=True
+        )
 
         """
         Our working list of pairs (node, node_data)
         """
-        _ordered_nodes: List[Tuple[Any, Dict[Any, Any]]] = attrib(init=False, factory=list)
+        _ordered_nodes: List[Tuple[Any, Dict[Any, Any]]] = attrib(
+            init=False, factory=list
+        )
         _to_process: Set[Any] = attrib(init=False, factory=set)
-        _effective_graph_label_frequency: Dict[Any, int] = attrib(init=False, factory=defaultdict)
-        _connections_to_ordered_nodes: Dict[Any, int] = attrib(init=False, factory=defaultdict)
+        _effective_graph_label_frequency: Dict[Any, int] = attrib(
+            init=False, factory=defaultdict
+        )
+        _connections_to_ordered_nodes: Dict[Any, int] = attrib(
+            init=False, factory=defaultdict
+        )
 
         def _get_matching_order_root_candidate(self) -> Any:
             """
@@ -1448,9 +1461,13 @@ class PatternMatching:
                     levels.append([])
                     overall_depth += 1
                 elif depth > overall_depth + 1:
-                    raise RuntimeError("Depth increased by more than one! Something is wrong with this BFS!")
+                    raise RuntimeError(
+                        "Depth increased by more than one! Something is wrong with this BFS!"
+                    )
                 elif depth < overall_depth:
-                    raise RuntimeError("Depth decreased! This should never happen in a BFS!")
+                    raise RuntimeError(
+                        "Depth decreased! This should never happen in a BFS!"
+                    )
 
                 current_level = levels[-1]
                 current_level.append(node)
@@ -1480,10 +1497,7 @@ class PatternMatching:
             for neighbor in self._pattern.neighbors(node):
                 self._connections_to_ordered_nodes[neighbor] += 1
 
-        def _process_matching_order_level(
-            self,
-            level: List[Any],
-        ):
+        def _process_matching_order_level(self, level: List[Any]):
             """
             Process a single level of a breadth-first search tree, adding the nodes to the list of
             already-ordered nodes
@@ -1535,12 +1549,15 @@ class PatternMatching:
                         # We filter out nodes we've already processed.
                         # Note that we don't need to do this if we treat the pattern as an
                         # undirected graph.
-                        [node for node in level if node in self._to_process],
+                        [node for node in level if node in self._to_process]
                     )
 
             pattern_with_nodes_sorted.add_nodes_from(self._ordered_nodes)
 
-            edges = [(source, dest, data) for (source, dest, data) in self._pattern.edges(data=True)]
+            edges = [
+                (source, dest, data)
+                for (source, dest, data) in self._pattern.edges(data=True)
+            ]
             pattern_with_nodes_sorted.add_edges_from(edges)
 
             return pattern_with_nodes_sorted
@@ -2736,11 +2753,15 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
     return _PATTERN_PREDICATE_NODE_ORDER.index(node.__class__)
 
 
-_PATTERN_OR_GRAPH_NODE_TO_LABEL = immutabledict(chain([
-    (node_type, index) for index, node_type in enumerate(_GRAPH_NODE_ORDER)
-], [
-    (node_type, index) for index, node_type in enumerate(_PATTERN_PREDICATE_NODE_ORDER)
-]))
+_PATTERN_OR_GRAPH_NODE_TO_LABEL: Mapping[Any, int] = immutabledict(
+    chain(
+        [(node_type, index) for index, node_type in enumerate(_GRAPH_NODE_ORDER)],
+        [
+            (node_type, index)
+            for index, node_type in enumerate(_PATTERN_PREDICATE_NODE_ORDER)
+        ],
+    )
+)
 
 
 def _graph_or_pattern_node_label(node_node_data_tuple) -> int:

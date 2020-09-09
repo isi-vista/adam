@@ -285,5 +285,5 @@ class SubsetVerbLearnerNew(
                 ]
             ),
             trim_after_match=pattern_remove_incomplete_region_or_spatial_path,
-            debug_callback=self._debug_callback
+            debug_callback=self._debug_callback,
         )
