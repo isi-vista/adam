@@ -70,7 +70,7 @@ class SurfaceTemplate:
                     and element in self._determiner_prefix_slots
                 ):
                     # casing on classifiers in Chinese -- this is a hack that's basically the same as the English one
-                    if filler_words[0] in ["di4 myan4", "chwang2", "jr3", "jwo1 dz"]:
+                    if filler_words[0] in ["chwang2", "jr3", "jwo1 dz"]:
                         output_tokens.append("yi1_jang1")
                     elif filler_words[0] in ["shu1"]:
                         output_tokens.append("yi1_ben3")
@@ -95,6 +95,7 @@ class SurfaceTemplate:
                         "shwei3",
                         "gwo3 jr1",
                         "nyou2 nai3",
+                        "di4 myan4",
                     ]:
                         output_tokens.append("yi1_ge4")
                 output_tokens.extend(filler_words)

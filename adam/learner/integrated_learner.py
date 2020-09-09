@@ -232,7 +232,7 @@ class IntegratedTemplateLearner(
                 else:
                     return cur_string
             # get the classifier and add it to the language
-            classifier = get_classifier_for_string(cur_string[0])
+            classifier = get_classifier_for_string(cur_string[-1])
             if classifier:
                 return tuple(chain((classifier,), cur_string))
             else:

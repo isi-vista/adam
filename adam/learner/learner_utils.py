@@ -69,7 +69,7 @@ from vistautils.span import Span
 
 
 def get_classifier_for_string(input_string: str) -> Optional[str]:
-    if input_string in ["di4 myan4", "chwang2", "jr3", "jwo1 dz"]:
+    if input_string in ["chwang2", "jr3", "jwo1 dz"]:
         return "yi1_jang1"
     elif input_string in ["shu1"]:
         return "yi1_ben3"
@@ -88,7 +88,14 @@ def get_classifier_for_string(input_string: str) -> Optional[str]:
     elif input_string in ["chyu1 chi2 bing3"]:
         return "yi1_kwai4"
     # eliminate mass and proper nouns and use the default classifier if another one hasn't already been used
-    elif input_string not in ["ba4 ba4", "ma1 ma1", "shwei3", "gwo3 jr1", "nyou2 nai3"]:
+    elif input_string not in [
+        "ba4 ba4",
+        "ma1 ma1",
+        "shwei3",
+        "gwo3 jr1",
+        "nyou2 nai3",
+        "di4 myan4",
+    ]:
         return "yi1_ge4"
     return None
 
@@ -258,6 +265,7 @@ def covers_entire_utterance(
             aligned_strings_for_slot = language_concept_alignment.language[
                 slot_for_element.start : slot_for_element.end
             ]
+            print(aligned_strings_for_slot)
             # we need to check here that the determiners aren't getting aligned; otherwise it can mess up our count
             if ignore_determiners:
                 num_covered_tokens += len(
@@ -274,7 +282,7 @@ def covers_entire_utterance(
     # to the template as the way we treat english determiners is currently
     # a hack. See: https://github.com/isi-vista/adam/issues/498
     sized_tokens = (
-        len(language_concept_alignment.language.as_token_sequence())
+        len([token for token in language_concept_alignment.language.as_token_sequence()])
         if not ignore_determiners
         else len(
             [
@@ -284,7 +292,7 @@ def covers_entire_utterance(
             ]
         )
     )
-
+    print("TOKENS", num_covered_tokens, sized_tokens)
     # This assumes the slots and the non-slot elements are non-overlapping,
     # which is true for how we construct them.
     return num_covered_tokens == sized_tokens
@@ -587,7 +595,6 @@ def candidate_templates(
             ):
                 if surface_template_bound_to_semantic_nodes:
                     ret.append(surface_template_bound_to_semantic_nodes)
-
     return immutableset(
         bound_surface_template
         for bound_surface_template in ret

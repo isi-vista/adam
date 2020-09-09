@@ -14,7 +14,7 @@ ENGLISH_DETERMINERS = immutableset(
         "yi1_jr1",
         "yi1_shan4",
         "yi1_ding3",
-        "yi_kwai4",
+        "yi1_kwai4",
     ]
 )
 """
