@@ -101,7 +101,7 @@ def test_objects_with_colors_is_curriculum(language_generator):
             and c[1].as_token_sequence()[2] == "is"
         ) or (
             language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
-            and c[1].as_token_sequence()[1] == "shr4"
+            and c[1].as_token_sequence()[2] == "shr4"
         )
     curriculum_test(
         _make_objects_with_colors_is_curriculum(None, None, language_generator)

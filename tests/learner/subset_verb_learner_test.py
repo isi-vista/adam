@@ -394,7 +394,12 @@ def test_take(language_mode, learner):
     run_verb_test(
         learner(language_mode),
         make_take_template(
-            agent=standard_object("taker_0", THING, required_properties=[ANIMATE]),
+            agent=standard_object(
+                "taker_0",
+                THING,
+                required_properties=[ANIMATE],
+                banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+            ),
             theme=standard_object("object_taken_0", required_properties=[INANIMATE]),
             use_adverbial_path_modifier=False,
         ),

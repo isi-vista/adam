@@ -1277,7 +1277,12 @@ def transitive_roll_with_surface(
 def make_roll_templates(
     noise_objects: Optional[int]
 ) -> Sequence[Phase1SituationTemplate]:
-    animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
+    animate_0 = standard_object(
+        "object_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     rollable_0 = standard_object(
         "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
     )
@@ -1289,7 +1294,7 @@ def make_roll_templates(
     return [
         # rolls intransitively
         intransitive_roll(animate_0, rolling_surface, background=background),
-        # rolls transitively
+        # # rolls transitively
         transitive_roll(animate_0, rollable_0, rolling_surface, background=background),
         # rolls on a surface
         transitive_roll_with_surface(
@@ -1626,7 +1631,6 @@ def make_put_templates(noise_objects: Optional[int]) -> Iterable[Phase1Situation
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
-
     object_put = standard_object("object_0", required_properties=[INANIMATE])
     on_region_object = standard_object(
         "on_region_object", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
@@ -2054,7 +2058,6 @@ def make_take_template(
                 ),
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
         # this is a hack since "grab" with an adverb doesn't really work in English
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
         if (
@@ -2642,7 +2645,6 @@ def throw_on_ground_template(
             )
         ],
         after_action_relations=[on(theme, ground)],
-        constraining_relations=[bigger_than(agent, theme)],
     )
 
 
@@ -2735,7 +2737,6 @@ def throw_up_down_template(
                 ),
             )
         ],
-        constraining_relations=flatten_relations(bigger_than(agent, theme)),
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
 
@@ -2772,7 +2773,6 @@ def throw_to_template(
             )
         ],
         after_action_relations=[near(theme, goal)],
-        constraining_relations=[bigger_than(agent, theme)],
     )
 
 

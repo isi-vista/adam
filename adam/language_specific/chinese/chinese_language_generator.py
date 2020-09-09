@@ -941,10 +941,11 @@ class SimpleRuleBasedChineseLanguageGenerator(
             )
             self.dependency_graph.add_node(dependency_node)
 
-            # add a classifier if necessary
-            self.add_classifier(
-                _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
-            )
+            # add a classifier if necessary; we don't add them for pronouns
+            if noun_lexicon_entry not in [YOU, ME]:
+                self.add_classifier(
+                    _object, count, dependency_node, noun_lexicon_entry=noun_lexicon_entry
+                )
 
             # handle sentences of the form 'the ball is red'
             if ATTRIBUTES_AS_X_IS_Y in self.situation.syntax_hints:
@@ -1029,7 +1030,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     IGNORE_HAS_AS_VERB not in self.situation.syntax_hints
                     and not self.situation.is_dynamic
                 ):
-                    return
+                    pass
                     # TODO: we currently return here since we can't handle one possessive node and one not for the third person (i.e. I have my ball, you have your ball
                     # but right now, we just have "Dad has a ball" since otherwise we'll end up adding "de" (equivalent of 's in English) to both instances (e.g. Dad's has Dad's ball)
                     # since the nodes aren't unique). https://github.com/isi-vista/adam/issues/55
@@ -1051,10 +1052,22 @@ class SimpleRuleBasedChineseLanguageGenerator(
             if count == 0:
                 raise RuntimeError(f"Invalid count for object {noun_lexicon_entry}")
             if (
-                count == 1
+                noun_dependency_node.part_of_speech == PROPER_NOUN
                 or _object.ontology_node == GROUND
-                or PROPER_NOUN in _object.properties
+                or MASS_NOUN in noun_lexicon_entry.properties
             ):
+                return
+            if count == 1:
+                classifier = noun_lexicon_entry.counting_classifier
+                if not classifier:
+                    classifier = "ge4"
+                # add "one" to the same string as the classifier as a hack for Chinese classifier "learning"
+                classifier = "yi1_" + classifier
+                self.dependency_graph.add_edge(
+                    DependencyTreeToken(classifier, PARTICLE),
+                    noun_dependency_node,
+                    role=CLASSIFIER,
+                )
                 return
             elif count == 2:
                 two = DependencyTreeToken("lyang3", NUMERAL)
@@ -1069,6 +1082,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     noun_dependency_node,
                     role=CLASSIFIER,
                 )
+                return
             # if the count is many, we don't need a CLF, and we just use many (this will be checked by a native speaker in the next round of checks)
             else:
                 many = DependencyTreeToken("hen3 dwo1", NUMERAL)

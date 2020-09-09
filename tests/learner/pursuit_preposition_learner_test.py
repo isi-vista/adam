@@ -1,4 +1,5 @@
 import random
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import pytest
 from adam.curriculum.phase1_curriculum import _x_has_y_template
 from immutablecollections import immutableset
@@ -494,7 +495,9 @@ def test_pursuit_preposition_in_front_learner(language_mode):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_has_learner(language_mode):
-    person = standard_object("person", PERSON)
+    person = standard_object(
+        "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     inanimate_object = standard_object(
         "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )

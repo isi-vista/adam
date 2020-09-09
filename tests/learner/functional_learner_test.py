@@ -1,7 +1,8 @@
 import pytest
 
 from adam.curriculum.phase2_curriculum import _make_sit_on_chair_curriculum
-from adam.experiment.experiment_utils import _make_sit_on_curriculum
+
+# from adam.experiment.experiment_utils import _make_sit_on_curriculum
 from adam.language.language_utils import phase2_language_generator
 from adam.learner import LanguageMode, LearningExample
 from adam.learner.functional_learner import FunctionalLearner
@@ -23,8 +24,10 @@ def integrated_learner_factory(language_mode: LanguageMode):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_functional_learner(language_mode: LanguageMode):
-
-    sit_train = _make_sit_on_curriculum(5, 0, phase2_language_generator(language_mode))
+    # TODO: currently the _make_sit_curriculum defaults to bed instead of chair so chair isn't predicted in the testing
+    sit_train = _make_sit_on_chair_curriculum(
+        5, 0, phase2_language_generator(language_mode)
+    )
     sit_test = _make_sit_on_chair_curriculum(
         1, 0, phase2_language_generator(language_mode)
     )
@@ -32,6 +35,7 @@ def test_functional_learner(language_mode: LanguageMode):
     learner = integrated_learner_factory(language_mode)
 
     for (_, linguistic_description, perceptual_representation) in sit_train.instances():
+        print(linguistic_description)
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )

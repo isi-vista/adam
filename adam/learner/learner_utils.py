@@ -68,6 +68,38 @@ from adam.utils.networkx_utils import subgraph
 from vistautils.span import Span
 
 
+def get_classifier_for_string(input_string: str) -> Optional[str]:
+    if input_string in ["chwang2", "jr3", "jwo1 dz"]:
+        return "yi1_jang1"
+    elif input_string in ["shu1"]:
+        return "yi1_ben3"
+    elif input_string in ["wu1"]:
+        return "yi1_jyan1"
+    elif input_string in ["chi4 che1", "ka3 che1"]:
+        return "yi1_lyang4"
+    elif input_string in ["yi3 dz"]:
+        return "yi1_ba3"
+    elif input_string in ["shou3", "gou3", "mau1", "nyau3", "syung2"]:
+        return "yi1_jr1"
+    elif input_string in ["men2"]:
+        return "yi1_shan4"
+    elif input_string in ["mau4 dz"]:
+        return "yi1_ding3"
+    elif input_string in ["chyu1 chi2 bing3"]:
+        return "yi1_kwai4"
+    # eliminate mass and proper nouns and use the default classifier if another one hasn't already been used
+    elif input_string not in [
+        "ba4 ba4",
+        "ma1 ma1",
+        "shwei3",
+        "gwo3 jr1",
+        "nyou2 nai3",
+        "di4 myan4",
+    ]:
+        return "yi1_ge4"
+    return None
+
+
 def pattern_match_to_description(
     *,
     surface_template: SurfaceTemplate,
@@ -236,7 +268,11 @@ def covers_entire_utterance(
             # we need to check here that the determiners aren't getting aligned; otherwise it can mess up our count
             if ignore_determiners:
                 num_covered_tokens += len(
-                    [x for x in aligned_strings_for_slot if x not in ["a", "the"]]
+                    [
+                        x
+                        for x in aligned_strings_for_slot
+                        if x not in ["a", "the"] and x[:3] != "yi1"
+                    ]
                 )
             else:
                 num_covered_tokens += len(aligned_strings_for_slot)
@@ -245,17 +281,16 @@ def covers_entire_utterance(
     # to the template as the way we treat english determiners is currently
     # a hack. See: https://github.com/isi-vista/adam/issues/498
     sized_tokens = (
-        len(language_concept_alignment.language.as_token_sequence())
+        len([token for token in language_concept_alignment.language.as_token_sequence()])
         if not ignore_determiners
         else len(
             [
                 token
                 for token in language_concept_alignment.language.as_token_sequence()
-                if token not in ["a", "the"]
+                if token not in ["a", "the"] and token[:3] != "yi1"
             ]
         )
     )
-
     # This assumes the slots and the non-slot elements are non-overlapping,
     # which is true for how we construct them.
     return num_covered_tokens == sized_tokens
@@ -558,7 +593,6 @@ def candidate_templates(
             ):
                 if surface_template_bound_to_semantic_nodes:
                     ret.append(surface_template_bound_to_semantic_nodes)
-
     return immutableset(
         bound_surface_template
         for bound_surface_template in ret

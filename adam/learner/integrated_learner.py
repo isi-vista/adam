@@ -5,7 +5,7 @@ import typing
 from itertools import chain, combinations
 from pathlib import Path
 from typing import Iterator, Mapping, Optional, Tuple, List
-
+from adam.learner.learner_utils import get_classifier_for_string
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS, ENGLISH_DETERMINERS
 from adam.learner import LearningExample, TopLevelLanguageLearner
@@ -251,33 +251,57 @@ class IntegratedTemplateLearner(
     def _add_determiners(
         self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
     ) -> Tuple[str, ...]:
+        # handle Chinese Classifiers by casing on the words -- this is hackish
         if (
             self.object_learner._language_mode  # pylint: disable=protected-access
-            != LanguageMode.ENGLISH
+            == LanguageMode.CHINESE
         ):
-            return cur_string
-        # If plural, we want to strip any "a" that might preceed a noun after "many" or "two"
-        if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
-            if "a" in cur_string:
-                a_position = cur_string.index("a")
-                if a_position > 0 and cur_string[a_position - 1] in ["many", "two"]:
+            if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
+                return tuple([token for token in cur_string if token[:3] != "yi1"])
+            # specially handle the case of my and your in Chinese since these organize the classifier and attribute differently
+            if cur_string[0] in ["ni3 de", "wo3 de"] and len(cur_string) > 1:
+                my_your_classifier = get_classifier_for_string(cur_string[1])
+                if my_your_classifier:
                     return tuple(
-                        [token for i, token in enumerate(cur_string) if i != a_position]
+                        chain((cur_string[0], my_your_classifier), cur_string[1:])
                     )
-        # English-specific hack to deal with us not understanding determiners:
-        # https://github.com/isi-vista/adam/issues/498
-        # The "is lower" check is a hack to block adding a determiner to proper names.
-        # Ground is a specific thing so we special case this to be assigned
-        if object_node.concept == GROUND_OBJECT_CONCEPT:
-            return tuple(chain(("the",), cur_string))
-        elif (
-            object_node.concept.debug_string not in MASS_NOUNS
-            and object_node.concept.debug_string.islower()
-            and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
-        ):
-            return tuple(chain(("a",), cur_string))
+                else:
+                    return cur_string
+            # get the classifier and add it to the language
+            classifier = get_classifier_for_string(cur_string[-1])
+            if classifier:
+                return tuple(chain((classifier,), cur_string))
+            else:
+                return cur_string
+
+        # handle English determiners
         else:
-            return cur_string
+            # If plural, we want to strip any "a" that might preceed a noun after "many" or "two"
+            if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
+                if "a" in cur_string:
+                    a_position = cur_string.index("a")
+                    if a_position > 0 and cur_string[a_position - 1] in ["many", "two"]:
+                        return tuple(
+                            [
+                                token
+                                for i, token in enumerate(cur_string)
+                                if i != a_position
+                            ]
+                        )
+            # English-specific hack to deal with us not understanding determiners:
+            # https://github.com/isi-vista/adam/issues/498
+            # The "is lower" check is a hack to block adding a determiner to proper names.
+            # Ground is a specific thing so we special case this to be assigned
+            if object_node.concept == GROUND_OBJECT_CONCEPT:
+                return tuple(chain(("the",), cur_string))
+            elif (
+                object_node.concept.debug_string not in MASS_NOUNS
+                and object_node.concept.debug_string.islower()
+                and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
+            ):
+                return tuple(chain(("a",), cur_string))
+            else:
+                return cur_string
 
     def _instantiate_object(
         self, object_node: ObjectSemanticNode, learner_semantics: LearnerSemantics

@@ -154,6 +154,7 @@ def run_subset_learner_for_object(
         ) in test_instance_group.instances():
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
+            print(gold)
             assert gold in [
                 desc.as_token_sequence() for desc in descriptions_from_learner
             ]
