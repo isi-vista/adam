@@ -1040,7 +1040,6 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     for _, path in self.situation.actions[
                         0
                     ].during.objects_to_paths.items():
-                        print(region, path.reference_destination_object)
                         if (
                             path.reference_destination_object == region
                             and SIDE in path.properties

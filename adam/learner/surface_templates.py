@@ -47,7 +47,7 @@ class SurfaceTemplate:
         """
 
         output_tokens: List[Union[str, SyntaxSemanticsVariable]] = []
-        for i, element in enumerate(self.elements):
+        for element in self.elements:
             if isinstance(element, SyntaxSemanticsVariable):
                 filler_words = template_variable_to_filler[element]
                 # Ground is a specific thing so we special case this to be assigned
@@ -69,8 +69,6 @@ class SurfaceTemplate:
                     and len(filler_words) == 1
                     and element in self._determiner_prefix_slots
                 ):
-                    # if i > 0 and elements[i-1] in ["wo3 de", "ni3 de"]:
-                    #     output_tokens.insert(i+1, "yi1_ge4")
                     # casing on classifiers in Chinese -- this is a hack that's basically the same as the English one
                     if filler_words[0] in ["di4 myan4", "chwang2", "jr3", "jwo1 dz"]:
                         output_tokens.append("yi1_jang1")

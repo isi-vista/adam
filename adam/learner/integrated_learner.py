@@ -3,7 +3,7 @@ import logging
 from itertools import chain, combinations
 from pathlib import Path
 from typing import Iterator, Mapping, Optional, Tuple, List
-
+from adam.learner.learner_utils import get_classifier_for_string
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
 from adam.learner import LearningExample, TopLevelLanguageLearner
@@ -222,34 +222,22 @@ class IntegratedTemplateLearner(
             self.object_learner._language_mode  # pylint: disable=protected-access
             == LanguageMode.CHINESE
         ):
-            if cur_string[0] in ["di4 myan4", "chwang2", "jr3", "jwo1 dz"]:
-                return tuple(chain(("yi1_jang1",), cur_string))
-            elif cur_string[0] in ["shu1"]:
-                return tuple(chain(("yi1_ben3",), cur_string))
-            elif cur_string[0] in ["wu1"]:
-                return tuple(chain(("yi1_jyan1",), cur_string))
-            elif cur_string[0] in ["chi4 che1", "ka3 che1"]:
-                return tuple(chain(("yi1_lyang4",), cur_string))
-            elif cur_string[0] in ["yi3 dz"]:
-                return tuple(chain(("yi1_ba3",), cur_string))
-            elif cur_string[0] in ["shou3", "gou3", "mau1", "nyau3", "syung2"]:
-                return tuple(chain(("yi1_jr1",), cur_string))
-            elif cur_string[0] in ["men2"]:
-                return tuple(chain(("yi1_shan4",), cur_string))
-            elif cur_string[0] in ["mau4 dz"]:
-                return tuple(chain(("yi1_ding3",), cur_string))
-            elif cur_string[0] in ["chyu1 chi2 bing3"]:
-                return tuple(chain(("yi1_kwai4",), cur_string))
-            elif cur_string[0] not in [
-                "ba4 ba4",
-                "ma1 ma1",
-                "shwei3",
-                "gwo3 jr1",
-                "nyou2 nai3",
-            ]:
-                return tuple(chain(("yi1_ge4",), cur_string))
+            # specially handle the case of my and your in Chinese since these organize the classifier and attribute differently
+            if cur_string[0] in ["ni3 de", "wo3 de"] and len(cur_string) > 1:
+                my_your_classifier = get_classifier_for_string(cur_string[1])
+                if my_your_classifier:
+                    return tuple(
+                        chain((cur_string[0], my_your_classifier), cur_string[1:])
+                    )
+                else:
+                    return cur_string
+            # get the classifier and add it to the language
+            classifier = get_classifier_for_string(cur_string[0])
+            if classifier:
+                return tuple(chain((classifier,), cur_string))
             else:
                 return cur_string
+
         # handle English determiners
         else:
             # If plural, we want to strip any "a" that might preceed a noun after "many" or "two"

@@ -68,6 +68,31 @@ from adam.utils.networkx_utils import subgraph
 from vistautils.span import Span
 
 
+def get_classifier_for_string(input_string: str) -> Optional[str]:
+    if input_string in ["di4 myan4", "chwang2", "jr3", "jwo1 dz"]:
+        return "yi1_jang1"
+    elif input_string in ["shu1"]:
+        return "yi1_ben3"
+    elif input_string in ["wu1"]:
+        return "yi1_jyan1"
+    elif input_string in ["chi4 che1", "ka3 che1"]:
+        return "yi1_lyang4"
+    elif input_string in ["yi3 dz"]:
+        return "yi1_ba3"
+    elif input_string in ["shou3", "gou3", "mau1", "nyau3", "syung2"]:
+        return "yi1_jr1"
+    elif input_string in ["men2"]:
+        return "yi1_shan4"
+    elif input_string in ["mau4 dz"]:
+        return "yi1_ding3"
+    elif input_string in ["chyu1 chi2 bing3"]:
+        return "yi1_kwai4"
+    # eliminate mass and proper nouns and use the default classifier if another one hasn't already been used
+    elif input_string not in ["ba4 ba4", "ma1 ma1", "shwei3", "gwo3 jr1", "nyou2 nai3"]:
+        return "yi1_ge4"
+    return None
+
+
 def pattern_match_to_description(
     *,
     surface_template: SurfaceTemplate,

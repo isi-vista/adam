@@ -1204,7 +1204,6 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
             # get a noun for the second object and add it to the tree
             if isinstance(relation.second_slot, SituationObject):
-                print("IS OBJECT")
                 second_slot_dependency_node = self._noun_for_object(relation.second_slot)
             elif isinstance(relation.second_slot, Region):
                 second_slot_dependency_node = self._noun_for_object(
