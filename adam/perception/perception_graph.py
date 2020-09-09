@@ -1087,6 +1087,7 @@ class DumpPartialMatchCallback:
             self.calls_to_match_counter % self.dump_every_x_calls == 0
             and (current_time - self.start_time) > self.seconds_to_wait_before_rendering
         ):
+            perception_graph: PerceptionGraphProtocol
             try:
                 perception_graph = PerceptionGraph(graph)
             except RuntimeError:
