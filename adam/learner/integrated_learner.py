@@ -84,7 +84,7 @@ class IntegratedTemplateLearner(
     _observation_num: int = attrib(init=False, default=0)
     _sub_learners: List[TemplateLearner] = attrib(init=False)
 
-    potential_definiteness_markers: typing.Counter[str] = attrib(
+    _potential_definiteness_markers: typing.Counter[str] = attrib(
         init=False, default=collections.Counter()
     )
 
@@ -143,10 +143,10 @@ class IntegratedTemplateLearner(
                     for node, span in current_learner_state.language_concept_alignment.node_to_language_span.items():
                         # Special case: Could be a object with a determiner included in the span
                         if span.end - span.start > 1:
-                            self.potential_definiteness_markers.update([sequence[span.start]])
+                            self._potential_definiteness_markers.update([sequence[span.start]])
                         # Standard case - add token preceeding the noun
                         elif span.start > 0:
-                            self.potential_definiteness_markers.update([sequence[span.start-1]])
+                            self._potential_definiteness_markers.update([sequence[span.start - 1]])
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
@@ -419,7 +419,7 @@ class IntegratedTemplateLearner(
         # Check if it contains any potential definiteness marker
         sequence = current_learner_state.language_concept_alignment.language.as_token_sequence()
         definite_marker_matches = []
-        most_common = self.potential_definiteness_markers.most_common(3)
+        most_common = self._potential_definiteness_markers.most_common(3)
         for node, span in current_learner_state.language_concept_alignment.node_to_language_span.items():
             if isinstance(node, ObjectSemanticNode):
                 # Special case: Could be a object with a determiner included in the span

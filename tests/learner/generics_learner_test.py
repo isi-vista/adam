@@ -111,7 +111,7 @@ def run_generics_test(learner, language_mode):
             LearningExample(perceptual_representation, linguistic_description)
         )
 
-    print(learner.potential_definiteness_markers)
+    print(learner._potential_definiteness_markers)
     learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
 
 
