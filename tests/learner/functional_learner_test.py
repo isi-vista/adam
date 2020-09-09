@@ -35,6 +35,7 @@ def test_functional_learner(language_mode: LanguageMode):
     learner = integrated_learner_factory(language_mode)
 
     for (_, linguistic_description, perceptual_representation) in sit_train.instances():
+        print(linguistic_description)
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
