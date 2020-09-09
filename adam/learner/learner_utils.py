@@ -265,7 +265,6 @@ def covers_entire_utterance(
             aligned_strings_for_slot = language_concept_alignment.language[
                 slot_for_element.start : slot_for_element.end
             ]
-            print(aligned_strings_for_slot)
             # we need to check here that the determiners aren't getting aligned; otherwise it can mess up our count
             if ignore_determiners:
                 num_covered_tokens += len(
@@ -292,7 +291,6 @@ def covers_entire_utterance(
             ]
         )
     )
-    print("TOKENS", num_covered_tokens, sized_tokens)
     # This assumes the slots and the non-slot elements are non-overlapping,
     # which is true for how we construct them.
     return num_covered_tokens == sized_tokens

@@ -301,7 +301,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         for thing_whose_meaning_to_learn in self._candidate_templates(
             language_perception_semantic_alignment
         ):
-            print(thing_whose_meaning_to_learn)
             self._learning_step(preprocessed_input, thing_whose_meaning_to_learn)
 
     def enrich_during_learning(

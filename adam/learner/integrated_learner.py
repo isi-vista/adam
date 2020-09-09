@@ -222,6 +222,9 @@ class IntegratedTemplateLearner(
             self.object_learner._language_mode  # pylint: disable=protected-access
             == LanguageMode.CHINESE
         ):
+            if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
+                return tuple([token for token in cur_string if token[:3] != "yi1"])
+                # raise NotImplementedError()
             # specially handle the case of my and your in Chinese since these organize the classifier and attribute differently
             if cur_string[0] in ["ni3 de", "wo3 de"] and len(cur_string) > 1:
                 my_your_classifier = get_classifier_for_string(cur_string[1])
