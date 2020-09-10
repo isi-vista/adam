@@ -43,7 +43,7 @@ from uuid import uuid4
 
 import graphviz
 from more_itertools import first, ilen
-from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
+from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes, selfloop_edges
 from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
@@ -1563,6 +1563,82 @@ class PatternMatching:
 
             return pattern_with_nodes_sorted
 
+    def _sort_in_topological_order(self, pattern_digraph: DiGraph) -> DiGraph:
+        """
+        Sort the given pattern digraph in topological order.
+
+        Adapted from public domain Python 2.5 code by Jens Weggemann, 2012.
+        https://github.com/jeweg/topological-sorting
+        """
+        pattern_with_nodes_sorted = DiGraph()
+
+        self_loops = immutableset(selfloop_edges(pattern_digraph))
+        sorted_pattern_nodes = []
+        sink_nodes = immutableset([
+            node for node in pattern_digraph.nodes
+            if not pattern_digraph.succ[node]
+        ])
+
+        @attrs
+        class _CycleDetector:
+            _seen_set: Set[Any] = attrib(factory=set)
+
+            def push(self, node: Any) -> bool:
+                if node in self._seen_set:
+                    seen_nodes = list(self._seen_set)
+                    first_saw_node_at_index = seen_nodes.index(node)
+                    logging.debug("Detected cycle of nodes %o", seen_nodes[first_saw_node_at_index:])
+                    return True
+                else:
+                    self._seen_set.add(node)
+                    return False
+
+            def pop(self, node: Any, caused_cycle: bool):
+                # If it caused a cycle, then we've seen it once already, so we shouldn't remove it
+                # yet -- we'll do that later.
+                if not caused_cycle:
+                    self._seen_set.remove(node)
+
+        cycle_detector = _CycleDetector()
+        visited_nodes = set()
+        traversed_edges = set()
+
+        def visit(node):
+            nonlocal cycle_detector
+            caused_cycle = cycle_detector.push(node)
+
+            if not caused_cycle:
+                for edge in pattern_digraph.in_edges(node):
+                    if edge not in traversed_edges and edge not in self_loops:
+                        traversed_edges.add(edge)
+                        predecessor, _ = edge
+                        visit(predecessor)
+
+            if node not in visited_nodes:
+                visited_nodes.add(node)
+                sorted_pattern_nodes.append(node)
+
+            cycle_detector.pop(node, caused_cycle)
+
+        def traverse_from_node(root_node):
+            nonlocal cycle_detector
+            cycle_detector = _CycleDetector()
+            visit(root_node)
+
+        for sink_node in iter(sink_nodes):
+            traverse_from_node(sink_node)
+
+        if len(visited_nodes) < len(pattern_digraph.nodes):
+            for node in pattern_digraph.nodes:
+                if node not in visited_nodes:
+                    traverse_from_node(node)
+
+        pattern_with_nodes_sorted.add_nodes_from(sorted_pattern_nodes)
+        pattern_with_nodes_sorted.add_edges_from(
+            (source, dest, data) for (source, dest, data) in pattern_digraph.edges(data=True)
+        )
+        return pattern_with_nodes_sorted
+
     def _internal_matches(
         self,
         *,
@@ -1584,14 +1660,7 @@ class PatternMatching:
             if not self.matching_pattern_against_pattern
             else _pattern_matching_node_order,
         )
-        pattern_sorter = self._MatchingOrderSorter(
-            graph=sorted_graph_to_match_against,
-            pattern=pattern._graph,  # pylint: disable=W0212
-            graph_node_order=_graph_node_order
-            if not self.matching_pattern_against_pattern
-            else _pattern_matching_node_order,
-        )
-        sorted_pattern = pattern_sorter.sort_pattern_into_matching_order()
+        sorted_pattern = self._sort_in_topological_order(pattern._graph)
 
         matching = GraphMatching(
             sorted_graph_to_match_against,
