@@ -114,49 +114,49 @@ class GraphMatching:
         # which appears to be by insertion order (at least on recent Pythons)
         min_key = self.pattern_node_order.__getitem__
 
-        # First we compute the "forward frontier" sets.
+        # First we compute the "backward frontier" sets.
         # These are the nodes which are reachable in one hop from the currently matched nodes
-        # by following edges in the forwards direction.
-        graph_match_forward_frontier = [
+        # by following edges in the *backwards* direction direction.
+        graph_match_backwards_frontier = [
             node
-            for node in self.graph_nodes_in_or_succeeding_match
+            for node in self.graph_nodes_in_or_preceding_match
             if node not in self.graph_node_to_pattern_node
         ]
-        pattern_match_forward_frontier = [
+        pattern_match_backwards_frontier = [
             node
-            for node in self.pattern_nodes_in_or_succeeding_match
+            for node in self.pattern_nodes_in_or_preceding_match
             if node not in self.pattern_node_to_graph_node
         ]
 
-        # if there are candidate node alignments moving forwards along the edges we attempt
-        # those first
-        # RMG: why doesn't this fail when the pattern has a forward frontier but the graph does not?
-        # Shouldn't that indicate a failed match?
-        if graph_match_forward_frontier and pattern_match_forward_frontier:
-            pattern_node = min(pattern_match_forward_frontier, key=min_key)
-            return (pattern_node, graph_match_forward_frontier)
+        # if there are candidate node alignments moving backwards along the edges we attempt
+        # those next.
+        # RMG: why doesn't this fail when the pattern has a backward frontier
+        # but the graph does not? Shouldn't that indicate a failed match?
+        if graph_match_backwards_frontier and pattern_match_backwards_frontier:
+            pattern_node = min(pattern_match_backwards_frontier, key=min_key)
+            return (pattern_node, graph_match_backwards_frontier)
         else:
-            # Compute the "backward frontier" sets.
+            # Compute the "forward frontier" sets.
             # These are the nodes which are reachable in one hop from the currently matched nodes
-            # by following edges in the *backwards* direction direction.
-            graph_match_backwards_frontier = [
+            # by following edges in the forwards direction.
+            graph_match_forward_frontier = [
                 node
-                for node in self.graph_nodes_in_or_preceding_match
+                for node in self.graph_nodes_in_or_succeeding_match
                 if node not in self.graph_node_to_pattern_node
             ]
-            pattern_match_backwards_frontier = [
+            pattern_match_forward_frontier = [
                 node
-                for node in self.pattern_nodes_in_or_preceding_match
+                for node in self.pattern_nodes_in_or_succeeding_match
                 if node not in self.pattern_node_to_graph_node
             ]
 
-            # if there are candidate node alignments moving backwards along the edges we attempt
-            # those next.
-            # RMG: why doesn't this fail when the pattern has a backward frontier
-            # but the graph does not? Shouldn't that indicate a failed match?
-            if graph_match_backwards_frontier and pattern_match_backwards_frontier:
-                pattern_node = min(pattern_match_backwards_frontier, key=min_key)
-                return (pattern_node, graph_match_backwards_frontier)
+            # if there are candidate node alignments moving forwards along the edges we attempt
+            # those first
+            # RMG: why doesn't this fail when the pattern has a forward frontier but the graph does not?
+            # Shouldn't that indicate a failed match?
+            if graph_match_forward_frontier and pattern_match_forward_frontier:
+                pattern_node = min(pattern_match_forward_frontier, key=min_key)
+                return (pattern_node, graph_match_forward_frontier)
             else:
                 # otherwise we just take the first unmatched pattern node
                 pattern_node = min(
