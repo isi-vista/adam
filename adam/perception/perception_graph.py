@@ -43,7 +43,7 @@ from uuid import uuid4
 
 import graphviz
 from more_itertools import first, ilen
-from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes, selfloop_edges
+from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes, selfloop_edges, set_edge_attributes
 from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
@@ -1660,7 +1660,28 @@ class PatternMatching:
             if not self.matching_pattern_against_pattern
             else _pattern_matching_node_order,
         )
-        sorted_pattern = self._sort_in_topological_order(pattern._graph)
+
+        def reverse_part_of_edges(digraph: DiGraph):
+            to_reverse = []
+            for node in digraph.nodes:
+                if isinstance(node, AnyObjectPerception) or isinstance(node, ObjectSemanticNodePerceptionPredicate):
+                    for predecessor, _, data in digraph.in_edges(node, data=True):
+                        predicate = data.get('predicate')
+                        if predicate == PART_OF or (isinstance(predicate, HoldsAtTemporalScopePredicate)
+                                                    and isinstance(predicate.wrapped_edge_predicate, RelationTypeIsPredicate)
+                                                    and predicate.wrapped_edge_predicate.relation_type == PART_OF):
+                            to_reverse.append((predecessor, node, data))
+
+            for u, v, data in to_reverse:
+                digraph.remove_edge(u, v)
+                digraph.add_edge(v, u)
+                digraph.edges[v, u].clear()
+                digraph.edges[v, u].update(data)
+
+        pattern_copy = pattern._graph.copy()  # pylint: disable=W0212
+        reverse_part_of_edges(pattern_copy)
+        sorted_pattern = self._sort_in_topological_order(pattern_copy)
+        reverse_part_of_edges(sorted_pattern)
 
         matching = GraphMatching(
             sorted_graph_to_match_against,
