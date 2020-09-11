@@ -7,7 +7,6 @@ from typing import AbstractSet, Iterable, Optional, Tuple
 from attr import attrs, attrib
 from immutablecollections import immutableset, immutablesetmultidict
 
-from adam.language import LinguisticDescription
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,

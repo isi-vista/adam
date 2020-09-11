@@ -30,7 +30,7 @@ from adam.experiment.experiment_utils import (
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import phase2_language_generator
-from adam.language_specific.english import ENGLISH_DETERMINERS
+from adam.language_specific.english import DETERMINERS
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
@@ -182,7 +182,7 @@ def learner_factory_from_params(
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
         objects,
-        determiners=ENGLISH_DETERMINERS,
+        determiners=DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
         perception_generator=perception_generator,

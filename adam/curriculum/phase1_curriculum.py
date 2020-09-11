@@ -417,7 +417,7 @@ def _make_generic_statements_curriculum(
             subject = [
                 token
                 for token in description.as_token_sequence()
-                if token not in ["a", "the"]
+                if token not in ["a", "the"] and token[0:3] != "yi1"
             ][0]
             all_instances.append(
                 (

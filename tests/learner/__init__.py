@@ -4,7 +4,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from immutablecollections import immutabledict
-from adam.language_specific.english import ENGLISH_DETERMINERS
+from adam.language_specific.english import DETERMINERS
 from adam.learner.language_mode import LanguageMode
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
@@ -22,7 +22,7 @@ PHASE_1_CURRICULUM_OBJECTS_INCLUDE_GROUND.append(GROUND)
 def object_recognizer_factory(language_mode: LanguageMode) -> ObjectRecognizer:
     return ObjectRecognizer.for_ontology_types(
         PHASE_1_CURRICULUM_OBJECTS_INCLUDE_GROUND,
-        ENGLISH_DETERMINERS,
+        DETERMINERS,
         GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
         perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,

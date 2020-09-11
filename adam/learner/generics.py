@@ -57,7 +57,7 @@ class SimpleGenericsLearner(TemplateLearner):
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         sequence = (
             language_perception_semantic_alignment.language_concept_alignment.language.as_token_sequence()
@@ -94,4 +94,3 @@ class SimpleGenericsLearner(TemplateLearner):
                     significant_object_node.concept,
                     action_concepts,
                 )
-

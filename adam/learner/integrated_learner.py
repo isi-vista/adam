@@ -5,9 +5,13 @@ import typing
 from itertools import chain, combinations
 from pathlib import Path
 from typing import Iterator, Mapping, Optional, Tuple, List
-from adam.learner.learner_utils import get_classifier_for_string
+
+from attr import attrib, attrs
+from attr.validators import instance_of, optional
+from immutablecollections import immutabledict
+
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
-from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS, ENGLISH_DETERMINERS
+from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
 from adam.learner import LearningExample, TopLevelLanguageLearner
 from adam.learner.alignments import (
     LanguageConceptAlignment,
@@ -16,6 +20,7 @@ from adam.learner.alignments import (
 )
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.language_mode import LanguageMode
+from adam.learner.learner_utils import get_classifier_for_string
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
@@ -32,9 +37,6 @@ from adam.semantics import (
     LearnerSemantics,
     FunctionalObjectConcept,
 )
-from attr import attrib, attrs
-from attr.validators import instance_of, optional
-from immutablecollections import immutabledict
 
 
 class LanguageLearnerNew:
@@ -84,7 +86,7 @@ class IntegratedTemplateLearner(
     _observation_num: int = attrib(init=False, default=0)
     _sub_learners: List[TemplateLearner] = attrib(init=False)
 
-    _potential_definiteness_markers: typing.Counter[str] = attrib(
+    potential_definiteness_markers: typing.Counter[str] = attrib(
         init=False, default=collections.Counter()
     )
 
@@ -139,14 +141,25 @@ class IntegratedTemplateLearner(
                 )
                 # Check definiteness after recognizing objects
                 if sub_learner == self.object_learner:
-                    sequence = current_learner_state.language_concept_alignment.language.as_token_sequence()
-                    for node, span in current_learner_state.language_concept_alignment.node_to_language_span.items():
+                    sequence = (
+                        current_learner_state.language_concept_alignment.language.as_token_sequence()
+                    )
+                    for (
+                        _,
+                        span,
+                    ) in (
+                        current_learner_state.language_concept_alignment.node_to_language_span.items()
+                    ):
                         # Special case: Could be a object with a determiner included in the span
                         if span.end - span.start > 1:
-                            self._potential_definiteness_markers.update([sequence[span.start]])
+                            self.potential_definiteness_markers.update(
+                                [sequence[span.start]]
+                            )
                         # Standard case - add token preceeding the noun
                         elif span.start > 0:
-                            self._potential_definiteness_markers.update([sequence[span.start - 1]])
+                            self.potential_definiteness_markers.update(
+                                [sequence[span.start - 1]]
+                            )
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
@@ -441,17 +454,27 @@ class IntegratedTemplateLearner(
 
     def is_definite(self, current_learner_state: LanguagePerceptionSemanticAlignment):
         # Check if it contains any potential definiteness marker
-        sequence = current_learner_state.language_concept_alignment.language.as_token_sequence()
+        sequence = (
+            current_learner_state.language_concept_alignment.language.as_token_sequence()
+        )
         definite_marker_matches = []
-        most_common = self._potential_definiteness_markers.most_common(3)
-        for node, span in current_learner_state.language_concept_alignment.node_to_language_span.items():
+        most_common = self.potential_definiteness_markers.keys()
+        # Could instead use the following for most_common n:
+        # most_common = [s for s, _ in self.potential_definiteness_markers.most_common(3)]
+        # TODO: We want to exclude attributes (e.g red balls) should be indefinite
+        for (
+            node,
+            span,
+        ) in (
+            current_learner_state.language_concept_alignment.node_to_language_span.items()
+        ):
             if isinstance(node, ObjectSemanticNode):
                 # Special case: Could be a object with a determiner included in the span
                 if span.end - span.start > 1:
                     definite_marker_matches.append(sequence[span.start] in most_common)
                 # Standard case - add token preceding the noun
                 elif span.start > 0:
-                    definite_marker_matches.append(sequence[span.start - 1] in most_common)
-        print(sequence)
-        print(definite_marker_matches)
+                    definite_marker_matches.append(
+                        sequence[span.start - 1] in most_common
+                    )
         return any(definite_marker_matches)
