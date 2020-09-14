@@ -18,6 +18,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import get_classifier_for_string
@@ -150,16 +151,24 @@ class IntegratedTemplateLearner(
                     ) in (
                         current_learner_state.language_concept_alignment.node_to_language_span.items()
                     ):
+                        potential_marker = None
                         # Special case: Could be a object with a determiner included in the span
                         if span.end - span.start > 1:
-                            self.potential_definiteness_markers.update(
-                                [sequence[span.start]]
-                            )
+                            potential_marker = sequence[span.start]
                         # Standard case - add token preceeding the noun
                         elif span.start > 0:
-                            self.potential_definiteness_markers.update(
-                                [sequence[span.start - 1]]
-                            )
+                            # If it's an attribute, look for the token preceeding the attribute
+                            if (
+                                sequence[span.start - 1]
+                                in self.learned_attribute_tokens()
+                                and span.start > 1
+                            ):
+                                potential_marker = sequence[span.start - 2]
+                            else:
+                                potential_marker = sequence[span.start - 1]
+                        # If we detected a marker, we update the set
+                        if potential_marker:
+                            self.potential_definiteness_markers.update([potential_marker])
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
@@ -452,16 +461,34 @@ class IntegratedTemplateLearner(
             valid_sub_learners.append(self.generics_learner)
         return valid_sub_learners
 
+    def learned_attribute_tokens(self) -> List[str]:
+        attribute_tokens = []
+        if self.attribute_learner and isinstance(
+            self.attribute_learner, SubsetAttributeLearnerNew
+        ):
+            for template in self.attribute_learner.surface_template_to_concept.keys():
+                for element in template.elements:
+                    if isinstance(element, str):
+                        attribute_tokens.append(element)
+        return attribute_tokens
+
     def is_definite(self, current_learner_state: LanguagePerceptionSemanticAlignment):
         # Check if it contains any potential definiteness marker
         sequence = (
             current_learner_state.language_concept_alignment.language.as_token_sequence()
         )
         definite_marker_matches = []
-        most_common = self.potential_definiteness_markers.keys()
+
+        markers = list(self.potential_definiteness_markers.keys())
         # Could instead use the following for most_common n:
         # most_common = [s for s, _ in self.potential_definiteness_markers.most_common(3)]
-        # TODO: We want to exclude attributes (e.g red balls) should be indefinite
+
+        # Remove attributes:
+        for token in self.learned_attribute_tokens():
+            if token in markers:
+                markers.remove(token)
+
+        # Check if any token in the sequence is a potential definiteness marker:
         for (
             node,
             span,
@@ -471,10 +498,19 @@ class IntegratedTemplateLearner(
             if isinstance(node, ObjectSemanticNode):
                 # Special case: Could be a object with a determiner included in the span
                 if span.end - span.start > 1:
-                    definite_marker_matches.append(sequence[span.start] in most_common)
+                    definite_marker_matches.append(sequence[span.start] in markers)
                 # Standard case - add token preceding the noun
                 elif span.start > 0:
-                    definite_marker_matches.append(
-                        sequence[span.start - 1] in most_common
-                    )
+                    # If it's an attribute, look for the token preceeding the attribute
+                    if (
+                        sequence[span.start - 1] in self.learned_attribute_tokens()
+                        and span.start > 1
+                    ):
+                        definite_marker_matches.append(
+                            sequence[span.start - 2] in markers
+                        )
+                    else:
+                        definite_marker_matches.append(
+                            sequence[span.start - 1] in markers
+                        )
         return any(definite_marker_matches)
