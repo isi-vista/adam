@@ -4,6 +4,9 @@ from itertools import chain
 from pathlib import Path
 from random import Random
 from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, Tuple
+
+from adam.axis import GeonAxis
+from adam.geon import Geon, CrossSection
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -24,6 +27,7 @@ from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
     extract_candidate_objects,
     replace_object_match,
+    is_part_of_label,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import (
@@ -162,8 +166,12 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             )
             new_nodes.append(fake_object_semantic_node)
 
+        simplified_perception_graph = _simplify_internal_structures(
+            perception_graph_after_processing
+        )
+
         return (
-            perception_graph_after_processing,
+            simplified_perception_graph,
             immutableset(chain(immutable_new_nodes, new_nodes)),
         )
 
@@ -575,8 +583,12 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
             )
             new_nodes.append(fake_object_semantic_node)
 
+        simplified_perception_graph = _simplify_internal_structures(
+            perception_graph_after_processing
+        )
+
         return (
-            perception_graph_after_processing,
+            simplified_perception_graph,
             immutableset(chain(immutable_new_nodes, new_nodes)),
         )
 
@@ -759,3 +771,63 @@ class PursuitObjectLearnerNew(
                 hypothesis.render_to_file(
                     concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
                 )
+
+
+def _simplify_internal_structures(
+    perception_graph_after_matching: PerceptionGraph
+) -> PerceptionGraph:
+    """
+    Given a perception graph from after matching,
+    return a new perception graph
+    where we have removed all non-object internal structure nodes on all subobjects.
+
+    In practice this means, for example, deleting geons, cross-sections, and axes on subobjects. So,
+    deleting the geons on Mom's arms, for example.
+
+    The non-object internal structure nodes of a subobject are the non-object nodes that are related
+    (directly or indirectly) to that subobject and not referenced by anything in the perception
+    graph except other parts of the same object.
+    """
+    graph = perception_graph_after_matching._graph  # pylint:disable=protected-access
+    object_roots = immutableset(
+        node
+        for node in graph.nodes
+        if isinstance(node, ObjectSemanticNode)
+        or isinstance(node, ObjectPerception)
+        and not any(
+            is_part_of_label(label) for _, _, label in graph.out_edges(node, data="label")
+        )
+    )
+    visited = set()
+
+    def visit(node):
+        if (
+            isinstance(node, Geon)
+            or isinstance(node, CrossSection)
+            or isinstance(node, GeonAxis)
+        ):
+            visited.add(node)
+            for neighbor in graph.neighbors(node):
+                if neighbor not in visited:
+                    visit(neighbor)
+
+    for object_root in object_roots:
+        # For simplicity's sake we visit all neighbors; visit() will ignore the ones that aren't the
+        # right type.
+        for root_neighbor in graph.neighbors(object_root):
+            visit(root_neighbor)
+
+    return perception_graph_after_matching.subgraph_by_nodes(
+        immutableset(
+            [
+                node
+                for node in graph.nodes
+                if not (
+                    isinstance(node, Geon)
+                    or isinstance(node, CrossSection)
+                    or isinstance(node, GeonAxis)
+                )
+                or node in visited
+            ]
+        )
+    )

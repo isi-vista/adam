@@ -552,6 +552,12 @@ class ObjectRecognizer:
         )
 
 
+def is_part_of_label(label) -> bool:
+    return label == PART_OF or (
+        isinstance(label, TemporallyScopedEdgeLabel) and label.attribute == PART_OF
+    )
+
+
 def extract_candidate_objects(
     whole_scene_perception_graph: PerceptionGraph
 ) -> Sequence[PerceptionGraph]:
@@ -562,11 +568,6 @@ def extract_candidate_objects(
     We will attempt to recognize only these and will ignore other parts of the scene.
     """
     scene_digraph = whole_scene_perception_graph.copy_as_digraph()
-
-    def is_part_of_label(label) -> bool:
-        return label == PART_OF or (
-            isinstance(label, TemporallyScopedEdgeLabel) and label.attribute == PART_OF
-        )
 
     # We first identify root object nodes, which are object nodes with no part-of
     # relationship with other object nodes.
