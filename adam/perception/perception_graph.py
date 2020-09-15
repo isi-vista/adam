@@ -1594,7 +1594,7 @@ class PatternMatching:
                     seen_nodes = list(self._seen_set)
                     first_saw_node_at_index = seen_nodes.index(node)
                     logging.debug(
-                        "Detected cycle of nodes %o", seen_nodes[first_saw_node_at_index:]
+                        f"Detected cycle of nodes %s", seen_nodes[first_saw_node_at_index:]
                     )
                     return True
                 else:
