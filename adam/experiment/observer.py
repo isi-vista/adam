@@ -5,11 +5,15 @@ from typing import Generic, Mapping, Optional, Tuple
 from more_itertools import only, take
 
 from attr import attrib, attrs
-from attr.validators import instance_of
+from attr.validators import instance_of, optional
 from vistautils.parameters import Parameters
 
 from adam.curriculum_to_html import CurriculumToHtmlDumper
-from adam.language import LinguisticDescription, LinguisticDescriptionT
+from adam.language import (
+    LinguisticDescription,
+    LinguisticDescriptionT,
+    PossiblyFalseTokenSequenceLinguisticDescription,
+)
 from adam.situation import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -162,6 +166,75 @@ class CandidateAccuracyObserver(
         return self._num_predictions_with_gold_in_candidates / self._num_predictions
 
 
+@attrs(slots=True)
+class PrecisionRecallObserver(
+    DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+):
+    r"""
+    Log information to calculate the learners precision and recall
+    """
+    name: str = attrib(validator=instance_of(str))
+
+    _num_predictions: int = attrib(init=False, default=0)
+    _num_positive_examples: int = attrib(init=False, default=0)
+    _num_true_positive_examples: int = attrib(init=False, default=0)
+    _num_false_negative_examples: int = attrib(init=False, default=0)
+
+    # these params allow the precision and recoll to be written out to a text file at each step
+    # which is helpful for graphing for experiments
+    make_report: bool = attrib(default=False, kw_only=True)
+    txt_path: str = attrib(
+        validator=instance_of(str), default="accuracy_out.txt", kw_only=True
+    )
+    robust: bool = attrib(default=True, kw_only=True)
+
+    def observe(  # pylint:disable=unused-argument
+        self,
+        situation: Optional[SituationT],
+        true_description: LinguisticDescription,
+        perceptual_representation: PerceptualRepresentation[PerceptionT],
+        predicted_descriptions: Mapping[LinguisticDescription, float],
+        offset: int = 0,
+    ) -> None:
+        self._num_predictions += 1
+
+        descriptions_as_token_sequences = [
+            desc.as_token_sequence() for desc in predicted_descriptions
+        ]
+
+        if (
+            isinstance(true_description, PossiblyFalseTokenSequenceLinguisticDescription)
+            and not true_description.accurate
+        ):
+            # This means we have a false description, we blindly assume any `LinguisticDescription` that isn't of this type
+            # Must be an accurate description of the situation - This is an eval hack as to avoid reworking the rest of the
+            # Curriculum generation. See:
+            if true_description.as_token_sequence() in descriptions_as_token_sequences:
+                self._num_false_negative_examples += 1
+        else:
+            # This means the linguistic description is true for the situation
+            self._num_positive_examples += 1
+            if true_description.as_token_sequence() in descriptions_as_token_sequences:
+                self._num_true_positive_examples += 1
+
+    def report(self) -> None:
+        raise NotImplementedError()
+
+    def precision(self) -> Optional[float]:
+        if not self._num_positive_examples:
+            return None
+        else:
+            return self._num_true_positive_examples / self._num_positive_examples
+
+    def recall(self) -> Optional[float]:
+        if not (self._num_true_positive_examples + self._num_false_negative_examples):
+            return None
+        else:
+            return self._num_true_positive_examples / (
+                self._num_true_positive_examples + self._num_false_negative_examples
+            )
+
+
 CSS = """
 body {
     font-size: 1em;
@@ -243,23 +316,63 @@ class LearningProgressHtmlLogger:  # pragma: no cover
     def pre_observer(self) -> "DescriptionObserver":  # type: ignore
         return HTMLLoggerPreObserver(name="Pre-observer", html_logger=self)
 
-    def post_observer(self) -> "DescriptionObserver":  # type: ignore
+    def post_observer(
+        self,
+        *,
+        include_accuracy_observer: bool = True,
+        log_accuracy_observer: bool = False,
+        accuracy_observer_path: str = "",
+        include_precision_recall_observer: bool = False,
+        log_precision_recall: bool = False,
+        precision_recall_path: str = "",
+    ) -> "DescriptionObserver":  # type: ignore
         return HTMLLoggerPostObserver(
             name="Post-observer",
             html_logger=self,
             candidate_accuracy_observer=CandidateAccuracyObserver(
-                name="Post-observer-acc"
-            ),
+                name="Post-observer-acc",
+                accuracy_to_txt=log_accuracy_observer,
+                txt_path=accuracy_observer_path,
+            )
+            if include_accuracy_observer
+            else None,
+            precision_recall_observer=PrecisionRecallObserver(
+                name="Post-observer-pr",
+                make_report=log_precision_recall,
+                txt_path=precision_recall_path,
+            )
+            if include_precision_recall_observer
+            else None,
             test_mode=False,
         )
 
-    def test_observer(self) -> "DescriptionObserver":  # type: ignore
+    def test_observer(
+        self,
+        *,
+        include_accuracy_observer: bool = True,
+        log_accuracy_observer: bool = False,
+        accuracy_observer_path: str = "",
+        include_precision_recall_observer: bool = False,
+        log_precision_recall: bool = False,
+        precision_recall_path: str = "",
+    ) -> "DescriptionObserver":  # type: ignore
         return HTMLLoggerPostObserver(
             name="Test-observer",
             html_logger=self,
             candidate_accuracy_observer=CandidateAccuracyObserver(
-                name="Test-observer-acc"
-            ),
+                name="Test-observer-acc",
+                accuracy_to_txt=log_accuracy_observer,
+                txt_path=accuracy_observer_path,
+            )
+            if include_accuracy_observer
+            else None,
+            precision_recall_observer=PrecisionRecallObserver(
+                name="Test-observer-pr",
+                make_report=log_precision_recall,
+                txt_path=precision_recall_path,
+            )
+            if include_precision_recall_observer
+            else None,
             test_mode=True,
         )
 
@@ -292,9 +405,9 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         predicted_descriptions: Mapping[LinguisticDescription, float],
         test_mode: bool,
         accuracy: Optional[float],
+        precision: Optional[float],
+        recall: Optional[float],
     ):
-        if accuracy is None:
-            accuracy = 0.0
         learner_pre_description = self.pre_observed_description
         self.pre_observed_description = None
 
@@ -375,14 +488,28 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                 f'\t\t\t\t<td valign="top">{situation_text}\n\t\t\t\t</td>\n'
                 f'\t\t\t\t<td valign="top">{true_description_text}</td>\n'
             )
-            if test_mode:
-                outfile.write(
-                    f'\t\t\t\t<td valign="top">{learner_description}<br/>Accuracy: {accuracy:2.2f}</td>\n'
+            composit_learner_description = (
+                f'\t\t\t\t<td valign="top">{learner_description}'
+            )
+            if accuracy:
+                composit_learner_description = (
+                    composit_learner_description + f"<br/>Accuracy: {accuracy:2.2f}"
                 )
+            if precision:
+                composit_learner_description = (
+                    composit_learner_description + f"<br/>Precision: {precision:2.2f}"
+                )
+            if recall:
+                composit_learner_description = (
+                    composit_learner_description + f"<br/>Recall: {recall:2.2.f}"
+                )
+            composit_learner_description = composit_learner_description + "</td>\n"
+            if test_mode:
+                outfile.write(f"{composit_learner_description}")
             else:
                 outfile.write(
                     f'\t\t\t\t<td valign="top">{learner_pre_description}</td>\n'
-                    f'\t\t\t\t<td valign="top">{learner_description}<br/>Accuracy: {accuracy:2.2f}</td>\n'
+                    f"{composit_learner_description}"
                 )
 
             render_buttons_text = ""
@@ -439,8 +566,11 @@ class HTMLLoggerPostObserver(  # pragma: no cover
     html_logger: LearningProgressHtmlLogger = attrib(
         validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
-    candidate_accuracy_observer = attrib(
-        validator=instance_of(CandidateAccuracyObserver), kw_only=True
+    candidate_accuracy_observer = attrib(  # type: ignore
+        validator=optional(CandidateAccuracyObserver), kw_only=True  # type: ignore
+    )
+    precision_recall_observer = attrib(  # type: ignore
+        validator=optional(PrecisionRecallObserver), kw_only=True  # type: ignore
     )
     test_mode: bool = attrib(validator=instance_of(bool), kw_only=True)
     counter: int = attrib(kw_only=True, default=0)
@@ -464,7 +594,15 @@ class HTMLLoggerPostObserver(  # pragma: no cover
             perceptual_representation=perceptual_representation,
             predicted_descriptions=predicted_descriptions,
             test_mode=self.test_mode,
-            accuracy=self.candidate_accuracy_observer.accuracy(),
+            accuracy=self.candidate_accuracy_observer.accuracy()
+            if self.candidate_accuracy_observer
+            else None,
+            precision=self.precision_recall_observer.precision()
+            if self.precision_recall_observer
+            else None,
+            recall=self.precision_recall_observer.recall()
+            if self.precision_recall_observer
+            else None,
         )
         self.counter += 1
 

@@ -64,3 +64,13 @@ class TokenSequenceLinguisticDescription(LinguisticDescription):
 
     def __len__(self) -> int:
         return len(self.tokens)
+
+
+@attrs(frozen=True)
+class PossiblyFalseTokenSequenceLinguisticDescription(TokenSequenceLinguisticDescription):
+    """
+    A `TokenSequenceLiguisticDescription` that is possibly inaccurate to describe the situation
+    it is attached with
+    """
+
+    accurate: bool = attrib(validator=instance_of(bool), kw_only=True)

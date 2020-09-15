@@ -103,17 +103,20 @@ def log_experiment_entry_point(params: Parameters) -> None:
         params, language_mode
     )
 
-    # these are the params to use for writing accuracy to a text file at every iteration (e.g. to graph later)
-    accuracy_to_txt = params.boolean("accuracy_to_txt", default=False)
-    accuracy_logging_path = params.string(
-        "accuracy_logging_path", default="accuracy_out.txt"
-    )
-    # we want to log to the same file as the html output, etc.
     experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
-    if experiment_group_dir:
-        txt_path = str(experiment_group_dir / accuracy_logging_path)
-    else:
-        txt_path = accuracy_logging_path
+
+    # these are the params to use for writing accuracy to a text file at every iteration (e.g. to graph later)
+    track_accuracy = params.boolean("include_acc_observer", default=True)
+    log_accuracy = params.boolean("accuracy_to_txt", default=False)
+    log_accuracy_path = params.string(
+        "accuracy_logging_path", default=f"{experiment_group_dir}/accuracy_out.txt"
+    )
+
+    track_precision_recall = params.boolean("include_pr_observer", default=False)
+    log_precision_recall = params.boolean("log_pr", default=False)
+    log_precision_recall_path = params.string(
+        "pr_log_path", default=f"{experiment_group_dir}/pr_out.txt"
+    )
 
     execute_experiment(
         Experiment(
@@ -125,10 +128,21 @@ def log_experiment_entry_point(params: Parameters) -> None:
             pre_example_training_observers=[
                 logger.pre_observer(),
                 CandidateAccuracyObserver(
-                    "pre-acc-observer", accuracy_to_txt=accuracy_to_txt, txt_path=txt_path
+                    "pre-acc-observer",
+                    accuracy_to_txt=log_accuracy,
+                    txt_path=log_accuracy_path,
                 ),
             ],
-            post_example_training_observers=[logger.post_observer()],
+            post_example_training_observers=[
+                logger.post_observer(
+                    include_accuracy_observer=track_accuracy,
+                    log_accuracy_observer=log_accuracy,
+                    accuracy_observer_path=log_accuracy_path,
+                    include_precision_recall_observer=track_precision_recall,
+                    log_precision_recall=log_precision_recall,
+                    precision_recall_path=log_precision_recall_path,
+                )
+            ],
             test_instance_groups=test_instance_groups,
             test_observers=[logger.test_observer()],
             sequence_chooser=RandomChooser.for_seed(0),
