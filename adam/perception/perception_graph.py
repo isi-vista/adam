@@ -43,7 +43,14 @@ from uuid import uuid4
 
 import graphviz
 from more_itertools import first, ilen
-from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes, selfloop_edges, set_edge_attributes
+from networkx import (
+    DiGraph,
+    connected_components,
+    is_isomorphic,
+    set_node_attributes,
+    selfloop_edges,
+    set_edge_attributes,
+)
 from typing_extensions import Protocol
 
 from adam.axes import AxesInfo, HasAxes
@@ -1572,12 +1579,11 @@ class PatternMatching:
         """
         pattern_with_nodes_sorted = DiGraph()
 
-        self_loops = immutableset(selfloop_edges(pattern_digraph))
+        self_loops: AbstractSet[Any] = immutableset(selfloop_edges(pattern_digraph))
         sorted_pattern_nodes = []
-        sink_nodes = immutableset([
-            node for node in pattern_digraph.nodes
-            if not pattern_digraph.succ[node]
-        ])
+        sink_nodes = immutableset(
+            [node for node in pattern_digraph.nodes if not pattern_digraph.succ[node]]
+        )
 
         @attrs
         class _CycleDetector:
@@ -1587,7 +1593,9 @@ class PatternMatching:
                 if node in self._seen_set:
                     seen_nodes = list(self._seen_set)
                     first_saw_node_at_index = seen_nodes.index(node)
-                    logging.debug("Detected cycle of nodes %o", seen_nodes[first_saw_node_at_index:])
+                    logging.debug(
+                        "Detected cycle of nodes %o", seen_nodes[first_saw_node_at_index:]
+                    )
                     return True
                 else:
                     self._seen_set.add(node)
@@ -1600,8 +1608,8 @@ class PatternMatching:
                     self._seen_set.remove(node)
 
         cycle_detector = _CycleDetector()
-        visited_nodes = set()
-        traversed_edges = set()
+        visited_nodes: Set[Any] = set()
+        traversed_edges: Set[Any] = set()
 
         def visit(node):
             nonlocal cycle_detector
@@ -1635,7 +1643,8 @@ class PatternMatching:
 
         pattern_with_nodes_sorted.add_nodes_from(sorted_pattern_nodes)
         pattern_with_nodes_sorted.add_edges_from(
-            (source, dest, data) for (source, dest, data) in pattern_digraph.edges(data=True)
+            (source, dest, data)
+            for (source, dest, data) in pattern_digraph.edges(data=True)
         )
         return pattern_with_nodes_sorted
 
@@ -1664,12 +1673,18 @@ class PatternMatching:
         def reverse_part_of_edges(digraph: DiGraph):
             to_reverse = []
             for node in digraph.nodes:
-                if isinstance(node, AnyObjectPerception) or isinstance(node, ObjectSemanticNodePerceptionPredicate):
+                if isinstance(node, AnyObjectPerception) or isinstance(
+                    node, ObjectSemanticNodePerceptionPredicate
+                ):
                     for predecessor, _, data in digraph.in_edges(node, data=True):
-                        predicate = data.get('predicate')
-                        if predicate == PART_OF or (isinstance(predicate, HoldsAtTemporalScopePredicate)
-                                                    and isinstance(predicate.wrapped_edge_predicate, RelationTypeIsPredicate)
-                                                    and predicate.wrapped_edge_predicate.relation_type == PART_OF):
+                        predicate = data.get("predicate")
+                        if predicate == PART_OF or (
+                            isinstance(predicate, HoldsAtTemporalScopePredicate)
+                            and isinstance(
+                                predicate.wrapped_edge_predicate, RelationTypeIsPredicate
+                            )
+                            and predicate.wrapped_edge_predicate.relation_type == PART_OF
+                        ):
                             to_reverse.append((predecessor, node, data))
 
             for u, v, data in to_reverse:
