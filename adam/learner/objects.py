@@ -773,6 +773,13 @@ class PursuitObjectLearnerNew(
                 )
 
 
+def _is_internal_structure_node(node):
+    return isinstance(node, tuple) and (
+        isinstance(node[0], Geon) or
+        isinstance(node[0], CrossSection)
+    ) or isinstance(node, GeonAxis)
+
+
 def _simplify_internal_structures(
     perception_graph_after_matching: PerceptionGraph
 ) -> PerceptionGraph:
@@ -800,12 +807,12 @@ def _simplify_internal_structures(
     )
     visited = set()
 
+    # Rather than *deleting* internal structure nodes that only connect to subobjects,
+    # which is hard,
+    # we instead *preserve* internal structure nodes that are connected to root objects.
+    # This should give the same behavior.
     def visit(node):
-        if (
-            isinstance(node, Geon)
-            or isinstance(node, CrossSection)
-            or isinstance(node, GeonAxis)
-        ):
+        if _is_internal_structure_node(node):
             visited.add(node)
             for neighbor in graph.neighbors(node):
                 if neighbor not in visited:
