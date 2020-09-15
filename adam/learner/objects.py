@@ -829,12 +829,7 @@ def _simplify_internal_structures(
             [
                 node
                 for node in graph.nodes
-                if not (
-                    isinstance(node, Geon)
-                    or isinstance(node, CrossSection)
-                    or isinstance(node, GeonAxis)
-                )
-                or node in visited
+                if not _is_internal_structure_node(node) or node in visited
             ]
         )
     )

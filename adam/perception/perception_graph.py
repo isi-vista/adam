@@ -1670,6 +1670,10 @@ class PatternMatching:
             else _pattern_matching_node_order,
         )
 
+        sorted_pattern = digraph_with_nodes_sorted_by(
+            pattern._graph,  # pylint: disable=W0212
+            _pattern_matching_node_order
+        )
         def reverse_part_of_edges(digraph: DiGraph):
             to_reverse = []
             for node in digraph.nodes:
