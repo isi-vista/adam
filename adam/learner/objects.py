@@ -774,10 +774,11 @@ class PursuitObjectLearnerNew(
 
 
 def _is_internal_structure_node(node):
-    return isinstance(node, tuple) and (
-        isinstance(node[0], Geon) or
-        isinstance(node[0], CrossSection)
-    ) or isinstance(node, GeonAxis)
+    return (
+        isinstance(node, tuple)
+        and (isinstance(node[0], Geon) or isinstance(node[0], CrossSection))
+        or isinstance(node, GeonAxis)
+    )
 
 
 def _simplify_internal_structures(
