@@ -8,14 +8,12 @@ from more_itertools import only, take
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
+
+from adam.language.dependency import LinearizedDependencyTree
 from vistautils.parameters import Parameters
 
 from adam.curriculum_to_html import CurriculumToHtmlDumper
-from adam.language import (
-    LinguisticDescription,
-    LinguisticDescriptionT,
-    PossiblyFalseTokenSequenceLinguisticDescription,
-)
+from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.situation import SituationT
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -205,7 +203,7 @@ class PrecisionRecallObserver(
         ]
 
         if (
-            isinstance(true_description, PossiblyFalseTokenSequenceLinguisticDescription)
+            isinstance(true_description, LinearizedDependencyTree)
             and not true_description.accurate
         ):
             # This means we have a false description, we blindly assume any `LinguisticDescription` that isn't of this type
@@ -229,7 +227,10 @@ class PrecisionRecallObserver(
             return self._num_true_positive_examples / self._num_positive_examples
 
     def recall(self) -> Optional[float]:
-        if not (self._num_true_positive_examples + self._num_false_negative_examples):
+        num_examples = (
+            self._num_true_positive_examples + self._num_false_negative_examples
+        )
+        if not num_examples:
             return None
         else:
             return self._num_true_positive_examples / (
@@ -617,7 +618,7 @@ class HTMLLoggerPreObserver(  # pragma: no cover
         validator=optional(PrecisionRecallObserver), kw_only=True  # type: ignore
     )
 
-    def observe(
+    def observe(  # pylint: disable=unused-argument
         self,
         situation: Optional[SituationT],
         true_description: LinguisticDescription,

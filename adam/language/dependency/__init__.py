@@ -110,6 +110,10 @@ class LinearizedDependencyTree(LinguisticDescription):
         converter=_to_tuple, default=()
     )
     surface_token_strings: Tuple[str, ...] = attrib(init=False)
+    accurate: bool = attrib(kw_only=True, default=True)
+    """
+    Used to specify if the language here matches the paired situation
+    """
 
     def as_token_sequence(self) -> Tuple[str, ...]:
         return tuple(node.token for node in self.surface_token_order)

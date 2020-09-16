@@ -6,7 +6,7 @@ from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import random
 
 from itertools import chain
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Iterable
 
 from more_itertools import flatten
 
@@ -82,6 +82,7 @@ from adam.situation.templates.phase1_templates import (
     all_possible,
     sampled,
     object_variable,
+    TemplateObjectVariable,
 )
 
 # TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
@@ -387,3 +388,40 @@ def build_m13_shuffled_curriculum(
     random.shuffle(situations)
 
     return situations
+
+
+def _make_multiple_object_template(
+    target: TemplateObjectVariable, background: Iterable[TemplateObjectVariable]
+) -> Phase1SituationTemplate:
+    return Phase1SituationTemplate(
+        "object-falls",
+        salient_object_variables=[target],
+        background_object_variables=background,
+    )
+
+
+def make_multiple_object_situation(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
+
+    target_object = standard_object("target_object")
+    noise_object_variables = [
+        standard_object("obj-" + str(idx), banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
+        for idx in range(num_noise_objects if num_noise_objects else 0)
+    ]
+
+    return phase1_instances(
+        "Multiple Objects",
+        sampled(
+            _make_multiple_object_template(target_object, noise_object_variables),
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            chooser=PHASE1_CHOOSER_FACTORY(),
+            max_to_sample=num_samples if num_samples else 20,
+            block_multiple_of_the_same_type=True,
+        ),
+        language_generator=language_generator,
+    )
