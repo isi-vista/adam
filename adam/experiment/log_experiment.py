@@ -105,19 +105,6 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
     experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
 
-    # these are the params to use for writing accuracy to a text file at every iteration (e.g. to graph later)
-    track_accuracy = params.boolean("include_acc_observer", default=True)
-    log_accuracy = params.boolean("accuracy_to_txt", default=False)
-    log_accuracy_path = params.string(
-        "accuracy_logging_path", default=f"{experiment_group_dir}/accuracy_out.txt"
-    )
-
-    track_precision_recall = params.boolean("include_pr_observer", default=False)
-    log_precision_recall = params.boolean("log_pr", default=False)
-    log_precision_recall_path = params.string(
-        "pr_log_path", default=f"{experiment_group_dir}/pr_out.txt"
-    )
-
     execute_experiment(
         Experiment(
             name=experiment_name,
@@ -126,25 +113,24 @@ def log_experiment_entry_point(params: Parameters) -> None:
                 params, graph_logger, language_mode
             ),
             pre_example_training_observers=[
-                logger.pre_observer(),
-                CandidateAccuracyObserver(
-                    "pre-acc-observer",
-                    accuracy_to_txt=log_accuracy,
-                    txt_path=log_accuracy_path,
-                ),
+                logger.pre_observer(
+                    params=params.namespace_or_empty("pre_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
             ],
             post_example_training_observers=[
                 logger.post_observer(
-                    include_accuracy_observer=track_accuracy,
-                    log_accuracy_observer=log_accuracy,
-                    accuracy_observer_path=log_accuracy_path,
-                    include_precision_recall_observer=track_precision_recall,
-                    log_precision_recall=log_precision_recall,
-                    precision_recall_path=log_precision_recall_path,
+                    params=params.namespace_or_empty("post_observer"),
+                    experiment_group_dir=experiment_group_dir,
                 )
             ],
             test_instance_groups=test_instance_groups,
-            test_observers=[logger.test_observer()],
+            test_observers=[
+                logger.test_observer(
+                    params=params.namespace_or_empty("test_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ],
             sequence_chooser=RandomChooser.for_seed(0),
         ),
         log_path=params.optional_creatable_directory("hypothesis_log_dir"),

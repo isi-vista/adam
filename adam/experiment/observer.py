@@ -1,5 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
+from pathlib import Path
+
 from typing import Generic, Mapping, Optional, Tuple
 
 from more_itertools import only, take
@@ -313,35 +315,86 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             sort_by_length=sort_by_length,
         )
 
-    def pre_observer(self) -> "DescriptionObserver":  # type: ignore
-        return HTMLLoggerPreObserver(name="Pre-observer", html_logger=self)
+    def pre_observer(
+        self,
+        *,
+        params: Parameters = Parameters.empty(),
+        experiment_group_dir: Optional[Path] = None,
+    ) -> "DescriptionObserver":  # type: ignore
+        track_accuracy = params.boolean("include_acc_observer", default=False)
+        log_accuracy = params.boolean("accuracy_to_txt", default=False)
+        log_accuracy_path = params.string(
+            "accuracy_logging_path",
+            default=f"{experiment_group_dir}/accuracy_post_out.txt"
+            if experiment_group_dir
+            else "accuracy_post_out.txt",
+        )
+        track_precision_recall = params.boolean("include_pr_observer", default=False)
+        log_precision_recall = params.boolean("log_pr", default=False)
+        log_precision_recall_path = params.string(
+            "pr_log_path",
+            default=f"{experiment_group_dir}/pr_post_out.txt"
+            if experiment_group_dir
+            else "pr_post_out.txt",
+        )
+        return HTMLLoggerPreObserver(
+            name="Pre-observer",
+            html_logger=self,
+            candidate_accuracy_observer=CandidateAccuracyObserver(
+                name="Pre-observer-acc",
+                accuracy_to_txt=log_accuracy,
+                txt_path=log_accuracy_path,
+            )
+            if track_accuracy
+            else None,
+            precision_recall_observer=PrecisionRecallObserver(
+                name="Pre-observer-pr",
+                make_report=log_precision_recall,
+                txt_path=log_precision_recall_path,
+            )
+            if track_precision_recall
+            else None,
+        )
 
     def post_observer(
         self,
         *,
-        include_accuracy_observer: bool = True,
-        log_accuracy_observer: bool = False,
-        accuracy_observer_path: str = "",
-        include_precision_recall_observer: bool = False,
-        log_precision_recall: bool = False,
-        precision_recall_path: str = "",
+        params: Parameters = Parameters.empty(),
+        experiment_group_dir: Optional[Path] = None,
     ) -> "DescriptionObserver":  # type: ignore
+        # these are the params to use for writing accuracy to a text file at every iteration (e.g. to graph later)
+        track_accuracy = params.boolean("include_acc_observer", default=True)
+        log_accuracy = params.boolean("accuracy_to_txt", default=False)
+        log_accuracy_path = params.string(
+            "accuracy_logging_path",
+            default=f"{experiment_group_dir}/accuracy_post_out.txt"
+            if experiment_group_dir
+            else "accuracy_post_out.txt",
+        )
+        track_precision_recall = params.boolean("include_pr_observer", default=False)
+        log_precision_recall = params.boolean("log_pr", default=False)
+        log_precision_recall_path = params.string(
+            "pr_log_path",
+            default=f"{experiment_group_dir}/pr_post_out.txt"
+            if experiment_group_dir
+            else "pr_post_out.txt",
+        )
         return HTMLLoggerPostObserver(
             name="Post-observer",
             html_logger=self,
             candidate_accuracy_observer=CandidateAccuracyObserver(
                 name="Post-observer-acc",
-                accuracy_to_txt=log_accuracy_observer,
-                txt_path=accuracy_observer_path,
+                accuracy_to_txt=log_accuracy,
+                txt_path=log_accuracy_path,
             )
-            if include_accuracy_observer
+            if track_accuracy
             else None,
             precision_recall_observer=PrecisionRecallObserver(
                 name="Post-observer-pr",
                 make_report=log_precision_recall,
-                txt_path=precision_recall_path,
+                txt_path=log_precision_recall_path,
             )
-            if include_precision_recall_observer
+            if track_precision_recall
             else None,
             test_mode=False,
         )
@@ -349,29 +402,42 @@ class LearningProgressHtmlLogger:  # pragma: no cover
     def test_observer(
         self,
         *,
-        include_accuracy_observer: bool = True,
-        log_accuracy_observer: bool = False,
-        accuracy_observer_path: str = "",
-        include_precision_recall_observer: bool = False,
-        log_precision_recall: bool = False,
-        precision_recall_path: str = "",
+        params: Parameters = Parameters.empty(),
+        experiment_group_dir: Optional[Path] = None,
     ) -> "DescriptionObserver":  # type: ignore
+        # these are the params to use for writing accuracy to a text file at every iteration (e.g. to graph later)
+        track_accuracy = params.boolean("include_acc_observer", default=True)
+        log_accuracy = params.boolean("accuracy_to_txt", default=False)
+        log_accuracy_path = params.string(
+            "accuracy_logging_path",
+            default=f"{experiment_group_dir}/accuracy_test_out.txt"
+            if experiment_group_dir
+            else "accuracy_test_out.txt",
+        )
+        track_precision_recall = params.boolean("include_pr_observer", default=False)
+        log_precision_recall = params.boolean("log_pr", default=False)
+        log_precision_recall_path = params.string(
+            "pr_log_path",
+            default=f"{experiment_group_dir}/pr_test_out.txt"
+            if experiment_group_dir
+            else "pr_test_out.txt",
+        )
         return HTMLLoggerPostObserver(
             name="Test-observer",
             html_logger=self,
             candidate_accuracy_observer=CandidateAccuracyObserver(
                 name="Test-observer-acc",
-                accuracy_to_txt=log_accuracy_observer,
-                txt_path=accuracy_observer_path,
+                accuracy_to_txt=log_accuracy,
+                txt_path=log_accuracy_path,
             )
-            if include_accuracy_observer
+            if track_accuracy
             else None,
             precision_recall_observer=PrecisionRecallObserver(
                 name="Test-observer-pr",
                 make_report=log_precision_recall,
-                txt_path=precision_recall_path,
+                txt_path=log_precision_recall_path,
             )
-            if include_precision_recall_observer
+            if track_precision_recall
             else None,
             test_mode=True,
         )
@@ -380,18 +446,23 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         self,
         predicted_descriptions: Mapping[LinguisticDescription, float],
         accuracy: Optional[float] = None,
+        precision: Optional[float] = None,
+        recall: Optional[float] = None,
     ) -> None:
-        if accuracy is not None:
-            accuracy_str = f"\nAccuracy: {accuracy:2.2f}%"
-        else:
-            accuracy_str = ""
+        append_str = ""
+        if accuracy:
+            append_str += f"\nAccuracy: {accuracy:2.2f}"
+        if precision:
+            append_str += f"\nPrecision: {precision:2.2f}"
+        if recall:
+            append_str += f"\nRecall: {recall:2.2f}"
         self.pre_observed_description = (
             pretty_descriptions(
                 predicted_descriptions,
                 self._num_pretty_descriptions,
                 sort_by_length=self._sort_by_length,
             )
-            + accuracy_str
+            + append_str
         )
 
     def post_observer_log(
@@ -404,9 +475,9 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
         test_mode: bool,
-        accuracy: Optional[float],
-        precision: Optional[float],
-        recall: Optional[float],
+        accuracy: Optional[float] = None,
+        precision: Optional[float] = None,
+        recall: Optional[float] = None,
     ):
         learner_pre_description = self.pre_observed_description
         self.pre_observed_description = None
@@ -539,6 +610,12 @@ class HTMLLoggerPreObserver(  # pragma: no cover
     html_logger: LearningProgressHtmlLogger = attrib(
         init=True, validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
+    candidate_accuracy_observer = attrib(  # type: ignore
+        validator=optional(CandidateAccuracyObserver), kw_only=True  # type: ignore
+    )
+    precision_recall_observer = attrib(  # type: ignore
+        validator=optional(PrecisionRecallObserver), kw_only=True  # type: ignore
+    )
 
     def observe(
         self,
@@ -548,8 +625,32 @@ class HTMLLoggerPreObserver(  # pragma: no cover
         predicted_descriptions: Mapping[LinguisticDescription, float],
         offset: int = 0,
     ) -> None:
-        # pylint: disable=unused-argument
-        self.html_logger.pre_observer_log(predicted_descriptions)
+        if self.candidate_accuracy_observer:
+            self.candidate_accuracy_observer.observe(
+                situation,
+                true_description,
+                perceptual_representation,
+                predicted_descriptions,
+            )
+        if self.precision_recall_observer:
+            self.precision_recall_observer.observe(
+                situation,
+                true_description,
+                perceptual_representation,
+                predicted_descriptions,
+            )
+        self.html_logger.pre_observer_log(
+            predicted_descriptions,
+            accuracy=self.candidate_accuracy_observer.accuracy()
+            if self.candidate_accuracy_observer
+            else None,
+            precision=self.precision_recall_observer.precision()
+            if self.precision_recall_observer
+            else None,
+            recall=self.precision_recall_observer.recall()
+            if self.precision_recall_observer
+            else None,
+        )
 
     def report(self) -> None:
         pass
@@ -583,9 +684,20 @@ class HTMLLoggerPostObserver(  # pragma: no cover
         predicted_descriptions: Mapping[LinguisticDescription, float],
         offset: int = 0,
     ) -> None:
-        self.candidate_accuracy_observer.observe(
-            situation, true_description, perceptual_representation, predicted_descriptions
-        )
+        if self.candidate_accuracy_observer:
+            self.candidate_accuracy_observer.observe(
+                situation,
+                true_description,
+                perceptual_representation,
+                predicted_descriptions,
+            )
+        if self.precision_recall_observer:
+            self.precision_recall_observer.observe(
+                situation,
+                true_description,
+                perceptual_representation,
+                predicted_descriptions,
+            )
         self.html_logger.post_observer_log(
             observer_name=self.name,
             instance_number=self.counter + offset,
