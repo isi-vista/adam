@@ -1594,8 +1594,7 @@ class PatternMatching:
                     seen_nodes = list(self._seen_set)
                     first_saw_node_at_index = seen_nodes.index(node)
                     logging.debug(
-                        f"Detected cycle of nodes %s",
-                        seen_nodes[first_saw_node_at_index:],
+                        f"Detected cycle of nodes %s", seen_nodes[first_saw_node_at_index:]
                     )
                     return True
                 else:
@@ -1671,39 +1670,14 @@ class PatternMatching:
             else _pattern_matching_node_order,
         )
 
-        def reverse_part_of_edges(digraph: DiGraph):
-            to_reverse = []
-            for node in digraph.nodes:
-                if isinstance(node, AnyObjectPerception) or isinstance(
-                    node, ObjectSemanticNodePerceptionPredicate
-                ):
-                    for predecessor, _, data in digraph.in_edges(node, data=True):
-                        predicate = data.get("predicate")
-                        if isinstance(predicate, RelationTypeIsPredicate):
-                            unwrapped_predicate = predicate
-                        elif isinstance(
-                            predicate, HoldsAtTemporalScopePredicate
-                        ) and isinstance(
-                            predicate.wrapped_edge_predicate, RelationTypeIsPredicate
-                        ):
-                            unwrapped_predicate = predicate.wrapped_edge_predicate
-                        # Otherwise it's definitely not a partOf edge, so we skip it
-                        else:
-                            continue
-
-                        if unwrapped_predicate.relation_type == PART_OF:
-                            to_reverse.append((predecessor, node, data))
-
-            for u, v, data in to_reverse:
-                digraph.remove_edge(u, v)
-                digraph.add_edge(v, u)
-                digraph.edges[v, u].clear()
-                digraph.edges[v, u].update(data)
-
-        pattern_copy = pattern._graph.copy()  # pylint: disable=W0212
-        reverse_part_of_edges(pattern_copy)
-        sorted_pattern = self._sort_in_topological_order(pattern_copy)
-        reverse_part_of_edges(sorted_pattern)
+        sorter = self._MatchingOrderSorter(
+            pattern=pattern._graph,  # pylint:disable=protected-access
+            graph=graph_to_match_against._graph,  # pylint:disable=protected-access
+            graph_node_order=_graph_node_order
+            if not self.matching_pattern_against_pattern
+            else _pattern_matching_node_order
+        )
+        sorted_pattern = sorter.sort_pattern_into_matching_order()
 
         matching = GraphMatching(
             sorted_graph_to_match_against,
