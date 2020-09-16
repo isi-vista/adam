@@ -181,7 +181,7 @@ def execute_experiment(
 
     if resume_from_latest_logged_state and starting_point != -1:
         raise RuntimeError(
-            "Starting point should not be specified when experiment is configured"
+            "Starting point should not be specified when experiment is configured "
             "to resume from latest learner state."
         )
 
