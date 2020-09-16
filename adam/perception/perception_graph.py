@@ -1679,13 +1679,19 @@ class PatternMatching:
                 ):
                     for predecessor, _, data in digraph.in_edges(node, data=True):
                         predicate = data.get("predicate")
-                        if predicate == PART_OF or (
-                            isinstance(predicate, HoldsAtTemporalScopePredicate)
-                            and isinstance(
-                                predicate.wrapped_edge_predicate, RelationTypeIsPredicate
-                            )
-                            and predicate.wrapped_edge_predicate.relation_type == PART_OF
+                        if isinstance(predicate, RelationTypeIsPredicate):
+                            unwrapped_predicate = predicate
+                        elif isinstance(
+                            predicate, HoldsAtTemporalScopePredicate
+                        ) and isinstance(
+                            predicate.wrapped_edge_predicate, RelationTypeIsPredicate
                         ):
+                            unwrapped_predicate = predicate.wrapped_edge_predicate
+                        # Otherwise it's definitely not a partOf edge, so we skip it
+                        else:
+                            continue
+
+                        if unwrapped_predicate.relation_type == PART_OF:
                             to_reverse.append((predecessor, node, data))
 
             for u, v, data in to_reverse:
