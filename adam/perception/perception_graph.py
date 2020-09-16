@@ -1594,7 +1594,8 @@ class PatternMatching:
                     seen_nodes = list(self._seen_set)
                     first_saw_node_at_index = seen_nodes.index(node)
                     logging.debug(
-                        f"Detected cycle of nodes %s", seen_nodes[first_saw_node_at_index:]
+                        f"Detected cycle of nodes %s",
+                        seen_nodes[first_saw_node_at_index:],
                     )
                     return True
                 else:
@@ -1675,7 +1676,7 @@ class PatternMatching:
             graph=graph_to_match_against._graph,  # pylint:disable=protected-access
             graph_node_order=_graph_node_order
             if not self.matching_pattern_against_pattern
-            else _pattern_matching_node_order
+            else _pattern_matching_node_order,
         )
         sorted_pattern = sorter.sort_pattern_into_matching_order()
 
