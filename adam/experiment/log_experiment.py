@@ -142,6 +142,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
         starting_point=params.integer("starting_point", default=0),
         point_to_log=params.integer("point_to_log", default=0),
         load_learner_state=params.optional_existing_file("learner_state_path"),
+        resume_from_latest_logged_state=params.boolean(
+            "resume_from_latest_logged_state", default=False
+        ),
+        debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
     )
 
 
