@@ -46,7 +46,7 @@ from adam.perception.perception_graph import (
     NodePredicate,
     RelationTypeIsPredicate,
     PerceptionGraph,
-)
+    HoldsAtTemporalScopePredicate)
 from adam.semantics import (
     Concept,
     ObjectSemanticNode,
@@ -179,6 +179,11 @@ def pattern_remove_incomplete_region_or_spatial_path(
         has_reference_edge: bool = False
         for successor in graph.successors(node):
             predicate = graph.edges[node, successor]["predicate"]
+
+            # Unwrap temporally-scoped edges before checking whether they're reference object edges.
+            if isinstance(predicate, HoldsAtTemporalScopePredicate):
+                predicate = predicate.wrapped_edge_predicate
+
             if isinstance(predicate, RelationTypeIsPredicate):
                 if predicate.relation_type == REFERENCE_OBJECT_LABEL:
                     has_reference_edge = True
