@@ -46,7 +46,8 @@ from adam.perception.perception_graph import (
     NodePredicate,
     RelationTypeIsPredicate,
     PerceptionGraph,
-    HoldsAtTemporalScopePredicate)
+    HoldsAtTemporalScopePredicate,
+)
 from adam.semantics import (
     Concept,
     ObjectSemanticNode,
