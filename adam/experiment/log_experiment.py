@@ -7,7 +7,7 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_subtle_verb_distinctions_curriculum,
 )
 import random
-from adam.learner.objects import PursuitObjectLearnerNew
+from adam.learner.objects import PursuitObjectLearnerNew, ProposeButVerifyObjectLearner
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
     build_gaila_m13_curriculum,
@@ -166,6 +166,7 @@ def learner_factory_from_params(
             "integrated-learner",
             "integrated-learner-recognizer",
             "pursuit-gaze",
+            "integrated-object-only",
         ],
     )
 
@@ -294,6 +295,42 @@ def learner_factory_from_params(
             ),
             functional_learner=FunctionalLearner(language_mode=language_mode),
         )
+    elif learner_type == "integrated-object-only":
+        object_learner_type = params.string(
+            "object_learner_type",
+            valid_options=["subset", "pbv", "pursuit"],
+            default="subset",
+        )
+        learner_params = params.namespace_or_empty("learner_params")
+        if not learner_params:
+            learner_params = Parameters.empty(namespace_prefix="learner_params")
+        if object_learner_type == "subset":
+            object_learner = SubsetObjectLearnerNew(  # type: ignore
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            )
+        elif object_learner_type == "pbv":
+            object_learner = ProposeButVerifyObjectLearner.from_params(  # type: ignore
+                learner_params
+            )
+        elif object_learner_type == "pursuit":
+            object_learner = PursuitObjectLearnerNew(  # type: ignore
+                learning_factor=learner_params.floating_point("learning_factor"),
+                graph_match_confirmation_threshold=learner_params.floating_point(
+                    "graph_match_confirmation_threshold"
+                ),
+                lexicon_entry_threshold=learner_params.floating_point(
+                    "lexicon_entry_threshold"
+                ),
+                rng=rng,
+                smoothing_parameter=learner_params.floating_point("smoothing_parameter"),
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                language_mode=language_mode,
+            )
+        else:
+            raise RuntimeError(f"Invalid Object Learner Type Selected: {learner_type}")
+        return lambda: IntegratedTemplateLearner(object_learner=object_learner)
     else:
         raise RuntimeError("can't happen")
 
@@ -394,7 +431,7 @@ def curriculum_from_params(
                 num_samples,
                 num_noise_objects,
                 language_generator,
-                params=params.namespace_or_empty("situation"),
+                params=params.namespace_or_empty("train_curriculum"),
             ),
             test_instance_groups(num_samples, num_noise_objects, language_generator)
             if test_instance_groups

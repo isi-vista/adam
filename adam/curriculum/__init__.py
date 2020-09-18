@@ -180,13 +180,13 @@ class AblatedLanguageSituationsInstanceGroup(
     """
     The name of the instance group.
     """
-    _instances: ImmutableSet[
+    _instances: List[
         Tuple[
             Optional[SituationT],
             LinguisticDescriptionT,
             PerceptualRepresentation[PerceptionT],
         ]
-    ] = attrib(converter=_to_immutableset)
+    ] = attrib()
     """
     Instances already instantiated so we store them as a tuple
     """
