@@ -179,10 +179,11 @@ def execute_experiment(
             "Need state logging path to be able to resume from latest learner state."
         )
 
-    if resume_from_latest_logged_state and starting_point != -1:
+    if resume_from_latest_logged_state and starting_point > 0:
         raise RuntimeError(
-            "Starting point should not be specified when experiment is configured "
-            "to resume from latest learner state."
+            f"Starting point should not be specified "
+            f"when learner is configured to resume from latest state."
+            f"(specified starting point {starting_point})."
         )
 
     # make the directories in which to log the learner
