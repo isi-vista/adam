@@ -61,6 +61,7 @@ class SurfaceTemplate:
                     and element in self._determiner_prefix_slots
                     and len(filler_words) == 1
                     and filler_words[0][0].islower()
+                    and filler_words[0] not in {"you", "me"}
                     and filler_words[0] not in MASS_NOUNS
                 ):
                     output_tokens.append("a")
