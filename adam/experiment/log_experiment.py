@@ -7,6 +7,8 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_subtle_verb_distinctions_curriculum,
 )
 import random
+
+from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.objects import PursuitObjectLearnerNew
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
@@ -26,6 +28,7 @@ from adam.experiment.experiment_utils import (
     build_m6_prepositions_curriculum,
     build_pursuit_curriculum,
     build_functionally_defined_objects_train_curriculum,
+    build_actions_and_generics_curriculum,
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
@@ -159,6 +162,7 @@ def learner_factory_from_params(
             "attribute-subset",
             "verb-subset",
             "integrated-learner",
+            "integrated-learner-recognizer-without-generics",
             "integrated-learner-recognizer",
             "pursuit-gaze",
         ],
@@ -288,6 +292,29 @@ def learner_factory_from_params(
                 language_mode=language_mode,
             ),
             functional_learner=FunctionalLearner(language_mode=language_mode),
+            generics_learner=SimpleGenericsLearner(),
+        )
+    elif learner_type == "integrated-learner-recognizer-without-generics":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=object_recognizer, language_mode=language_mode
+            ),
+            attribute_learner=SubsetAttributeLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            relation_learner=SubsetRelationLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            functional_learner=FunctionalLearner(language_mode=language_mode),
         )
     else:
         raise RuntimeError("can't happen")
@@ -331,6 +358,7 @@ def curriculum_from_params(
         ),
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
         "m13-relations": (make_prepositions_curriculum, None),
+        "actions-and-generics-curriculum": (build_actions_and_generics_curriculum, None),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())

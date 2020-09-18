@@ -29,6 +29,10 @@ from adam.curriculum.phase1_curriculum import (
     _make_drink_curriculum,
     make_sit_transitive,
     make_sit_template_intransitive,
+    _make_fly_curriculum,
+    _make_jump_curriculum,
+    _make_sit_curriculum,
+    _make_eat_curriculum,
 )
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language.dependency import LinearizedDependencyTree
@@ -86,6 +90,26 @@ def build_generics_curriculum(
         _make_generic_statements_curriculum(
             num_samples, num_noise_objects, language_generator
         )
+    ]
+
+
+def build_actions_and_generics_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Sequence[Phase1InstanceGroup]:
+    # pylint: disable=unused-argument
+    return [
+        _make_eat_curriculum(10, 0, language_generator),
+        _make_drink_curriculum(10, 0, language_generator),
+        _make_sit_curriculum(10, 0, language_generator),
+        _make_jump_curriculum(10, 0, language_generator),
+        _make_fly_curriculum(10, 0, language_generator),
+        _make_generic_statements_curriculum(
+            num_samples=20, noise_objects=0, language_generator=language_generator
+        ),
     ]
 
 
