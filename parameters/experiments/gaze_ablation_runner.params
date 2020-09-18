@@ -31,6 +31,6 @@ backend: slurm
 partition: ephemeral
 num_cpus: 1
 num_gpus: 0
-memory: '2G'  # not sure how much is needed
-job_time_in_minutes: 240  # 4 hours should be plenty for this?
+memory: '2G'
+job_time_in_minutes: 240
 
