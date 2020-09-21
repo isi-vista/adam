@@ -5,6 +5,8 @@ from adam.ontology import OntologyNode, CAN_FILL_TEMPLATE_SLOT
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     _make_cup_schema,
+    _CHAIR_FRONT_TO_BACK_AXIS,
+    _CHAIR_LEFT_TO_RIGHT_AXIS,
     _CHAIR_SCHEMA_BACK,
     _CHAIR_SCHEMA_SQUARE_SEAT,
     _CHAIR_SCHEMA_FRONT_LEFT_LEG,
@@ -31,6 +33,9 @@ from adam.ontology.phase1_ontology import (
     CHAIR,
     contacts,
     above,
+    located,
+    PROXIMAL,
+    Direction,
     GAILA_PHASE_1_ONTOLOGY,
     SMALLER_THAN,
     BIGGER_THAN,
@@ -164,6 +169,34 @@ _CHAIR_2_SCHEMA = ObjectStructuralSchema(
             above(_CHAIR_SCHEMA_SQUARE_SEAT, _CHAIR_LEGS),
             contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SQUARE_SEAT),
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SQUARE_SEAT),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_FRONT_TO_BACK_AXIS, positive=True
+                ),
+            ),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_LEFT_TO_RIGHT_AXIS, positive=True
+                ),
+            ),
         ]
     ),
     axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
@@ -182,6 +215,34 @@ _CHAIR_3_SCHEMA = ObjectStructuralSchema(
         [
             contacts(_CHAIR_LEGS, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_LEGS),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_FRONT_TO_BACK_AXIS, positive=True
+                ),
+            ),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_LEFT_TO_RIGHT_AXIS, positive=True
+                ),
+            ),
         ]
     ),
     axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
@@ -200,6 +261,34 @@ _CHAIR_4_SCHEMA = ObjectStructuralSchema(
         [
             contacts(_CHAIR_LEGS, _CHAIR_SCHEMA_SQUARE_SEAT),
             above(_CHAIR_SCHEMA_SQUARE_SEAT, _CHAIR_LEGS),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_FRONT_TO_BACK_AXIS, positive=True
+                ),
+            ),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                    _CHAIR_SCHEMA_BACK_RIGHT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_LEFT_TO_RIGHT_AXIS, positive=True
+                ),
+            ),
         ]
     ),
     axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
@@ -220,6 +309,32 @@ _CHAIR_5_SCHEMA = ObjectStructuralSchema(
             above(_CHAIR_SCHEMA_SEAT, _CHAIR_THREE_LEGS),
             contacts(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
             above(_CHAIR_SCHEMA_BACK, _CHAIR_SCHEMA_SEAT),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_FRONT_TO_BACK_AXIS, positive=True
+                ),
+            ),
+            located(  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_LEFT_LEG,
+                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
+                ],  # type: ignore
+                [  # type: ignore
+                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
+                ],  # type: ignore
+                distance=PROXIMAL,
+                direction=Direction(
+                    relative_to_axis=_CHAIR_LEFT_TO_RIGHT_AXIS, positive=True
+                ),
+            ),
         ]
     ),
     axes=_CHAIR_SCHEMA_BACK.schema.axes.copy(),
