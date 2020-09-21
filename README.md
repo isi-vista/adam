@@ -22,6 +22,9 @@ Documentation can be found [here](https://adam-language-learner.readthedocs.io/e
     ```
     adam_root: PATH_TO_WORKING_COPY_OF_THIS_REPO
     adam_experiment_root: PATH_OUTSIDE_WORKING_COPY_TO_WRITE_EXPERIMENT_DATA_TO
+   
+    conda_environment: NAME_OF_CONDA_ENVIRONMENT
+    conda_base_path: PATH_TO_CONDA_DIRECTORY
     ```
 
 ## Using PyPy
