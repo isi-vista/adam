@@ -314,9 +314,7 @@ _CHAIR_5_SCHEMA = ObjectStructuralSchema(
                     _CHAIR_SCHEMA_FRONT_LEFT_LEG,
                     _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
                 ],  # type: ignore
-                [  # type: ignore
-                    _CHAIR_SCHEMA_BACK_LEFT_LEG,
-                ],  # type: ignore
+                [_CHAIR_SCHEMA_BACK_LEFT_LEG],  # type: ignore  # type: ignore
                 distance=PROXIMAL,
                 direction=Direction(
                     relative_to_axis=_CHAIR_FRONT_TO_BACK_AXIS, positive=True
@@ -327,9 +325,7 @@ _CHAIR_5_SCHEMA = ObjectStructuralSchema(
                     _CHAIR_SCHEMA_FRONT_LEFT_LEG,
                     _CHAIR_SCHEMA_BACK_LEFT_LEG,
                 ],  # type: ignore
-                [  # type: ignore
-                    _CHAIR_SCHEMA_FRONT_RIGHT_LEG,
-                ],  # type: ignore
+                [_CHAIR_SCHEMA_FRONT_RIGHT_LEG],  # type: ignore  # type: ignore
                 distance=PROXIMAL,
                 direction=Direction(
                     relative_to_axis=_CHAIR_LEFT_TO_RIGHT_AXIS, positive=True
