@@ -126,7 +126,7 @@ FIXED_PARAMETERS = {
     "learner": "integrated-object-only",
     "post_observer": {
         "include_acc_observer": False,
-        "track_precision_recall": True,
+        "include_pr_observer": True,
         "log_precision_recall": True,
     },
     "test_observer": {"accuracy_to_txt": True},

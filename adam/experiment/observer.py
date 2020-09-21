@@ -218,7 +218,32 @@ class PrecisionRecallObserver(
                 self._num_true_positive_examples += 1
 
     def report(self) -> None:
-        raise NotImplementedError()
+        precision = self.precision()
+        recall = self.recall()
+
+        # write out to an accuracy file if requested to do so by the user
+        if self.make_report:
+            try:
+                with open(self.txt_path, "a") as f:
+                    f.write(f"{precision},{recall}\n")
+            # we currently catch errors with a warning rather than stopping the program if we can't log accuracy
+            except OSError as e:
+                logging.warning(
+                    f"The following error occurred while attempting to log accuracy to a txt file: {e}"
+                )
+
+        if precision is not None:
+            logging.info(
+                "%s: Precision of learner's predictions is %d / %d predictions (%03.2f %%)\n"
+                "Recall of learner's predictions is %d / %d predictions (%03.2f %%)",
+                self.name,
+                self._num_true_positive_examples,
+                self._num_positive_examples,
+                100 * precision,
+                self._num_true_positive_examples,
+                self._num_true_positive_examples + self._num_false_negative_examples,
+                100 * recall,
+            )
 
     def precision(self) -> Optional[float]:
         if not self._num_positive_examples:
@@ -423,23 +448,26 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             if experiment_group_dir
             else "pr_test_out.txt",
         )
-        return HTMLLoggerPostObserver(
-            name="Test-observer",
-            html_logger=self,
-            candidate_accuracy_observer=CandidateAccuracyObserver(
+        a_ob = None
+        pr_ob = None
+        if track_accuracy:
+            a_ob = CandidateAccuracyObserver(
                 name="Test-observer-acc",
                 accuracy_to_txt=log_accuracy,
                 txt_path=log_accuracy_path,
             )
-            if track_accuracy
-            else None,
-            precision_recall_observer=PrecisionRecallObserver(
+        if track_precision_recall:
+            pr_ob = PrecisionRecallObserver(
                 name="Test-observer-pr",
                 make_report=log_precision_recall,
                 txt_path=log_precision_recall_path,
             )
-            if track_precision_recall
-            else None,
+
+        return HTMLLoggerPostObserver(
+            name="t-observer",
+            html_logger=self,
+            candidate_accuracy_observer=a_ob,
+            precision_recall_observer=pr_ob,
             test_mode=True,
         )
 
@@ -573,7 +601,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                 )
             if recall:
                 composit_learner_description = (
-                    composit_learner_description + f"<br/>Recall: {recall:2.2.f}"
+                    composit_learner_description + f"<br/>Recall: {recall:2.2f}"
                 )
             composit_learner_description = composit_learner_description + "</td>\n"
             if test_mode:
@@ -611,12 +639,8 @@ class HTMLLoggerPreObserver(  # pragma: no cover
     html_logger: LearningProgressHtmlLogger = attrib(
         init=True, validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
-    candidate_accuracy_observer = attrib(  # type: ignore
-        validator=optional(CandidateAccuracyObserver), kw_only=True  # type: ignore
-    )
-    precision_recall_observer = attrib(  # type: ignore
-        validator=optional(PrecisionRecallObserver), kw_only=True  # type: ignore
-    )
+    candidate_accuracy_observer = attrib(kw_only=True)  # type: ignore
+    precision_recall_observer = attrib(kw_only=True)  # type: ignore
 
     def observe(  # pylint: disable=unused-argument
         self,
@@ -668,12 +692,8 @@ class HTMLLoggerPostObserver(  # pragma: no cover
     html_logger: LearningProgressHtmlLogger = attrib(
         validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
-    candidate_accuracy_observer = attrib(  # type: ignore
-        validator=optional(CandidateAccuracyObserver), kw_only=True  # type: ignore
-    )
-    precision_recall_observer = attrib(  # type: ignore
-        validator=optional(PrecisionRecallObserver), kw_only=True  # type: ignore
-    )
+    candidate_accuracy_observer = attrib(kw_only=True)  # type: ignore
+    precision_recall_observer = attrib(kw_only=True)  # type: ignore
     test_mode: bool = attrib(validator=instance_of(bool), kw_only=True)
     counter: int = attrib(kw_only=True, default=0)
 
