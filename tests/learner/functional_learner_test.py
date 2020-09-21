@@ -24,7 +24,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_functional_learner(language_mode: LanguageMode):
 
-    sit_train = _make_sit_on_curriculum(5, 0, phase2_language_generator(language_mode))
+    sit_train = _make_sit_on_curriculum(8, 0, phase2_language_generator(language_mode))
     sit_test = _make_sit_on_chair_curriculum(
         1, 0, phase2_language_generator(language_mode)
     )
