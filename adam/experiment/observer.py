@@ -7,7 +7,7 @@ from typing import Generic, Mapping, Optional, Tuple
 from more_itertools import only, take
 
 from attr import attrib, attrs
-from attr.validators import instance_of, optional
+from attr.validators import instance_of
 
 from adam.language.dependency import LinearizedDependencyTree
 from vistautils.parameters import Parameters
@@ -232,7 +232,7 @@ class PrecisionRecallObserver(
                     f"The following error occurred while attempting to log accuracy to a txt file: {e}"
                 )
 
-        if precision is not None:
+        if precision is not None and recall is not None:
             logging.info(
                 "%s: Precision of learner's predictions is %d / %d predictions (%03.2f %%)\n"
                 "Recall of learner's predictions is %d / %d predictions (%03.2f %%)",
