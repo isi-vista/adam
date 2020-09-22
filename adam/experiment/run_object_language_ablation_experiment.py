@@ -127,7 +127,7 @@ FIXED_PARAMETERS = {
     "post_observer": {
         "include_acc_observer": False,
         "include_pr_observer": True,
-        "log_precision_recall": True,
+        "log_pr": True,
     },
     "test_observer": {"accuracy_to_txt": True},
 }

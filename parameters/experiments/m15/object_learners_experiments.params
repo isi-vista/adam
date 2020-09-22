@@ -20,7 +20,7 @@ num_language_accuracy_increment: 3
 
 # Baseline experiment params
 object_language_ablation:
-   num_samples: 600
+   num_samples: 400
    sort_learner_descriptions_by_length: true
    num_pretty_descriptions: 5
 
@@ -29,7 +29,7 @@ object_language_ablation:
 
 # Workflow Params
 workflow_name: 'gaze_ablation_pegasus'
-workflow_directory: '%adam_experiment_root%/%experiment%'
+workflow_directory: '%experiment_group_dir%'
 site: 'saga'
 namespace: 'saga'
 
@@ -38,4 +38,9 @@ partition: ephemeral
 num_cpus: 1
 num_gpus: 0
 memory: '4G'  # not sure how much is needed
-job_time_in_minutes: 600  # 10 hours should be plenty for this? (Pursuit takes the longest)
+job_time_in_minutes: 720  # We request 12 hours as this is the maximum allotment for Ephemeral
+                          # By requesting this much we can easily just restart the pegasus workflow
+                          # And continue from the last checkpointed time. This is very useful for
+                          # pursuit. It may also be wise to log more than every 100 instances
+                          # to decrease the number of 'lost' training instances that can occur
+                          # If the process is killed or errors out.
