@@ -4,20 +4,27 @@ _includes:
 experiment: 'object_language_ablation'
 experiment_group_dir: '%adam_experiment_root%/%experiment%'
 
-# Configuration Params
-min_num_objects: 1
-max_num_objects : 7
-min_language_accuracy: 0.3
-max_language_accuracy: 0.7
-num_language_accuracy_increment: 5
+# Configuration Params - Prelim
+min_num_objects: 3
+max_num_objects : 5
+min_language_accuracy: 0.4
+max_language_accuracy: 0.6
+num_language_accuracy_increment: 3
+
+# Configuration Params - Desired
+#min_num_objects: 1
+#max_num_objects : 7
+#min_language_accuracy: 0.3
+#max_language_accuracy: 0.7
+#num_language_accuracy_increment: 5
 
 # Baseline experiment params
 object_language_ablation:
-   num_samples: 100
+   num_samples: 600
    sort_learner_descriptions_by_length: true
    num_pretty_descriptions: 5
 
-   log_hypothesis_every_n_steps: 180
+   log_hypothesis_every_n_steps: 100
    debug_learner_pickling: false
 
 # Workflow Params
@@ -30,5 +37,5 @@ backend: slurm
 partition: ephemeral
 num_cpus: 1
 num_gpus: 0
-memory: '2G'  # not sure how much is needed
-job_time_in_minutes: 240  # 4 hours should be plenty for this?
+memory: '4G'  # not sure how much is needed
+job_time_in_minutes: 600  # 10 hours should be plenty for this? (Pursuit takes the longest)

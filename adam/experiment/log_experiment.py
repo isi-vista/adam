@@ -393,7 +393,7 @@ def curriculum_from_params(
     ]
 
     num_samples = params.optional_positive_integer("num_samples")
-    num_noise_objects = params.optional_positive_integer("num_noise_objects")
+    num_noise_objects = params.optional_integer("num_noise_objects")
 
     if curriculum_name == "pursuit":
         return (

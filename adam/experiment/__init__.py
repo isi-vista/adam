@@ -346,6 +346,7 @@ def execute_experiment(
                         learner_descriptions_after_seeing_example,
                         offset=starting_point,
                     )
+                    post_example_observer.report()
     logging.info("Training complete")
 
     for training_observer in chain(

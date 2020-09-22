@@ -678,7 +678,10 @@ class HTMLLoggerPreObserver(  # pragma: no cover
         )
 
     def report(self) -> None:
-        pass
+        if self.candidate_accuracy_observer:
+            self.candidate_accuracy_observer.report()
+        if self.precision_recall_observer:
+            self.precision_recall_observer.report()
 
 
 @attrs(slots=True)
@@ -740,7 +743,10 @@ class HTMLLoggerPostObserver(  # pragma: no cover
         self.counter += 1
 
     def report(self) -> None:
-        pass
+        if self.candidate_accuracy_observer:
+            self.candidate_accuracy_observer.report()
+        if self.precision_recall_observer:
+            self.precision_recall_observer.report()
 
 
 # used by TopChoiceExactMatchObserver
