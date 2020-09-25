@@ -38,7 +38,7 @@ from adam.semantics import (
     GROUND_OBJECT_CONCEPT,
     LearnerSemantics,
     FunctionalObjectConcept,
-    Concept)
+    Concept, AttributeSemanticNode, ObjectConcept, ActionConcept, AttributeConcept)
 
 
 class LanguageLearnerNew:
@@ -93,7 +93,7 @@ class IntegratedTemplateLearner(
     )
 
     concept_semantics: Dict[Concept, Dict[Concept, float]] = attrib(
-        init=False, default=collections.defaultdict(collections.defaultdict)
+        init=False, default=collections.defaultdict(lambda: collections.defaultdict(float))
     )
 
     def observe(
@@ -147,33 +147,7 @@ class IntegratedTemplateLearner(
                 )
                 # Check definiteness after recognizing objects
                 if sub_learner == self.object_learner:
-                    sequence = (
-                        current_learner_state.language_concept_alignment.language.as_token_sequence()
-                    )
-                    for (
-                        _,
-                        span,
-                    ) in (
-                        current_learner_state.language_concept_alignment.node_to_language_span.items()
-                    ):
-                        potential_marker = None
-                        # Special case: Could be a object with a determiner included in the span
-                        if span.end - span.start > 1:
-                            potential_marker = sequence[span.start]
-                        # Standard case - add token preceeding the noun
-                        elif span.start > 0:
-                            # If it's an attribute, look for the token preceeding the attribute
-                            if (
-                                sequence[span.start - 1]
-                                in self.learned_attribute_tokens()
-                                and span.start > 1
-                            ):
-                                potential_marker = sequence[span.start - 2]
-                            else:
-                                potential_marker = sequence[span.start - 1]
-                        # If we detected a marker, we update the set
-                        if potential_marker:
-                            self.potential_definiteness_markers.update([potential_marker])
+                    self.learn_definiteness_markers(current_learner_state)
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
@@ -196,7 +170,9 @@ class IntegratedTemplateLearner(
                 desc.as_token_sequence() for desc in descs
             ]:
                 self.generics_learner.learn_from(current_learner_state)
-                self.generics_learner.update_concept_semantics(self.concept_semantics)
+
+        # Update concept semantics
+        self.update_concept_semantics(current_learner_state)
 
 
     def describe(
@@ -479,6 +455,36 @@ class IntegratedTemplateLearner(
                         attribute_tokens.append(element)
         return attribute_tokens
 
+    def learn_definiteness_markers(self, current_learner_state):
+        # Helper method to learn definiteness markers from objects
+        sequence = (
+            current_learner_state.language_concept_alignment.language.as_token_sequence()
+        )
+        for (
+                _,
+                span,
+        ) in (
+                current_learner_state.language_concept_alignment.node_to_language_span.items()
+        ):
+            potential_marker = None
+            # Special case: Could be a object with a determiner included in the span
+            if span.end - span.start > 1:
+                potential_marker = sequence[span.start]
+            # Standard case - add token preceeding the noun
+            elif span.start > 0:
+                # If it's an attribute, look for the token preceeding the attribute
+                if (
+                        sequence[span.start - 1]
+                        in self.learned_attribute_tokens()
+                        and span.start > 1
+                ):
+                    potential_marker = sequence[span.start - 2]
+                else:
+                    potential_marker = sequence[span.start - 1]
+            # If we detected a marker, we update the set
+            if potential_marker:
+                self.potential_definiteness_markers.update([potential_marker])
+
     def is_definite(self, current_learner_state: LanguagePerceptionSemanticAlignment):
         # Check if it contains any potential definiteness marker
         sequence = (
@@ -521,3 +527,33 @@ class IntegratedTemplateLearner(
                             sequence[span.start - 1] in markers
                         )
         return any(definite_marker_matches)
+
+    def update_concept_semantics(self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment):
+        recognized_semantic_nodes = list(language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes)
+        span = language_perception_semantic_alignment.language_concept_alignment.node_to_language_span
+
+        # Get all action and attribute concepts
+        concepts = [n.concept for n in recognized_semantic_nodes]
+        relevant_concepts = [c for c in concepts if isinstance(c, AttributeConcept) or isinstance(c, ActionConcept)]
+
+        # Get object concepts that are in the utterance
+        object_concepts: List[ObjectConcept] = []
+        for node in recognized_semantic_nodes:
+            if isinstance(node, ObjectSemanticNode) and node in span:
+                object_concepts.append(node.concept)
+
+        # Update association strength for each object - other concept pair
+        for object_concept in object_concepts:
+            for other_concept in relevant_concepts:
+                old_score = self.concept_semantics[object_concept][other_concept]
+                new_score = old_score + (1.0 - old_score) * 0.3
+                self.concept_semantics[object_concept][other_concept] = new_score
+
+        # For each object - other concept pair learner through generics, set a high association strength
+        if self.generics_learner:
+            for object_concept, other_concepts in self.generics_learner.learned_representations.values():
+                for other_concept in other_concepts:
+                    self.concept_semantics[object_concept][other_concept] = 1.0
+
+
+

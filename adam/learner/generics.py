@@ -16,7 +16,7 @@ from adam.semantics import (
     ObjectSemanticNode,
     ObjectConcept,
     ActionConcept,
-    AttributeSemanticNode)
+    AttributeSemanticNode, AttributeConcept)
 
 
 @attrs
@@ -62,46 +62,37 @@ class SimpleGenericsLearner(TemplateLearner):
         sequence = (
             language_perception_semantic_alignment.language_concept_alignment.language.as_token_sequence()
         )
-        recognized_semantic_nodes = (
+        recognized_semantic_nodes = list(
             language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
         )
-        span = (
-            language_perception_semantic_alignment.language_concept_alignment.node_to_language_span
-        )
+        span = language_perception_semantic_alignment.language_concept_alignment.node_to_language_span
 
-        # Check if both an action and an object is recognized
-        action_nodes = [
-            n for n in recognized_semantic_nodes if isinstance(n, ActionSemanticNode)
-        ]
-        attribute_nodes = [
-            n for n in recognized_semantic_nodes if isinstance(n, AttributeSemanticNode)
-        ]
+        # Get actions and attributes that are recognized in the scene
+        concepts = [n.concept for n in recognized_semantic_nodes]
+        attribute_concepts = [c for c in concepts if isinstance(c, AttributeConcept)]
+        action_concepts = [c for c in concepts if isinstance(c, ActionConcept)]
 
-        significant_object_node: Optional[ObjectSemanticNode] = None
         # Check if a recognized object matches the heard utterance
+        significant_object_concept: Optional[Concept] = None
         for node in recognized_semantic_nodes:
             if isinstance(node, ObjectSemanticNode) and node in span:
-                significant_object_node = node
+                significant_object_concept = node.concept
 
         # Actions: E.g dog s walk
         # Attributes: E.g cookies are brown
         # For each set of potential semantic nodes
-        for other_semantic_nodes in [action_nodes, attribute_nodes]:
+        for other_concepts in [action_concepts, attribute_concepts]:
             # If there is a recognized object node that matches the scene, and a generic action OR attribute, learn!
-            if significant_object_node and other_semantic_nodes:
-                # Generic! Filter out the concepts.
-                other_concepts = set([n.concept for n in other_semantic_nodes])
+            if significant_object_concept and other_concepts:
+                # Generic!
                 if sequence in self.learned_representations:
                     known_representation = self.learned_representations[sequence]
                     known_representation[1].update(other_concepts)
                 else:
                     self.learned_representations[sequence] = (
-                        significant_object_node.concept,
-                        other_concepts,
+                        significant_object_concept,
+                        set(other_concepts),
                     )
 
-    def update_concept_semantics(self, concept_semantics: Dict[Concept, Dict[Concept, float]]) -> None:
-        for object_concept, other_concepts in self.learned_representations.values():
-            for other_concept in other_concepts:
-                concept_semantics[object_concept][other_concept] = 0.9
+
 
