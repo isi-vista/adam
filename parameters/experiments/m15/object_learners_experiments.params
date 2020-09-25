@@ -29,7 +29,7 @@ object_language_ablation:
 
 # Workflow Params
 workflow_name: 'gaze_ablation_pegasus'
-workflow_directory: '%experiment_group_dir%'
+workflow_directory: '%adam_experiment_root%/%experiment%'
 site: 'saga'
 namespace: 'saga'
 
