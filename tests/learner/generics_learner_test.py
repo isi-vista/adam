@@ -115,7 +115,10 @@ def run_generics_test(learner, language_mode):
     learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
 
 
-@pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
+@pytest.mark.parametrize("language_mode", [
+    LanguageMode.ENGLISH,
+                                           # LanguageMode.CHINESE
+])
 def test_generics(language_mode):
     learner = integrated_learner_factory(language_mode)
     run_generics_test(learner, language_mode)

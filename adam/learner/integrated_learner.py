@@ -1,10 +1,10 @@
 import collections
 import itertools
 import logging
+from typing import Iterator, Mapping, Optional, Tuple, List, Dict
 import typing
 from itertools import chain, combinations
 from pathlib import Path
-from typing import Iterator, Mapping, Optional, Tuple, List
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
@@ -20,6 +20,7 @@ from adam.learner.alignments import (
 )
 from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.functional_learner import FunctionalLearner
+from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import get_classifier_for_string
 from adam.learner.plurals import SubsetPluralLearnerNew
@@ -37,7 +38,7 @@ from adam.semantics import (
     GROUND_OBJECT_CONCEPT,
     LearnerSemantics,
     FunctionalObjectConcept,
-)
+    Concept)
 
 
 class LanguageLearnerNew:
@@ -78,7 +79,7 @@ class IntegratedTemplateLearner(
         validator=optional(instance_of(FunctionalLearner)), default=None
     )
 
-    generics_learner: Optional[TemplateLearner] = attrib(
+    generics_learner: Optional[SimpleGenericsLearner] = attrib(
         validator=optional(instance_of(TemplateLearner)), default=None
     )
 
@@ -89,6 +90,10 @@ class IntegratedTemplateLearner(
 
     potential_definiteness_markers: typing.Counter[str] = attrib(
         init=False, default=collections.Counter()
+    )
+
+    concept_semantics: Dict[Concept, Dict[Concept, float]] = attrib(
+        init=False, default=collections.defaultdict(collections.defaultdict)
     )
 
     def observe(
@@ -191,6 +196,8 @@ class IntegratedTemplateLearner(
                 desc.as_token_sequence() for desc in descs
             ]:
                 self.generics_learner.learn_from(current_learner_state)
+                self.generics_learner.update_concept_semantics(self.concept_semantics)
+
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]

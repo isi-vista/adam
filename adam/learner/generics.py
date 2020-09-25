@@ -16,13 +16,13 @@ from adam.semantics import (
     ObjectSemanticNode,
     ObjectConcept,
     ActionConcept,
-)
+    AttributeSemanticNode)
 
 
 @attrs
 class SimpleGenericsLearner(TemplateLearner):
     learned_representations: Dict[
-        Tuple[str, ...], Tuple[ObjectConcept, Set[ActionConcept]]
+        Tuple[str, ...], Tuple[ObjectConcept, Set[Concept]]
     ] = attrib(init=False, default=Factory(dict))
 
     def enrich_during_learning(
@@ -73,8 +73,8 @@ class SimpleGenericsLearner(TemplateLearner):
         action_nodes = [
             n for n in recognized_semantic_nodes if isinstance(n, ActionSemanticNode)
         ]
-        object_nodes = [
-            n for n in recognized_semantic_nodes if isinstance(n, ObjectSemanticNode)
+        attribute_nodes = [
+            n for n in recognized_semantic_nodes if isinstance(n, AttributeSemanticNode)
         ]
 
         significant_object_node: Optional[ObjectSemanticNode] = None
@@ -83,14 +83,25 @@ class SimpleGenericsLearner(TemplateLearner):
             if isinstance(node, ObjectSemanticNode) and node in span:
                 significant_object_node = node
 
-        if action_nodes and object_nodes and significant_object_node:
-            # Generic!
-            action_concepts = set([a.concept for a in action_nodes])
-            if sequence in self.learned_representations:
-                known_representation = self.learned_representations[sequence]
-                known_representation[1].update(action_concepts)
-            else:
-                self.learned_representations[sequence] = (
-                    significant_object_node.concept,
-                    action_concepts,
-                )
+        # Actions: E.g dog s walk
+        # Attributes: E.g cookies are brown
+        # For each set of potential semantic nodes
+        for other_semantic_nodes in [action_nodes, attribute_nodes]:
+            # If there is a recognized object node that matches the scene, and a generic action OR attribute, learn!
+            if significant_object_node and other_semantic_nodes:
+                # Generic! Filter out the concepts.
+                other_concepts = set([n.concept for n in other_semantic_nodes])
+                if sequence in self.learned_representations:
+                    known_representation = self.learned_representations[sequence]
+                    known_representation[1].update(other_concepts)
+                else:
+                    self.learned_representations[sequence] = (
+                        significant_object_node.concept,
+                        other_concepts,
+                    )
+
+    def update_concept_semantics(self, concept_semantics: Dict[Concept, Dict[Concept, float]]) -> None:
+        for object_concept, other_concepts in self.learned_representations.values():
+            for other_concept in other_concepts:
+                concept_semantics[object_concept][other_concept] = 0.9
+
