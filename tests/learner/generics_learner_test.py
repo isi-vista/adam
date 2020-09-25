@@ -97,6 +97,7 @@ def run_generics_test(learner, language_mode):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
+        # print(linguistic_description)
 
     generics_curriculum = _make_generic_statements_curriculum(
         num_samples=20, noise_objects=0, language_generator=language_generator
@@ -110,10 +111,11 @@ def run_generics_test(learner, language_mode):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
+        # print(linguistic_description)
 
     # print(learner._potential_definiteness_markers)
     learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
-    print(learner.concept_semantics)
+    # print(learner.concept_semantics)
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])

@@ -1,14 +1,15 @@
 import collections
 import itertools
 import logging
-from typing import Iterator, Mapping, Optional, Tuple, List, Dict
 import typing
 from itertools import chain, combinations
 from pathlib import Path
+from typing import Iterator, Mapping, Optional, Tuple, List, Dict
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import immutabledict
+from vistautils.span import Span
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
@@ -38,7 +39,11 @@ from adam.semantics import (
     GROUND_OBJECT_CONCEPT,
     LearnerSemantics,
     FunctionalObjectConcept,
-    Concept, AttributeSemanticNode, ObjectConcept, ActionConcept, AttributeConcept)
+    Concept,
+    ObjectConcept,
+    ActionConcept,
+    AttributeConcept,
+)
 
 
 class LanguageLearnerNew:
@@ -80,7 +85,7 @@ class IntegratedTemplateLearner(
     )
 
     generics_learner: Optional[SimpleGenericsLearner] = attrib(
-        validator=optional(instance_of(TemplateLearner)), default=None
+        validator=optional(instance_of(SimpleGenericsLearner)), default=None
     )
 
     _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
@@ -92,8 +97,9 @@ class IntegratedTemplateLearner(
         init=False, default=collections.Counter()
     )
 
-    concept_semantics: Dict[Concept, Dict[Concept, float]] = attrib(
-        init=False, default=collections.defaultdict(lambda: collections.defaultdict(float))
+    concept_semantics: Dict[Concept, Dict[Tuple[Concept, Span], float]] = attrib(
+        init=False,
+        default=collections.defaultdict(lambda: collections.defaultdict(float)),
     )
 
     def observe(
@@ -173,7 +179,6 @@ class IntegratedTemplateLearner(
 
         # Update concept semantics
         self.update_concept_semantics(current_learner_state)
-
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
@@ -461,10 +466,10 @@ class IntegratedTemplateLearner(
             current_learner_state.language_concept_alignment.language.as_token_sequence()
         )
         for (
-                _,
-                span,
+            _,
+            span,
         ) in (
-                current_learner_state.language_concept_alignment.node_to_language_span.items()
+            current_learner_state.language_concept_alignment.node_to_language_span.items()
         ):
             potential_marker = None
             # Special case: Could be a object with a determiner included in the span
@@ -474,9 +479,8 @@ class IntegratedTemplateLearner(
             elif span.start > 0:
                 # If it's an attribute, look for the token preceeding the attribute
                 if (
-                        sequence[span.start - 1]
-                        in self.learned_attribute_tokens()
-                        and span.start > 1
+                    sequence[span.start - 1] in self.learned_attribute_tokens()
+                    and span.start > 1
                 ):
                     potential_marker = sequence[span.start - 2]
                 else:
@@ -528,32 +532,43 @@ class IntegratedTemplateLearner(
                         )
         return any(definite_marker_matches)
 
-    def update_concept_semantics(self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment):
-        recognized_semantic_nodes = list(language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes)
-        span = language_perception_semantic_alignment.language_concept_alignment.node_to_language_span
+    def update_concept_semantics(
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    ):
+        recognized_semantic_nodes = list(
+            language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
+        )
+        span = (
+            language_perception_semantic_alignment.language_concept_alignment.node_to_language_span
+        )
+        print(span)
 
         # Get all action and attribute concepts
         concepts = [n.concept for n in recognized_semantic_nodes]
-        relevant_concepts = [c for c in concepts if isinstance(c, AttributeConcept) or isinstance(c, ActionConcept)]
+        relevant_concepts = [
+            c
+            for c in concepts
+            if isinstance(c, AttributeConcept) or isinstance(c, ActionConcept)
+        ]
 
         # Get object concepts that are in the utterance
-        object_concepts: List[ObjectConcept] = []
+        object_concepts_with_span: List[Tuple[ObjectConcept, Span]] = []
         for node in recognized_semantic_nodes:
             if isinstance(node, ObjectSemanticNode) and node in span:
-                object_concepts.append(node.concept)
+                object_concepts_with_span.append((node.concept, span[node]))
 
         # Update association strength for each object - other concept pair
-        for object_concept in object_concepts:
+        for object_concept, span in object_concepts_with_span:
             for other_concept in relevant_concepts:
-                old_score = self.concept_semantics[object_concept][other_concept]
-                new_score = old_score + (1.0 - old_score) * 0.3
-                self.concept_semantics[object_concept][other_concept] = new_score
+                old_score = self.concept_semantics[object_concept][(other_concept, span)]
+                new_score = old_score + (1.0 - old_score) * 0.2
+                self.concept_semantics[object_concept][(other_concept, span)] = new_score
 
         # For each object - other concept pair learner through generics, set a high association strength
         if self.generics_learner:
-            for object_concept, other_concepts in self.generics_learner.learned_representations.values():
+            for (
+                object_concept,
+                other_concepts,
+            ) in self.generics_learner.learned_representations.values():
                 for other_concept in other_concepts:
                     self.concept_semantics[object_concept][other_concept] = 1.0
-
-
-
