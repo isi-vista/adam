@@ -1,5 +1,4 @@
 import random
-from pathlib import Path
 from typing import Iterable
 
 import pytest
@@ -97,7 +96,6 @@ def run_generics_test(learner, language_mode):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
-        # print(linguistic_description)
 
     generics_curriculum = _make_generic_statements_curriculum(
         num_samples=20, noise_objects=0, language_generator=language_generator
@@ -111,14 +109,13 @@ def run_generics_test(learner, language_mode):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
-        # print(linguistic_description)
 
-    # print(learner._potential_definiteness_markers)
-    learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
-    # print(learner.concept_graph.edges.data())
-    # # print(learner.concept_graph.edges.data())
-    # for edge in learner.concept_graph.edges.data():
+    # learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
+    # for edge in learner.semantics_graph.edges.data():
     #     print(edge)
+    # A = to_agraph(learner.semantics_graph)
+    # A.layout('dot')
+    # A.draw(f"./renders/{language_mode.name}_semantics.png")
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])

@@ -756,8 +756,9 @@ def candidate_object_hypotheses(
     ]
 
 
-def get_slot_from_semantic_node(object_concept: Concept,
-                                semantic_node: SemanticNode) -> Optional[SyntaxSemanticsVariable]:
+def get_slot_from_semantic_node(
+    object_concept: Concept, semantic_node: SemanticNode
+) -> Optional[SyntaxSemanticsVariable]:
     slot = None
     for slot_var, object_node in semantic_node.slot_fillings.items():
         if object_node.concept == object_concept:

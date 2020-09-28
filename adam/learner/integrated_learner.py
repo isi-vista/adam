@@ -4,12 +4,12 @@ import logging
 import typing
 from itertools import chain, combinations
 from pathlib import Path
-from typing import Iterator, Mapping, Optional, Tuple, List, Dict
+from typing import Iterator, Mapping, Optional, Tuple, List
 
-from networkx import Graph
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import immutabledict
+from networkx import Graph
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
@@ -23,7 +23,10 @@ from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_utils import get_classifier_for_string, get_slot_from_semantic_node
+from adam.learner.learner_utils import (
+    get_classifier_for_string,
+    get_slot_from_semantic_node,
+)
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
@@ -39,9 +42,9 @@ from adam.semantics import (
     GROUND_OBJECT_CONCEPT,
     LearnerSemantics,
     FunctionalObjectConcept,
-    Concept,
     ObjectConcept,
-    AttributeSemanticNode, SyntaxSemanticsVariable)
+    AttributeSemanticNode,
+)
 
 
 class LanguageLearnerNew:
@@ -540,7 +543,8 @@ class IntegratedTemplateLearner(
         # Get all action and attribute nodes
         # concepts = [n.concept for n in recognized_semantic_nodes]
         relevant_nodes = [
-            n for n in recognized_semantic_nodes
+            n
+            for n in recognized_semantic_nodes
             if isinstance(n, ActionSemanticNode) or isinstance(n, AttributeSemanticNode)
         ]
 
@@ -557,19 +561,30 @@ class IntegratedTemplateLearner(
                 slot = get_slot_from_semantic_node(object_concept, node)
                 if slot:
                     # Update if the association exists, otherwise create
-                    if self.semantics_graph.has_edge(object_concept, other_concept) and \
-                            slot == self.semantics_graph[object_concept][other_concept]['slot']:
-                        old_score = self.semantics_graph[object_concept][other_concept]['weight']
+                    if (
+                        self.semantics_graph.has_edge(object_concept, other_concept)
+                        and slot
+                        == self.semantics_graph[object_concept][other_concept]["slot"]
+                    ):
+                        old_score = self.semantics_graph[object_concept][other_concept][
+                            "weight"
+                        ]
                         new_score = old_score + (1.0 - old_score) * 0.2
-                        self.semantics_graph[object_concept][other_concept]['weight'] = new_score
+                        self.semantics_graph[object_concept][other_concept][
+                            "weight"
+                        ] = new_score
                     else:
-                        self.semantics_graph.add_edge(object_concept, other_concept, slot=slot, weight=0.2)
+                        self.semantics_graph.add_edge(
+                            object_concept, other_concept, slot=slot, weight=0.2
+                        )
 
         # For each object - other concept pair learner through generics, set a high association strength
         if self.generics_learner:
             for (
-                object_concept,
+                obj_con,
                 other_concepts_and_object_slots,
             ) in self.generics_learner.learned_representations.values():
-                for other_concept, slot in other_concepts_and_object_slots:
-                    self.semantics_graph.add_edge(object_concept, other_concept, slot=slot, weight=1.0)
+                for other_con, slot in other_concepts_and_object_slots:
+                    self.semantics_graph.add_edge(
+                        obj_con, other_con, slot=slot, weight=1.0
+                    )

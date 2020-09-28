@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import AbstractSet, Optional, Tuple, Dict, Set
 
 from attr import attrs, attrib, Factory
-from vistautils.span import Span
 
 from adam.learner import SurfaceTemplate
 from adam.learner.alignments import (
@@ -15,10 +14,9 @@ from adam.learner.template_learner import TemplateLearner
 from adam.semantics import (
     Concept,
     ObjectSemanticNode,
-    ObjectConcept,
-    ActionConcept,
-    AttributeConcept,
-    ActionSemanticNode, AttributeSemanticNode, SyntaxSemanticsVariable)
+    ActionSemanticNode,
+    SyntaxSemanticsVariable,
+)
 
 
 @attrs
@@ -28,12 +26,12 @@ class SimpleGenericsLearner(TemplateLearner):
     ] = attrib(init=False, default=Factory(dict))
 
     def enrich_during_learning(
-            self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> LanguagePerceptionSemanticAlignment:
         return language_perception_semantic_alignment
 
     def enrich_during_description(
-            self, perception_semantic_alignment: PerceptionSemanticAlignment
+        self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         return perception_semantic_alignment
 
@@ -46,8 +44,8 @@ class SimpleGenericsLearner(TemplateLearner):
         Path(log_output_path).mkdir(parents=True, exist_ok=True)
         with open(log_output_path / f"generics_log.txt", "w") as out:
             for (
-                    sequence,
-                    (object_concept, actions),
+                sequence,
+                (object_concept, actions),
             ) in self.learned_representations.items():
                 out.write(f'Learned generic: {" ".join(sequence)} \n')
                 out.write(f"Related objects: {object_concept} \n")
@@ -57,9 +55,9 @@ class SimpleGenericsLearner(TemplateLearner):
         return set()
 
     def learn_from(
-            self,
-            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-            offset: int = 0,
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        offset: int = 0,
     ) -> None:
         sequence = (
             language_perception_semantic_alignment.language_concept_alignment.language.as_token_sequence()
@@ -72,8 +70,9 @@ class SimpleGenericsLearner(TemplateLearner):
         )
 
         # Get actions and attributes that are recognized in the scene
-        action_nodes = [n for n in recognized_semantic_nodes if isinstance(n, ActionSemanticNode)]
-        attribute_nodes = [n for n in recognized_semantic_nodes if isinstance(n, AttributeSemanticNode)]
+        action_nodes = [
+            n for n in recognized_semantic_nodes if isinstance(n, ActionSemanticNode)
+        ]
 
         # Check if a recognized object matches the heard utterance
         significant_object_concept: Optional[Concept] = None
