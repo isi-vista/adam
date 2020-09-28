@@ -115,7 +115,10 @@ def run_generics_test(learner, language_mode):
 
     # print(learner._potential_definiteness_markers)
     learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
-    print(learner.concept_semantics)
+    # print(learner.concept_graph.edges.data())
+    # # print(learner.concept_graph.edges.data())
+    # for edge in learner.concept_graph.edges.data():
+    #     print(edge)
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])

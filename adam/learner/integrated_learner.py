@@ -6,10 +6,10 @@ from itertools import chain, combinations
 from pathlib import Path
 from typing import Iterator, Mapping, Optional, Tuple, List, Dict
 
+from networkx import Graph
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import immutabledict
-from vistautils.span import Span
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
@@ -41,8 +41,6 @@ from adam.semantics import (
     FunctionalObjectConcept,
     Concept,
     ObjectConcept,
-    ActionConcept,
-    AttributeConcept,
     AttributeSemanticNode, SyntaxSemanticsVariable)
 
 
@@ -97,10 +95,7 @@ class IntegratedTemplateLearner(
         init=False, default=collections.Counter()
     )
 
-    concept_semantics: Dict[Concept, Dict[Tuple[Concept, SyntaxSemanticsVariable], float]] = attrib(
-        init=False,
-        default=collections.defaultdict(lambda: collections.defaultdict(float)),
-    )
+    semantics_graph: Graph = attrib(init=False, default=Graph())
 
     def observe(
         self,
@@ -558,11 +553,17 @@ class IntegratedTemplateLearner(
         # Update association strength for each object - other concept pair
         for object_concept in recognized_object_concepts:
             for node in relevant_nodes:
+                other_concept = node.concept
                 slot = get_slot_from_semantic_node(object_concept, node)
                 if slot:
-                    old_score = self.concept_semantics[object_concept][(node.concept, slot)]
-                    new_score = old_score + (1.0 - old_score) * 0.2
-                    self.concept_semantics[object_concept][(node.concept, slot)] = new_score
+                    # Update if the association exists, otherwise create
+                    if self.semantics_graph.has_edge(object_concept, other_concept) and \
+                            slot == self.semantics_graph[object_concept][other_concept]['slot']:
+                        old_score = self.semantics_graph[object_concept][other_concept]['weight']
+                        new_score = old_score + (1.0 - old_score) * 0.2
+                        self.semantics_graph[object_concept][other_concept]['weight'] = new_score
+                    else:
+                        self.semantics_graph.add_edge(object_concept, other_concept, slot=slot, weight=0.2)
 
         # For each object - other concept pair learner through generics, set a high association strength
         if self.generics_learner:
@@ -570,5 +571,5 @@ class IntegratedTemplateLearner(
                 object_concept,
                 other_concepts_and_object_slots,
             ) in self.generics_learner.learned_representations.values():
-                for other_concept_and_object_slot in other_concepts_and_object_slots:
-                    self.concept_semantics[object_concept][other_concept_and_object_slot] = 1.0
+                for other_concept, slot in other_concepts_and_object_slots:
+                    self.semantics_graph.add_edge(object_concept, other_concept, slot=slot, weight=1.0)
