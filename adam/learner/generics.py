@@ -10,6 +10,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.learner_utils import get_slot_from_semantic_node
 from adam.learner.template_learner import TemplateLearner
 from adam.semantics import (
     Concept,
@@ -17,22 +18,22 @@ from adam.semantics import (
     ObjectConcept,
     ActionConcept,
     AttributeConcept,
-)
+    ActionSemanticNode, AttributeSemanticNode, SyntaxSemanticsVariable)
 
 
 @attrs
 class SimpleGenericsLearner(TemplateLearner):
     learned_representations: Dict[
-        Tuple[str, ...], Tuple[Concept, Set[Tuple[Concept, Span]]]
+        Tuple[str, ...], Tuple[Concept, Set[Tuple[Concept, SyntaxSemanticsVariable]]]
     ] = attrib(init=False, default=Factory(dict))
 
     def enrich_during_learning(
-        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+            self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> LanguagePerceptionSemanticAlignment:
         return language_perception_semantic_alignment
 
     def enrich_during_description(
-        self, perception_semantic_alignment: PerceptionSemanticAlignment
+            self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         return perception_semantic_alignment
 
@@ -45,8 +46,8 @@ class SimpleGenericsLearner(TemplateLearner):
         Path(log_output_path).mkdir(parents=True, exist_ok=True)
         with open(log_output_path / f"generics_log.txt", "w") as out:
             for (
-                sequence,
-                (object_concept, actions),
+                    sequence,
+                    (object_concept, actions),
             ) in self.learned_representations.items():
                 out.write(f'Learned generic: {" ".join(sequence)} \n')
                 out.write(f"Related objects: {object_concept} \n")
@@ -56,9 +57,9 @@ class SimpleGenericsLearner(TemplateLearner):
         return set()
 
     def learn_from(
-        self,
-        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        offset: int = 0,
+            self,
+            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+            offset: int = 0,
     ) -> None:
         sequence = (
             language_perception_semantic_alignment.language_concept_alignment.language.as_token_sequence()
@@ -71,31 +72,31 @@ class SimpleGenericsLearner(TemplateLearner):
         )
 
         # Get actions and attributes that are recognized in the scene
-        concepts = [n.concept for n in recognized_semantic_nodes]
-        attribute_concepts = [c for c in concepts if isinstance(c, AttributeConcept)]
-        action_concepts = [c for c in concepts if isinstance(c, ActionConcept)]
+        action_nodes = [n for n in recognized_semantic_nodes if isinstance(n, ActionSemanticNode)]
+        attribute_nodes = [n for n in recognized_semantic_nodes if isinstance(n, AttributeSemanticNode)]
 
         # Check if a recognized object matches the heard utterance
         significant_object_concept: Optional[Concept] = None
-        significant_object_span: Optional[Span] = None
         for node in recognized_semantic_nodes:
             if isinstance(node, ObjectSemanticNode) and node in span:
                 significant_object_concept = node.concept
-                significant_object_span = span[node]
 
         # Actions: E.g dog s walk
-        # Attributes: E.g cookies are brown
-        # For each set of potential semantic nodes
-        for concepts in [action_concepts, attribute_concepts]:
-            # If there is a recognized object node that matches the scene, and a generic action OR attribute, learn!
-            if significant_object_concept and significant_object_span and concepts:
-                # Generic!
-                concepts_and_spans = [(c, significant_object_span) for c in concepts]
-                if sequence in self.learned_representations:
-                    known_representation = self.learned_representations[sequence]
-                    known_representation[1].update(concepts_and_spans)
-                else:
-                    self.learned_representations[sequence] = (
-                        significant_object_concept,
-                        set(concepts_and_spans),
-                    )
+        # TODO: Attributes: E.g cookies are brown
+        # If there is a recognized object node that matches the scene, and a generic action OR attribute, learn!
+        if significant_object_concept and action_nodes:
+            # Get the slot of object for each recognized action in the statement
+            action_concepts_and_object_slots = []
+            for node in action_nodes:
+                slot = get_slot_from_semantic_node(significant_object_concept, node)
+                if slot:
+                    action_concepts_and_object_slots.append((node.concept, slot))
+            # Update the representation for learned generics for the sequence
+            if sequence in self.learned_representations:
+                known_representation = self.learned_representations[sequence]
+                known_representation[1].update(action_concepts_and_object_slots)
+            else:
+                self.learned_representations[sequence] = (
+                    significant_object_concept,
+                    set(action_concepts_and_object_slots),
+                )

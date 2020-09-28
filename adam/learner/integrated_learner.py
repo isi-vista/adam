@@ -23,7 +23,7 @@ from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_utils import get_classifier_for_string
+from adam.learner.learner_utils import get_classifier_for_string, get_slot_from_semantic_node
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
@@ -43,7 +43,7 @@ from adam.semantics import (
     ObjectConcept,
     ActionConcept,
     AttributeConcept,
-)
+    AttributeSemanticNode, SyntaxSemanticsVariable)
 
 
 class LanguageLearnerNew:
@@ -97,7 +97,7 @@ class IntegratedTemplateLearner(
         init=False, default=collections.Counter()
     )
 
-    concept_semantics: Dict[Concept, Dict[Tuple[Concept, Span], float]] = attrib(
+    concept_semantics: Dict[Concept, Dict[Tuple[Concept, SyntaxSemanticsVariable], float]] = attrib(
         init=False,
         default=collections.defaultdict(lambda: collections.defaultdict(float)),
     )
@@ -541,34 +541,34 @@ class IntegratedTemplateLearner(
         span = (
             language_perception_semantic_alignment.language_concept_alignment.node_to_language_span
         )
-        print(span)
 
-        # Get all action and attribute concepts
-        concepts = [n.concept for n in recognized_semantic_nodes]
-        relevant_concepts = [
-            c
-            for c in concepts
-            if isinstance(c, AttributeConcept) or isinstance(c, ActionConcept)
+        # Get all action and attribute nodes
+        # concepts = [n.concept for n in recognized_semantic_nodes]
+        relevant_nodes = [
+            n for n in recognized_semantic_nodes
+            if isinstance(n, ActionSemanticNode) or isinstance(n, AttributeSemanticNode)
         ]
 
         # Get object concepts that are in the utterance
-        object_concepts_with_span: List[Tuple[ObjectConcept, Span]] = []
+        recognized_object_concepts: List[ObjectConcept] = []
         for node in recognized_semantic_nodes:
             if isinstance(node, ObjectSemanticNode) and node in span:
-                object_concepts_with_span.append((node.concept, span[node]))
+                recognized_object_concepts.append(node.concept)
 
         # Update association strength for each object - other concept pair
-        for object_concept, span in object_concepts_with_span:
-            for other_concept in relevant_concepts:
-                old_score = self.concept_semantics[object_concept][(other_concept, span)]
-                new_score = old_score + (1.0 - old_score) * 0.2
-                self.concept_semantics[object_concept][(other_concept, span)] = new_score
+        for object_concept in recognized_object_concepts:
+            for node in relevant_nodes:
+                slot = get_slot_from_semantic_node(object_concept, node)
+                if slot:
+                    old_score = self.concept_semantics[object_concept][(node.concept, slot)]
+                    new_score = old_score + (1.0 - old_score) * 0.2
+                    self.concept_semantics[object_concept][(node.concept, slot)] = new_score
 
         # For each object - other concept pair learner through generics, set a high association strength
         if self.generics_learner:
             for (
                 object_concept,
-                other_concepts,
+                other_concepts_and_object_slots,
             ) in self.generics_learner.learned_representations.values():
-                for other_concept in other_concepts:
-                    self.concept_semantics[object_concept][other_concept] = 1.0
+                for other_concept_and_object_slot in other_concepts_and_object_slots:
+                    self.concept_semantics[object_concept][other_concept_and_object_slot] = 1.0
