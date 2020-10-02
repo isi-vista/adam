@@ -12,12 +12,14 @@ from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 
 
 def integrated_learner_factory(language_mode: LanguageMode):
+    functional_learner = FunctionalLearner(language_mode=language_mode)
     return IntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         action_learner=SubsetVerbLearnerNew(
-            ontology=GAILA_PHASE_2_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_2_ONTOLOGY, beam_size=5, language_mode=language_mode,
+            action_fallback_learners=[functional_learner],
         ),
-        functional_learner=FunctionalLearner(language_mode=language_mode),
+        functional_learner=functional_learner,
     )
 
 

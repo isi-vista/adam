@@ -16,6 +16,7 @@ from adam.learner import (
     SurfaceTemplate,
 )
 from adam.learner.template_learner import TemplateLearner
+from adam.learner.fallback_learner import ActionFallbackLearnerProtocol
 from adam.semantics import (
     SyntaxSemanticsVariable,
     LearnerSemantics,
@@ -23,6 +24,8 @@ from adam.semantics import (
     FunctionalObjectConcept,
     ActionConcept,
     Concept,
+    ActionSemanticNode,
+    ObjectSemanticNode,
 )
 
 
@@ -64,7 +67,7 @@ class ConceptFunctionCounter:
 
 
 @attrs
-class FunctionalLearner(TemplateLearner):
+class FunctionalLearner(TemplateLearner, ActionFallbackLearnerProtocol):
     _observation_num: int = attrib(init=False, default=0)
     _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
     _concept_to_slots_to_function_counter: Dict[
@@ -127,6 +130,35 @@ class FunctionalLearner(TemplateLearner):
                 self._concept_to_slots_to_function_counter[semantic_node.concept][
                     slot
                 ].add_example(slot_filler.concept)
+
+    def ignore_slot_internal_structure_failure(
+        self,
+        action_semantic_node: ActionSemanticNode,
+        slot_with_failure: SyntaxSemanticsVariable,
+    ) -> bool:
+        # Do we recognize the action at all?
+        if (
+            action_semantic_node.concept
+            in self._concept_to_slots_to_function_counter.keys()
+        ):
+            # If we recognize the specific slot, *and* the slot is filled with a functional
+            # object concept, we should ignore internal structural failures on that.
+            #
+            # Note that a functional object concept is always an "IOU" marking something the
+            # functional learner needs to replace, and is *not* the result of running the
+            # functional learner.
+            slots_to_function_counter = self._concept_to_slots_to_function_counter[
+                action_semantic_node.concept
+            ]
+            slot_filler = action_semantic_node.slot_fillings[slot_with_failure]
+            if (
+                slot_with_failure in slots_to_function_counter
+                and isinstance(slot_filler, ObjectSemanticNode)
+                and isinstance(slot_filler.concept, FunctionalObjectConcept)
+            ):
+                return True
+
+        return False
 
     def _enrich_common(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
