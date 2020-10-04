@@ -376,7 +376,6 @@ def _make_plural_objects_curriculum(  # pylint: disable=unused-argument
     )
 
 
-# TODO: currently this doesn't constrain the colours that object can be
 def _make_colour_predicates_curriculum(
     num_samples: Optional[int],
     noise_objects: Optional[int],
@@ -387,11 +386,20 @@ def _make_colour_predicates_curriculum(
     """Creates situations and descriptions such as `cookies are brown' with a single
     cookie that is brown"""
     all_instances = []
+    # chinese mapping of objects to the colours they usually are
     chinese_colour_dictionary = {
         "syi1 gwa1": "lyu4 se4",
         "chyu1 chi2 bing3": "chyan3 he2 se4",
+        "jr3": "bai2 se4",
+        "syung2": "shen1 dzung1 se4",
     }
-    english_colour_dictionary = {"watermelon": "green", "cookie": "light brown"}
+    # english mapping of objects to the colours they usually are
+    english_colour_dictionary = {
+        "watermelon": "green",
+        "cookie": "light brown",
+        "paper": "white",
+        "bear": "dark brown",
+    }
     # we keep track of the subjects so we only generate one predicate colour for each subject
     all_subjects: List[str] = []
     for (instance, description, perception) in _make_each_object_by_itself_curriculum(
