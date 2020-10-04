@@ -383,10 +383,13 @@ def _make_colour_predicates_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
+    """Creates situations and descriptions such as `cookies are brown' with a single
+    cookie that is brown"""
     all_instances = []
     for (instance, description, perception) in _make_objects_with_colors_is_curriculum(
         num_samples, noise_objects, language_generator
     ).instances():
+        # if the language is Chinese, we already are good to go with the generated language
         if language_generator in [
             GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
             GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
@@ -398,6 +401,7 @@ def _make_colour_predicates_curriculum(
                     perception,
                 )
             )
+        # if it's English, we need to be sure plurality is reflected in our description
         else:
             linguistic_description = description.as_token_sequence()
             updated_description = TokenSequenceLinguisticDescription(
