@@ -376,6 +376,22 @@ def _make_plural_objects_curriculum(  # pylint: disable=unused-argument
     )
 
 
+def _make_colour_predicates_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
+    all_instances = []
+    for (instance, description, perception) in _make_objects_with_colors_is_curriculum(
+        num_samples, noise_objects, language_generator
+    ).instances():
+        # print(instance, description, perception)
+        all_instances.append((instance, description, perception))
+    return ExplicitWithSituationInstanceGroup("colour predicates", all_instances)
+
+
 # TODO: Refactor this curriculum
 def _make_generic_statements_curriculum(
     num_samples: Optional[int],
