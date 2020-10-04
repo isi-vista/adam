@@ -59,6 +59,7 @@ from adam.ontology.phase1_ontology import (
     AGENT,
     PATIENT,
     COOKIE,
+    PERSON,
     WATERMELON,
     TOWARD,
     AWAY_FROM,
@@ -95,7 +96,7 @@ NODES_TO_CHOOSE_FROM = [
     for x in GAILA_PHASE_1_ENGLISH_LEXICON._ontology_node_to_word.items()  # pylint:disable=protected-access
     if x[1].part_of_speech in [NOUN]
     and MASS_NOUN not in x[1].properties
-    and x[0] not in [BABY, HEAD, HAND, GROUND, NONHUMAN_ANIMAL]
+    and x[0] not in [BABY, HEAD, HAND, GROUND, NONHUMAN_ANIMAL, PERSON]
 ]
 # differentiate between the nodes that can be modified with tall and those that can't
 TALL_ELIGIBLE_NODES = [
