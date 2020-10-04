@@ -387,8 +387,23 @@ def _make_colour_predicates_curriculum(
     for (instance, description, perception) in _make_objects_with_colors_is_curriculum(
         num_samples, noise_objects, language_generator
     ).instances():
-        # print(instance, description, perception)
-        all_instances.append((instance, description, perception))
+        if language_generator in [
+            GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+            GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
+        ]:
+            all_instances.append(
+                (
+                    instance,
+                    TokenSequenceLinguisticDescription(description.as_token_sequence()),
+                    perception,
+                )
+            )
+        else:
+            linguistic_description = description.as_token_sequence()
+            updated_description = TokenSequenceLinguisticDescription(
+                (linguistic_description[1], "s", "are", linguistic_description[-1])
+            )
+            all_instances.append((instance, updated_description, perception))
     return ExplicitWithSituationInstanceGroup("colour predicates", all_instances)
 
 
