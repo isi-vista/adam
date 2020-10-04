@@ -1,5 +1,6 @@
 from adam.curriculum.phase1_curriculum import (
     Phase1InstanceGroup,
+    _make_kind_predicates_curriculum,
     _make_colour_predicates_curriculum,
     _make_behind_in_front_curriculum,
     _make_come_curriculum,
@@ -357,3 +358,11 @@ def test_generics_curriculum(language_generator):
 )
 def test_colour_predicates_curriculum(language_generator):
     curriculum_test(_make_colour_predicates_curriculum(None, None, language_generator))
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_kind_predicates_curriculum(language_generator):
+    curriculum_test(_make_kind_predicates_curriculum(None, None, language_generator))

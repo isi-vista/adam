@@ -376,6 +376,98 @@ def _make_plural_objects_curriculum(  # pylint: disable=unused-argument
     )
 
 
+def _make_kind_predicates_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
+    """Creates situations and descriptions such as `dogs are animals` with
+    a perception of a dog"""
+    all_instances = []
+    # chinese mapping of objects to the colours they usually are
+    chinese_kind_dictionary = {
+        "syung2": ["dung4 wu4"],
+        "gou3": ["dung4 wu4"],
+        "mau1": ["dung4 wu4"],
+        "nyau3": ["dung4 wu4"],
+        "ma1 ma1": ["ren2"],
+        "ba4 ba4": ["ren2"],
+        "bau3 bau3": ["ren2"],
+    }
+    # english mapping of objects to the colours they usually are
+    english_kind_dictionary = {
+        "bear": ["animal", "s"],
+        "dog": ["animal", "s"],
+        "cat": ["animal", "s"],
+        "bird": ["animal", "s"],
+        "Mom": ["people"],
+        "Dad": ["people"],
+        "baby": ["people"],
+    }
+    # we keep track of the subjects so we only generate one predicate for each subject
+    all_subjects: List[str] = []
+    for (instance, description, perception) in _make_each_object_by_itself_curriculum(
+        num_samples, noise_objects, language_generator
+    ).instances():
+        linguistic_tokens = description.as_token_sequence()
+        if language_generator in [
+            GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
+            GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+        ]:
+            if (
+                linguistic_tokens[0] not in all_subjects
+                and linguistic_tokens[0] in chinese_kind_dictionary
+            ):
+                all_subjects.append(linguistic_tokens[0])
+                all_instances.append(
+                    (
+                        instance,
+                        TokenSequenceLinguisticDescription(
+                            (
+                                linguistic_tokens[0],
+                                "shr4",
+                                chinese_kind_dictionary[linguistic_tokens[0]][0],
+                            )
+                        ),
+                        perception,
+                    )
+                )
+        else:
+            if (
+                linguistic_tokens[-1] not in all_subjects
+                and linguistic_tokens[-1] in english_kind_dictionary
+            ):
+                all_subjects.append(linguistic_tokens[-1])
+                all_instances.append(
+                    (
+                        instance,
+                        TokenSequenceLinguisticDescription(
+                            (
+                                linguistic_tokens[-1],
+                                "s",
+                                "are",
+                                english_kind_dictionary[linguistic_tokens[-1]][0],
+                                english_kind_dictionary[linguistic_tokens[-1]][-1],
+                            )
+                        )
+                        # deal with regular + s vs. other plurals
+                        if len(english_kind_dictionary[linguistic_tokens[-1]]) > 1
+                        else TokenSequenceLinguisticDescription(
+                            (
+                                linguistic_tokens[-1],
+                                "s",
+                                "are",
+                                english_kind_dictionary[linguistic_tokens[-1]][0],
+                            )
+                        ),
+                        perception,
+                    )
+                )
+    return ExplicitWithSituationInstanceGroup("kind predicates", all_instances)
+
+
 def _make_colour_predicates_curriculum(
     num_samples: Optional[int],
     noise_objects: Optional[int],
