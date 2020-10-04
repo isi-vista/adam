@@ -71,6 +71,7 @@ from adam.ontology.phase1_ontology import (
     BED,
     CAT,
     BEAR,
+    NONHUMAN_ANIMAL,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -104,6 +105,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
         (GROUND, LexiconEntry("ground", NOUN, plural_form="grounds")),
+        (NONHUMAN_ANIMAL, LexiconEntry("animal", NOUN, plural_form="animals")),
         (MOM, LexiconEntry("Mom", PROPER_NOUN)),
         (BALL, LexiconEntry("ball", NOUN, plural_form="balls")),
         (WATERMELON, LexiconEntry("watermelon", NOUN, plural_form="watermelons")),
