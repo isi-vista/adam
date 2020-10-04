@@ -376,6 +376,7 @@ def _make_plural_objects_curriculum(  # pylint: disable=unused-argument
     )
 
 
+# TODO: currently this doesn't constrain the colours that object can be
 def _make_colour_predicates_curriculum(
     num_samples: Optional[int],
     noise_objects: Optional[int],
@@ -386,6 +387,8 @@ def _make_colour_predicates_curriculum(
     """Creates situations and descriptions such as `cookies are brown' with a single
     cookie that is brown"""
     all_instances = []
+    # we keep track of the subjects so we only generate one predicate colour for each subject
+    all_subjects: List[str] = []
     for (instance, description, perception) in _make_objects_with_colors_is_curriculum(
         num_samples, noise_objects, language_generator
     ).instances():
@@ -394,20 +397,26 @@ def _make_colour_predicates_curriculum(
             GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
             GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
         ]:
-            all_instances.append(
-                (
-                    instance,
-                    TokenSequenceLinguisticDescription(description.as_token_sequence()),
-                    perception,
+            if description.as_token_sequence()[0] not in all_subjects:
+                all_subjects.append(description.as_token_sequence()[0])
+                all_instances.append(
+                    (
+                        instance,
+                        TokenSequenceLinguisticDescription(
+                            description.as_token_sequence()
+                        ),
+                        perception,
+                    )
                 )
-            )
         # if it's English, we need to be sure plurality is reflected in our description
         else:
             linguistic_description = description.as_token_sequence()
-            updated_description = TokenSequenceLinguisticDescription(
-                (linguistic_description[1], "s", "are", linguistic_description[-1])
-            )
-            all_instances.append((instance, updated_description, perception))
+            if linguistic_description[1] not in all_subjects:
+                all_subjects.append(linguistic_description[1])
+                updated_description = TokenSequenceLinguisticDescription(
+                    (linguistic_description[1], "s", "are", linguistic_description[-1])
+                )
+                all_instances.append((instance, updated_description, perception))
     return ExplicitWithSituationInstanceGroup("colour predicates", all_instances)
 
 
