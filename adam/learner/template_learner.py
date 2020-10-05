@@ -304,7 +304,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
     _observation_num: int = attrib(init=False, default=0)
     _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
     _action_fallback_learners: Sequence[ActionFallbackLearnerProtocol] = attrib(
-        kw_only=True, default=tuple()
+        kw_only=True, converter=tuple, default=tuple()
     )
 
     def learn_from(
