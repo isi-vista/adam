@@ -441,7 +441,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
 
             # If we reach this point, matching has failed. Handle this appropriately.
             # If we're in an action learner...
-            if isinstance(concept, ActionConcept):
+            if self._can_handle_failure(concept=concept, pattern=pattern):
                 # Figure out where we failed.
                 #
                 # We have to do a cast because the type system doesn't know that we're guaranteed to
@@ -449,156 +449,13 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 failure = cast(
                     PatternMatching.MatchFailure, matcher.first_match_or_failure_info()
                 )
-
-                # Handle the case where we failed on the internal structure of a slot.
-                slot_pattern_nodes = immutableset(
-                    pattern.template_variable_to_pattern_node.values()
+                return self._on_match_failure(
+                    failure=failure,
+                    concept=concept,
+                    pattern=pattern,
+                    score=score,
+                    match_template=match_template,
                 )
-                unmatched_pattern_nodes = immutableset(
-                    [
-                        pattern_node
-                        for pattern_node in pattern.graph_pattern._graph.nodes  # pylint:disable=protected-access
-                        if pattern_node
-                        not in failure.largest_match_pattern_subgraph._graph.nodes  # pylint:disable=protected-access
-                    ]
-                )
-
-                # Here, we simplify the logic slightly
-                # by assuming the edge will be a HoldsAtTemporalScopePredicate;
-                # it should be, since the integrated learner
-                # should never run the action learner on a static graph.
-                def is_part_of_predicate(predicate: HoldsAtTemporalScopePredicate):
-                    unwrapped_predicate = predicate.wrapped_edge_predicate
-                    return (
-                        isinstance(unwrapped_predicate, RelationTypeIsPredicate)
-                        and unwrapped_predicate.relation_type == PART_OF
-                    )
-
-                # If the slot pattern nodes all matched,
-                # AND we *failed* to match a pattern node that's `partOf` one of the slots...
-                if (
-                    not slot_pattern_nodes.intersection(unmatched_pattern_nodes)
-                    # and slot_with_unmatched_subobject
-                ):
-                    # First, construct an action semantic node corresponding to the potential match.
-                    semantics = ActionSemanticNode(
-                        concept=concept,
-                        slot_fillings=immutabledict(
-                            [
-                                (
-                                    slot,
-                                    failure.pattern_node_to_graph_node_for_largest_match[
-                                        pattern_node
-                                    ],
-                                )
-                                for slot, pattern_node in pattern.template_variable_to_pattern_node.items()
-                            ]
-                        ),
-                    )
-                    for (
-                        slot,
-                        slot_pattern_node,
-                    ) in pattern.template_variable_to_pattern_node.items():
-                        if any(
-                            subobject in unmatched_pattern_nodes
-                            and is_part_of_predicate(predicate)
-                            for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(
-                                slot_pattern_node, data="predicate"
-                            )
-                        ):
-                            for fallback_learner in self._action_fallback_learners:
-                                if fallback_learner.ignore_slot_internal_structure_failure(
-                                    semantics, slot
-                                ):
-                                    logging.debug(
-                                        "Fallback learner says that we can ignore internal structure failure "
-                                        "for %s (failed slot was %s)",
-                                        semantics,
-                                        slot,
-                                    )
-                                    # Excise the internal structure of the failed slot part of the pattern
-                                    fixed_pattern = _delete_subobjects_of_object_in_pattern(
-                                        pattern.graph_pattern, slot_pattern_node
-                                    )
-                                    # If any of the slot pattern nodes got excised then this is never going
-                                    # to work, so break out of the loop.
-                                    #
-                                    # This should never happen, because it would require one of the slots to
-                                    # be part of the other.
-                                    if any(
-                                        slot_pattern_node
-                                        not in fixed_pattern._graph  # pylint:disable=protected-access
-                                        for slot_pattern_node in slot_pattern_nodes
-                                    ):
-                                        break
-                                    # Make a new PerceptionGraphTemplate, excising the failed part
-                                    updated_template = PerceptionGraphTemplate(
-                                        graph_pattern=fixed_pattern,
-                                        template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
-                                    )
-                                    if match_template(
-                                        concept=concept,
-                                        pattern=updated_template,
-                                        score=score,
-                                    ):
-                                        return True
-                                    # If this doesn't work the first time we meet the if-condition,
-                                    # then it never will,
-                                    # so break out of the loop
-                                    break
-
-                # Otherwise, maybe a root-level matched object matched but one of its subobjects
-                # failed to match.
-                #
-                # We can assume it will be an ObjectSemanticNode since (if we are running in the
-                # integrated learner) an object learner should already have done the replacing for
-                # us.
-                matched_root_node_with_unmatched_subobject: Optional[
-                    Union[AnyObjectPerception, ObjectSemanticNodePerceptionPredicate]
-                ] = first(
-                    (
-                        object_node
-                        for object_node in failure.largest_match_pattern_subgraph
-                        if not object_node in pattern.pattern_node_to_template_variable
-                        and not any(
-                            is_part_of_predicate(predicate)
-                            for _, _, predicate in pattern.graph_pattern._graph.out_edges(  # pylint:disable=protected-access
-                                object_node, data="predicate"
-                            )
-                        )
-                        and any(
-                            is_part_of_predicate(predicate)
-                            for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(  # pylint:disable=protected-access
-                                object_node, data="predicate"
-                            )
-                            if subobject not in failure.largest_match_pattern_subgraph
-                        )
-                    ),
-                    None,
-                )
-                if matched_root_node_with_unmatched_subobject:
-                    # Excise the internal structure of the failed slot part of the pattern
-                    fixed_pattern = _delete_subobjects_of_object_in_pattern(
-                        pattern.graph_pattern, matched_root_node_with_unmatched_subobject
-                    )
-                    # All of the slot pattern nodes must still be around for this to work.
-                    #
-                    # This should never happen, because it would require one of the slots to
-                    # be part of the other.
-                    if all(
-                        slot_pattern_node in fixed_pattern._graph
-                        for slot_pattern_node in slot_pattern_nodes
-                    ):
-                        # Make a new PerceptionGraphTemplate, excising the failed part
-                        updated_template = PerceptionGraphTemplate(
-                            graph_pattern=fixed_pattern,
-                            template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
-                        )
-                        if match_template(
-                            concept=concept, pattern=updated_template, score=score
-                        ):
-                            return True
-            return False
 
         # For each template whose semantics we are certain of (=have been added to the lexicon)
         for (concept, graph_pattern, score) in self._primary_templates():
@@ -672,6 +529,166 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             ),
             nodes_after_post_processing,
         )
+
+    def _can_handle_failure(
+        self, *, concept: Concept, _pattern: PerceptionGraphTemplate, _score: float
+    ) -> bool:
+        return isinstance(concept, ActionConcept)
+
+    def _on_match_failure(
+        self,
+        *,
+        failure: PatternMatching.MatchFailure,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        score: float,
+        match_template,
+    ) -> bool:
+        if isinstance(concept, ActionConcept):
+            # Handle the case where we failed on the internal structure of a slot.
+            slot_pattern_nodes = immutableset(
+                pattern.template_variable_to_pattern_node.values()
+            )
+            unmatched_pattern_nodes = immutableset(
+                [
+                    pattern_node
+                    for pattern_node in pattern.graph_pattern._graph.nodes  # pylint:disable=protected-access
+                    if pattern_node
+                    not in failure.largest_match_pattern_subgraph._graph.nodes  # pylint:disable=protected-access
+                ]
+            )
+
+            # Here, we simplify the logic slightly
+            # by assuming the edge will be a HoldsAtTemporalScopePredicate;
+            # it should be, since the integrated learner
+            # should never run the action learner on a static graph.
+            def is_part_of_predicate(predicate: HoldsAtTemporalScopePredicate):
+                unwrapped_predicate = predicate.wrapped_edge_predicate
+                return (
+                    isinstance(unwrapped_predicate, RelationTypeIsPredicate)
+                    and unwrapped_predicate.relation_type == PART_OF
+                )
+
+            # If the slot pattern nodes all matched,
+            # AND we *failed* to match a pattern node that's `partOf` one of the slots...
+            if not slot_pattern_nodes.intersection(unmatched_pattern_nodes):
+                # First, construct an action semantic node corresponding to the potential match.
+                semantics = ActionSemanticNode(
+                    concept=concept,
+                    slot_fillings=immutabledict(
+                        [
+                            (
+                                slot,
+                                failure.pattern_node_to_graph_node_for_largest_match[
+                                    pattern_node
+                                ],
+                            )
+                            for slot, pattern_node in pattern.template_variable_to_pattern_node.items()
+                        ]
+                    ),
+                )
+                for (
+                    slot,
+                    slot_pattern_node,
+                ) in pattern.template_variable_to_pattern_node.items():
+                    if any(
+                        subobject in unmatched_pattern_nodes
+                        and is_part_of_predicate(predicate)
+                        for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(
+                            slot_pattern_node, data="predicate"
+                        )
+                    ):
+                        for fallback_learner in self._action_fallback_learners:
+                            if fallback_learner.ignore_slot_internal_structure_failure(
+                                semantics, slot
+                            ):
+                                logging.debug(
+                                    "Fallback learner says that we can ignore internal structure failure "
+                                    "for %s (failed slot was %s)",
+                                    semantics,
+                                    slot,
+                                )
+                                # Excise the internal structure of the failed slot part of the pattern
+                                fixed_pattern = _delete_subobjects_of_object_in_pattern(
+                                    pattern.graph_pattern, slot_pattern_node
+                                )
+                                # If any of the slot pattern nodes got excised then this is never going
+                                # to work, so break out of the loop.
+                                #
+                                # This should never happen, because it would require one of the slots to
+                                # be part of the other.
+                                if any(
+                                    slot_pattern_node
+                                    not in fixed_pattern._graph  # pylint:disable=protected-access
+                                    for slot_pattern_node in slot_pattern_nodes
+                                ):
+                                    break
+                                # Make a new PerceptionGraphTemplate, excising the failed part
+                                updated_template = PerceptionGraphTemplate(
+                                    graph_pattern=fixed_pattern,
+                                    template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
+                                )
+                                if match_template(
+                                    concept=concept, pattern=updated_template, score=score
+                                ):
+                                    return True
+                                # If this doesn't work the first time we meet the if-condition,
+                                # then it never will,
+                                # so break out of the loop
+                                break
+
+            # Otherwise, maybe a root-level matched object matched but one of its subobjects
+            # failed to match.
+            #
+            # We can assume it will be an ObjectSemanticNode since (if we are running in the
+            # integrated learner) an object learner should already have done the replacing for
+            # us.
+            matched_root_node_with_unmatched_subobject: Optional[
+                Union[AnyObjectPerception, ObjectSemanticNodePerceptionPredicate]
+            ] = first(
+                (
+                    object_node
+                    for object_node in failure.largest_match_pattern_subgraph
+                    if not object_node in pattern.pattern_node_to_template_variable
+                    and not any(
+                        is_part_of_predicate(predicate)
+                        for _, _, predicate in pattern.graph_pattern._graph.out_edges(  # pylint:disable=protected-access
+                            object_node, data="predicate"
+                        )
+                    )
+                    and any(
+                        is_part_of_predicate(predicate)
+                        for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(  # pylint:disable=protected-access
+                            object_node, data="predicate"
+                        )
+                        if subobject not in failure.largest_match_pattern_subgraph
+                    )
+                ),
+                None,
+            )
+            if matched_root_node_with_unmatched_subobject:
+                # Excise the internal structure of the failed slot part of the pattern
+                fixed_pattern = _delete_subobjects_of_object_in_pattern(
+                    pattern.graph_pattern, matched_root_node_with_unmatched_subobject
+                )
+                # All of the slot pattern nodes must still be around for this to work.
+                #
+                # This should never happen, because it would require one of the slots to
+                # be part of the other.
+                if all(
+                    slot_pattern_node in fixed_pattern._graph
+                    for slot_pattern_node in slot_pattern_nodes
+                ):
+                    # Make a new PerceptionGraphTemplate, excising the failed part
+                    updated_template = PerceptionGraphTemplate(
+                        graph_pattern=fixed_pattern,
+                        template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
+                    )
+                    if match_template(
+                        concept=concept, pattern=updated_template, score=score
+                    ):
+                        return True
+        return False
 
     @abstractmethod
     def _learning_step(
