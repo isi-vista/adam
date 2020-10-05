@@ -13,10 +13,9 @@ from typing import (
     Union,
     cast,
     Set,
-    Optional,
 )
 
-from more_itertools import one, first
+from more_itertools import one
 from networkx import connected_components
 from vistautils.iter_utils import only
 
@@ -69,7 +68,6 @@ from adam.semantics import (
     ObjectSemanticNode,
     SemanticNode,
     FunctionalObjectConcept,
-    SyntaxSemanticsVariable,
     ActionSemanticNode,
 )
 from attr import attrib, attrs, evolve
