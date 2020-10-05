@@ -495,7 +495,10 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                             ]
                         ),
                     )
-                    for slot, slot_pattern_node in pattern.template_variable_to_pattern_node.items():
+                    for (
+                        slot,
+                        slot_pattern_node,
+                    ) in pattern.template_variable_to_pattern_node.items():
                         if any(
                             subobject in unmatched_pattern_nodes
                             and is_part_of_predicate(predicate)
@@ -515,8 +518,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                                     )
                                     # Excise the internal structure of the failed slot part of the pattern
                                     fixed_pattern = _delete_subobjects_of_object_in_pattern(
-                                        pattern.graph_pattern,
-                                        slot_pattern_node,
+                                        pattern.graph_pattern, slot_pattern_node
                                     )
                                     # If any of the slot pattern nodes got excised then this is never going
                                     # to work, so break out of the loop.
@@ -535,7 +537,9 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                                         template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
                                     )
                                     if match_template(
-                                        concept=concept, pattern=updated_template, score=score
+                                        concept=concept,
+                                        pattern=updated_template,
+                                        score=score,
                                     ):
                                         return True
                                     # If this doesn't work the first time we meet the if-condition,
