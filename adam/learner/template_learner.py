@@ -603,7 +603,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                         for subobject, _, predicate in graph_pattern_digraph.in_edges(
                             slot_pattern_node, data="predicate"
                         )
-                    # *and* if any fallback learner says we can ignore this failure...
+                        # *and* if any fallback learner says we can ignore this failure...
                     ) and any(
                         fallback_learner.ignore_slot_internal_structure_failure(
                             semantics, slot
@@ -644,24 +644,23 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             # subobjects failed to match.
             for object_node in failure.largest_match_pattern_subgraph:
                 if (
-                        # non-slot
-                        object_node not in pattern.pattern_node_to_template_variable
-                        # root-level
-                        and not any(
-                            is_part_of_predicate(predicate)
-                            for _, _, predicate in graph_pattern_digraph.out_edges(
-                                    object_node, data="predicate"
-                            )
+                    # non-slot
+                    object_node not in pattern.pattern_node_to_template_variable
+                    # root-level
+                    and not any(
+                        is_part_of_predicate(predicate)
+                        for _, _, predicate in graph_pattern_digraph.out_edges(
+                            object_node, data="predicate"
                         )
-                        # one of its subobjects failed to match
-                        and any(
-                            is_part_of_predicate(predicate)
-                            for subobject, _, predicate in
-                            pattern.graph_pattern._graph.in_edges(  # pylint:disable=protected-access
-                                object_node, data="predicate"
-                            )
-                            if subobject not in failure.largest_match_pattern_subgraph
+                    )
+                    # one of its subobjects failed to match
+                    and any(
+                        is_part_of_predicate(predicate)
+                        for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(  # pylint:disable=protected-access
+                            object_node, data="predicate"
                         )
+                        if subobject not in failure.largest_match_pattern_subgraph
+                    )
                 ):
                     # Excise the internal structure of the failed slot part of the pattern
                     fixed_pattern = _delete_subobjects_of_object_in_pattern(
