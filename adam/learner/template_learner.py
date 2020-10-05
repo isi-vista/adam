@@ -545,6 +545,8 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         match_template,
     ) -> bool:
         if isinstance(concept, ActionConcept):
+            graph_pattern_digraph = pattern.graph_pattern.copy_as_digraph()
+
             # Handle the case where we failed on the internal structure of a slot.
             slot_pattern_nodes = immutableset(
                 pattern.template_variable_to_pattern_node.values()
@@ -552,7 +554,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             unmatched_pattern_nodes = immutableset(
                 [
                     pattern_node
-                    for pattern_node in pattern.graph_pattern._graph.nodes  # pylint:disable=protected-access
+                    for pattern_node in graph_pattern_digraph.nodes  # pylint:disable=protected-access
                     if pattern_node
                     not in failure.largest_match_pattern_subgraph._graph.nodes  # pylint:disable=protected-access
                 ]
@@ -598,7 +600,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     if any(
                         subobject in unmatched_pattern_nodes
                         and is_part_of_predicate(predicate)
-                        for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(
+                        for subobject, _, predicate in graph_pattern_digraph.in_edges(
                             slot_pattern_node, data="predicate"
                         )
                     # *and* if any fallback learner says we can ignore this failure...
@@ -640,51 +642,50 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
 
             # Handle the case where a root-level non-slot matched object matched but one of its
             # subobjects failed to match.
-            matched_root_node_with_unmatched_subobject: Optional[
-                Union[AnyObjectPerception, ObjectSemanticNodePerceptionPredicate]
-            ] = first(
-                (
-                    object_node
-                    for object_node in failure.largest_match_pattern_subgraph
-                    if object_node not in pattern.pattern_node_to_template_variable
-                    and not any(
-                        is_part_of_predicate(predicate)
-                        for _, _, predicate in pattern.graph_pattern._graph.out_edges(  # pylint:disable=protected-access
-                            object_node, data="predicate"
+            for object_node in failure.largest_match_pattern_subgraph:
+                if (
+                        # non-slot
+                        object_node not in pattern.pattern_node_to_template_variable
+                        # root-level
+                        and not any(
+                            is_part_of_predicate(predicate)
+                            for _, _, predicate in graph_pattern_digraph.out_edges(
+                                    object_node, data="predicate"
+                            )
                         )
-                    )
-                    and any(
-                        is_part_of_predicate(predicate)
-                        for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(  # pylint:disable=protected-access
-                            object_node, data="predicate"
+                        # one of its subobjects failed to match
+                        and any(
+                            is_part_of_predicate(predicate)
+                            for subobject, _, predicate in
+                            pattern.graph_pattern._graph.in_edges(  # pylint:disable=protected-access
+                                object_node, data="predicate"
+                            )
+                            if subobject not in failure.largest_match_pattern_subgraph
                         )
-                        if subobject not in failure.largest_match_pattern_subgraph
-                    )
-                ),
-                None,
-            )
-            if matched_root_node_with_unmatched_subobject:
-                # Excise the internal structure of the failed slot part of the pattern
-                fixed_pattern = _delete_subobjects_of_object_in_pattern(
-                    pattern.graph_pattern, matched_root_node_with_unmatched_subobject
-                )
-                # All of the slot pattern nodes must still be around for this to work.
-                #
-                # This should never happen, because it would require one of the slots to
-                # be part of the other.
-                if all(
-                    slot_pattern_node in fixed_pattern._graph
-                    for slot_pattern_node in slot_pattern_nodes
                 ):
-                    # Make a new PerceptionGraphTemplate, excising the failed part
-                    updated_template = PerceptionGraphTemplate(
-                        graph_pattern=fixed_pattern,
-                        template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
+                    # Excise the internal structure of the failed slot part of the pattern
+                    fixed_pattern = _delete_subobjects_of_object_in_pattern(
+                        pattern.graph_pattern, object_node
                     )
-                    if match_template(
-                        concept=concept, pattern=updated_template, score=score
+                    # All of the slot pattern nodes must still be around for this to work.
+                    #
+                    # This should never happen, because it would require one of the slots to
+                    # be part of the other.
+                    if all(
+                        slot_pattern_node in fixed_pattern._graph
+                        for slot_pattern_node in slot_pattern_nodes
                     ):
-                        return True
+                        # Make a new PerceptionGraphTemplate, excising the failed part
+                        updated_template = PerceptionGraphTemplate(
+                            graph_pattern=fixed_pattern,
+                            template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
+                        )
+                        if match_template(
+                            concept=concept, pattern=updated_template, score=score
+                        ):
+                            return True
+                    break
+
         return False
 
     @abstractmethod
