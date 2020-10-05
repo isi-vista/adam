@@ -441,7 +441,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
 
             # If we reach this point, matching has failed. Handle this appropriately.
             # If we're in an action learner...
-            if self._can_handle_failure(concept=concept, pattern=pattern):
+            if self._can_handle_failure(concept=concept, pattern=pattern, score=score):
                 # Figure out where we failed.
                 #
                 # We have to do a cast because the type system doesn't know that we're guaranteed to
