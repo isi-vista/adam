@@ -560,17 +560,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 ]
             )
 
-            # Here, we simplify the logic slightly
-            # by assuming the edge will be a HoldsAtTemporalScopePredicate;
-            # it should be, since the integrated learner
-            # should never run the action learner on a static graph.
-            def is_part_of_predicate(predicate: HoldsAtTemporalScopePredicate):
-                unwrapped_predicate = predicate.wrapped_edge_predicate
-                return (
-                    isinstance(unwrapped_predicate, RelationTypeIsPredicate)
-                    and unwrapped_predicate.relation_type == PART_OF
-                )
-
             # If the slot pattern nodes all matched,
             # AND we *failed* to match a pattern node that's `partOf` one of the slots...
             if not slot_pattern_nodes.intersection(unmatched_pattern_nodes):
@@ -599,7 +588,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     # -JAC
                     if any(
                         subobject in unmatched_pattern_nodes
-                        and is_part_of_predicate(predicate)
+                        and _is_part_of_predicate(predicate)
                         for subobject, _, predicate in graph_pattern_digraph.in_edges(
                             slot_pattern_node, data="predicate"
                         )
@@ -648,14 +637,14 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     object_node not in pattern.pattern_node_to_template_variable
                     # root-level
                     and not any(
-                        is_part_of_predicate(predicate)
+                        _is_part_of_predicate(predicate)
                         for _, _, predicate in graph_pattern_digraph.out_edges(
                             object_node, data="predicate"
                         )
                     )
                     # one of its subobjects failed to match
                     and any(
-                        is_part_of_predicate(predicate)
+                        _is_part_of_predicate(predicate)
                         for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(  # pylint:disable=protected-access
                             object_node, data="predicate"
                         )
@@ -744,6 +733,26 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         """
 
 
+def _unwrap_predicate_if_wrapped(predicate) -> bool:
+    return (
+        predicate.wrapped_edge_predicate
+        if isinstance(predicate, HoldsAtTemporalScopePredicate)
+        else predicate
+    )
+
+
+def _is_relation_type_predicate(predicate, relation_type) -> bool:
+    unwrapped_predicate = _unwrap_predicate_if_wrapped(predicate)
+    return (
+        isinstance(unwrapped_predicate, RelationTypeIsPredicate)
+        and unwrapped_predicate.relation_type == relation_type
+    )
+
+
+def _is_part_of_predicate(predicate) -> bool:
+    return _is_relation_type_predicate(predicate, PART_OF)
+
+
 def _delete_subobjects_of_object_in_pattern(
     pattern: PerceptionGraphPattern,
     object_: Union[ObjectSemanticNodePerceptionPredicate, AnyObjectPerception],
@@ -757,25 +766,11 @@ def _delete_subobjects_of_object_in_pattern(
     """
     digraph = pattern._graph  # pylint:disable=protected-access
 
-    def unwrap_predicate_if_wrapped(predicate) -> bool:
-        return (
-            predicate.wrapped_edge_predicate
-            if isinstance(predicate, HoldsAtTemporalScopePredicate)
-            else predicate
-        )
-
-    def is_relation_type_predicate(predicate, relation_type) -> bool:
-        unwrapped_predicate = unwrap_predicate_if_wrapped(predicate)
-        return (
-            isinstance(unwrapped_predicate, RelationTypeIsPredicate)
-            and unwrapped_predicate.relation_type == relation_type
-        )
-
     def is_reference_object_predicate(predicate) -> bool:
-        return is_relation_type_predicate(predicate, REFERENCE_OBJECT_LABEL)
+        return _is_relation_type_predicate(predicate, REFERENCE_OBJECT_LABEL)
 
     def is_in_region_predicate(predicate) -> bool:
-        return is_relation_type_predicate(predicate, IN_REGION)
+        return _is_relation_type_predicate(predicate, IN_REGION)
 
     def is_only_object_in_region(subobject, region) -> bool:
         return any(
@@ -784,13 +779,6 @@ def _delete_subobjects_of_object_in_pattern(
                 region, data="predicate"
             )
             if is_in_region_predicate(predicate)
-        )
-
-    def is_part_of_predicate(predicate) -> bool:
-        unwrapped_predicate = unwrap_predicate_if_wrapped(predicate)
-        return (
-            isinstance(unwrapped_predicate, RelationTypeIsPredicate)
-            and unwrapped_predicate.relation_type == PART_OF
         )
 
     # This function could be more efficient. It seems efficient enough for now.
@@ -804,7 +792,7 @@ def _delete_subobjects_of_object_in_pattern(
             for _, successor, predicate in digraph.out_edges(
                 current_node, data="predicate"
             ):
-                if is_part_of_predicate(predicate):
+                if _is_part_of_predicate(predicate):
                     part_of.add(successor)
                     to_visit.add(successor)
 
