@@ -638,8 +638,8 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                             ):
                                 return True
 
-            # Otherwise, maybe a root-level matched object matched but one of its subobjects
-            # failed to match.
+            # Otherwise, maybe a root-level non-slot matched object matched but one of its
+            # subobjects failed to match.
             #
             # We can assume it will be an ObjectSemanticNode since (if we are running in the
             # integrated learner) an object learner should already have done the replacing for
