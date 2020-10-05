@@ -781,26 +781,23 @@ def _delete_subobjects_of_object_in_pattern(
             if is_in_region_predicate(predicate)
         )
 
-    # This function could be more efficient. It seems efficient enough for now.
-    def get_things_node_is_a_part_of(node):
-        part_of = set()
+    def all_subobjects_of(root_object_node):
+        part_of = []
         visited = set()
-        to_visit = {node}
+        to_visit = {root_object_node}
         while to_visit:
             current_node = to_visit.pop()
             visited.add(current_node)
-            for _, successor, predicate in digraph.out_edges(
+            for predecessor, _, predicate in digraph.in_edges(
                 current_node, data="predicate"
             ):
-                if _is_part_of_predicate(predicate):
-                    part_of.add(successor)
-                    to_visit.add(successor)
+                if _is_part_of_predicate(predicate) and predecessor not in visited:
+                    part_of.append(predecessor)
+                    to_visit.add(predecessor)
 
         return part_of
 
-    subobjects = immutableset(
-        [node for node in digraph.nodes if object_ in get_things_node_is_a_part_of(node)]
-    )
+    subobjects = immutableset(all_subobjects_of(object_))
     subobject_properties = immutableset(
         [
             node
