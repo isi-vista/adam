@@ -640,10 +640,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
 
             # Handle the case where a root-level non-slot matched object matched but one of its
             # subobjects failed to match.
-            #
-            # We can assume it will be an ObjectSemanticNode since (if we are running in the
-            # integrated learner) an object learner should already have done the replacing for
-            # us.
             matched_root_node_with_unmatched_subobject: Optional[
                 Union[AnyObjectPerception, ObjectSemanticNodePerceptionPredicate]
             ] = first(
