@@ -531,7 +531,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         )
 
     def _can_handle_failure(
-        self, *, concept: Concept, _pattern: PerceptionGraphTemplate, _score: float
+        self, *, concept: Concept, pattern: PerceptionGraphTemplate, score: float
     ) -> bool:
         return isinstance(concept, ActionConcept)
 
