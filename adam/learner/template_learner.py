@@ -591,48 +591,52 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     slot,
                     slot_pattern_node,
                 ) in pattern.template_variable_to_pattern_node.items():
+                    # If any slot has an unmatched *direct* subobject...
+                    #
+                    # HACK. Probably this should check for indirect subobjects of the slot, too.
+                    # -JAC
                     if any(
                         subobject in unmatched_pattern_nodes
                         and is_part_of_predicate(predicate)
                         for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(
                             slot_pattern_node, data="predicate"
                         )
+                    # *and* if any fallback learner says we can ignore this failure...
+                    ) and any(
+                        fallback_learner.ignore_slot_internal_structure_failure(
+                            semantics, slot
+                        )
+                        for fallback_learner in self._action_fallback_learners
                     ):
-                        if any(
-                            fallback_learner.ignore_slot_internal_structure_failure(
-                                semantics, slot
-                            )
-                            for fallback_learner in self._action_fallback_learners
+                        logging.debug(
+                            "Fallback learner says that we can ignore internal structure failure "
+                            "for %s (failed slot was %s)",
+                            semantics,
+                            slot,
+                        )
+                        # Excise the internal structure of the failed slot part of the pattern
+                        fixed_pattern = _delete_subobjects_of_object_in_pattern(
+                            pattern.graph_pattern, slot_pattern_node
+                        )
+                        # Only proceed if all of the slots are in the pattern.
+                        #
+                        # This should always be true happen, because for it to be false, one
+                        # of the slots would have to be part of another.
+                        if all(
+                            slot_pattern_node
+                            in fixed_pattern._graph  # pylint:disable=protected-access
+                            for slot_pattern_node in slot_pattern_nodes
                         ):
-                            logging.debug(
-                                "Fallback learner says that we can ignore internal structure failure "
-                                "for %s (failed slot was %s)",
-                                semantics,
-                                slot,
+                            # Make a new PerceptionGraphTemplate, excising the failed part
+                            updated_template = PerceptionGraphTemplate(
+                                graph_pattern=fixed_pattern,
+                                template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
                             )
-                            # Excise the internal structure of the failed slot part of the pattern
-                            fixed_pattern = _delete_subobjects_of_object_in_pattern(
-                                pattern.graph_pattern, slot_pattern_node
-                            )
-                            # Only proceed if all of the slots are in the pattern.
-                            #
-                            # This should always be true happen, because for it to be false, one
-                            # of the slots would have to be part of another.
-                            if all(
-                                slot_pattern_node
-                                in fixed_pattern._graph  # pylint:disable=protected-access
-                                for slot_pattern_node in slot_pattern_nodes
+                            # We use an if so that we will fall through if this fails.
+                            if match_template(
+                                concept=concept, pattern=updated_template, score=score
                             ):
-                                # Make a new PerceptionGraphTemplate, excising the failed part
-                                updated_template = PerceptionGraphTemplate(
-                                    graph_pattern=fixed_pattern,
-                                    template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
-                                )
-                                # We use an if so that we will fall through if this fails.
-                                if match_template(
-                                    concept=concept, pattern=updated_template, score=score
-                                ):
-                                    return True
+                                return True
 
             # Otherwise, maybe a root-level matched object matched but one of its subobjects
             # failed to match.
