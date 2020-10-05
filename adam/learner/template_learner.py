@@ -612,28 +612,26 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                                 fixed_pattern = _delete_subobjects_of_object_in_pattern(
                                     pattern.graph_pattern, slot_pattern_node
                                 )
-                                # If any of the slot pattern nodes got excised then this is never going
-                                # to work, so break out of the loop.
+                                # Only proceed if all of the slots are in the pattern.
                                 #
-                                # This should never happen, because it would require one of the slots to
-                                # be part of the other.
-                                if any(
+                                # This should always be true happen, because for it to be false, one
+                                # of the slots would have to be part of another.
+                                if all(
                                     slot_pattern_node
-                                    not in fixed_pattern._graph  # pylint:disable=protected-access
+                                    in fixed_pattern._graph  # pylint:disable=protected-access
                                     for slot_pattern_node in slot_pattern_nodes
                                 ):
-                                    break
-                                # Make a new PerceptionGraphTemplate, excising the failed part
-                                updated_template = PerceptionGraphTemplate(
-                                    graph_pattern=fixed_pattern,
-                                    template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
-                                )
-                                if match_template(
-                                    concept=concept, pattern=updated_template, score=score
-                                ):
-                                    return True
-                                # If this doesn't work the first time we meet the if-condition,
-                                # then it never will,
+                                    # Make a new PerceptionGraphTemplate, excising the failed part
+                                    updated_template = PerceptionGraphTemplate(
+                                        graph_pattern=fixed_pattern,
+                                        template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
+                                    )
+                                    # We use an if so that we will fall through if this fails.
+                                    if match_template(
+                                        concept=concept, pattern=updated_template, score=score
+                                    ):
+                                        return True
+                                # If this doesn't work the first time we try it, then it never will,
                                 # so break out of the loop
                                 break
 
@@ -649,7 +647,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 (
                     object_node
                     for object_node in failure.largest_match_pattern_subgraph
-                    if not object_node in pattern.pattern_node_to_template_variable
+                    if object_node not in pattern.pattern_node_to_template_variable
                     and not any(
                         is_part_of_predicate(predicate)
                         for _, _, predicate in pattern.graph_pattern._graph.out_edges(  # pylint:disable=protected-access
