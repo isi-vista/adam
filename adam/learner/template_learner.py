@@ -531,6 +531,13 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
     def _can_handle_failure(
         self, *, concept: Concept, pattern: PerceptionGraphTemplate, score: float
     ) -> bool:
+        """
+        Return whether it's even possible for us to handle the given template matching failure.
+
+        Note that this may return true when we can't actually do anything about it. This is just a
+        heuristic to avoid re-executing the matching code if we know for certain we can't do
+        anything with the failure info to fix things.
+        """
         return isinstance(concept, ActionConcept)
 
     def _on_match_failure(
@@ -542,6 +549,12 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         score: float,
         match_template,
     ) -> bool:
+        """
+        Handle a match failure and return whether we were able to match after executing all
+        appropriate "fallback" logic.
+
+        This should only be called by match_template in _enrich_common().
+        """
         if isinstance(concept, ActionConcept):
             graph_pattern_digraph = pattern.graph_pattern.copy_as_digraph()
 
