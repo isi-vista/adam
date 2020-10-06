@@ -112,7 +112,7 @@ class PerceptionGraphFromObjectRecognizer:
             self.description_to_matched_object_node.values()
         )
         if matched_object_nodes != described_matched_object_nodes:
-            raise RuntimeError(
+            logging.warning(
                 f"A matched object node should be present in the graph"
                 f"if and only if it is described. Got matches objects "
                 f"{matched_object_nodes} but those described were {described_matched_object_nodes}"
@@ -323,7 +323,9 @@ class ObjectRecognizer:
                     remove_internal_structure=False,
                 )
 
-        candidate_object_subgraphs = extract_candidate_objects(perception_graph)
+        candidate_object_subgraphs = extract_candidate_objects(
+            perception_graph, sort_by_increasing_size=True
+        )
         object_matches = []
 
         for candidate_object_graph in candidate_object_subgraphs:
@@ -557,7 +559,7 @@ def is_part_of_label(label) -> bool:
 
 
 def extract_candidate_objects(
-    whole_scene_perception_graph: PerceptionGraph
+    whole_scene_perception_graph: PerceptionGraph, sort_by_increasing_size: bool
 ) -> Sequence[PerceptionGraph]:
 
     """
@@ -651,6 +653,13 @@ def extract_candidate_objects(
             whole_scene_perception_graph.subgraph_by_nodes(
                 immutableset(candidate_subgraph_nodes)
             )
+        )
+    # we sort the candidate objects' graphs from least to greatest number of nodes in the graph. This allows us to match objects
+    # with less cost before objects with greater cost, and also causes us to match gazed objects after non-gazed objects, which is the
+    # order needed to ensure that gaze is assigned to the correct object if there are multiple in the scene
+    if sort_by_increasing_size:
+        candidate_objects.sort(
+            key=lambda x: len(x._graph.node)  # pylint:disable=protected-access
         )
     return candidate_objects
 

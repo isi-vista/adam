@@ -67,6 +67,10 @@ from adam.ontology.phase1_ontology import (
     PASS,
     WATERMELON,
     WALK,
+    PAPER,
+    BED,
+    CAT,
+    BEAR,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -115,6 +119,9 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (BOX, LexiconEntry("box", NOUN, plural_form="boxes")),
         (CHAIR, LexiconEntry("chair", NOUN, plural_form="chairs")),
         (HEAD, LexiconEntry("head", NOUN, plural_form="heads")),
+        (PAPER, LexiconEntry("paper", NOUN, plural_form="papers")),
+        (BEAR, LexiconEntry("bear", NOUN, plural_form="bears")),
+        (BED, LexiconEntry("bed", NOUN, plural_form="beds")),
         (MILK, LexiconEntry("milk", NOUN, [MASS_NOUN])),
         (HAND, LexiconEntry("hand", NOUN, plural_form="hands")),
         (TRUCK, LexiconEntry("truck", NOUN, plural_form="trucks")),
@@ -124,6 +131,7 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (DAD, LexiconEntry("Dad", PROPER_NOUN)),
         (BABY, LexiconEntry("baby", NOUN, plural_form="babies")),
         (DOG, LexiconEntry("dog", NOUN, plural_form="dogs")),
+        (CAT, LexiconEntry("cat", NOUN, plural_form="cats")),
         (BIRD, LexiconEntry("bird", NOUN, plural_form="birds")),
         (GO, LexiconEntry("go", VERB, verb_form_sg3_prs="goes")),
         (COME, LexiconEntry("come", VERB, verb_form_sg3_prs="comes")),

@@ -1,4 +1,5 @@
 import random
+from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import pytest
 from adam.curriculum.phase1_curriculum import _x_has_y_template
 from immutablecollections import immutableset
@@ -60,6 +61,7 @@ def test_pursuit_preposition_on_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -70,6 +72,7 @@ def test_pursuit_preposition_on_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -120,6 +123,7 @@ def test_pursuit_preposition_beside_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -132,6 +136,7 @@ def test_pursuit_preposition_beside_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -182,6 +187,7 @@ def test_pursuit_preposition_under_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -194,6 +200,7 @@ def test_pursuit_preposition_under_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -242,6 +249,7 @@ def test_pursuit_preposition_over_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -254,6 +262,7 @@ def test_pursuit_preposition_over_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -302,6 +311,7 @@ def test_pursuit_preposition_in_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -312,6 +322,7 @@ def test_pursuit_preposition_in_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -366,6 +377,7 @@ def test_pursuit_preposition_behind_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -383,6 +395,7 @@ def test_pursuit_preposition_behind_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -437,6 +450,7 @@ def test_pursuit_preposition_in_front_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -454,6 +468,7 @@ def test_pursuit_preposition_in_front_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -480,7 +495,9 @@ def test_pursuit_preposition_in_front_learner(language_mode):
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_pursuit_preposition_has_learner(language_mode):
-    person = standard_object("person", PERSON)
+    person = standard_object(
+        "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
     inanimate_object = standard_object(
         "inanimate-object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
     )
@@ -495,6 +512,7 @@ def test_pursuit_preposition_has_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -506,6 +524,7 @@ def test_pursuit_preposition_has_learner(language_mode):
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )

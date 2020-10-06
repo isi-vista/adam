@@ -4,18 +4,7 @@ Interfaces for language learning code.
 from adam.learner.language_mode import LanguageMode
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import (
-    Dict,
-    Generic,
-    Mapping,
-    Optional,
-    Callable,
-    Tuple,
-    Iterable,
-    List,
-    AbstractSet,
-)
-from immutablecollections import ImmutableSet, immutableset
+from typing import Dict, Generic, Mapping, Optional, Callable
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
@@ -25,11 +14,7 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from enum import Enum, auto
-import itertools
 from adam.learner.alignments import LanguageConceptAlignment
-from adam.semantics import SemanticNode
-from vistautils.span import Span
 from adam.ontology.ontology import Ontology
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -88,7 +73,7 @@ class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT])
     def observe(
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         """
         Observe a `LearningExample`, possibly updating internal state.
@@ -139,7 +124,7 @@ class MemorizingLanguageLearner(
     def observe(
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
-        observation_num: int = -1,  # pylint:disable=unused-argument
+        offset: int = 0,  # pylint:disable=unused-argument
     ) -> None:
         self._memorized_situations[
             learning_example.perception
@@ -211,7 +196,7 @@ class ComposableLearner(ABC):
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         """
         Learn from a `LanguagePerceptionSemanticAlignment` describing a situation. This may update

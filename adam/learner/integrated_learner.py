@@ -14,6 +14,7 @@ from adam.learner.alignments import (
 )
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.language_mode import LanguageMode
+from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
 from adam.perception import PerceptualRepresentation
@@ -40,7 +41,7 @@ class LanguageLearnerNew:
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
         pass
 
@@ -82,20 +83,14 @@ class IntegratedTemplateLearner(
         learning_example: LearningExample[
             DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
         ],
-        observation_num: int = -1,
+        offset: int = 0,
     ) -> None:
-        if observation_num >= 0:
-            logging.info(
-                "Observation %s: %s",
-                observation_num,
-                learning_example.linguistic_description.as_token_string(),
-            )
-        else:
-            logging.info(
-                "Observation %s: %s",
-                self._observation_num,
-                learning_example.linguistic_description.as_token_string(),
-            )
+
+        logging.info(
+            "Observation %s: %s",
+            self._observation_num + offset,
+            learning_example.linguistic_description.as_token_string(),
+        )
 
         self._observation_num += 1
 
@@ -128,9 +123,7 @@ class IntegratedTemplateLearner(
                 # perception graph edge wrappers.
                 # See https://github.com/isi-vista/adam/issues/792 .
                 if not learning_example.perception.is_dynamic():
-                    sub_learner.learn_from(
-                        current_learner_state, observation_num=observation_num
-                    )
+                    sub_learner.learn_from(current_learner_state, offset=offset)
                 current_learner_state = sub_learner.enrich_during_learning(
                     current_learner_state
                 )
@@ -141,9 +134,7 @@ class IntegratedTemplateLearner(
             )
 
             if self.functional_learner:
-                self.functional_learner.learn_from(
-                    current_learner_state, observation_num=observation_num
-                )
+                self.functional_learner.learn_from(current_learner_state, offset=offset)
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
@@ -231,6 +222,14 @@ class IntegratedTemplateLearner(
             != LanguageMode.ENGLISH
         ):
             return cur_string
+        # If plural, we want to strip any "a" that might preceed a noun after "many" or "two"
+        if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
+            if "a" in cur_string:
+                a_position = cur_string.index("a")
+                if a_position > 0 and cur_string[a_position - 1] in ["many", "two"]:
+                    return tuple(
+                        [token for i, token in enumerate(cur_string) if i != a_position]
+                    )
         # English-specific hack to deal with us not understanding determiners:
         # https://github.com/isi-vista/adam/issues/498
         # The "is lower" check is a hack to block adding a determiner to proper names.

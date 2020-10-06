@@ -24,7 +24,11 @@ from adam.learner import (
 from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import PursuitObjectLearnerNew, SubsetObjectLearnerNew
+from adam.learner.objects import (
+    PursuitObjectLearnerNew,
+    SubsetObjectLearnerNew,
+    ProposeButVerifyObjectLearner,
+)
 from adam.learner.objects import SubsetObjectLearner
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
@@ -68,6 +72,15 @@ def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
         object_learner=SubsetObjectLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=10, language_mode=language_mode
+        )
+    )
+
+
+def integrated_learner_pv_factory(langage_mode: LanguageMode):
+    rng = RandomChooser.for_seed(0)
+    return IntegratedTemplateLearner(
+        object_learner=ProposeButVerifyObjectLearner(
+            rng=rng, language_mode=langage_mode, ontology=GAILA_PHASE_1_ONTOLOGY
         )
     )
 
@@ -118,6 +131,7 @@ def run_subset_learner_for_object(
             chooser=PHASE1_TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -155,6 +169,7 @@ def run_subset_learner_for_object(
             marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
         ),
         integrated_learner_factory,
+        integrated_learner_pv_factory,
     ],
 )
 def test_subset_learner(language_mode, learner):

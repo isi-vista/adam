@@ -139,6 +139,7 @@ def test_recognize_in_transfer_of_possession(language_mode):
                 max_to_sample=1,
                 chooser=PHASE1_CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
+                block_multiple_of_the_same_type=True,
             ),
         ).instances()
     )

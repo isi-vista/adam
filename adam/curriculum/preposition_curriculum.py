@@ -13,12 +13,14 @@ from adam.curriculum.curriculum_utils import (
     phase1_instances,
     make_noise_objects,
 )
+from adam.curriculum.curriculum_utils import GROUND_OBJECT_TEMPLATE
 from adam.language_specific.english.english_language_generator import (
     USE_ABOVE_BELOW,
     USE_NEAR,
 )
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER, THING, OntologyNode
 from adam.ontology.phase1_ontology import (
+    negate,
     BALL,
     BOOK,
     BOX,
@@ -121,7 +123,8 @@ def _under_template(
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            strictly_under(ground, figure, dist=DISTAL if is_distal else PROXIMAL)
+            negate(on(figure, GROUND_OBJECT_TEMPLATE)),
+            strictly_under(ground, figure, dist=DISTAL if is_distal else PROXIMAL),
         ],
         constraining_relations=[bigger_than(ground, figure)],
         gazed_objects=[figure],
@@ -146,7 +149,8 @@ def _over_template(
         salient_object_variables=[figure, ground],
         background_object_variables=background,
         asserted_always_relations=[
-            strictly_over(figure, ground, dist=DISTAL if is_distal else PROXIMAL)
+            negate(on(figure, GROUND_OBJECT_TEMPLATE)),
+            strictly_over(figure, ground, dist=DISTAL if is_distal else PROXIMAL),
         ],
         gazed_objects=[figure],
         syntax_hints=syntax_hints,
@@ -293,6 +297,7 @@ def _make_on_training(
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -338,6 +343,7 @@ def _make_beside_training(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -378,6 +384,7 @@ def _make_under_training(
                         is_distal=use_above_below,
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
+                    block_multiple_of_the_same_type=True,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
@@ -424,6 +431,7 @@ def _make_over_training(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for figure in figures
                 for ground in grounds
@@ -464,6 +472,7 @@ def _make_in_training(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for figure in figures
                 for ground in grounds
@@ -509,6 +518,7 @@ def _make_behind_training(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -556,6 +566,7 @@ def _make_in_front_training(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -603,6 +614,7 @@ def _make_near_training(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -649,6 +661,7 @@ def _make_far_training(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -705,6 +718,7 @@ def _make_on_tests(
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -756,6 +770,7 @@ def _make_beside_tests(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -803,6 +818,7 @@ def _make_under_tests(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for figure in figures
                 for ground in grounds
@@ -853,6 +869,7 @@ def _make_over_tests(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for figure in figures
                 for ground in grounds
@@ -907,6 +924,7 @@ def _make_in_tests(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 )
                 for figure in figures
                 for ground in grounds
@@ -956,6 +974,7 @@ def _make_behind_tests(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -1008,6 +1027,7 @@ def _make_in_front_tests(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -1059,6 +1079,7 @@ def _make_near_tests(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds
@@ -1109,6 +1130,7 @@ def _make_far_tests(
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             chooser=PHASE1_CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
+                            block_multiple_of_the_same_type=True,
                         )
                         for figure in figures
                         for ground in grounds

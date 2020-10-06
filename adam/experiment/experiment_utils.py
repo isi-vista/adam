@@ -1,6 +1,9 @@
 from itertools import repeat, chain
+from more_itertools import only
 from typing import Sequence, Optional
 import random
+
+from adam.curriculum import AblatedLanguageSituationsInstanceGroup
 from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     PHASE1_CHOOSER_FACTORY,
@@ -12,6 +15,8 @@ from adam.curriculum.m6_curriculum import (
     instantiate_subcurricula,
     M6_CURRICULUM_ALL_OBJECTS,
 )
+from adam.curriculum.phase2_curriculum import make_multiple_object_situation
+from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE, THING
@@ -19,6 +24,7 @@ from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
     CAN_BE_SAT_ON_BY_PEOPLE,
     ANIMATE,
+    PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 
@@ -33,6 +39,8 @@ from adam.curriculum.phase1_curriculum import (
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
+from adam.random_utils import RandomChooser
+from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import sampled
 from vistautils.parameters import Parameters
@@ -178,6 +186,7 @@ def _make_sit_on_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 25,
+                    block_multiple_of_the_same_type=True,
                 ),
                 sampled(
                     make_sit_transitive(
@@ -186,6 +195,7 @@ def _make_sit_on_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 25,
+                    block_multiple_of_the_same_type=True,
                 ),
             ]
         ),
@@ -203,6 +213,74 @@ def build_functionally_defined_objects_train_curriculum(
     return [
         _make_sit_on_curriculum(num_samples, num_noise_objects, language_generator),
         _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
+    ]
+
+
+def build_object_learner_experiment_curriculum_train(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+    *,
+    params: Parameters = Parameters.empty(),
+) -> Sequence[Phase1InstanceGroup]:
+    situations = make_multiple_object_situation(
+        num_samples, num_noise_objects, language_generator
+    )
+    accurate_language_chance = params.floating_point(
+        "accurate_language_percentage", default=0.5
+    )
+    output_situations = []
+    random.seed(params.integer("random_seed", default=0))
+    rng = RandomChooser.for_seed(params.integer("language_random_seed", default=0))
+    for (situation, language, perception) in situations.instances():
+        if random.random() <= accurate_language_chance:
+            output_language = language
+        else:
+            # Make Invalid Language
+            if situation and isinstance(situation, HighLevelSemanticsSituation):
+                # First, gather all OntologyNodes which aren't already present in the situation
+                present_ontology_nodes = [
+                    _object.ontology_node for _object in situation.all_objects
+                ]
+                valid_other_objects = [
+                    node
+                    for node in PHASE_1_CURRICULUM_OBJECTS
+                    if node not in present_ontology_nodes
+                ]
+                # Then choose one at random
+                chosen_ontology_node = rng.choice(valid_other_objects)
+                # Make a fake situation with just this object in it, ignoring colors
+                wrong_situation = HighLevelSemanticsSituation(
+                    ontology=GAILA_PHASE_2_ONTOLOGY,
+                    salient_objects=[
+                        SituationObject.instantiate_ontology_node(
+                            chosen_ontology_node, ontology=GAILA_PHASE_2_ONTOLOGY
+                        )
+                    ],
+                    syntax_hints=[IGNORE_COLORS],
+                )
+                # Generate the language as if it came from this fake situation rather than the original one
+                fake_language = only(
+                    language_generator.generate_language(wrong_situation, chooser=rng)
+                )
+                output_language = LinearizedDependencyTree(
+                    dependency_tree=fake_language.dependency_tree,
+                    surface_token_order=fake_language.surface_token_order,
+                    accurate=False,
+                )
+
+            else:
+                raise RuntimeError(
+                    f"Unable to make invalid language without a situation of type HighlevelSemanticsSituation. Got situation: {situation}"
+                )
+
+        output_situations.append((situation, output_language, perception))
+    return [
+        AblatedLanguageSituationsInstanceGroup(
+            name=f"{situations.name()}_ablated", instances=output_situations
+        )
     ]
 
 

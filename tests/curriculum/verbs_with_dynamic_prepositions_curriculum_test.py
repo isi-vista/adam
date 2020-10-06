@@ -35,7 +35,10 @@ def test_make_push(language_generator):
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_make_go(language_generator):
-    curriculum_test(_make_go_with_prepositions(None, None, language_generator))
+    for boolean in [True, False]:
+        curriculum_test(
+            _make_go_with_prepositions(None, None, language_generator, boolean)
+        )
 
 
 @pytest.mark.parametrize(
@@ -43,7 +46,10 @@ def test_make_go(language_generator):
     [GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR, GAILA_PHASE_1_LANGUAGE_GENERATOR],
 )
 def test_make_throw(language_generator):
-    curriculum_test(_make_throw_with_prepositions(None, None, language_generator))
+    for boolean in [True, False]:
+        curriculum_test(
+            _make_throw_with_prepositions(None, None, language_generator, boolean)
+        )
 
 
 @pytest.mark.parametrize(

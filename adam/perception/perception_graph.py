@@ -251,6 +251,9 @@ class TemporallyScopedEdgeLabel:
 
 
 # certain constant edges used by PerceptionGraphs
+REFERENCE_OBJECT_SOURCE_LABEL = OntologyNode("reference-object-source")
+REFERENCE_OBJECT_DESTINATION_LABEL = OntologyNode("reference-object-destination")
+
 REFERENCE_OBJECT_LABEL = OntologyNode("reference-object")
 """
 Edge label in a `PerceptionGraph` linking a `Region` to its reference object.
@@ -3232,8 +3235,10 @@ class _FrameTranslation:
                         map_edge=self._map_edge,
                         map_node=self._map_node,
                     )
-                    if isinstance(path_info.reference_object, Region):
-                        regions.append(path_info.reference_object)
+                    if isinstance(path_info.reference_source_object, Region):
+                        regions.append(path_info.reference_source_object)
+                    if isinstance(path_info.reference_destination_object, Region):
+                        regions.append(path_info.reference_destination_object)
 
             # Below we ensure all regions appearing as relation and path arguments
             # are correctly translated.
@@ -3288,17 +3293,45 @@ class _FrameTranslation:
         edges_to_add: List[Tuple[Any, Any, Any]] = []
         edges_to_add.append((moving_object, path, HAS_PATH_LABEL))
         edges_to_add.append(
-            (path, map_node(path.reference_object), REFERENCE_OBJECT_LABEL)
+            (path, map_node(path.reference_source_object), REFERENCE_OBJECT_SOURCE_LABEL)
         )
-        if isinstance(path.reference_object, Region):
-            _translate_region(
-                perception_digraph,
-                path.reference_object,
-                map_node=map_node,
-                map_edge=map_edge,
-                axes_info=axes_info,
-                temporal_scopes=_DURING_ONLY,
+        edges_to_add.append(
+            (
+                path,
+                map_node(path.reference_destination_object),
+                REFERENCE_OBJECT_DESTINATION_LABEL,
             )
+        )
+        if path.reference_source_object == path.reference_destination_object:
+            if isinstance(path.reference_source_object, Region):
+                _translate_region(
+                    perception_digraph,
+                    path.reference_source_object,
+                    map_node=map_node,
+                    map_edge=map_edge,
+                    axes_info=axes_info,
+                    temporal_scopes=_DURING_ONLY,
+                )
+        else:
+            if isinstance(path.reference_source_object, Region):
+                _translate_region(
+                    perception_digraph,
+                    path.reference_source_object,
+                    map_node=map_node,
+                    map_edge=map_edge,
+                    axes_info=axes_info,
+                    temporal_scopes=immutableset([TemporalScope.BEFORE]),
+                )
+
+            if isinstance(path.reference_destination_object, Region):
+                _translate_region(
+                    perception_digraph,
+                    path.reference_destination_object,
+                    map_node=map_node,
+                    map_edge=map_edge,
+                    axes_info=axes_info,
+                    temporal_scopes=immutableset([TemporalScope.AFTER]),
+                )
         if path.reference_axis:
             edges_to_add.append(
                 (
@@ -3374,7 +3407,6 @@ class _FrameTranslation:
             )
         else:
             label = relation.relation_type
-
         graph.add_edge(
             self._map_node(relation.first_slot),
             self._map_node(relation.second_slot),

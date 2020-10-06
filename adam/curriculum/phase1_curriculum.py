@@ -2,7 +2,7 @@
 Curricula for DARPA GAILA Phase 1
 """
 from math import ceil
-
+from adam.ontology.phase1_ontology import DISTAL
 from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
 from itertools import chain
@@ -44,7 +44,6 @@ from adam.ontology.phase1_ontology import (
     AGENT,
     ANIMATE,
     BIRD,
-    BOX,
     CAN_BE_SAT_ON_BY_PEOPLE,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     CAN_JUMP,
@@ -211,6 +210,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                     max_to_sample=num_samples,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -223,6 +223,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                     max_to_sample=num_samples,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -236,6 +237,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for object in [MOM, DAD, BABY]
                 ),
@@ -245,6 +247,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=5,
+                        block_multiple_of_the_same_type=True,
                     )
                     for object in [MOM, DAD, BABY]
                 ),
@@ -283,6 +286,7 @@ def _make_objects_with_colors_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 80,
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -320,6 +324,7 @@ def _make_objects_with_colors_is_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 80,
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -467,6 +472,7 @@ def _make_object_on_ground_curriculum(  # pylint: disable=unused-argument
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -479,6 +485,7 @@ def _make_object_on_ground_curriculum(  # pylint: disable=unused-argument
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -531,6 +538,7 @@ def _make_person_has_object_curriculum(
                             inanimate_object_0,
                             background=background,
                         ),
+                        block_multiple_of_the_same_type=True,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         max_to_sample=num_samples if num_samples else 35,
@@ -599,6 +607,7 @@ def _make_part_whole_curriculum(  # pylint: disable=unused-argument
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=1,
+                    block_multiple_of_the_same_type=True,
                 ),
                 language_generator=language_generator,
             ).instances()
@@ -620,6 +629,7 @@ def _make_part_whole_curriculum(  # pylint: disable=unused-argument
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=3,
+                    block_multiple_of_the_same_type=True,
                 ),
                 language_generator=language_generator,
             ).instances()
@@ -672,6 +682,7 @@ def _make_my_your_object_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 20,
+                    block_multiple_of_the_same_type=True,
                 )
                 for person in owners
             ]
@@ -705,7 +716,8 @@ def falling_template(
                             theme,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_object=ground,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -727,9 +739,10 @@ def fall_on_ground_template(
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         "falls-to-ground",
-        salient_object_variables=[theme, GROUND_OBJECT_TEMPLATE],
+        salient_object_variables=[theme, ground],
         background_object_variables=background,
         actions=[
             Action(
@@ -741,7 +754,8 @@ def fall_on_ground_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -749,8 +763,8 @@ def fall_on_ground_template(
                 ),
             )
         ],
-        before_action_relations=[negate(on(theme, GROUND_OBJECT_TEMPLATE))],
-        after_action_relations=[on(theme, GROUND_OBJECT_TEMPLATE)],
+        before_action_relations=[negate(on(theme, ground))],
+        after_action_relations=[on(theme, ground)],
     )
 
 
@@ -774,10 +788,12 @@ def make_fall_templates(
         for syntax_hints in syntax_hints_options
     ]
 
+    object_falling.extend(
+        [fall_on_ground_template(arbitary_object, background=background)]
+    )
+
     # "ball fell on the ground"
-    return object_falling + [
-        fall_on_ground_template(arbitary_object, background=background)
-    ]
+    return object_falling
 
 
 def _make_fall_curriculum(
@@ -797,6 +813,7 @@ def _make_fall_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -860,6 +877,7 @@ def _make_transfer_of_possession_curriculum(
                     max_to_sample=num_samples if num_samples else 100,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for template in make_give_templates(background)
             ]
@@ -896,6 +914,7 @@ def _make_object_on_object_curriculum(
             max_to_sample=num_samples if num_samples else 100,
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -937,6 +956,7 @@ def _make_object_beside_object_curriculum(
             max_to_sample=num_samples if num_samples else 50,
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
     )
@@ -977,6 +997,7 @@ def _make_object_under_or_over_object_curriculum(
                     max_to_sample=num_samples if num_samples else 100,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for template in templates
             ]
@@ -1023,12 +1044,14 @@ def _make_object_in_other_object_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 ),
                 sampled(
                     solid_template,
                     max_to_sample=num_samples * 3 if num_samples else 75,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 ),
             ]
         ),
@@ -1044,6 +1067,7 @@ def bare_fly(
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         "fly",
         salient_object_variables=[agent],
@@ -1058,7 +1082,14 @@ def bare_fly(
                             agent,
                             SpatialPath(
                                 AWAY_FROM if up else TOWARD,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=Region(ground, distance=DISTAL)
+                                if (not up) and syntax_hints
+                                else ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                )
+                                if up and syntax_hints
+                                else ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1115,6 +1146,7 @@ def _make_fly_curriculum(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples,
+                        block_multiple_of_the_same_type=True,
                     )
                     if num_samples
                     else all_possible(
@@ -1154,7 +1186,8 @@ def intransitive_roll(
                             agent,
                             SpatialPath(
                                 None,
-                                reference_object=surface,
+                                reference_source_object=surface,
+                                reference_destination_object=surface,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1189,7 +1222,8 @@ def transitive_roll(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_object=surface,
+                                reference_source_object=surface,
+                                reference_destination_object=surface,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1224,7 +1258,8 @@ def transitive_roll_with_surface(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_object=surface,
+                                reference_source_object=surface,
+                                reference_destination_object=surface,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1240,7 +1275,12 @@ def transitive_roll_with_surface(
 def make_roll_templates(
     noise_objects: Optional[int]
 ) -> Sequence[Phase1SituationTemplate]:
-    animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
+    animate_0 = standard_object(
+        "object_0",
+        THING,
+        required_properties=[ANIMATE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
     rollable_0 = standard_object(
         "object_1", INANIMATE_OBJECT, required_properties=[ROLLABLE]
     )
@@ -1252,7 +1292,7 @@ def make_roll_templates(
     return [
         # rolls intransitively
         intransitive_roll(animate_0, rolling_surface, background=background),
-        # rolls transitively
+        # # rolls transitively
         transitive_roll(animate_0, rollable_0, rolling_surface, background=background),
         # rolls on a surface
         transitive_roll_with_surface(
@@ -1277,6 +1317,7 @@ def _make_roll_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation in make_roll_templates(noise_objects)
             ]
@@ -1323,6 +1364,7 @@ def _make_transitive_roll_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation in make_transitive_roll_templates(noise_objects)
             ]
@@ -1400,6 +1442,7 @@ def _make_speaker_addressee_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in _make_templates()
                 )
@@ -1413,10 +1456,10 @@ def make_jump_template(
     agent: TemplateObjectVariable,
     *,
     use_adverbial_path_modifier: bool,
-    operator: PathOperator = None,
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         "jump-on-ground",
         salient_object_variables=[agent],
@@ -1425,18 +1468,17 @@ def make_jump_template(
             Action(
                 JUMP,
                 argument_roles_to_fillers=[(AGENT, agent)],
-                auxiliary_variable_bindings=[
-                    (JUMP_INITIAL_SUPPORTER_AUX, GROUND_OBJECT_TEMPLATE)
-                ],
+                auxiliary_variable_bindings=[(JUMP_INITIAL_SUPPORTER_AUX, ground)],
                 during=DuringAction(
                     objects_to_paths=[
                         (
                             agent,
                             SpatialPath(
-                                operator=operator
+                                operator=AWAY_FROM
                                 if use_adverbial_path_modifier
                                 else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=ground,
+                                reference_destination_object=ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1475,16 +1517,26 @@ def make_pass_template(
                         (
                             agent,
                             SpatialPath(
-                                None, reference_object=goal, properties=spatial_properties
+                                None,
+                                reference_source_object=Region(goal, distance=DISTAL),
+                                reference_destination_object=goal,
+                                properties=spatial_properties,
                             ),
                         ),
                         (
                             agent,
                             SpatialPath(
-                                operator=operator
-                                if use_adverbial_path_modifier
-                                else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                operator=operator,
+                                reference_source_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == TOWARD)
+                                else GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -1546,12 +1598,12 @@ def _make_jump_curriculum(
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
                             background=background,
                         ),
+                        block_multiple_of_the_same_type=True,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 25,
                     )
                     for use_adverbial_path_modifier in (True, False)
-                    for operator in [TOWARD, AWAY_FROM]
                 ]
             ),
             flatten(
@@ -1561,6 +1613,7 @@ def _make_jump_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                 ]
             ),
@@ -1576,7 +1629,6 @@ def make_put_templates(noise_objects: Optional[int]) -> Iterable[Phase1Situation
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
-
     object_put = standard_object("object_0", required_properties=[INANIMATE])
     on_region_object = standard_object(
         "on_region_object", required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM]
@@ -1611,6 +1663,7 @@ def _make_put_curriculum(
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 25,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in make_put_templates(noise_objects)
                 ]
@@ -1658,6 +1711,7 @@ def _make_put_on_speaker_addressee_body_part_curriculum(
                             body_part_of_putter,
                             background=make_noise_objects(noise_objects),
                         ),
+                        block_multiple_of_the_same_type=True,
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -1740,6 +1794,7 @@ def _make_drink_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -1754,6 +1809,7 @@ def _make_drink_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
+                    block_multiple_of_the_same_type=True,
                 ),
             ]
         ),
@@ -1806,6 +1862,7 @@ def _make_eat_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -1938,6 +1995,7 @@ def _make_sit_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -1979,14 +2037,18 @@ def make_take_template(
                                 # this is a hack since "grab" with an adverb doesn't really work in English
                                 operator=operator
                                 if (
-                                    use_adverbial_path_modifier
-                                    and (
-                                        not spatial_properties
-                                        or HARD_FORCE not in spatial_properties
-                                    )
+                                    not spatial_properties
+                                    or HARD_FORCE not in spatial_properties
                                 )
                                 else None,
-                                reference_object=ground,
+                                reference_source_object=Region(ground, distance=DISTAL)
+                                if (operator and operator == TOWARD)
+                                else ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else ground,
                                 properties=spatial_properties,
                             ),
                         )
@@ -1994,7 +2056,6 @@ def make_take_template(
                 ),
             )
         ],
-        constraining_relations=[bigger_than(agent, theme)],
         # this is a hack since "grab" with an adverb doesn't really work in English
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER]
         if (
@@ -2033,7 +2094,8 @@ def make_walk_run_template(
                             agent,
                             SpatialPath(
                                 operator=TOWARD,
-                                reference_object=goal,
+                                reference_source_object=Region(goal, distance=DISTAL),
+                                reference_destination_object=goal,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2043,7 +2105,14 @@ def make_walk_run_template(
                                 operator=operator
                                 if use_adverbial_path_modifier
                                 else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=Region(ground, distance=DISTAL)
+                                if (operator and operator == TOWARD)
+                                else ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else ground,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2079,9 +2148,10 @@ def _make_take_curriculum(
                                 "object_taken_0", required_properties=[INANIMATE]
                             ),
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
-                            operator=operator,
+                            operator=operator if use_adverbial_path_modifier else None,
                             background=make_noise_objects(noise_objects),
                         ),
+                        block_multiple_of_the_same_type=True,
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
@@ -2110,16 +2180,17 @@ def bare_move_template(
             Action(
                 MOVE,
                 argument_roles_to_fillers=[(AGENT, agent)],
-                auxiliary_variable_bindings=[
-                    (MOVE_GOAL, Region(goal_reference, distance=PROXIMAL))
-                ],
+                auxiliary_variable_bindings=[(MOVE_GOAL, goal_reference)],
                 during=DuringAction(
                     objects_to_paths=[
                         (
                             agent,
                             SpatialPath(
-                                None,
-                                reference_object=goal_reference,
+                                TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2146,22 +2217,22 @@ def transitive_move_template(
             Action(
                 MOVE,
                 argument_roles_to_fillers=[(AGENT, agent), (THEME, theme)],
+                auxiliary_variable_bindings=[(MOVE_GOAL, goal_reference)],
                 during=DuringAction(
-                    continuously=[contacts(agent, theme)],
                     objects_to_paths=[
                         (
                             theme,
                             SpatialPath(
-                                None,
-                                reference_object=goal_reference,
+                                TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=goal_reference,
                                 properties=spatial_properties,
                             ),
                         )
-                    ],
+                    ]
                 ),
-                auxiliary_variable_bindings=[
-                    (MOVE_GOAL, Region(goal_reference, distance=PROXIMAL))
-                ],
             )
         ],
         constraining_relations=[bigger_than(agent, theme)],
@@ -2216,6 +2287,7 @@ def _make_move_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation in make_move_templates(noise_objects)
             ]
@@ -2280,6 +2352,7 @@ def _make_spin_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation in make_spin_templates(noise_objects)
             ]
@@ -2338,6 +2411,7 @@ def _make_go_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for situation in make_go_templates(noise_objects)
                 ]
@@ -2354,6 +2428,7 @@ def _make_go_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for is_distal in (True, False)
                 ]
@@ -2375,10 +2450,7 @@ def make_push_templates(
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> List[Phase1SituationTemplate]:
     # push with implicit goal
-    aux_bindings = [
-        (PUSH_SURFACE_AUX, push_surface),
-        (PUSH_GOAL, Region(push_goal, distance=PROXIMAL)),
-    ]
+    aux_bindings = [(PUSH_SURFACE_AUX, push_surface), (PUSH_GOAL, push_goal)]
     push_unexpressed_goal = Phase1SituationTemplate(
         "push-unexpressed-surface-goal",
         salient_object_variables=[agent, theme],
@@ -2394,18 +2466,28 @@ def make_push_templates(
                         (
                             agent,
                             SpatialPath(
-                                None,
-                                reference_object=push_goal,
+                                TO,
+                                reference_source_object=Region(
+                                    push_goal, distance=DISTAL
+                                ),
+                                reference_destination_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         ),
                         (
                             agent,
                             SpatialPath(
-                                operator=operator
-                                if use_adverbial_path_modifier
-                                else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                operator=operator,
+                                reference_source_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == TOWARD)
+                                else GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2413,10 +2495,8 @@ def make_push_templates(
                 ),
             )
         ],
-        constraining_relations=[
-            bigger_than(push_surface, agent),
-            bigger_than(push_surface, push_goal),
-        ],
+        constraining_relations=[bigger_than(push_surface, theme)],
+        asserted_always_relations=[on(theme, push_surface)],
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER] if use_adverbial_path_modifier else [],
     )
 
@@ -2436,18 +2516,28 @@ def make_push_templates(
                         (
                             agent,
                             SpatialPath(
-                                None,
-                                reference_object=push_goal,
+                                TO,
+                                reference_source_object=Region(
+                                    push_goal, distance=DISTAL
+                                ),
+                                reference_destination_object=push_goal,
                                 properties=spatial_properties,
                             ),
                         ),
                         (
                             agent,
                             SpatialPath(
-                                operator=operator
-                                if use_adverbial_path_modifier
-                                else None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                operator=operator,
+                                reference_source_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == TOWARD)
+                                else GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                )
+                                if (operator and operator == AWAY_FROM)
+                                else GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         ),
@@ -2478,6 +2568,7 @@ def _make_push_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
                 )
                 for adverbial_path_modifier in [True, False]
                 for operator in [TOWARD, AWAY_FROM]
@@ -2512,9 +2603,10 @@ def throw_on_ground_template(
     spatial_properties: Iterable[OntologyNode] = immutableset(),
     background: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
+    ground = GROUND_OBJECT_TEMPLATE
     return Phase1SituationTemplate(
         "throw-on-ground",
-        salient_object_variables=[agent, theme, GROUND_OBJECT_TEMPLATE],
+        salient_object_variables=[agent, theme, ground],
         background_object_variables=background,
         actions=[
             Action(
@@ -2525,7 +2617,7 @@ def throw_on_ground_template(
                     (
                         GOAL,
                         Region(
-                            GROUND_OBJECT_TEMPLATE,
+                            ground,
                             distance=EXTERIOR_BUT_IN_CONTACT,
                             direction=GRAVITATIONAL_UP,
                         ),
@@ -2537,7 +2629,12 @@ def throw_on_ground_template(
                             theme,
                             SpatialPath(
                                 None,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=agent,
+                                reference_destination_object=Region(
+                                    ground,
+                                    distance=EXTERIOR_BUT_IN_CONTACT,
+                                    direction=GRAVITATIONAL_UP,
+                                ),
                                 properties=spatial_properties,
                             ),
                         )
@@ -2545,8 +2642,7 @@ def throw_on_ground_template(
                 ),
             )
         ],
-        after_action_relations=[on(theme, GROUND_OBJECT_TEMPLATE)],
-        constraining_relations=[bigger_than(agent, theme)],
+        after_action_relations=[on(theme, ground)],
     )
 
 
@@ -2574,7 +2670,10 @@ def throw_template(
                         (
                             theme,
                             SpatialPath(
-                                None, reference_object=goal, properties=spatial_properties
+                                None,
+                                reference_source_object=agent,
+                                reference_destination_object=goal,
+                                properties=spatial_properties,
                             ),
                         )
                     ]
@@ -2611,7 +2710,10 @@ def throw_up_down_template(
                             theme,
                             SpatialPath(
                                 AWAY_FROM,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=GROUND_OBJECT_TEMPLATE,
+                                reference_destination_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                ),
                                 properties=spatial_properties,
                             ),
                         )
@@ -2622,7 +2724,10 @@ def throw_up_down_template(
                             theme,
                             SpatialPath(
                                 TOWARD,
-                                reference_object=GROUND_OBJECT_TEMPLATE,
+                                reference_source_object=Region(
+                                    GROUND_OBJECT_TEMPLATE, distance=DISTAL
+                                ),
+                                reference_destination_object=GROUND_OBJECT_TEMPLATE,
                                 properties=spatial_properties,
                             ),
                         )
@@ -2630,7 +2735,6 @@ def throw_up_down_template(
                 ),
             )
         ],
-        constraining_relations=flatten_relations(bigger_than(agent, theme)),
         syntax_hints=[USE_ADVERBIAL_PATH_MODIFIER],
     )
 
@@ -2656,7 +2760,10 @@ def throw_to_template(
                         (
                             theme,
                             SpatialPath(
-                                None, reference_object=goal, properties=spatial_properties
+                                None,
+                                reference_source_object=agent,
+                                reference_destination_object=goal,
+                                properties=spatial_properties,
                             ),
                         )
                     ]
@@ -2664,7 +2771,6 @@ def throw_to_template(
             )
         ],
         after_action_relations=[near(theme, goal)],
-        constraining_relations=[bigger_than(agent, theme)],
     )
 
 
@@ -2693,7 +2799,10 @@ def throw_to_region_template(
                         (
                             theme,
                             SpatialPath(
-                                None, reference_object=goal, properties=spatial_properties
+                                None,
+                                reference_source_object=agent,
+                                reference_destination_object=theme,
+                                properties=spatial_properties,
                             ),
                         )
                     ]
@@ -2744,20 +2853,16 @@ def make_throw_templates(
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
-    catcher = standard_object(
-        "catcher_0",
-        THING,
-        required_properties=[ANIMATE],
-        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
-    )
 
     object_thrown = standard_object("object_0", required_properties=[INANIMATE])
-    implicit_goal_reference = standard_object("implicit_throw_goal_object", BOX)
+    implicit_goal_reference = standard_object(
+        "implicit_throw_goal_object", required_properties=[INANIMATE]
+    )
     background = make_noise_objects(noise_objects)
 
     return [
-        # Dad throws a cookie on the ground
-        throw_on_ground_template(thrower, object_thrown, background=background),
+        # # Dad throws a cookie on the ground -- disabled because we learn this in verbs with dynamic prepositions
+        # throw_on_ground_template(thrower, object_thrown, background=background),
         # A baby throws a truck
         throw_template(
             thrower, object_thrown, implicit_goal_reference, background=background
@@ -2778,8 +2883,8 @@ def make_throw_templates(
             is_up=False,
             background=background,
         ),
-        # Throw To
-        throw_to_template(thrower, object_thrown, catcher, background=background),
+        # Throw To -- disabled because we learn this in verbs with dynamic prepositions
+        # throw_to_template(thrower, object_thrown, catcher, background=background),
     ]
 
 
@@ -2800,6 +2905,7 @@ def _make_throw_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in make_throw_templates(noise_objects)
                 ]
@@ -2839,9 +2945,10 @@ def _make_pass_curriculum(
                                 banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
                             ),
                             use_adverbial_path_modifier=use_adverbial_path_modifier,
-                            operator=operator,
+                            operator=operator if use_adverbial_path_modifier else None,
                             background=make_noise_objects(noise_objects),
                         ),
+                        block_multiple_of_the_same_type=True,
                         ontology=GAILA_PHASE_1_ONTOLOGY,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         max_to_sample=num_samples if num_samples else 25,
@@ -2875,8 +2982,26 @@ def _make_come_down_template(
                 argument_roles_to_fillers=[(AGENT, agent), (GOAL, goal_reference)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (agent, SpatialPath(TOWARD, ground)),
-                        (agent, SpatialPath(TO, goal_reference)),
+                        (
+                            agent,
+                            SpatialPath(
+                                TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
+                        ),
+                        (
+                            agent,
+                            SpatialPath(
+                                TO,
+                                reference_source_object=Region(
+                                    goal_reference, distance=DISTAL
+                                ),
+                                reference_destination_object=Region(
+                                    goal_reference, distance=PROXIMAL
+                                ),
+                            ),
+                        ),
                     ]
                 ),
             )
@@ -2896,7 +3021,8 @@ def _make_come_curriculum(
 ) -> Phase1InstanceGroup:
     movee = standard_object(
         "movee",
-        required_properties=[SELF_MOVING],
+        THING,
+        required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
     )
     learner = standard_object("leaner_0", LEARNER)
@@ -2948,6 +3074,7 @@ def _make_come_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -2960,6 +3087,7 @@ def _make_come_curriculum(
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     max_to_sample=num_samples,
+                    block_multiple_of_the_same_type=True,
                 )
                 if num_samples
                 else all_possible(
@@ -2972,12 +3100,14 @@ def _make_come_curriculum(
                     max_to_sample=num_samples if num_samples else 25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 ),
                 sampled(
                     _make_come_down_template(movee, object_, speaker, ground, background),
                     max_to_sample=num_samples if num_samples else 25,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 ),
             ]
         ),
@@ -3049,6 +3179,7 @@ def _make_behind_in_front_curriculum(
                         max_to_sample=num_samples if num_samples else 25,
                         chooser=PHASE1_CHOOSER_FACTORY(),
                         ontology=GAILA_PHASE_1_ONTOLOGY,
+                        block_multiple_of_the_same_type=True,
                     )
                     for template in make_behind_in_front_templates()
                 )
@@ -3181,10 +3312,10 @@ def build_gaila_phase1_verb_curriculum(
         ),
         _make_fly_curriculum(num_samples, num_noise_objects, language_generator),
         _make_roll_curriculum(num_samples, num_noise_objects, language_generator),
-        # TODO: in Chinese, _make_speaker_addressee_curriculum currently leads to an error in graph matching
-        _make_speaker_addressee_curriculum(
-            num_samples, num_noise_objects, language_generator
-        ),
+        # TODO: see https://github.com/isi-vista/adam/issues/937
+        # _make_speaker_addressee_curriculum(
+        #     num_samples, num_noise_objects, language_generator
+        # ),
         _make_jump_curriculum(num_samples, num_noise_objects, language_generator),
         _make_drink_curriculum(num_samples, num_noise_objects, language_generator),
         _make_sit_curriculum(num_samples, num_noise_objects, language_generator),
@@ -3195,6 +3326,7 @@ def build_gaila_phase1_verb_curriculum(
         _make_spin_curriculum(num_samples, num_noise_objects, language_generator),
         _make_go_curriculum(num_samples, num_noise_objects, language_generator),
         _make_push_curriculum(num_samples, num_noise_objects, language_generator),
+        # TODO: fix this based on Deniz's thoughts
         _make_throw_curriculum(num_samples, num_noise_objects, language_generator),
         _make_pass_curriculum(num_samples, num_noise_objects, language_generator),
         # _make_put_on_speaker_addressee_body_part_curriculum(num_samples, num_noise_objects, language_generator),

@@ -1,0 +1,24 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-complete'
+experiment_group_dir: '%adam_experiment_root%/%experiment%/output/'
+curriculum: 'm13-complete'
+learner: 'integrated-learner-recognizer'
+use_pegasus: true
+
+workflow_name: 'm13_runner'
+workflow_directory: '%adam_experiment_root%/%experiment%'
+site: 'saga'
+namespace: 'saga'
+
+backend: slurm
+partition: ephemeral
+num_cpus: 1
+num_gpus: 0
+memory: '2G'  # not sure how much is needed
+job_time_in_minutes: 240  # 4 hours should be plenty for this?
+
+save_state_every_n_steps: 200
+debug_learner_pickling: false

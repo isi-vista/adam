@@ -4,6 +4,8 @@ from adam.geon import LARGE_TO_SMALL, CONSTANT, SMALL_TO_LARGE_TO_SMALL
 from adam.ontology import OntologyNode, CAN_FILL_TEMPLATE_SLOT
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
+    MUCH_BIGGER_THAN,
+    MUCH_SMALLER_THAN,
     _make_cup_schema,
     _CHAIR_FRONT_TO_BACK_AXIS,
     _CHAIR_LEFT_TO_RIGHT_AXIS,
@@ -39,6 +41,7 @@ from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     SMALLER_THAN,
     BIGGER_THAN,
+    PERCEIVABLE_PROPERTY,
     _TIRE,
     BOX,
     DOG,
@@ -85,6 +88,12 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.structural_schema import ObjectStructuralSchema
 from adam.relation import flatten_relations
+
+TWO = OntologyNode("two")
+subtype(TWO, PERCEIVABLE_PROPERTY)
+MANY = OntologyNode("many")
+subtype(TWO, PERCEIVABLE_PROPERTY)
+HAS_COUNT = OntologyNode("has-count")
 
 CHAIR_2 = OntologyNode(
     "chair-2",
@@ -377,3 +386,32 @@ GAILA_PHASE_2_ONTOLOGY = Ontology(
         GAILA_PHASE_2_SIZE_GRADES, relation_type=BIGGER_THAN, opposite_type=SMALLER_THAN
     ),
 )
+
+
+def gravitationally_aligned_axis_is_largest(
+    ontology_node: OntologyNode, ontology: Ontology
+) -> bool:
+    schemata = list(ontology.structural_schemata(ontology_node))
+    if not schemata or len(schemata) != 1:
+        return False
+    gravitational = schemata[0].axes.gravitationally_aligned_axis
+    relations = schemata[0].axes.axis_relations
+    if not gravitational or not relations:
+        return False
+    return (
+        any(
+            r.first_slot == gravitational
+            and r.relation_type in [BIGGER_THAN, MUCH_BIGGER_THAN]
+            for r in relations
+        )
+        and not any(
+            r.first_slot == gravitational
+            and r.relation_type in [SMALLER_THAN, MUCH_SMALLER_THAN]
+            for r in relations
+        )
+        and not any(
+            r.second_slot == gravitational
+            and r.relation_type in [BIGGER_THAN, MUCH_BIGGER_THAN]
+            for r in relations
+        )
+    )

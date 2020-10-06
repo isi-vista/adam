@@ -106,6 +106,7 @@ def run_verb_test(learner, situation_template, language_generator):
                     max_to_sample=10,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -120,6 +121,7 @@ def run_verb_test(learner, situation_template, language_generator):
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
             ]
         ),
@@ -172,6 +174,19 @@ def test_eat_simple(language_mode, learner):
     )
 
 
+def drink_test_template():
+    object_0 = standard_object(
+        "object_0",
+        required_properties=[HOLLOW, PERSON_CAN_HAVE],
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+    )
+    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
+    person_0 = standard_object(
+        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+    )
+    return make_drink_template(person_0, liquid_0, object_0, None)
+
+
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 @pytest.mark.parametrize(
     "learner",
@@ -184,18 +199,9 @@ def test_eat_simple(language_mode, learner):
     ],
 )
 def test_drink(language_mode, learner):
-    object_0 = standard_object(
-        "object_0",
-        required_properties=[HOLLOW, PERSON_CAN_HAVE],
-        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
-    )
-    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
-    person_0 = standard_object(
-        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
-    )
     run_verb_test(
         learner(language_mode),
-        make_drink_template(person_0, liquid_0, object_0, None),
+        drink_test_template(),
         language_generator=phase1_language_generator(language_mode),
     )
 
@@ -388,7 +394,12 @@ def test_take(language_mode, learner):
     run_verb_test(
         learner(language_mode),
         make_take_template(
-            agent=standard_object("taker_0", THING, required_properties=[ANIMATE]),
+            agent=standard_object(
+                "taker_0",
+                THING,
+                required_properties=[ANIMATE],
+                banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+            ),
             theme=standard_object("object_taken_0", required_properties=[INANIMATE]),
             use_adverbial_path_modifier=False,
         ),
@@ -503,6 +514,7 @@ def test_throw_animacy(language_mode, learner):
                     max_to_sample=10,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation_template in make_throw_animacy_templates(None)
             ]
@@ -519,6 +531,7 @@ def test_throw_animacy(language_mode, learner):
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    block_multiple_of_the_same_type=True,
                 )
                 for situation_template in make_throw_animacy_templates(None)
             ]

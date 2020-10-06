@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pytest
 from more_itertools import only
-
+from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis, AxesInfo
 from adam.language_specific.english.english_language_generator import (
     PREFER_DITRANSITIVE,
@@ -12,7 +12,6 @@ from adam.language_specific.english.english_language_generator import (
     IGNORE_COLORS,
     USE_ABOVE_BELOW,
     USE_NEAR,
-    USE_VERTICAL_MODIFIERS,
 )
 from adam.language_specific.english.english_phase_1_lexicon import (
     GAILA_PHASE_1_ENGLISH_LEXICON,
@@ -21,7 +20,9 @@ from adam.ontology import IN_REGION, IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import (
     AGENT,
+    BOOK,
     BABY,
+    TRUCK,
     BALL,
     BIRD,
     BOX,
@@ -68,6 +69,7 @@ from adam.ontology.phase1_ontology import (
     RED,
     BLACK,
     far,
+    negate,
     WALK,
     HARD_FORCE,
     PASS,
@@ -87,6 +89,7 @@ from adam.ontology.phase1_spatial_relations import (
     Direction,
     PROXIMAL,
     VIA,
+    TOWARD,
 )
 from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation, flatten_relations
@@ -826,7 +829,8 @@ def test_bird_flies_path_beside():
                             bird,
                             SpatialPath(
                                 VIA,
-                                reference_object=car_region,
+                                reference_source_object=car_region,
+                                reference_destination_object=car_region,
                                 reference_axis=HorizontalAxisOfObject(car, index=0),
                             ),
                         )
@@ -853,7 +857,16 @@ def test_bird_flies_up():
                 argument_roles_to_fillers=[(AGENT, bird)],
                 during=DuringAction(
                     objects_to_paths=[
-                        (bird, SpatialPath(operator=AWAY_FROM, reference_object=ground))
+                        (
+                            bird,
+                            SpatialPath(
+                                operator=AWAY_FROM,
+                                reference_source_object=ground,
+                                reference_destination_object=Region(
+                                    ground, distance=DISTAL
+                                ),
+                            ),
+                        )
                     ]
                 ),
             )
@@ -1639,50 +1652,56 @@ def test_box_without_attribute():
         generated_tokens(box_without_attribute)
 
 
-def test_bigger_than():
-    box = situation_object(BOX)
-    learner = situation_object(LEARNER)
-    big_box = HighLevelSemanticsSituation(
+def test_big_truck_updated():
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[box, learner],
-        always_relations=[bigger_than(box, learner)],
+        salient_objects=[truck1],
+        other_objects=[truck2],
+        always_relations=[(bigger_than(truck1, truck2))],
     )
-    assert generated_tokens(situation=big_box) == ("a", "big", "box")
+    assert not gravitationally_aligned_axis_is_largest(TRUCK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("a", "big", "truck")
 
 
-def test_taller_than():
-    box = situation_object(BOX)
-    learner = situation_object(LEARNER)
-    big_box = HighLevelSemanticsSituation(
+def test_tall_book_updated():
+    book1 = situation_object(BOOK, debug_handle="book1")
+    book2 = situation_object(BOOK, debug_handle="book2")
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[box, learner],
-        always_relations=[bigger_than(box, learner)],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        salient_objects=[book1],
+        other_objects=[book2],
+        always_relations=[(bigger_than(book1, book2))],
     )
-    assert generated_tokens(situation=big_box) == ("a", "tall", "box")
+    assert gravitationally_aligned_axis_is_largest(BOOK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("a", "tall", "book")
 
 
-def test_shorter_than():
-    box = situation_object(BOX)
-    learner = situation_object(LEARNER)
-    big_box = HighLevelSemanticsSituation(
+def test_short_book_updated():
+    book1 = situation_object(BOOK, debug_handle="book1")
+    book2 = situation_object(BOOK, debug_handle="book2")
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[box, learner],
-        always_relations=[bigger_than(learner, box)],
-        syntax_hints=[USE_VERTICAL_MODIFIERS],
+        salient_objects=[book1],
+        other_objects=[book2],
+        always_relations=[(bigger_than(book2, book1))],
     )
-    assert generated_tokens(situation=big_box) == ("a", "short", "box")
+    assert gravitationally_aligned_axis_is_largest(BOOK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("a", "short", "book")
 
 
-def test_smaller_than():
-    box = situation_object(BOX)
-    learner = situation_object(LEARNER)
-    big_box = HighLevelSemanticsSituation(
+def test_small_truck_updated():
+    truck1 = situation_object(TRUCK, debug_handle="truck1")
+    truck2 = situation_object(TRUCK, debug_handle="truck2")
+    situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY,
-        salient_objects=[box, learner],
-        always_relations=[bigger_than(learner, box)],
+        salient_objects=[truck1],
+        other_objects=[truck2],
+        always_relations=[(bigger_than(truck2, truck1))],
     )
-    assert generated_tokens(situation=big_box) == ("a", "small", "box")
+    assert not gravitationally_aligned_axis_is_largest(TRUCK, GAILA_PHASE_1_ONTOLOGY)
+    assert generated_tokens(situation) == ("a", "small", "truck")
 
 
 def test_run():
@@ -1700,7 +1719,10 @@ def test_run():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -1726,7 +1748,10 @@ def test_toss():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -1753,7 +1778,10 @@ def test_shove():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_object=table, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=table,
+                                reference_destination_object=table,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -1787,7 +1815,10 @@ def test_grab():
                         (
                             mom,
                             SpatialPath(
-                                None, reference_object=GROUND, properties=[HARD_FORCE]
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[HARD_FORCE],
                             ),
                         )
                     ]
@@ -1812,7 +1843,12 @@ def test_slowly():
                     objects_to_paths=[
                         (
                             mom,
-                            SpatialPath(None, reference_object=GROUND, properties=[SLOW]),
+                            SpatialPath(
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[SLOW],
+                            ),
                         )
                     ]
                 ),
@@ -1836,7 +1872,12 @@ def test_fast():
                     objects_to_paths=[
                         (
                             mom,
-                            SpatialPath(None, reference_object=GROUND, properties=[FAST]),
+                            SpatialPath(
+                                None,
+                                reference_source_object=GROUND,
+                                reference_destination_object=GROUND,
+                                properties=[FAST],
+                            ),
                         )
                     ]
                 ),
@@ -1887,6 +1928,36 @@ def test_counts_of_objects():
                 "a",
                 object_type.handle,
             )
+
+
+def test_not_toward_on_translation_of_relations():
+    theme = situation_object(MOM)
+    ground = situation_object(GROUND)
+    situation = HighLevelSemanticsSituation(
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        salient_objects=[theme, ground],
+        actions=[
+            Action(
+                action_type=FALL,
+                argument_roles_to_fillers=[(THEME, theme)],
+                during=DuringAction(
+                    objects_to_paths=[
+                        (
+                            theme,
+                            SpatialPath(
+                                TOWARD,
+                                reference_source_object=Region(ground, distance=DISTAL),
+                                reference_destination_object=ground,
+                            ),
+                        )
+                    ]
+                ),
+            )
+        ],
+        before_action_relations=[negate(on(theme, ground))],
+        after_action_relations=[on(theme, ground)],
+    )
+    assert generated_tokens(situation) == ("Mom", "falls", "toward", "the", "ground")
 
 
 def generated_tokens(situation):

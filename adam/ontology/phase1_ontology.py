@@ -69,7 +69,6 @@ from adam.ontology.phase1_spatial_relations import (
     AWAY_FROM,
     DISTAL,
     EXTERIOR_BUT_IN_CONTACT,
-    FROM,
     GRAVITATIONAL_DOWN,
     GRAVITATIONAL_UP,
     INTERIOR,
@@ -224,6 +223,12 @@ FAST = OntologyNode("fast")
 subtype(FAST, PROPERTY)
 SLOW = OntologyNode("slow")
 subtype(SLOW, PROPERTY)
+SIDE = OntologyNode("side")
+subtype(SIDE, PROPERTY)
+LEFT = OntologyNode("left")
+subtype(LEFT, PROPERTY)
+RIGHT = OntologyNode("right")
+subtype(RIGHT, PROPERTY)
 
 # forcefulness distinctions
 HARD_FORCE = OntologyNode("hard-force")
@@ -323,6 +328,22 @@ TABLE = OntologyNode(
     ],
 )
 subtype(TABLE, INANIMATE_OBJECT)
+
+BED = OntologyNode(
+    "bed",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        HAS_SPACE_UNDER,
+        CAN_BE_SAT_ON_BY_PEOPLE,
+        WHITE,
+        BLUE,
+        BLACK,
+        LIGHT_BROWN,
+        DARK_BROWN,
+    ],
+)
+subtype(BED, INANIMATE_OBJECT)
 BALL = OntologyNode(
     "ball",
     [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, RED, BLUE, GREEN, BLACK, WHITE],
@@ -332,6 +353,17 @@ WATERMELON = OntologyNode(
     "watermelon", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, EDIBLE, ROLLABLE, GREEN]
 )
 subtype(WATERMELON, INANIMATE_OBJECT)
+PAPER = OntologyNode(
+    "paper",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        PERSON_CAN_HAVE,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        WHITE,
+        TWO_DIMENSIONAL,
+    ],
+)
+subtype(PAPER, INANIMATE_OBJECT)
 BOOK = OntologyNode(
     "book",
     [
@@ -482,6 +514,12 @@ DOG = OntologyNode(
     "dog", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
 )
 subtype(DOG, NONHUMAN_ANIMAL)
+CAT = OntologyNode(
+    "cat", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
+)
+subtype(CAT, NONHUMAN_ANIMAL)
+BEAR = OntologyNode("bear", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, DARK_BROWN])
+subtype(BEAR, NONHUMAN_ANIMAL)
 BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY, RED, BLUE, BLACK, WHITE])
 subtype(BIRD, NONHUMAN_ANIMAL)
 
@@ -489,7 +527,10 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
     [
         BABY,
         BALL,
+        BEAR,
         WATERMELON,
+        CAT,
+        PAPER,
         BIRD,
         BOOK,
         BOX,
@@ -507,6 +548,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
         JUICE,
         MILK,
         MOM,
+        BED,
         TABLE,
         TRUCK,
         WATER,
@@ -530,6 +572,10 @@ _CHAIR_SEAT = OntologyNode("chairseat")
 subtype(_CHAIR_SEAT, INANIMATE_OBJECT)
 _TABLETOP = OntologyNode("tabletop")
 subtype(_TABLETOP, INANIMATE_OBJECT)
+_MATTRESS = OntologyNode("mattress")
+subtype(_MATTRESS, INANIMATE_OBJECT)
+_HEADBOARD = OntologyNode("headboard")
+subtype(_HEADBOARD, INANIMATE_OBJECT)
 _TAIL = OntologyNode("tail")
 subtype(_TAIL, _BODY_PART)
 _WING = OntologyNode("wing")
@@ -552,6 +598,10 @@ _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
 _DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_DOG_HEAD, _BODY_PART)
+_CAT_HEAD = OntologyNode("cat-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_CAT_HEAD, _BODY_PART)
+_BEAR_HEAD = OntologyNode("bear-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_BEAR_HEAD, _BODY_PART)
 _BIRD_HEAD = OntologyNode("bird-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_BIRD_HEAD, _BODY_PART)
 _LEG_SEGMENT = OntologyNode("leg-segment")
@@ -629,6 +679,7 @@ def _on_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
     )
 
 
+on_region = _on_region_factory  # pylint:disable=invalid-name
 on = make_dsl_region_relation(_on_region_factory)  # pylint:disable=invalid-name
 
 
@@ -640,6 +691,7 @@ def _near_region_factory(
     )
 
 
+near_region = _near_region_factory  # pylint:disable=invalid-name
 near = make_dsl_region_relation(_near_region_factory)  # pylint:disable=invalid-name
 
 
@@ -649,6 +701,7 @@ def _far_region_factory(
     return Region(reference_object=reference_object, distance=DISTAL, direction=direction)
 
 
+far_region = _far_region_factory  # pylint:disable=invalid-name
 far = make_dsl_region_relation(_far_region_factory)  # pylint:disable=invalid-name
 
 
@@ -663,6 +716,11 @@ SIZE_RELATION = OntologyNode("size-relation")
 subtype(SIZE_RELATION, RELATION)
 
 BIGGER_THAN = OntologyNode("biggerThan")
+BIGGER_THAN_SAME_TYPE = OntologyNode(
+    "biggerThanSameType"
+)  # For relative size between objects of same type
+
+SAME_TYPE = OntologyNode("same-type")
 """
 A relation indicating that one object is bigger than another object.
 
@@ -670,18 +728,26 @@ This is a placeholder for a more sophisticated representation of size:
 https://github.com/isi-vista/adam/issues/70
 """
 subtype(BIGGER_THAN, SIZE_RELATION)
+subtype(BIGGER_THAN_SAME_TYPE, SIZE_RELATION)
 
 SMALLER_THAN = OntologyNode("smallerThan")
+SMALLER_THAN_SAME_TYPE = OntologyNode(
+    "smallerThanSameType"
+)  # For relative size between objects of same type
 """
 A relation indicating that one object is smaller than another object.
 
 This is a placeholder for a more sophisticated representation of size:
 https://github.com/isi-vista/adam/issues/70
 """
+subtype(SMALLER_THAN_SAME_TYPE, SIZE_RELATION)
 subtype(SMALLER_THAN, SIZE_RELATION)
 
 bigger_than = make_opposite_dsl_relation(  # pylint:disable=invalid-name
     BIGGER_THAN, opposite_type=SMALLER_THAN
+)
+bigger_than_same = make_opposite_dsl_relation(  # pylint:disable=invalid-name
+    BIGGER_THAN_SAME_TYPE, opposite_type=SMALLER_THAN_SAME_TYPE
 )
 
 AXIS_RELATION = OntologyNode("axis-relation")
@@ -1038,6 +1104,46 @@ def _make_torso_schema():
     )
 
 
+def _make_bear_head_schema() -> ObjectStructuralSchema:
+    torso_to_nose = directed("bear-head-torso-to-nose")
+    bottom_to_top = directed("bear-head-bottom-to-top")
+    left_to_right = symmetric("bear-head-left-to-right")
+    return ObjectStructuralSchema(
+        _BEAR_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=torso_to_nose,
+                orienting_axes=[bottom_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than(torso_to_nose, [left_to_right, bottom_to_top])
+                ],
+            ),
+        ),
+    )
+
+
+def _make_cat_head_schema() -> ObjectStructuralSchema:
+    torso_to_nose = directed("cat-head-torso-to-nose")
+    bottom_to_top = directed("cat-head-bottom-to-top")
+    left_to_right = symmetric("cat-head-left-to-right")
+    return ObjectStructuralSchema(
+        _CAT_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=SMALL_TO_LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=torso_to_nose,
+                orienting_axes=[bottom_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than([bottom_to_top, left_to_right], torso_to_nose)
+                ],
+            ),
+        ),
+    )
+
+
 def _make_dog_head_schema() -> ObjectStructuralSchema:
     torso_to_nose = directed("dog-head-torso-to-nose")
     bottom_to_top = directed("dog-head-bottom-to-top")
@@ -1244,6 +1350,71 @@ def _make_table_top_schema() -> ObjectStructuralSchema:
     )
 
 
+def _make_headboard_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_HEADBOARD,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    bigger_than([side_to_side, bottom_to_top], front_to_back),
+                    bigger_than(side_to_side, bottom_to_top),
+                ],
+            ),
+        ),
+    )
+
+
+def _make_mattress_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=_MATTRESS,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    bigger_than([front_to_back, side_to_side], bottom_to_top),
+                    bigger_than(front_to_back, side_to_side),
+                ],
+            ),
+        ),
+    )
+
+
+def _make_paper_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=PAPER,
+        geon=Geon(
+            cross_section=RECTANGULAR,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    much_bigger_than([front_to_back, side_to_side], bottom_to_top)
+                ],
+            ),
+        ),
+    )
+
+
 def _make_tail_schema() -> ObjectStructuralSchema:
     edge_to_tip = directed("edge-to-tip")
     diameter_0 = symmetric("diameter_0")
@@ -1409,6 +1580,7 @@ def _make_human_arm_segment():
 _DOOR_SCHEMA = _make_door_schema()
 _BALL_SCHEMA = _make_ball_schema()
 _WATERMELON_SCHEMA = _make_watermelon_schema()
+_PAPER_SCHEMA = _make_paper_schema()
 _BOX_SCHEMA = _make_box_schema()
 _HAT_SCHEMA = _make_hat_schema()
 _COOKIE_SCHEMA = _make_cookie_schema()
@@ -1418,6 +1590,8 @@ _HAND_SCHEMA = _make_hand_schema()
 _HEAD_SCHEMA = _make_head_schema()
 _TORSO_SCHEMA = _make_torso_schema()
 _DOG_HEAD_SCHEMA = _make_dog_head_schema()
+_CAT_HEAD_SCHEMA = _make_cat_head_schema()
+_BEAR_HEAD_SCHEMA = _make_bear_head_schema()
 _BIRD_HEAD_SCHEMA = _make_bird_head_schema()
 _UPPER_LEG_SEGMENT_SCHEMA = _make_upper_leg_segment_schema()
 _LOWER_LEG_SEGMENT_SCHEMA = _make_lower_leg_segment_schema()
@@ -1427,6 +1601,8 @@ _CHAIRBACK_SCHEMA = _make_chair_back_schema()
 _CHAIR_SEAT_SCHEMA = _make_chair_seat_schema()
 _CHAIR_SQUARE_SEAT_SCHEMA = _make_square_chair_seat_schema()
 _TABLETOP_SCHEMA = _make_table_top_schema()
+_MATTRESS_SCHEMA = _make_mattress_schema()
+_HEADBOARD_SCHEMA = _make_headboard_schema()
 _TAIL_SCHEMA = _make_tail_schema()
 _WING_SCHEMA = _make_wing_schema()
 _ROOF_SCHEMA = _make_roof_schema()
@@ -1605,6 +1781,125 @@ _TABLE_SCHEMA = ObjectStructuralSchema(
     ),
     axes=_TABLE_SCHEMA_LEG_1.schema.axes.copy(),
 )
+
+# schema for a bed
+_BED_SCHEMA_LEG_1 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_SCHEMA_LEG_2 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_SCHEMA_LEG_3 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_SCHEMA_LEG_4 = SubObject(_INANIMATE_LEG_SCHEMA)
+_BED_LEGS = [_BED_SCHEMA_LEG_1, _BED_SCHEMA_LEG_2, _BED_SCHEMA_LEG_3, _BED_SCHEMA_LEG_4]
+_BED_SCHEMA_MATTRESS = SubObject(_MATTRESS_SCHEMA)
+_BED_SCHEMA_HEADBOARD = SubObject(_HEADBOARD_SCHEMA)
+_BED_SCHEMA = ObjectStructuralSchema(
+    BED,
+    sub_objects=[
+        _BED_SCHEMA_LEG_1,
+        _BED_SCHEMA_LEG_2,
+        _BED_SCHEMA_LEG_3,
+        _BED_SCHEMA_LEG_4,
+        _BED_SCHEMA_MATTRESS,
+        _BED_SCHEMA_HEADBOARD,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+            contacts(_BED_SCHEMA_MATTRESS, _BED_SCHEMA_MATTRESS),
+            above(_BED_SCHEMA_HEADBOARD, _BED_SCHEMA_MATTRESS),
+            bigger_than(_BED_SCHEMA_HEADBOARD, _BED_LEGS),
+            above(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+            bigger_than(_BED_SCHEMA_MATTRESS, _BED_LEGS),
+        ]
+    ),
+    axes=_BED_SCHEMA_MATTRESS.schema.axes.copy(),
+)
+
+# bear schemata describing the sub-object structural nature of a bear
+_BEAR_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA)
+_BEAR_SCHEMA_TORS0 = SubObject(_TORSO_SCHEMA)
+_BEAR_SCHEMA_HEAD = SubObject(_BEAR_HEAD_SCHEMA)
+_BEAR_LEGS = [
+    _BEAR_SCHEMA_LEG_1,
+    _BEAR_SCHEMA_LEG_2,
+    _BEAR_SCHEMA_LEG_3,
+    _BEAR_SCHEMA_LEG_4,
+]
+_BEAR_APPENDAGES = [
+    _BEAR_SCHEMA_LEG_1,
+    _BEAR_SCHEMA_LEG_2,
+    _BEAR_SCHEMA_LEG_3,
+    _BEAR_SCHEMA_LEG_4,
+    _BEAR_SCHEMA_HEAD,
+]
+
+_BEAR_SCHEMA = ObjectStructuralSchema(
+    BEAR,
+    sub_objects=[
+        _BEAR_SCHEMA_TORS0,
+        _BEAR_SCHEMA_HEAD,
+        _BEAR_SCHEMA_LEG_4,
+        _BEAR_SCHEMA_LEG_3,
+        _BEAR_SCHEMA_LEG_2,
+        _BEAR_SCHEMA_LEG_1,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_BEAR_SCHEMA_TORS0, _BEAR_APPENDAGES),
+            above(_BEAR_SCHEMA_HEAD, _BEAR_SCHEMA_TORS0),
+            above(_BEAR_SCHEMA_TORS0, _BEAR_LEGS),
+            bigger_than(_BEAR_SCHEMA_TORS0, _BEAR_LEGS),
+            bigger_than(_BEAR_SCHEMA_TORS0, _BEAR_SCHEMA_HEAD),
+        ]
+    ),
+    axes=_BEAR_SCHEMA_TORS0.schema.axes.copy(),
+)
+
+
+# cat schemata describing the sub-object structural nature of a cat
+_CAT_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA)
+_CAT_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_CAT_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
+_CAT_SCHEMA_HEAD = SubObject(_CAT_HEAD_SCHEMA)
+_CAT_LEGS = [_CAT_SCHEMA_LEG_1, _CAT_SCHEMA_LEG_2, _CAT_SCHEMA_LEG_3, _CAT_SCHEMA_LEG_4]
+_CAT_APPENDAGES = [
+    _CAT_SCHEMA_LEG_1,
+    _CAT_SCHEMA_LEG_2,
+    _CAT_SCHEMA_LEG_3,
+    _CAT_SCHEMA_LEG_4,
+    _CAT_SCHEMA_TAIL,
+    _CAT_SCHEMA_HEAD,
+]
+
+_CAT_SCHEMA = ObjectStructuralSchema(
+    CAT,
+    sub_objects=[
+        _CAT_SCHEMA_TAIL,
+        _CAT_SCHEMA_HEAD,
+        _CAT_SCHEMA_TORSO,
+        _CAT_SCHEMA_LEG_1,
+        _CAT_SCHEMA_LEG_2,
+        _CAT_SCHEMA_LEG_3,
+        _CAT_SCHEMA_LEG_4,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_CAT_SCHEMA_TORSO, _CAT_APPENDAGES),
+            above(_CAT_SCHEMA_HEAD, _CAT_SCHEMA_TORSO),
+            above(_CAT_SCHEMA_TAIL, _CAT_SCHEMA_TORSO),
+            above(_CAT_SCHEMA_TORSO, _CAT_LEGS),
+            bigger_than(_CAT_SCHEMA_TORSO, _CAT_LEGS),
+            bigger_than(_CAT_SCHEMA_TORSO, _CAT_SCHEMA_TAIL),
+            bigger_than(_CAT_SCHEMA_TORSO, _CAT_SCHEMA_HEAD),
+        ]
+    ),
+    axes=_CAT_SCHEMA_TORSO.schema.axes.copy(),
+)
+
 
 # schemata describing the sub-object structural nature of a dog
 _DOG_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA, properties=[IS_LEFT, IS_LOWER])
@@ -1840,8 +2135,14 @@ _PUT_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({AGENT: _PUT_AGENT, THEME: _PUT_THEME, GOAL: _PUT_GOAL}),
     during=DuringAction(
         objects_to_paths=[
-            (_PUT_THEME, SpatialPath(FROM, _CONTACTING_MANIPULATOR)),
-            (_PUT_THEME, SpatialPath(TO, _PUT_GOAL)),
+            (
+                _PUT_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=_CONTACTING_MANIPULATOR,
+                    reference_destination_object=_PUT_GOAL,
+                ),
+            )
         ]
     ),
     enduring_conditions=[
@@ -1880,15 +2181,17 @@ PUSH_SURFACE_AUX = ActionDescriptionVariable(
 
 def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_PUSH_THEME, SpatialPath(TO, PUSH_GOAL))]
+        objects_to_paths=[
+            (
+                _PUSH_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(PUSH_GOAL, distance=DISTAL),
+                    reference_destination_object=PUSH_GOAL,
+                ),
+            )
+        ]
     )
-    enduring = [
-        partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
-        bigger_than(_PUSH_AGENT, _PUSH_THEME),
-        bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
-        contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
-        on(_PUSH_THEME, PUSH_SURFACE_AUX),
-    ]
     preconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL, negated=True)]
     postconditions = [Relation(IN_REGION, _PUSH_THEME, PUSH_GOAL)]
     asserted_properties = [
@@ -1902,7 +2205,13 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
             {AGENT: _PUSH_AGENT, THEME: _PUSH_THEME, GOAL: PUSH_GOAL}
         ),
         during=during,
-        enduring_conditions=enduring,
+        enduring_conditions=[
+            partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+            bigger_than(_PUSH_AGENT, _PUSH_THEME),
+            bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
+            contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
+            on(_PUSH_THEME, PUSH_SURFACE_AUX),
+        ],
         preconditions=preconditions,
         postconditions=postconditions,
         asserted_properties=asserted_properties,
@@ -1911,7 +2220,13 @@ def _make_push_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     yield PUSH, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _PUSH_AGENT, THEME: _PUSH_THEME}),
         during=during,
-        enduring_conditions=enduring,
+        enduring_conditions=[
+            partOf(_PUSH_MANIPULATOR, _PUSH_AGENT),
+            bigger_than(_PUSH_AGENT, _PUSH_THEME),
+            bigger_than(PUSH_SURFACE_AUX, _PUSH_THEME),
+            contacts(_PUSH_MANIPULATOR, _PUSH_THEME),
+            on(_PUSH_THEME, PUSH_SURFACE_AUX),
+        ],
         preconditions=preconditions,
         postconditions=postconditions,
         asserted_properties=asserted_properties,
@@ -1925,7 +2240,16 @@ _GO_GOAL = ActionDescriptionVariable(THING)
 def _make_go_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     postconditions = [Relation(IN_REGION, _GO_AGENT, _GO_GOAL)]
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_GO_AGENT, SpatialPath(TO, _GO_GOAL))]
+        objects_to_paths=[
+            (
+                _GO_AGENT,
+                SpatialPath(
+                    TO,
+                    reference_source_object=Region(_GO_GOAL, distance=DISTAL),
+                    reference_destination_object=_GO_GOAL,
+                ),
+            )
+        ]
     )
     asserted_properties = [(_GO_AGENT, VOLITIONALLY_INVOLVED), (_GO_AGENT, MOVES)]
 
@@ -1947,7 +2271,19 @@ _COME_ACTION_DESCRIPTION = ActionDescription(
         {AGENT: _COME_AGENT, GOAL: _COME_GOAL}
     ),
     preconditions=[Relation(IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=DISTAL))],
-    during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
+    during=DuringAction(
+        objects_to_paths=[
+            (
+                _COME_AGENT,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(_COME_GOAL, distance=DISTAL),
+                    reference_destination_object=Region(_COME_GOAL, distance=PROXIMAL),
+                ),
+            )
+        ]
+    ),
+    # during=DuringAction(objects_to_paths=[(_COME_AGENT, SpatialPath(TO, _COME_GOAL))]),
     postconditions=[
         Relation(IN_REGION, _COME_AGENT, Region(_COME_GOAL, distance=PROXIMAL))
     ],
@@ -1968,11 +2304,7 @@ _TAKE_ACTION_DESCRIPTION = ActionDescription(
     preconditions=[negate(has(_TAKE_AGENT, _TAKE_THEME))],
     postconditions=[
         has(_TAKE_AGENT, _TAKE_THEME),
-        Relation(
-            IN_REGION,
-            _TAKE_THEME,
-            Region(_TAKE_MANIPULATOR, distance=EXTERIOR_BUT_IN_CONTACT),
-        ),
+        contacts(_TAKE_THEME, _TAKE_MANIPULATOR),
     ],
     asserted_properties=[
         (_TAKE_AGENT, VOLITIONALLY_INVOLVED),
@@ -2012,7 +2344,7 @@ _GIVE_ACTION_DESCRIPTION = ActionDescription(
         {AGENT: _GIVE_AGENT, THEME: _GIVE_THEME, GOAL: _GIVE_GOAL}
     ),
     enduring_conditions=[
-        bigger_than(_GIVE_AGENT, _GIVE_THEME),
+        # bigger_than(_GIVE_AGENT, _GIVE_THEME),
         bigger_than(_GIVE_GOAL, _GIVE_THEME),
         partOf(_GIVE_AGENT_MANIPULATOR, _GIVE_AGENT),
         partOf(_GIVE_GOAL_MANIPULATOR, _GIVE_GOAL),
@@ -2078,7 +2410,8 @@ def _make_spin_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
 def spin_around_primary_axis(object_):
     return SpatialPath(
         operator=None,
-        reference_object=object_,
+        reference_source_object=object_,
+        reference_destination_object=object_,
         reference_axis=PrimaryAxisOfObject(object_),
         orientation_changed=True,
     )
@@ -2140,7 +2473,14 @@ _FALL_ACTION_DESCRIPTION = ActionDescription(
     frame=ActionDescriptionFrame({THEME: _FALL_THEME}),
     during=DuringAction(
         objects_to_paths=[
-            (_FALL_THEME, SpatialPath(operator=TOWARD, reference_object=_FALL_GROUND))
+            (
+                _FALL_THEME,
+                SpatialPath(
+                    operator=TOWARD,
+                    reference_source_object=_far_region_factory(_FALL_GROUND),
+                    reference_destination_object=_FALL_GROUND,
+                ),
+            )
         ]
     ),
     # You can't fall if you start on the ground.
@@ -2160,7 +2500,16 @@ _THROW_GROUND = ActionDescriptionVariable(GROUND)
 
 def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_THROW_THEME, SpatialPath(TO, THROW_GOAL))],
+        objects_to_paths=[
+            (
+                _THROW_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=_THROW_MANIPULATOR,
+                    reference_destination_object=THROW_GOAL,
+                ),
+            )
+        ],
         # must be above the ground at some point during the action
         at_some_point=[
             Relation(
@@ -2186,7 +2535,7 @@ def _make_throw_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription
     postconditions = flatten_relations(
         [
             Relation(IN_REGION, _THROW_THEME, THROW_GOAL),
-            on(_THROW_THEME, THROW_GOAL),
+            near(_THROW_THEME, THROW_GOAL),
             # negate(contacts(_THROW_MANIPULATOR, _THROW_THEME)),
             negate(contacts(_THROW_AGENT, _THROW_THEME)),
         ]
@@ -2253,28 +2602,20 @@ _PASS_GROUND = ActionDescriptionVariable(GROUND)
 
 def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_PASS_THEME, SpatialPath(TO, PASS_GOAL))],
-        # must be above the ground at some point during the action
-        at_some_point=[
-            Relation(
-                IN_REGION,
+        objects_to_paths=[
+            (
                 _PASS_THEME,
-                Region(
-                    reference_object=_PASS_GROUND,
-                    distance=DISTAL,
-                    direction=GRAVITATIONAL_UP,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=_PASS_MANIPULATOR,
+                    reference_destination_object=PASS_GOAL,
                 ),
             )
-        ],
+        ]
     )
     enduring = [
         partOf(_PASS_MANIPULATOR, _PASS_AGENT),
         bigger_than(_PASS_AGENT, _PASS_THEME),
-    ]
-    preconditions = [
-        has(_PASS_AGENT, _PASS_THEME),
-        # contacts(_PASS_MANIPULATOR, _PASS_THEME),
-        contacts(_PASS_AGENT, _PASS_THEME),
     ]
     postconditions = flatten_relations(
         [
@@ -2307,7 +2648,10 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ),
         during=during,
         enduring_conditions=enduring,
-        preconditions=preconditions,
+        preconditions=[
+            contacts(_PASS_MANIPULATOR, _PASS_THEME),
+            has(_PASS_AGENT, _PASS_THEME),
+        ],
         postconditions=postconditions_manipulator,
         asserted_properties=asserted_properties,
     )
@@ -2318,7 +2662,10 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ),
         during=during,
         enduring_conditions=enduring,
-        preconditions=preconditions,
+        preconditions=[
+            contacts(_PASS_MANIPULATOR, _PASS_THEME),
+            has(_PASS_AGENT, _PASS_THEME),
+        ],
         postconditions=postconditions,
         asserted_properties=asserted_properties,
     )
@@ -2327,7 +2674,10 @@ def _make_pass_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         frame=ActionDescriptionFrame({AGENT: _PASS_AGENT, THEME: _PASS_THEME}),
         during=during,
         enduring_conditions=enduring,
-        preconditions=preconditions,
+        preconditions=[
+            contacts(_PASS_MANIPULATOR, _PASS_THEME),
+            has(_PASS_AGENT, _PASS_THEME),
+        ],
         postconditions=postconditions,
         asserted_properties=asserted_properties,
     )
@@ -2341,12 +2691,35 @@ _MOVE_MANIPULATOR = ActionDescriptionVariable(THING, properties=[CAN_MANIPULATE_
 
 def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]]:
     during_move_self: DuringAction[ActionDescriptionVariable] = DuringAction(
-        objects_to_paths=[(_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL))]
+        objects_to_paths=[
+            (
+                _MOVE_AGENT,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
+                    reference_destination_object=MOVE_GOAL,
+                ),
+            )
+        ]
     )
     during_move_object: DuringAction[ActionDescriptionVariable] = DuringAction(
         objects_to_paths=[
-            (_MOVE_AGENT, SpatialPath(TO, MOVE_GOAL)),
-            (_MOVE_THEME, SpatialPath(TO, MOVE_GOAL)),
+            (
+                _MOVE_AGENT,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
+                    reference_destination_object=MOVE_GOAL,
+                ),
+            ),
+            (
+                _MOVE_THEME,
+                SpatialPath(
+                    operator=TO,
+                    reference_source_object=Region(MOVE_GOAL, distance=DISTAL),
+                    reference_destination_object=MOVE_GOAL,
+                ),
+            ),
         ]
     )
     enduring = [
@@ -2358,7 +2731,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT}),
         during=during_move_self,
-        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        postconditions=[near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2371,10 +2744,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, THEME: _MOVE_THEME}),
         during=during_move_object,
         enduring_conditions=enduring,
-        postconditions=[
-            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
-            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
-        ],
+        postconditions=[near(_MOVE_THEME, MOVE_GOAL), near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2386,7 +2756,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
     yield MOVE, ActionDescription(
         frame=ActionDescriptionFrame({AGENT: _MOVE_AGENT, GOAL: MOVE_GOAL}),
         during=during_move_self,
-        postconditions=[Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL)],
+        postconditions=[near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2402,10 +2772,7 @@ def _make_move_descriptions() -> Iterable[Tuple[OntologyNode, ActionDescription]
         ),
         during=during_move_object,
         enduring_conditions=enduring,
-        postconditions=[
-            Relation(IN_REGION, _MOVE_THEME, MOVE_GOAL),
-            Relation(IN_REGION, _MOVE_AGENT, MOVE_GOAL),
-        ],
+        postconditions=[near(_MOVE_THEME, MOVE_GOAL), near(_MOVE_AGENT, MOVE_GOAL)],
         asserted_properties=[
             (_MOVE_AGENT, VOLITIONALLY_INVOLVED),
             (_MOVE_AGENT, CAUSES_CHANGE),
@@ -2433,8 +2800,22 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
             preconditions=preconditions,
             during=DuringAction(
                 objects_to_paths=[
-                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
-                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=JUMP_INITIAL_SUPPORTER_AUX,
+                            reference_destination_object=JUMP_INITIAL_SUPPORTER_AUX,
+                        ),
+                    ),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=jump_ground,
+                            reference_destination_object=jump_ground,
+                        ),
+                    ),
                 ],
                 # must be above the ground at some point during the action
                 at_some_point=[
@@ -2461,8 +2842,30 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
             preconditions=preconditions,
             during=DuringAction(
                 objects_to_paths=[
-                    (jump_agent, SpatialPath(AWAY_FROM, JUMP_INITIAL_SUPPORTER_AUX)),
-                    (jump_agent, SpatialPath(AWAY_FROM, jump_ground)),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                            reference_destination_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                        ),
+                    ),
+                    (
+                        jump_agent,
+                        SpatialPath(
+                            AWAY_FROM,
+                            reference_source_object=Region(
+                                jump_ground, distance=PROXIMAL
+                            ),
+                            reference_destination_object=Region(
+                                JUMP_INITIAL_SUPPORTER_AUX, distance=PROXIMAL
+                            ),
+                        ),
+                    ),
                 ],
                 # must be above the ground at some point during the action
                 at_some_point=[
@@ -2477,7 +2880,8 @@ def _make_jump_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     )
                 ],
             ),
-            postconditions=[on(jump_agent, jump_goal)],
+            # this breaks for regions so is currently disabled and specified in the curricula instead
+            # postconditions=[on(jump_agent, jump_goal)],
             asserted_properties=asserted_properties,
         ),
     )
@@ -2520,7 +2924,8 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                         roll_theme,
                         SpatialPath(
                             operator=AWAY_FROM,
-                            reference_object=roll_agent,
+                            reference_source_object=roll_agent,
+                            reference_destination_object=roll_agent,
                             reference_axis=HorizontalAxisOfObject(roll_theme, index=0),
                             orientation_changed=True,
                         ),
@@ -2548,8 +2953,9 @@ def _make_roll_description() -> Iterable[Tuple[OntologyNode, ActionDescription]]
                     (
                         roll_agent,
                         SpatialPath(
-                            operator=AWAY_FROM,
-                            reference_object=roll_agent,
+                            operator=None,
+                            reference_source_object=roll_agent,
+                            reference_destination_object=roll_agent,
                             reference_axis=HorizontalAxisOfObject(roll_agent, index=0),
                             orientation_changed=True,
                         ),
@@ -2611,15 +3017,16 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (CAR, TRUCK),
     (_TRAILER, _FLATBED),
     (_TRUCK_CAB,),
-    (TABLE, DOOR),
+    (BED, _MATTRESS),
+    (TABLE, DOOR, BEAR),
     (_TABLETOP,),
     (MOM, DAD, PERSON),
     (DOG, BOX, CHAIR, _TIRE),
     (BABY,),
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
-    (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
-    (WATERMELON, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
+    (CAT, _ARM, _ANIMAL_LEG, _INANIMATE_LEG),
+    (WATERMELON, PAPER, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
     (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
 )
@@ -2628,12 +3035,16 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
     _ontology_graph,
     structural_schemata=[
+        (BED, _BED_SCHEMA),
         (BALL, _BALL_SCHEMA),
+        (PAPER, _PAPER_SCHEMA),
         (WATERMELON, _WATERMELON_SCHEMA),
+        (BEAR, _BEAR_SCHEMA),
         (CHAIR, _CHAIR_SCHEMA),
         (PERSON, _PERSON_SCHEMA),
         (TABLE, _TABLE_SCHEMA),
         (DOG, _DOG_SCHEMA),
+        (CAT, _CAT_SCHEMA),
         (BIRD, _BIRD_SCHEMA),
         (BOX, _BOX_SCHEMA),
         (DOOR, _DOOR_SCHEMA),

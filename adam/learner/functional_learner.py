@@ -77,20 +77,14 @@ class FunctionalLearner(TemplateLearner, ActionFallbackLearnerProtocol):
     def learn_from(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        observation_num: int = -1,
+        offset: int = 0,
     ):
-        if observation_num >= 0:
-            logging.info(
-                "Observation %s: %s",
-                observation_num,
-                language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
-            )
-        else:
-            logging.info(
-                "Observation %s: %s",
-                self._observation_num,
-                language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
-            )
+
+        logging.info(
+            "Observation %s: %s",
+            self._observation_num + offset,
+            language_perception_semantic_alignment.language_concept_alignment.language.as_token_string(),
+        )
 
         self._observation_num += 1
 
@@ -231,7 +225,7 @@ class FunctionalLearner(TemplateLearner, ActionFallbackLearnerProtocol):
                         concept
                     ][
                         slot
-                    ]._concept_to_count:
+                    ]._concept_to_count:  # pylint:disable=protected-access
                         file.write(
-                            f"\t\t{functional_concept} - {self._concept_to_slots_to_function_counter[concept][slot]._concept_to_count[functional_concept]}\n"  # pylint: disable=protected-access
+                            f"\t\t{functional_concept} - {self._concept_to_slots_to_function_counter[concept][slot]._concept_to_count[functional_concept]}\n"  # pylint:disable=protected-access
                         )

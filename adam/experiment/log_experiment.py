@@ -26,6 +26,7 @@ from adam.experiment.experiment_utils import (
     build_m6_prepositions_curriculum,
     build_pursuit_curriculum,
     build_functionally_defined_objects_train_curriculum,
+    build_object_learner_experiment_curriculum_train,
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
@@ -55,7 +56,7 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase_1_curriculum,
 )
 from adam.experiment import Experiment, execute_experiment
-from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
+from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import TopLevelLanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.prepositions import SubsetPrepositionLearner
@@ -106,6 +107,8 @@ def log_experiment_entry_point(params: Parameters) -> None:
         params, language_mode
     )
 
+    experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
+
     execute_experiment(
         Experiment(
             name=experiment_name,
@@ -114,12 +117,24 @@ def log_experiment_entry_point(params: Parameters) -> None:
                 params, graph_logger, language_mode
             ),
             pre_example_training_observers=[
-                logger.pre_observer(),
-                CandidateAccuracyObserver("pre-acc-observer"),
+                logger.pre_observer(  # type: ignore
+                    params=params.namespace_or_empty("pre_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
             ],
-            post_example_training_observers=[logger.post_observer()],
+            post_example_training_observers=[
+                logger.post_observer(  # type: ignore
+                    params=params.namespace_or_empty("post_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ],
             test_instance_groups=test_instance_groups,
-            test_observers=[logger.test_observer()],
+            test_observers=[
+                logger.test_observer(  # type: ignore
+                    params=params.namespace_or_empty("test_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ],
             sequence_chooser=RandomChooser.for_seed(0),
         ),
         log_path=params.optional_creatable_directory("hypothesis_log_dir"),
@@ -127,10 +142,14 @@ def log_experiment_entry_point(params: Parameters) -> None:
             "log_hypothesis_every_n_steps", default=250
         ),
         log_learner_state=params.boolean("log_learner_state", default=True),
-        learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
-        starting_point=params.integer("starting_point", default=-1),
+        learner_logging_path=experiment_group_dir,
+        starting_point=params.integer("starting_point", default=0),
         point_to_log=params.integer("point_to_log", default=0),
         load_learner_state=params.optional_existing_file("learner_state_path"),
+        resume_from_latest_logged_state=params.boolean(
+            "resume_from_latest_logged_state", default=False
+        ),
+        debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
     )
 
 
@@ -155,11 +174,11 @@ def learner_factory_from_params(
 
     beam_size = params.positive_integer("beam_size", default=10)
 
-    if language_mode == LanguageMode.CHINESE and learner_type not in [
-        "integrated-learner",
-        "integrated-learner-recognizer",
-    ]:
-        raise RuntimeError("Only able to test Chinese with integrated learner.")
+    # if language_mode == LanguageMode.CHINESE and learner_type not in [
+    #    "integrated-learner",
+    #    "integrated-learner-recognizer",
+    # ]:
+    #    raise RuntimeError("Only able to test Chinese with integrated learner.")
 
     rng = random.Random()
     rng.seed(0)
@@ -322,6 +341,10 @@ def curriculum_from_params(
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
         "m13-relations": (make_prepositions_curriculum, None),
         "m13-part-whole": (_make_part_whole_curriculum, None),
+        "m15-object-noise-experiments": (
+            build_object_learner_experiment_curriculum_train,
+            build_each_object_by_itself_curriculum_test,
+        ),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
@@ -331,6 +354,7 @@ def curriculum_from_params(
         pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")
     else:
         pursuit_curriculum_params = Parameters.empty()
+    use_path_instead_of_goal = params.boolean("use-path-instead-of-goal", default=False)
 
     (training_instance_groups, test_instance_groups) = str_to_train_test_curriculum[
         curriculum_name
@@ -339,15 +363,50 @@ def curriculum_from_params(
     num_samples = params.optional_positive_integer("num_samples")
     num_noise_objects = params.optional_positive_integer("num_noise_objects")
 
+    if curriculum_name == "pursuit":
+        return (
+            training_instance_groups(
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                pursuit_curriculum_params=pursuit_curriculum_params,
+            ),
+            test_instance_groups(num_samples, num_noise_objects, language_generator)
+            if test_instance_groups
+            else [],
+        )
+
+    # optional argument to use path instead of goal
+    elif use_path_instead_of_goal and curriculum_name in [
+        "m13-complete",
+        "m13-shuffled",
+        "m13-verbs-with-dynamic-prepositions",
+    ]:
+        return (
+            training_instance_groups(
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                use_path_instead_of_goal,
+            ),
+            test_instance_groups(num_samples, num_noise_objects, language_generator)
+            if test_instance_groups
+            else [],
+        )
+    elif curriculum_name == "m15-object-noise-experiments":
+        return (
+            training_instance_groups(
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                params=params.namespace_or_empty("situation"),
+            ),
+            test_instance_groups(num_samples, num_noise_objects, language_generator)
+            if test_instance_groups
+            else [],
+        )
     return (
-        training_instance_groups(num_samples, num_noise_objects, language_generator)
-        if curriculum_name != "pursuit"
-        else training_instance_groups(
-            num_samples,
-            num_noise_objects,
-            language_generator,
-            pursuit_curriculum_params=pursuit_curriculum_params,
-        ),
+        training_instance_groups(num_samples, num_noise_objects, language_generator),
         test_instance_groups(num_samples, num_noise_objects, language_generator)
         if test_instance_groups
         else [],

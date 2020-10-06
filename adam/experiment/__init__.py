@@ -11,7 +11,9 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    cast,
     Generic,
+    Iterable,
     Sequence,
     Tuple,
     Optional,
@@ -123,6 +125,28 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
         check_arg(callable(self.learner_factory), "Learner factory must be callable")
 
 
+def _learner_states_by_most_recent(learner_path: Path) -> Iterable[Tuple[int, Path]]:
+    paths = []
+    for logged_state_path in learner_path.glob("learner_state_at_*.pkl"):
+        if not logged_state_path.is_file():
+            logging.warning("Skipping non-file learner state %s.", str(logged_state_path))
+            continue
+        iteration_number_string = logged_state_path.name.replace(
+            "learner_state_at_", ""
+        ).replace(".pkl", "")
+        try:
+            iteration_number = int(iteration_number_string)
+        except ValueError:
+            logging.warning(
+                "Skipping learner state file with bad iteration number %s.",
+                iteration_number_string,
+            )
+            continue
+        paths.append((iteration_number, logged_state_path))
+        logged_state_path.stat()
+    return sorted(paths, reverse=True)
+
+
 def execute_experiment(
     experiment: Experiment[SituationT, LinguisticDescriptionT, PerceptionT],
     *,
@@ -131,12 +155,36 @@ def execute_experiment(
     learner_logging_path: Optional[Path] = None,
     log_learner_state: bool = True,
     load_learner_state: Optional[Path] = None,
+    resume_from_latest_logged_state: bool = False,
+    debug_learner_pickling: bool = False,
     starting_point: int = 0,
     point_to_log: int = 0,
 ) -> None:
     """
     Runs an `Experiment`.
     """
+
+    # the starting point must be greater than or equal to 0
+    if starting_point < 0:
+        logging.warning(f"Starting point {starting_point} is invalid, setting to 0")
+        starting_point = 0
+
+    if resume_from_latest_logged_state and load_learner_state is not None:
+        raise RuntimeError(
+            "Cannot both resume from latest logged state and load a specified state file."
+        )
+
+    if resume_from_latest_logged_state and learner_logging_path is None:
+        raise RuntimeError(
+            "Need state logging path to be able to resume from latest learner state."
+        )
+
+    if resume_from_latest_logged_state and starting_point > 0:
+        raise RuntimeError(
+            f"Starting point should not be specified "
+            f"when learner is configured to resume from latest state."
+            f"(specified starting point {starting_point})."
+        )
 
     # make the directories in which to log the learner
     if log_learner_state and learner_logging_path:
@@ -166,6 +214,39 @@ def execute_experiment(
             logging.warning(
                 "Unable to load learner at %s, using factory instead", load_learner_state
             )
+
+    # If we should resume from the latest logged state, try to load each numbered state file,
+    # starting with the file for the learner that got the farthest in the curriculum
+    elif resume_from_latest_logged_state:
+        logging.info("Attempting to resume from latest learner state...")
+        learner = None
+        # This should already be set, but just in case it wasn't, for example if
+        # log_learner_state = False, set it.
+        learner_path = cast(Path, learner_logging_path) / "learner_state"
+        # Note that this is safe if the learner path doesn't exist -- this loop will simply never
+        # execute.
+        for iteration_number, learner_state_path in _learner_states_by_most_recent(
+            learner_path
+        ):
+            try:
+                with learner_state_path.open("rb") as f:
+                    learner = pickle.load(f)
+                starting_point = iteration_number
+            except OSError:
+                logging.warning(
+                    "Unable to open learner state at %s; skipping.",
+                    str(learner_state_path),
+                )
+            except pickle.UnpicklingError:
+                logging.warning(
+                    "Couldn't unpickle learner state at %s; skipping.",
+                    str(learner_state_path),
+                )
+        # Fall back on default learner
+        if learner is None:
+            logging.info("Could not load a saved learner; using factory instead.")
+            learner = experiment.learner_factory()
+
     # if there's no existing learner, instantiate the default
     else:
         learner = experiment.learner_factory()
@@ -223,6 +304,12 @@ def execute_experiment(
                         ),
                         pickle.HIGHEST_PROTOCOL,
                     )
+                    if debug_learner_pickling:
+                        logging.info("Pickling and unpickling learner...")
+                        learner = pickle.loads(
+                            pickle.dumps(learner, protocol=pickle.HIGHEST_PROTOCOL)
+                        )
+                        logging.info("Pickled and unpickled.")
 
             if experiment.pre_example_training_observers:
                 learner_descriptions_before_seeing_example = learner.describe(
@@ -244,7 +331,7 @@ def execute_experiment(
 
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description),
-                observation_num=num_observations,
+                offset=starting_point,
             )
 
             if experiment.post_example_training_observers:

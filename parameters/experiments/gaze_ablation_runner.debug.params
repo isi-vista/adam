@@ -1,0 +1,16 @@
+_includes:
+   - "gaze_ablation_runner.params"
+
+experiment: 'gaze_ablation_pegasus_debug'
+experiment_group_dir: '%adam_experiment_root%/%experiment%'
+
+min_num_objects: 3
+max_num_objects : 4
+num_increments: 5
+min_num_noise : 0
+max_num_noise : 0
+min_instances : 15
+max_instances : 17
+
+workflow_name: 'gaze_ablation_pegasus_debug'
+workflow_directory: '%adam_experiment_root%/%experiment%'
