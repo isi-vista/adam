@@ -87,6 +87,10 @@ class IntegratedTemplateLearner(
         validator=optional(instance_of(FunctionalLearner)), default=None
     )
 
+    plural_learner: Optional[TemplateLearner] = attrib(
+        validator=optional(instance_of(TemplateLearner)), default=None
+    )
+
     generics_learner: Optional[SimpleGenericsLearner] = attrib(
         validator=optional(instance_of(SimpleGenericsLearner)), default=None
     )
@@ -139,6 +143,7 @@ class IntegratedTemplateLearner(
         for sub_learner in [
             self.object_learner,
             self.attribute_learner,
+            self.plural_learner,
             self.relation_learner,
         ]:
             if sub_learner:
@@ -193,6 +198,7 @@ class IntegratedTemplateLearner(
         for sub_learner in [
             self.object_learner,
             self.attribute_learner,
+            self.plural_learner,
             self.relation_learner,
         ]:
             if sub_learner:
@@ -266,7 +272,7 @@ class IntegratedTemplateLearner(
             self.object_learner._language_mode  # pylint: disable=protected-access
             == LanguageMode.CHINESE
         ):
-            if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
+            if self.plural_learner:
                 return tuple([token for token in cur_string if token[:3] != "yi1"])
             # specially handle the case of my and your in Chinese since these organize the classifier and attribute differently
             if cur_string[0] in ["ni3 de", "wo3 de"] and len(cur_string) > 1:
@@ -287,7 +293,7 @@ class IntegratedTemplateLearner(
         # handle English determiners
         else:
             # If plural, we want to strip any "a" that might preceed a noun after "many" or "two"
-            if isinstance(self.attribute_learner, SubsetPluralLearnerNew):
+            if self.plural_learner:
                 if "a" in cur_string:
                     a_position = cur_string.index("a")
                     if a_position > 0 and cur_string[a_position - 1] in ["many", "two"]:
@@ -316,61 +322,62 @@ class IntegratedTemplateLearner(
     def _instantiate_object(
         self, object_node: ObjectSemanticNode, learner_semantics: LearnerSemantics
     ) -> Iterator[Tuple[str, ...]]:
+        for learner in [self.attribute_learner, self.plural_learner]:
+            # For now, we assume the order in which modifiers is expressed is arbitrary.
+            attributes_we_can_express = (
+                [
+                    attribute
+                    for attribute in learner_semantics.objects_to_attributes[object_node]
+                    if learner.templates_for_concept(attribute.concept)
+                ]
+                if learner
+                else []
 
-        # For now, we assume the order in which modifiers is expressed is arbitrary.
-        attributes_we_can_express = (
-            [
-                attribute
-                for attribute in learner_semantics.objects_to_attributes[object_node]
-                if self.attribute_learner.templates_for_concept(attribute.concept)
-            ]
-            if self.attribute_learner
-            else []
-        )
-        # We currently cannot deal with relations that modify objects embedded in other expressions.
-        # See https://github.com/isi-vista/adam/issues/794 .
-        # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
+            )
+            # We currently cannot deal with relations that modify objects embedded in other expressions.
+            # See https://github.com/isi-vista/adam/issues/794 .
+            # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
 
-        if (
-            isinstance(object_node.concept, FunctionalObjectConcept)
-            and object_node.concept
-            in learner_semantics.functional_concept_to_object_concept.keys()
-        ):
-            concept = learner_semantics.functional_concept_to_object_concept[
-                object_node.concept
-            ]
-        else:
-            concept = object_node.concept
-
-        for template in self.object_learner.templates_for_concept(concept):
-
-            cur_string = template.instantiate(
-                template_variable_to_filler=immutabledict()
-            ).as_token_sequence()
-
-            for num_attributes in range(
-                min(len(attributes_we_can_express), self._max_attributes_per_word)
+            if (
+                isinstance(object_node.concept, FunctionalObjectConcept)
+                and object_node.concept
+                in learner_semantics.functional_concept_to_object_concept.keys()
             ):
-                for attribute_combinations in combinations(
-                    attributes_we_can_express,
-                    # +1 because the range starts at 0
-                    num_attributes + 1,
-                ):
-                    for attribute in attribute_combinations:
-                        # we know, but mypy does not, that self.attribute_learner is not None
-                        for (
-                            attribute_template
-                        ) in self.attribute_learner.templates_for_concept(  # type: ignore
-                            attribute.concept
-                        ):
-                            yield self._add_determiners(
-                                object_node,
-                                attribute_template.instantiate(
-                                    template_variable_to_filler={SLOT1: cur_string}
-                                ).as_token_sequence(),
-                            )
+                concept = learner_semantics.functional_concept_to_object_concept[
+                    object_node.concept
+                ]
+            else:
+                concept = object_node.concept
 
-            yield self._add_determiners(object_node, cur_string)
+            for template in self.object_learner.templates_for_concept(concept):
+
+                cur_string = template.instantiate(
+                    template_variable_to_filler=immutabledict()
+                ).as_token_sequence()
+
+                for num_attributes in range(
+                    min(len(attributes_we_can_express), self._max_attributes_per_word)
+                ):
+                    for attribute_combinations in combinations(
+                        attributes_we_can_express,
+                        # +1 because the range starts at 0
+                        num_attributes + 1,
+                    ):
+                        for attribute in attribute_combinations:
+                            # we know, but mypy does not, that self.attribute_learner is not None
+                            for (
+                                attribute_template
+                            ) in learner.templates_for_concept(  # type: ignore
+                                attribute.concept
+                            ):
+                                yield self._add_determiners(
+                                    object_node,
+                                    attribute_template.instantiate(
+                                        template_variable_to_filler={SLOT1: cur_string}
+                                    ).as_token_sequence(),
+                                )
+
+                yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
         self, relation_node: RelationSemanticNode, learner_semantics: LearnerSemantics
@@ -439,6 +446,8 @@ class IntegratedTemplateLearner(
             valid_sub_learners.append(self.object_learner)
         if self.attribute_learner:
             valid_sub_learners.append(self.attribute_learner)
+        if self.plural_learner:
+            valid_sub_learners.append(self.plural_learner)
         if self.relation_learner:
             valid_sub_learners.append(self.relation_learner)
         if self.action_learner:

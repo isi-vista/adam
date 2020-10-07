@@ -45,11 +45,11 @@ class SimpleGenericsLearner(TemplateLearner):
         with open(log_output_path / f"generics_log.txt", "w") as out:
             for (
                 sequence,
-                (object_concept, actions),
+                (object_concept, others),
             ) in self.learned_representations.items():
                 out.write(f'Learned generic: {" ".join(sequence)} \n')
                 out.write(f"Related objects: {object_concept} \n")
-                out.write(f"Related actions: {actions} \n\n")
+                out.write(f"Related concept: {others} \n\n")
 
     def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
         return set()

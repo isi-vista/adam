@@ -1,5 +1,6 @@
 import random
 from pathlib import Path
+from pprint import pprint
 from typing import Iterable
 
 import pytest
@@ -13,9 +14,10 @@ from adam.curriculum.phase1_curriculum import (
     _make_sit_curriculum,
     _make_jump_curriculum,
     _make_fly_curriculum,
-)
+    _make_colour_predicates_curriculum, _make_kind_predicates_curriculum, _make_objects_with_colors_curriculum)
 from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
+from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
@@ -39,7 +41,8 @@ def integrated_learner_factory(language_mode: LanguageMode):
     rng.seed(0)
     return IntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
-        attribute_learner=SubsetPluralLearnerNew(
+        # attribute_learner=SubsetPluralLearnerNew(
+        attribute_learner=SubsetAttributeLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
         action_learner=SubsetVerbLearnerNew(
@@ -76,12 +79,6 @@ def run_generics_test(learner, language_mode):
                     )
 
     language_generator = phase1_language_generator(language_mode)
-
-    actions = list(_make_eat_curriculum(10, 0, language_generator).instances())
-    actions.extend(_make_drink_curriculum(10, 0, language_generator).instances())
-    actions.extend(_make_sit_curriculum(10, 0, language_generator).instances())
-    actions.extend(_make_jump_curriculum(10, 0, language_generator).instances())
-    actions.extend(_make_fly_curriculum(10, 0, language_generator).instances())
     # Teach plurals
     plurals = list(
         phase1_instances(
@@ -92,30 +89,42 @@ def run_generics_test(learner, language_mode):
             language_generator=language_generator,
         ).instances()
     )
-    for (_, linguistic_description, perceptual_representation) in actions + plurals:
-        # Get the object matches first - preposition learner can't learn without already recognized objects
-        learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
-        )
 
-    generics_curriculum = _make_generic_statements_curriculum(
-        num_samples=20, noise_objects=0, language_generator=language_generator
+    curricula = [
+        # Actions - verbs in generics
+        _make_eat_curriculum(10, 0, language_generator),
+        _make_drink_curriculum(10, 0, language_generator),
+        _make_sit_curriculum(10, 0, language_generator),
+        _make_jump_curriculum(10, 0, language_generator),
+        _make_fly_curriculum(10, 0, language_generator),
+        # Color attributes
+        _make_objects_with_colors_curriculum(None, None, language_generator),
+        # Predicates
+        _make_colour_predicates_curriculum(None, None, language_generator),
+        _make_kind_predicates_curriculum(None, None, language_generator),
+        # Generics
+        _make_generic_statements_curriculum(
+            num_samples=20, noise_objects=0, language_generator=language_generator
+        )]
+
+    for curriculum in curricula:
+        for (
+            _,
+            linguistic_description,
+            perceptual_representation,
+        ) in curriculum.instances():
+            # Get the object matches first - preposition learner can't learn without already recognized objects
+            print(linguistic_description)
+            learner.observe(
+                LearningExample(perceptual_representation, linguistic_description)
+            )
+
+    learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
+    learner.render_to_file(
+        graph_name="semantics",
+        output_file=Path(f"./renders/{language_mode.name}-semantics.png"),
     )
-    for (
-        _,
-        linguistic_description,
-        perceptual_representation,
-    ) in generics_curriculum.instances():
-        # Get the object matches first - preposition learner can't learn without already recognized objects
-        learner.observe(
-            LearningExample(perceptual_representation, linguistic_description)
-        )
-
-    # learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
-    # learner.render_to_file(
-    #     graph_name="semantics",
-    #     output_file=Path(f"./renders/{language_mode.name}-semantics.png"),
-    # )
+    pprint(learner.generics_learner.learned_representations.items())
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
