@@ -1,0 +1,35 @@
+_includes:
+   - "../../root.params"
+   - "m13.params"
+
+experiment: 'm13-shuffled-pegasus'
+experiment_group_dir: '%adam_experiment_root%/%experiment%'
+include_objects: False
+include_imprecise_size: False
+include_imprecise_temporal: False
+include_subtle_verb: False
+include_object_restrictions: False
+include_functionally_defined_objects: False
+include_relations: False
+include_generics: False
+include_verbs_with_dynamic_prepositions: False
+include_m9_complete: False
+include_m13_complete: False
+include_m13_shuffled: True
+include_debug: False
+use_pegasus: true
+
+workflow_name: 'm13_shuffled_pegasus'
+workflow_directory: '%adam_experiment_root%/%experiment%'
+site: 'saga'
+namespace: 'saga'
+
+backend: slurm
+partition: ephemeral
+num_cpus: 1
+num_gpus: 0
+memory: '2G'  # not sure how much is needed
+job_time_in_minutes: 240  # 4 hours should be plenty for this?
+
+save_state_every_n_steps: 50
+debug_learner_pickling: false

@@ -29,6 +29,7 @@ from adam.experiment.experiment_utils import (
     build_pursuit_curriculum,
     build_functionally_defined_objects_train_curriculum,
     build_actions_and_generics_curriculum,
+    build_object_learner_experiment_curriculum_train,
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
@@ -57,7 +58,7 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase_1_curriculum,
 )
 from adam.experiment import Experiment, execute_experiment
-from adam.experiment.observer import LearningProgressHtmlLogger, CandidateAccuracyObserver
+from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import TopLevelLanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.prepositions import SubsetPrepositionLearner
@@ -106,17 +107,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
         params, language_mode
     )
 
-    # these are the params to use for writing accuracy to a text file at every iteration (e.g. to graph later)
-    accuracy_to_txt = params.boolean("accuracy_to_txt", default=False)
-    accuracy_logging_path = params.string(
-        "accuracy_logging_path", default="accuracy_out.txt"
-    )
-    # we want to log to the same file as the html output, etc.
     experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
-    if experiment_group_dir:
-        txt_path = str(experiment_group_dir / accuracy_logging_path)
-    else:
-        txt_path = accuracy_logging_path
 
     execute_experiment(
         Experiment(
@@ -126,14 +117,24 @@ def log_experiment_entry_point(params: Parameters) -> None:
                 params, graph_logger, language_mode
             ),
             pre_example_training_observers=[
-                logger.pre_observer(),
-                CandidateAccuracyObserver(
-                    "pre-acc-observer", accuracy_to_txt=accuracy_to_txt, txt_path=txt_path
-                ),
+                logger.pre_observer(  # type: ignore
+                    params=params.namespace_or_empty("pre_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
             ],
-            post_example_training_observers=[logger.post_observer()],
+            post_example_training_observers=[
+                logger.post_observer(  # type: ignore
+                    params=params.namespace_or_empty("post_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ],
             test_instance_groups=test_instance_groups,
-            test_observers=[logger.test_observer()],
+            test_observers=[
+                logger.test_observer(  # type: ignore
+                    params=params.namespace_or_empty("test_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ],
             sequence_chooser=RandomChooser.for_seed(0),
         ),
         log_path=params.optional_creatable_directory("hypothesis_log_dir"),
@@ -145,6 +146,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
         starting_point=params.integer("starting_point", default=0),
         point_to_log=params.integer("point_to_log", default=0),
         load_learner_state=params.optional_existing_file("learner_state_path"),
+        resume_from_latest_logged_state=params.boolean(
+            "resume_from_latest_logged_state", default=False
+        ),
+        debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
     )
 
 
@@ -359,6 +364,10 @@ def curriculum_from_params(
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
         "m13-relations": (make_prepositions_curriculum, None),
         "actions-and-generics-curriculum": (build_actions_and_generics_curriculum, None),
+        "m15-object-noise-experiments": (
+            build_object_learner_experiment_curriculum_train,
+            build_each_object_by_itself_curriculum_test,
+        ),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
@@ -402,6 +411,18 @@ def curriculum_from_params(
                 num_noise_objects,
                 language_generator,
                 use_path_instead_of_goal,
+            ),
+            test_instance_groups(num_samples, num_noise_objects, language_generator)
+            if test_instance_groups
+            else [],
+        )
+    elif curriculum_name == "m15-object-noise-experiments":
+        return (
+            training_instance_groups(
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                params=params.namespace_or_empty("situation"),
             ),
             test_instance_groups(num_samples, num_noise_objects, language_generator)
             if test_instance_groups

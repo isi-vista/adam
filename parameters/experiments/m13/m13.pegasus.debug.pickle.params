@@ -1,0 +1,11 @@
+_includes:
+   - "../../root.params"
+   - "m13.pegasus.debug.params"
+
+experiment: 'm13-pegasus-debug-pickle-unpickle-at-checkpoints'
+experiment_group_dir: '%adam_experiment_root%/%experiment%'
+
+workflow_name: 'm13_pegasus_debug_pickle'
+workflow_directory: '%adam_experiment_root%/%experiment%'
+
+debug_learner_pickling: true

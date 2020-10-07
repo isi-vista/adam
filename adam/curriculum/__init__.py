@@ -2,11 +2,13 @@ r"""
 Code to specify what is shown to `LanguageLearner`\ s and in what order.
 """
 from abc import ABC, abstractmethod
+
+from immutablecollections import ImmutableSet
 from typing import Generic, Iterable, Optional, Tuple, List
 
 from attr import attrib, attrs
 from attr.validators import instance_of
-from immutablecollections.converter_utils import _to_tuple
+from immutablecollections.converter_utils import _to_tuple, _to_immutableset
 
 from adam.language import LinguisticDescriptionT
 from adam.language.language_generator import LanguageGenerator
@@ -168,3 +170,37 @@ class GeneratedFromSituationsInstanceGroup(
                         situation, self._chooser
                     ),
                 )
+
+
+@attrs(frozen=True, slots=True)
+class AblatedLanguageSituationsInstanceGroup(
+    InstanceGroup[SituationT, LinguisticDescriptionT, PerceptionT]
+):
+    _name: str = attrib(validator=instance_of(str))
+    """
+    The name of the instance group.
+    """
+    _instances: ImmutableSet[
+        Tuple[
+            Optional[SituationT],
+            LinguisticDescriptionT,
+            PerceptualRepresentation[PerceptionT],
+        ]
+    ] = attrib(converter=_to_immutableset)
+    """
+    Instances already instantiated so we store them as a tuple
+    """
+
+    def name(self) -> str:
+        return self._name
+
+    def instances(
+        self
+    ) -> Iterable[
+        Tuple[
+            Optional[SituationT],
+            LinguisticDescriptionT,
+            PerceptualRepresentation[PerceptionT],
+        ]
+    ]:
+        return self._instances

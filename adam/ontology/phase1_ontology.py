@@ -550,7 +550,7 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
 _BODY_PART = OntologyNode("body-part", [IS_BODY_PART])
 subtype(_BODY_PART, THING)
 _ARM = OntologyNode("arm")
-subtype(_ARM, THING)
+subtype(_ARM, _BODY_PART)
 _TORSO = OntologyNode("torso")
 subtype(_TORSO, _BODY_PART)
 _ANIMAL_LEG = OntologyNode("(animal) leg")
