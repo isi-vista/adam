@@ -609,7 +609,7 @@ class IntegratedTemplateLearner(
         }
 
         for (source_node, target_node, data) in self.semantics_graph.edges.data():
-            edge_label = str(data["slot"]) + str(data["weight"])
+            edge_label = 'slot=' + str(data["slot"]) + ' weight=' + str(data["weight"])
             source_dot_node = semantics_nodes_to_dot_node_ids[source_node]
             target_dot_node = semantics_nodes_to_dot_node_ids[target_node]
             dot_graph.edge(source_dot_node, target_dot_node, edge_label)
