@@ -180,6 +180,11 @@ class IntegratedTemplateLearner(
             if not learning_example.linguistic_description.as_token_sequence() in [
                 desc.as_token_sequence() for desc in descs
             ]:
+                # TODO: Pass plural markers to generics
+                if isinstance(self.plural_learner, SubsetPluralLearnerNew):
+                    self.generics_learner.plural_markers = list(  # pylint: disable=assigning-non-slot
+                        self.plural_learner.potential_plural_markers.keys()
+                    )
                 self.generics_learner.learn_from(current_learner_state)
 
         # Update concept semantics
@@ -332,7 +337,6 @@ class IntegratedTemplateLearner(
                 ]
                 if learner
                 else []
-
             )
             # We currently cannot deal with relations that modify objects embedded in other expressions.
             # See https://github.com/isi-vista/adam/issues/794 .
@@ -618,7 +622,7 @@ class IntegratedTemplateLearner(
         }
 
         for (source_node, target_node, data) in self.semantics_graph.edges.data():
-            edge_label = 'slot=' + str(data["slot"]) + ' weight=' + str(data["weight"])
+            edge_label = "slot=" + str(data["slot"]) + " weight=" + str(data["weight"])
             source_dot_node = semantics_nodes_to_dot_node_ids[source_node]
             target_dot_node = semantics_nodes_to_dot_node_ids[target_node]
             dot_graph.edge(source_dot_node, target_dot_node, edge_label)

@@ -759,7 +759,7 @@ def candidate_object_hypotheses(
 def get_slot_from_semantic_node(
     object_concept: Concept, semantic_node: SemanticNode
 ) -> str:
-    slot = ''
+    slot = ""
     for slot_var, object_node in semantic_node.slot_fillings.items():
         if object_node.concept == object_concept:
             return slot_var.name

@@ -1,8 +1,8 @@
 import logging
 from pathlib import Path
-from typing import AbstractSet, Optional, Tuple, Dict, Set
+from typing import AbstractSet, Optional, Tuple, Dict, Set, List
 
-from attr import attrs, attrib, Factory
+from attr import attrib, Factory, attrs
 
 from adam.learner import SurfaceTemplate
 from adam.learner.alignments import (
@@ -15,8 +15,9 @@ from adam.semantics import (
     Concept,
     ObjectSemanticNode,
     ActionSemanticNode,
-    SyntaxSemanticsVariable,
-    AttributeSemanticNode)
+    AttributeSemanticNode,
+    AttributeConcept,
+)
 
 
 @attrs
@@ -24,6 +25,10 @@ class SimpleGenericsLearner(TemplateLearner):
     learned_representations: Dict[
         Tuple[str, ...], Tuple[Concept, Set[Tuple[Concept, str]]]
     ] = attrib(init=False, default=Factory(dict))
+
+    learned_kinds: Dict[str, AttributeConcept] = attrib(init=False, default=Factory(dict))
+
+    plural_markers: List[str] = attrib(init=False, default=Factory(list))
 
     def enrich_during_learning(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -73,7 +78,7 @@ class SimpleGenericsLearner(TemplateLearner):
         action_nodes = [
             n for n in recognized_semantic_nodes if isinstance(n, ActionSemanticNode)
         ]
-        attibute_nodes = [
+        attribute_nodes = [
             n for n in recognized_semantic_nodes if isinstance(n, AttributeSemanticNode)
         ]
 
@@ -84,22 +89,18 @@ class SimpleGenericsLearner(TemplateLearner):
                 significant_object_concept = node.concept
 
         # Actions: E.g dog s walk
-        # TODO: Attributes: E.g cookies are brown
-        # TODO: Kinds: E.g cookie is a food
+        # Attributes: E.g cookies are brown
+        # Kinds: E.g cookie is a food
         #  Both of these statements are regular generics as the noun is indefinite. We just need to
-        #  check attributes in addition to actions. We might have to hardwire "is" or "are" in order to recognize
-        #  kinds. "Cookie s are brown" should work if we detect both the cookie and brown without caring about "are".
-        #  However, in "cookie is a food" or "cookie s are food s" we don't recognize anything but the cookie, which
-        #  is problematic.
-
+        #  check attributes in addition to actions. We hardwire "are" in order to recognize kinds.
         # If there is a recognized object node that matches the scene, and a generic action OR attribute, learn!
-        for nodes in [action_nodes, attibute_nodes]:
+        for nodes in [action_nodes, attribute_nodes]:
             if significant_object_concept and nodes:
                 # Get the slot of object for each recognized action in the statement
                 other_concepts_and_object_slots = []
-                for node in nodes:
+                for node in nodes:  # type: ignore
                     slot = get_slot_from_semantic_node(significant_object_concept, node)
-                    if slot != '':
+                    if slot != "":
                         other_concepts_and_object_slots.append((node.concept, slot))
                 # Update the representation for learned generics for the sequence
                 if sequence in self.learned_representations:
@@ -110,6 +111,16 @@ class SimpleGenericsLearner(TemplateLearner):
                         significant_object_concept,
                         set(other_concepts_and_object_slots),
                     )
-        # TODO: Kinds
-        # elif significant_object_concept and is_predicate(statement):
-        # Filter out the part of the statement that might correspond to the kinds and use that for semantic encoding.
+            # Kinds: E.g cookie is a food
+            elif significant_object_concept and ("are" in sequence or "shr4" in sequence):
+                # Filter out the kind words and use that for semantic encoding.
+                pred = "shr4" if "shr4" in sequence else "are"
+                kind = sequence[sequence.index(pred) + 1]
+                # Create a concept for the kind
+                if kind not in self.learned_kinds:
+                    kind_concept = AttributeConcept(kind)
+                    self.learned_kinds[kind] = kind_concept
+                self.learned_representations[sequence] = (
+                    significant_object_concept,
+                    {(self.learned_kinds[kind], "is")},
+                )
