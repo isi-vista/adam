@@ -1,7 +1,17 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, Tuple
+from typing import (
+    AbstractSet,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -26,6 +36,7 @@ from adam.perception.perception_graph import (
     DebugCallableType,
     PerceptionGraph,
     PerceptionGraphPatternMatch,
+    PatternMatching,
 )
 from adam.semantics import Concept, SemanticNode
 
@@ -366,13 +377,28 @@ class AbstractTemplateSubsetLearnerNew(
                     concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
                 )
 
+    def _should_return_match_failure(
+        self, concept: Concept, pattern: PerceptionGraphTemplate
+    ) -> bool:
+        """
+        Return whether we should return a match failure when matching fails or just return None.
+
+        This exists for optimization purposes. We usually don't need the match failure info and it
+        may be expensive to compute.
+        """
+        return False
+
     def _match_template(
         self,
         *,
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
-    ) -> Optional[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+    ) -> Union[
+        Tuple[PerceptionGraphPatternMatch, SemanticNode],
+        PatternMatching.MatchFailure,
+        None,
+    ]:
         """
         Try to match our model of the semantics to the perception graph
         """
@@ -388,4 +414,8 @@ class AbstractTemplateSubsetLearnerNew(
             )
             # A template only has to match once; we don't care about finding additional matches.
             return match, semantic_node_for_match
-        return None
+
+        if self._should_return_match_failure(concept, pattern):
+            return matcher.first_match_or_failure_info()
+        else:
+            return None

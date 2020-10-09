@@ -27,10 +27,7 @@ from adam.learner.alignments import (
     PerceptionSemanticAlignment,
 )
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_utils import (
-    pattern_match_to_description,
-    pattern_match_to_semantic_node,
-)
+from adam.learner.learner_utils import pattern_match_to_description
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
     _get_root_object_perception,
@@ -41,7 +38,6 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.learner.fallback_learner import ActionFallbackLearnerProtocol
 from adam.ontology import IN_REGION
 from adam.ontology.phase1_ontology import PART_OF
 from adam.perception import PerceptualRepresentation, ObjectPerception, MatchMode
@@ -54,22 +50,20 @@ from adam.perception.perception_graph import (
     PerceptionGraphPatternMatch,
     HoldsAtTemporalScopePredicate,
     RelationTypeIsPredicate,
-    PatternMatching,
     AnyObjectPerception,
     ObjectSemanticNodePerceptionPredicate,
     PerceptionGraphPattern,
     IsOntologyNodePredicate,
     RegionPredicate,
     REFERENCE_OBJECT_LABEL,
+    PatternMatching,
 )
 from adam.semantics import (
     Concept,
-    ActionConcept,
     ObjectConcept,
     ObjectSemanticNode,
     SemanticNode,
     FunctionalObjectConcept,
-    ActionSemanticNode,
 )
 from attr import attrib, attrs, evolve
 from immutablecollections import immutabledict, immutableset
@@ -296,9 +290,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
 
     _observation_num: int = attrib(init=False, default=0)
     _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
-    _action_fallback_learners: Sequence[ActionFallbackLearnerProtocol] = attrib(
-        kw_only=True, converter=tuple, default=tuple()
-    )
 
     def learn_from(
         self,
@@ -389,7 +380,11 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
-    ) -> Optional[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+    ) -> Union[
+        Tuple[PerceptionGraphPatternMatch, SemanticNode],
+        PatternMatching.MatchFailure,
+        None,
+    ]:
         """
         Try to match our model of the semantics to the perception graph
         """
@@ -417,57 +412,23 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         # and then, if no match has been found, against those we are still learning.
         def match_template(
             *, concept: Concept, pattern: PerceptionGraphTemplate, score: float
-        ) -> bool:
-            # TODO: ignored code from master
-            # rtrn = self._match_template(
-            #     concept=concept,
-            #     pattern=pattern,
-            #     perception_graph=preprocessed_perception_graph,
-            # )
-
-            # try to see if (our model of) its semantics is present in the situation.
-            matcher = pattern.graph_pattern.matcher(
-                preprocessed_perception_graph,
-                match_mode=MatchMode.NON_OBJECT,
-                # debug_callback=self._debug_callback,
+        ):
+            rtrn = self._match_template(
+                concept=concept,
+                pattern=pattern,
+                perception_graph=preprocessed_perception_graph,
             )
-            # TODO: more ignored code from master
+
             # Its possible there is no match for the template in the graph
             # So we handle a None return here
-            # if rtrn:
-            #     (match, semantic_node_for_match) = rtrn
-
-            for match in matcher.matches(use_lookahead_pruning=True):
-                # if there is a match, use that match to describe the situation.
-                semantic_node_for_match = pattern_match_to_semantic_node(
-                    concept=concept, pattern=pattern, match=match
-                )
+            if rtrn:
+                (match, semantic_node_for_match) = rtrn
                 match_to_score.append((semantic_node_for_match, score))
                 # We want to replace object matches with their semantic nodes,
                 # but we don't want to alter the graph while matching it,
                 # so we accumulate these to replace later.
                 if isinstance(concept, ObjectConcept):
                     matched_objects.append((semantic_node_for_match, match))
-                # A template only has to match once; we don't care about finding additional matches.
-                return True
-
-            # If we reach this point, matching has failed. Handle this appropriately.
-            # If we're in an action learner...
-            if self._can_handle_failure(concept=concept, pattern=pattern, score=score):
-                # Figure out where we failed.
-                #
-                # We have to do a cast because the type system doesn't know that we're guaranteed to
-                # fail at this point (having already tried to do the match and having failed).
-                failure = cast(
-                    PatternMatching.MatchFailure, matcher.first_match_or_failure_info()
-                )
-                return self._on_match_failure(
-                    failure=failure,
-                    concept=concept,
-                    pattern=pattern,
-                    score=score,
-                    match_template=match_template,
-                )
 
         # For each template whose semantics we are certain of (=have been added to the lexicon)
         for (concept, graph_pattern, score) in self._primary_templates():
@@ -542,165 +503,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             nodes_after_post_processing,
         )
 
-    def _can_handle_failure(
-        self, *, concept: Concept, pattern: PerceptionGraphTemplate, score: float
-    ) -> bool:
-        """
-        Return whether it's even possible for us to handle the given template matching failure.
-
-        Note that this may return true when we can't actually do anything about it. This is just a
-        heuristic to avoid re-executing the matching code if we know for certain we can't do
-        anything with the failure info to fix things.
-        """
-        return isinstance(concept, ActionConcept)
-
-    def _on_match_failure(
-        self,
-        *,
-        failure: PatternMatching.MatchFailure,
-        concept: Concept,
-        pattern: PerceptionGraphTemplate,
-        score: float,
-        match_template,
-    ) -> bool:
-        """
-        Handle a match failure and return whether we were able to match after executing all
-        appropriate "fallback" logic.
-
-        This should only be called by match_template in _enrich_common().
-        """
-        if isinstance(concept, ActionConcept):
-            graph_pattern_digraph = pattern.graph_pattern.copy_as_digraph()
-
-            # Handle the case where we failed on the internal structure of a slot.
-            slot_pattern_nodes = immutableset(
-                pattern.template_variable_to_pattern_node.values()
-            )
-            unmatched_pattern_nodes = immutableset(
-                [
-                    pattern_node
-                    for pattern_node in graph_pattern_digraph.nodes  # pylint:disable=protected-access
-                    if pattern_node
-                    not in failure.largest_match_pattern_subgraph._graph.nodes  # pylint:disable=protected-access
-                ]
-            )
-
-            # If the slot pattern nodes all matched,
-            # AND we *failed* to match a pattern node that's `partOf` one of the slots...
-            if not slot_pattern_nodes.intersection(unmatched_pattern_nodes):
-                # First, construct an action semantic node corresponding to the potential match.
-                semantics = ActionSemanticNode(
-                    concept=concept,
-                    slot_fillings=immutabledict(
-                        [
-                            (
-                                slot,
-                                failure.pattern_node_to_graph_node_for_largest_match[
-                                    pattern_node
-                                ],
-                            )
-                            for slot, pattern_node in pattern.template_variable_to_pattern_node.items()
-                        ]
-                    ),
-                )
-                for (
-                    slot,
-                    slot_pattern_node,
-                ) in pattern.template_variable_to_pattern_node.items():
-                    # If any slot has an unmatched *direct* subobject...
-                    #
-                    # HACK. Probably this should check for indirect subobjects of the slot, too.
-                    # -JAC
-                    if any(
-                        subobject in unmatched_pattern_nodes
-                        and _is_part_of_predicate(predicate)
-                        for subobject, _, predicate in graph_pattern_digraph.in_edges(
-                            slot_pattern_node, data="predicate"
-                        )
-                        # *and* if any fallback learner says we can ignore this failure...
-                    ) and any(
-                        fallback_learner.ignore_slot_internal_structure_failure(
-                            semantics, slot
-                        )
-                        for fallback_learner in self._action_fallback_learners
-                    ):
-                        logging.debug(
-                            "Fallback learner says that we can ignore internal structure failure "
-                            "for %s (failed slot was %s)",
-                            semantics,
-                            slot,
-                        )
-                        # Excise the internal structure of the failed slot part of the pattern
-                        fixed_pattern = _delete_subobjects_of_object_in_pattern(
-                            pattern.graph_pattern, slot_pattern_node
-                        )
-                        # Only proceed if all of the slots are in the pattern.
-                        #
-                        # This should always be true happen, because for it to be false, one
-                        # of the slots would have to be part of another.
-                        if all(
-                            slot_pattern_node
-                            in fixed_pattern._graph  # pylint:disable=protected-access
-                            for slot_pattern_node in slot_pattern_nodes
-                        ):
-                            # Make a new PerceptionGraphTemplate, excising the failed part
-                            updated_template = PerceptionGraphTemplate(
-                                graph_pattern=fixed_pattern,
-                                template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
-                            )
-                            # We use an if so that we will fall through if this fails.
-                            if match_template(
-                                concept=concept, pattern=updated_template, score=score
-                            ):
-                                return True
-
-            # Handle the case where a root-level non-slot matched object matched but one of its
-            # subobjects failed to match.
-            for object_node in failure.largest_match_pattern_subgraph:
-                if (
-                    # non-slot
-                    object_node not in pattern.pattern_node_to_template_variable
-                    # root-level
-                    and not any(
-                        _is_part_of_predicate(predicate)
-                        for _, _, predicate in graph_pattern_digraph.out_edges(
-                            object_node, data="predicate"
-                        )
-                    )
-                    # one of its subobjects failed to match
-                    and any(
-                        _is_part_of_predicate(predicate)
-                        for subobject, _, predicate in pattern.graph_pattern._graph.in_edges(  # pylint:disable=protected-access
-                            object_node, data="predicate"
-                        )
-                        if subobject not in failure.largest_match_pattern_subgraph
-                    )
-                ):
-                    # Excise the internal structure of the failed slot part of the pattern
-                    fixed_pattern = _delete_subobjects_of_object_in_pattern(
-                        pattern.graph_pattern, object_node
-                    )
-                    # All of the slot pattern nodes must still be around for this to work.
-                    #
-                    # This should never happen, because it would require one of the slots to
-                    # be part of the other.
-                    if all(
-                        slot_pattern_node in fixed_pattern._graph
-                        for slot_pattern_node in slot_pattern_nodes
-                    ):
-                        # Make a new PerceptionGraphTemplate, excising the failed part
-                        updated_template = PerceptionGraphTemplate(
-                            graph_pattern=fixed_pattern,
-                            template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
-                        )
-                        if match_template(
-                            concept=concept, pattern=updated_template, score=score
-                        ):
-                            return True
-                    break
-
-        return False
-
     @abstractmethod
     def _learning_step(
         self,
@@ -756,114 +558,3 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         Get the secondary templates to try during description if none of the primary templates
         matched.
         """
-
-
-def _unwrap_predicate_if_wrapped(predicate) -> bool:
-    return (
-        predicate.wrapped_edge_predicate
-        if isinstance(predicate, HoldsAtTemporalScopePredicate)
-        else predicate
-    )
-
-
-def _is_relation_type_predicate(predicate, relation_type) -> bool:
-    unwrapped_predicate = _unwrap_predicate_if_wrapped(predicate)
-    return (
-        isinstance(unwrapped_predicate, RelationTypeIsPredicate)
-        and unwrapped_predicate.relation_type == relation_type
-    )
-
-
-def _is_part_of_predicate(predicate) -> bool:
-    return _is_relation_type_predicate(predicate, PART_OF)
-
-
-def _delete_subobjects_of_object_in_pattern(
-    pattern: PerceptionGraphPattern,
-    object_: Union[ObjectSemanticNodePerceptionPredicate, AnyObjectPerception],
-) -> PerceptionGraphPattern:
-    """
-    Given a perception graph from after matching,
-    return a new perception graph
-    where we have removed every subobject of the given object node.
-
-    Note that this does not clean up hanging nodes.
-    """
-    digraph = pattern._graph  # pylint:disable=protected-access
-
-    def is_reference_object_predicate(predicate) -> bool:
-        return _is_relation_type_predicate(predicate, REFERENCE_OBJECT_LABEL)
-
-    def is_in_region_predicate(predicate) -> bool:
-        return _is_relation_type_predicate(predicate, IN_REGION)
-
-    def is_only_object_in_region(subobject, region) -> bool:
-        return any(
-            thing_in_region != subobject
-            for thing_in_region, _, predicate in digraph.in_edges(
-                region, data="predicate"
-            )
-            if is_in_region_predicate(predicate)
-        )
-
-    def all_subobjects_of(root_object_node):
-        part_of = []
-        visited = set()
-        to_visit = {root_object_node}
-        while to_visit:
-            current_node = to_visit.pop()
-            visited.add(current_node)
-            for predecessor, _, predicate in digraph.in_edges(
-                current_node, data="predicate"
-            ):
-                if _is_part_of_predicate(predicate) and predecessor not in visited:
-                    part_of.append(predecessor)
-                    to_visit.add(predecessor)
-
-        return part_of
-
-    subobjects = immutableset(all_subobjects_of(object_))
-    subobject_properties = immutableset(
-        [
-            node
-            for subobject in subobjects
-            for node in digraph.successors(subobject)
-            if isinstance(node, IsOntologyNodePredicate)
-        ]
-    )
-    subobject_regions = immutableset(
-        [
-            node
-            for subobject in subobjects
-            for node, _, predicate in digraph.in_edges(subobject, data="predicate")
-            if isinstance(node, RegionPredicate)
-            and is_reference_object_predicate(predicate)
-        ]
-        + [
-            node
-            for subobject in subobjects
-            for _, node, predicate in digraph.out_edges(subobject, data="predicate")
-            if isinstance(node, RegionPredicate)
-            and is_only_object_in_region(subobject, node)
-        ]
-    )
-    prune = subobjects | subobject_properties | subobject_regions
-
-    pattern_digraph_without_subobjects = subgraph(
-        digraph, immutableset([node for node in digraph.nodes if node not in prune])
-    )
-
-    fixed_pattern_as_undirected_graph = pattern_digraph_without_subobjects.to_undirected(
-        as_view=True
-    )
-    try:
-        # There should be exactly one connected component in the resulting graph.
-        only(connected_components(fixed_pattern_as_undirected_graph))
-    except ValueError:
-        raise RuntimeError(
-            "Removing subobjects of object results in a disconnected or empty pattern graph."
-        )
-
-    return PerceptionGraphPattern(
-        pattern_digraph_without_subobjects, dynamic=pattern.dynamic
-    )

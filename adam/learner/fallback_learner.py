@@ -1,8 +1,9 @@
-from typing_extensions import Protocol
+from typing_extensions import Protocol, runtime
 
 from adam.semantics import SyntaxSemanticsVariable, ActionSemanticNode
 
 
+@runtime
 class ActionFallbackLearnerProtocol(Protocol):
     def ignore_slot_internal_structure_failure(
         self,
