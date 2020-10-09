@@ -36,6 +36,7 @@ from adam.ontology.phase1_ontology import (
     MOM,
     DAD,
     BABY,
+    WATERMELON,
 )
 from adam.situation.templates.phase1_templates import property_variable, sampled
 from tests.learner import (
@@ -174,8 +175,12 @@ def test_subset_color_attribute(
 )
 def test_subset_my_attribute_learner_integrated(language_mode, learner):
     inanimate_object = standard_object(
-        "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
+        "object",
+        INANIMATE_OBJECT,
+        required_properties=[PERSON_CAN_HAVE],
+        banned_ontology_types=[WATERMELON],
     )
+    watermelon = standard_object("watermelon", WATERMELON)
 
     language_generator = phase1_language_generator(language_mode)
 
@@ -208,7 +213,7 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
                     banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
                     added_properties=[IS_SPEAKER],
                 ),
-                inanimate_object,
+                watermelon,
                 syntax_hints=[IGNORE_HAS_AS_VERB],
             ),
             block_multiple_of_the_same_type=True,
