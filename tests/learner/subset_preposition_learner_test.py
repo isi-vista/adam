@@ -32,6 +32,7 @@ from adam.ontology.phase1_ontology import (
     TABLE,
     WATER,
     PERSON_CAN_HAVE,
+    WATERMELON,
 )
 from adam.situation.templates.phase1_templates import object_variable, sampled
 from immutablecollections import immutableset
@@ -288,7 +289,7 @@ def test_subset_preposition_has(language_mode, learner):
         "person", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
     )
     cup = standard_object("cup", CUP)
-    book = standard_object("book", BOOK)
+    watermelon = standard_object("watermelon", WATERMELON)
     ball = standard_object("ball", BALL)
 
     language_generator = phase1_language_generator(language_mode)
@@ -312,7 +313,7 @@ def test_subset_preposition_has(language_mode, learner):
             "Has Unit Train",
             language_generator=language_generator,
             situations=sampled(
-                _x_has_y_template(person, book),
+                _x_has_y_template(person, watermelon),
                 chooser=PHASE1_CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 max_to_sample=1,
