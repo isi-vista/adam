@@ -450,6 +450,8 @@ def _make_kind_predicates_curriculum(
     all_instances = []
     # chinese mapping of objects to the colours they usually are
     chinese_kind_dictionary = {
+        "syi1 gwa1": ["shr2 wu4"],
+        "chyu1 chi2 bing3": ["shr2 wu4"],
         "syung2": ["dung4 wu4"],
         "gou3": ["dung4 wu4"],
         "mau1": ["dung4 wu4"],
@@ -467,6 +469,8 @@ def _make_kind_predicates_curriculum(
         "Mom": ["people"],
         "Dad": ["people"],
         "baby": ["people"],
+        "watermelon": ["food"],
+        "cookie": ["food"],
     }
     # we keep track of the subjects so we only generate one predicate for each subject
     all_subjects: List[str] = []
