@@ -387,7 +387,7 @@ class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearn
             previous_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
-            allowed_matches=immutablesetmultidict(
+            match_restrictions=immutablesetmultidict(
                 [
                     (node1, node2)
                     for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
@@ -462,7 +462,7 @@ class SubsetVerbLearnerNew(
             previous_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
-            allowed_matches=immutablesetmultidict(
+            match_restrictions=immutablesetmultidict(
                 [
                     (node1, node2)
                     for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
