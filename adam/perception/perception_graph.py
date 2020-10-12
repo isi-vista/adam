@@ -1726,15 +1726,13 @@ class PatternMatching:
             allowed_matches,
         )
         for allowed_matching in product(
+            *[((node, match),) for node, match in initial_partial_match.items()],
             *[zip(repeat(node), allowed_matches[node]) for node in allowed_matches.keys()]
         ):
             logging.debug(
                 "PatternMatcher code... Allowed matching was %s", allowed_matching
             )
-            allowed_matching = immutabledict(allowed_matching)
-            merged_initial_partial_match: Mapping[Any, Any] = immutabledict(
-                chain(allowed_matching.items(), initial_partial_match.items())
-            )
+            merged_initial_partial_match = immutabledict(allowed_matching)
 
             for (
                 graph_node_to_matching_pattern_node
