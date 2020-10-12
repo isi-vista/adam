@@ -1388,7 +1388,9 @@ class PatternMatching:
             self.debug_callback = debug_callback
 
         match_restrictions = self.match_restrictions
-        logging.debug("PatternMatcher code... Allowed matches were %s", match_restrictions)
+        logging.debug(
+            "PatternMatcher code... Match restrictions were %s", match_restrictions
+        )
 
         for node in initial_partial_match.keys():
             if (
@@ -1396,13 +1398,12 @@ class PatternMatching:
                 and initial_partial_match[node] not in match_restrictions[node]
             ):
                 raise RuntimeError(
-                    "Initial partial match is not compatible with set of allowed matches!"
+                    "Initial partial match is not compatible with set of match restrictions!"
                 )
 
         # Our initial partial match may already match up some of our nodes that have matching
-        # restrictions (as given by allowed_matches). In that case, we don't need to iterate over
-        # the different allowed ways to match up those nodes, so we remove them from our collection
-        # of allowed matches.
+        # restrictions. In that case, we don't need to iterate over the different allowed ways to
+        # match up those nodes, so we remove them from our collection of allowed matches.
         match_restrictions = immutablesetmultidict(
             (node, allowed_match)
             for node, allowed_match in match_restrictions.items()
@@ -1412,17 +1413,18 @@ class PatternMatching:
         # We want to iterate over all possible initial matchings, which means taking the product of
         # the sequences of allowed pairings for each node in allowed_matches.
         logging.debug(
-            "PatternMatcher code... After filtering, allowed matches were %s",
+            "PatternMatcher code... After filtering, match restrictions were %s",
             match_restrictions,
         )
         for allowed_matching in product(
             *[((node, match),) for node, match in initial_partial_match.items()],
             *[zip(repeat(node), match_restrictions[node]) for node in match_restrictions.keys()]
         ):
-            logging.debug(
-                "PatternMatcher code... Allowed matching was %s", allowed_matching
-            )
             merged_initial_partial_match = immutabledict(allowed_matching)
+            logging.debug(
+                "PatternMatcher code... Using merged initial partial matching of  %s",
+                merged_initial_partial_match,
+            )
 
             for (
                 graph_node_to_matching_pattern_node
