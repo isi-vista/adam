@@ -100,7 +100,7 @@ class PerceptionGraphTemplate:
         graph_logger: Optional[GraphLogger] = None,
         ontology: Ontology,
         debug_callback: Optional[Callable[[Any, Any], None]] = None,
-        match_restrictions: ImmutableSetMultiDict[
+        allowed_matches: ImmutableSetMultiDict[
             NodePredicate, NodePredicate
         ] = immutablesetmultidict(),
         match_mode: MatchMode,
@@ -143,7 +143,7 @@ class PerceptionGraphTemplate:
             graph_logger=graph_logger,
             ontology=ontology,
             debug_callback=debug_callback,
-            match_restrictions=match_restrictions,
+            allowed_matches=allowed_matches,
             match_mode=match_mode,
             trim_after_match=trim_after_match,
         )

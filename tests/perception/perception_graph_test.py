@@ -510,9 +510,9 @@ def test_syntactically_infeasible_partial_match():
         )
 
 
-def test_match_restrictions_with_bad_partial_match():
+def test_allowed_matches_with_bad_partial_match():
     """
-    Tests whether PatternMarching's match_restrictions functionality works as intended when a bad
+    Tests whether PatternMarching's allowed_matches functionality works as intended when a bad
     partial match is specified.
     """
     target_object = BOX
@@ -581,7 +581,7 @@ def test_match_restrictions_with_bad_partial_match():
         graph_to_match_against=pattern2,
         matching_pattern_against_pattern=True,
         match_mode=MatchMode.OBJECT,
-        match_restrictions=immutablesetmultidict([(pattern1_box, pattern2_box)]),
+        allowed_matches=immutablesetmultidict([(pattern1_box, pattern2_box)]),
     )
     with pytest.raises(RuntimeError):
         first(

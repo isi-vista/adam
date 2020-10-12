@@ -124,7 +124,7 @@ class SubsetRelationLearnerNew(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
-            match_restrictions=immutablesetmultidict(
+            allowed_matches=immutablesetmultidict(
                 [
                     (node2, node1)
                     for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()

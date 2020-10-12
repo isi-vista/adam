@@ -1014,7 +1014,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         debug_callback: Optional[DebugCallableType] = None,
         graph_logger: Optional["GraphLogger"] = None,
         ontology: Ontology,
-        match_restrictions: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
+        allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
         match_mode: MatchMode,
         trim_after_match: Optional[
             Callable[["PerceptionGraphPattern"], "PerceptionGraphPattern"]
@@ -1032,7 +1032,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             debug_callback=debug_callback,
             matching_pattern_against_pattern=True,
             match_mode=match_mode,
-            match_restrictions=match_restrictions,
+            allowed_matches=allowed_matches,
         )
         attempted_match = matcher.relax_pattern_until_it_matches(
             graph_logger=graph_logger,
@@ -1136,9 +1136,7 @@ class PatternMatching:
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
-    # A mapping from each pattern node to the set of graph nodes it is allowed to match with.
-    # A pattern node not present in this mapping may match with any graph node.
-    match_restrictions: ImmutableSetMultiDict[Any, Any] = attrib(
+    allowed_matches: ImmutableSetMultiDict[Any, Any] = attrib(
         validator=instance_of(ImmutableSetMultiDict),
         kw_only=True,
         default=immutablesetmultidict(),
@@ -1387,65 +1385,42 @@ class PatternMatching:
         if debug_callback:
             self.debug_callback = debug_callback
 
-        match_restrictions = self.match_restrictions
-        logging.debug(
-            "PatternMatcher code... Match restrictions were %s", match_restrictions
-        )
+        allowed_matches = self.allowed_matches
+        logging.debug("PatternMatcher code... Allowed matches were %s", allowed_matches)
 
         for node in initial_partial_match.keys():
             if (
-                node in match_restrictions
-                and initial_partial_match[node] not in match_restrictions[node]
+                node in allowed_matches
+                and initial_partial_match[node] not in allowed_matches[node]
             ):
                 raise RuntimeError(
-                    "Initial partial match is not compatible with set of match restrictions!"
+                    "Initial partial match is not compatible with set of allowed matches!"
                 )
 
         # Our initial partial match may already match up some of our nodes that have matching
-        # restrictions. In that case, we don't need to iterate over the different allowed ways to
-        # match up those nodes, so we remove them from our collection of allowed matches.
-        match_restrictions = immutablesetmultidict(
+        # restrictions (as given by allowed_matches). In that case, we don't need to iterate over
+        # the different allowed ways to match up those nodes, so we remove them from our collection
+        # of allowed matches.
+        allowed_matches = immutablesetmultidict(
             (node, allowed_match)
-            for node, allowed_match in match_restrictions.items()
+            for node, allowed_match in allowed_matches.items()
             if node not in initial_partial_match
         )
 
-        logging.debug(
-            "PatternMatcher code... After filtering, match restrictions were %s",
-            match_restrictions,
-        )
-
         # We want to iterate over all possible initial matchings, which means taking the product of
-        # the sequences of allowed pairings for each node in match_restrictions.
-        #
-        # For each node we make a list of things it could pair with
-        # (those) are the things being product-ed together
-        # and then we pick one possible pairing from each list
-        # (that's the product).
-        possible_initial_matches = (
-            product(
-                # For these nodes there is only one possible pairing:
-                # the one forced by our initial partial match.
-                *[((node, match),) for node, match in initial_partial_match.items()],
-                *[
-                    zip(repeat(node), match_restrictions[node])
-                    for node in match_restrictions.keys()
-                ],
-            )
-            # If initial_partial_match and match_restrictions are both empty,
-            # then the only reasonable initial partial match is the empty one.
-            # Note we have to handle this separately,
-            # since in this case the above product is empty.
-            if initial_partial_match or match_restrictions
-            else ((),)
+        # the sequences of allowed pairings for each node in allowed_matches.
+        logging.debug(
+            "PatternMatcher code... After filtering, allowed matches were %s",
+            allowed_matches,
         )
-
-        for merged_initial_partial_match in possible_initial_matches:
-            merged_initial_partial_match = immutabledict(merged_initial_partial_match)
+        for allowed_matching in product(
+            *[((node, match),) for node, match in initial_partial_match.items()],
+            *[zip(repeat(node), allowed_matches[node]) for node in allowed_matches.keys()]
+        ):
             logging.debug(
-                "PatternMatcher code... Using merged initial partial matching of  %s",
-                merged_initial_partial_match,
+                "PatternMatcher code... Allowed matching was %s", allowed_matching
             )
+            merged_initial_partial_match = immutabledict(allowed_matching)
 
             for (
                 graph_node_to_matching_pattern_node

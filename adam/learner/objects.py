@@ -457,7 +457,7 @@ class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateL
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.OBJECT,
-            match_restrictions=immutablesetmultidict(
+            allowed_matches=immutablesetmultidict(
                 [
                     (node2, node1)
                     for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
@@ -526,7 +526,7 @@ class SubsetObjectLearnerNew(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.OBJECT,
-            match_restrictions=immutablesetmultidict(
+            allowed_matches=immutablesetmultidict(
                 [
                     (node2, node1)
                     for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
