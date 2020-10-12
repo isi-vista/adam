@@ -1161,7 +1161,9 @@ class PatternMatching:
     # Callable object for debugging purposes. We use this to track the number of calls to match and render the graphs.
     debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
 
-    allowed_matches: ImmutableSetMultiDict[Any, Any] = attrib(
+    # A mapping from each pattern node to the set of graph nodes it is allowed to match with.
+    # A pattern node not present in this mapping may match with any graph node.
+    match_restrictions: ImmutableSetMultiDict[Any, Any] = attrib(
         validator=instance_of(ImmutableSetMultiDict),
         kw_only=True,
         default=immutablesetmultidict(),
@@ -1697,13 +1699,13 @@ class PatternMatching:
         if debug_callback:
             self.debug_callback = debug_callback
 
-        allowed_matches = self.allowed_matches
-        logging.debug("PatternMatcher code... Allowed matches were %s", allowed_matches)
+        match_restrictions = self.match_restrictions
+        logging.debug("PatternMatcher code... Allowed matches were %s", match_restrictions)
 
         for node in initial_partial_match.keys():
             if (
-                node in allowed_matches
-                and initial_partial_match[node] not in allowed_matches[node]
+                node in match_restrictions
+                and initial_partial_match[node] not in match_restrictions[node]
             ):
                 raise RuntimeError(
                     "Initial partial match is not compatible with set of allowed matches!"
@@ -1713,9 +1715,9 @@ class PatternMatching:
         # restrictions (as given by allowed_matches). In that case, we don't need to iterate over
         # the different allowed ways to match up those nodes, so we remove them from our collection
         # of allowed matches.
-        allowed_matches = immutablesetmultidict(
+        match_restrictions = immutablesetmultidict(
             (node, allowed_match)
-            for node, allowed_match in allowed_matches.items()
+            for node, allowed_match in match_restrictions.items()
             if node not in initial_partial_match
         )
 
@@ -1723,11 +1725,11 @@ class PatternMatching:
         # the sequences of allowed pairings for each node in allowed_matches.
         logging.debug(
             "PatternMatcher code... After filtering, allowed matches were %s",
-            allowed_matches,
+            match_restrictions,
         )
         for allowed_matching in product(
             *[((node, match),) for node, match in initial_partial_match.items()],
-            *[zip(repeat(node), allowed_matches[node]) for node in allowed_matches.keys()]
+            *[zip(repeat(node), match_restrictions[node]) for node in match_restrictions.keys()]
         ):
             logging.debug(
                 "PatternMatcher code... Allowed matching was %s", allowed_matching
