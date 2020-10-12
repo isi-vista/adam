@@ -10,7 +10,9 @@ from pegasus_wrapper import (
     run_python_on_parameters,
     Locator,
     write_workflow_description,
+    limit_jobs_for_category,
 )
+from pegasus_wrapper.resource_request import SlurmResourceRequest
 
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 import adam.experiment.log_experiment as log_experiment_script
@@ -34,6 +36,10 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
     )
     values_for_accuracy = np.linspace(
         min_language_accuracy, max_language_accuracy, num_language_accuracy_increment
+    )
+
+    limit_jobs_for_category(
+        "pursuit", params.integer("num_pursuit_learners_active", default=8)
     )
 
     for num_objects in range(min_num_objects, max_num_objects + 1):
@@ -74,6 +80,12 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
                         log_experiment_script,
                         experiment_params,
                         depends_on=[],
+                        resource_request=SlurmResourceRequest.from_parameters(
+                            PURSUIT_RESOURCE_REQUEST
+                        )
+                        if learner_type == "pursuit"
+                        else None,
+                        category=learner_type,
                     )
 
     write_workflow_description()
@@ -131,6 +143,15 @@ FIXED_PARAMETERS = {
     },
     "test_observer": {"accuracy_to_txt": True},
 }
+
+PURSUIT_RESOURCE_REQUEST = Parameters.from_mapping(
+    {
+        "exclude_list": f"saga01,saga02,saga03,saga04,saga05,saga06,saga07,saga08,saga09,saga10,saga11,saga12,saga13,"
+        f"saga14,saga15,saga16,saga17,saga18,saga19,saga20,saga21,saga22,saga23,saga24,saga25,saga26,"
+        f"gaia01,gaia02",
+        "partition": "ephemeral",
+    }
+)
 
 if __name__ == "__main__":
     parameters_only_entry_point(object_language_ablation_runner_entry_point)
