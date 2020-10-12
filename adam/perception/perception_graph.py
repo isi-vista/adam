@@ -1014,7 +1014,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         debug_callback: Optional[DebugCallableType] = None,
         graph_logger: Optional["GraphLogger"] = None,
         ontology: Ontology,
-        allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
+        match_restrictions: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
         match_mode: MatchMode,
         trim_after_match: Optional[
             Callable[["PerceptionGraphPattern"], "PerceptionGraphPattern"]
@@ -1032,7 +1032,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             debug_callback=debug_callback,
             matching_pattern_against_pattern=True,
             match_mode=match_mode,
-            allowed_matches=allowed_matches,
+            match_restrictions=match_restrictions,
         )
         attempted_match = matcher.relax_pattern_until_it_matches(
             graph_logger=graph_logger,
@@ -1411,7 +1411,7 @@ class PatternMatching:
         )
 
         # We want to iterate over all possible initial matchings, which means taking the product of
-        # the sequences of allowed pairings for each node in allowed_matches.
+        # the sequences of allowed pairings for each node in match_restrictions.
         logging.debug(
             "PatternMatcher code... After filtering, match restrictions were %s",
             match_restrictions,
