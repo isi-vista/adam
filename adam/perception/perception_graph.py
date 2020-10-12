@@ -1416,14 +1416,14 @@ class PatternMatching:
             "PatternMatcher code... After filtering, match restrictions were %s",
             match_restrictions,
         )
-        for allowed_matching in product(
+        for merged_initial_partial_match_pairings in product(
             *[((node, match),) for node, match in initial_partial_match.items()],
             *[
                 zip(repeat(node), match_restrictions[node])
                 for node in match_restrictions.keys()
             ],
         ):
-            merged_initial_partial_match = immutabledict(allowed_matching)
+            merged_initial_partial_match = immutabledict(merged_initial_partial_match_pairings)
             logging.debug(
                 "PatternMatcher code... Using merged initial partial matching of  %s",
                 merged_initial_partial_match,
