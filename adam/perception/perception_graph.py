@@ -1730,7 +1730,10 @@ class PatternMatching:
         )
         for allowed_matching in product(
             *[((node, match),) for node, match in initial_partial_match.items()],
-            *[zip(repeat(node), match_restrictions[node]) for node in match_restrictions.keys()]
+            *[
+                zip(repeat(node), match_restrictions[node])
+                for node in match_restrictions.keys()
+            ],
         ):
             merged_initial_partial_match = immutabledict(allowed_matching)
             logging.debug(
