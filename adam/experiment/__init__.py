@@ -7,6 +7,7 @@ import os
 from itertools import chain
 
 # for some reason, pylint doesn't recognize the types used in quoted type annotations
+from more_itertools import only
 from pathlib import Path
 from typing import (
     Any,
@@ -24,10 +25,18 @@ from attr.validators import instance_of
 
 # noinspection PyProtectedMember
 from immutablecollections.converter_utils import _to_tuple
+
+from adam.experiment.experiment_utils import restore_report_state, restore_html_state
 from vistautils.preconditions import check_arg
 
 from adam.curriculum import InstanceGroup
-from adam.experiment.observer import DescriptionObserver
+from adam.experiment.observer import (
+    DescriptionObserver,
+    CandidateAccuracyObserver,
+    PrecisionRecallObserver,
+    HTMLLoggerPostObserver,
+    HTMLLoggerPreObserver,
+)
 from adam.language import LinguisticDescriptionT
 from adam.situation import SituationT
 from adam.learner import TopLevelLanguageLearner, LearningExample
@@ -198,6 +207,15 @@ def execute_experiment(
                 logging.warning("Cannot log learner state to %s", str(learner_path))
                 log_learner_state = False
                 logging.warning("Proceeding without logging learner state")
+        observer_path = learner_logging_path / "observer_state"
+        if not os.path.exists(observer_path):
+            try:
+                os.mkdir(observer_path)
+            # if we don't have a directory where we can log our observer state, we simply don't log it
+            except OSError:
+                logging.warning("Cannot log observer state to %s", str(observer_path))
+                log_learner_state = False
+                logging.warning("Proceeding without logging learner state")
 
     logging.info("Beginning experiment %s", experiment.name)
 
@@ -244,8 +262,39 @@ def execute_experiment(
                 )
         # Fall back on default learner
         if learner is None:
-            logging.info("Could not load a saved learner; using factory instead.")
+            logging.warning("Could not load a saved learner; using factory instead.")
             learner = experiment.learner_factory()
+        # If we did load a learner we should restore the state of our observers reports to match the learner
+        else:
+            # WARNING: This DOES NOT verify that the observed instance number of the observers match
+            # That of the learner we loaded. This issue is tracked here: https://github.com/isi-vista/adam/issues/981
+            logging.info("Restoring State of Observers Text Reports")
+            for observer_iter in chain(
+                experiment.pre_example_training_observers,
+                experiment.post_example_training_observers,
+            ):
+                if isinstance(observer_iter, HTMLLoggerPreObserver) or isinstance(
+                    observer_iter, HTMLLoggerPostObserver
+                ):
+                    restore_html_state(
+                        Path(observer_iter.html_logger.outfile_dir), starting_point
+                    )
+                    if (
+                        observer_iter.candidate_accuracy_observer
+                        and observer_iter.candidate_accuracy_observer.accuracy_to_txt
+                    ):
+                        restore_report_state(
+                            Path(observer_iter.candidate_accuracy_observer.txt_path),
+                            starting_point,
+                        )
+                    if (
+                        observer_iter.precision_recall_observer
+                        and observer_iter.precision_recall_observer.make_report
+                    ):
+                        restore_report_state(
+                            Path(observer_iter.precision_recall_observer.txt_path),
+                            starting_point,
+                        )
 
     # if there's no existing learner, instantiate the default
     else:
@@ -310,6 +359,27 @@ def execute_experiment(
                             pickle.dumps(learner, protocol=pickle.HIGHEST_PROTOCOL)
                         )
                         logging.info("Pickled and unpickled.")
+                # Dump the observers to a pickle file
+                if experiment.pre_example_training_observers:
+                    pickle.dump(
+                        experiment.pre_example_training_observers,
+                        open(
+                            observer_path
+                            / f"preobserver_state_at_{str(num_observations)}.pkl",
+                            "wb",
+                        ),
+                        pickle.HIGHEST_PROTOCOL,
+                    )
+                if experiment.post_example_training_observers:
+                    pickle.dump(
+                        experiment.post_example_training_observers,
+                        open(
+                            observer_path
+                            / f"postobserver_state_at_{str(num_observations)}.pkl",
+                            "wb",
+                        ),
+                        pickle.HIGHEST_PROTOCOL,
+                    )
 
             if experiment.pre_example_training_observers:
                 learner_descriptions_before_seeing_example = learner.describe(
@@ -344,7 +414,6 @@ def execute_experiment(
                         linguistic_description,
                         perceptual_representation,
                         learner_descriptions_after_seeing_example,
-                        offset=starting_point,
                     )
                     post_example_observer.report()
     logging.info("Training complete")
@@ -364,6 +433,19 @@ def execute_experiment(
                 open(learner_path / f"final_learner_state.pkl", "wb"),
                 pickle.HIGHEST_PROTOCOL,
             )
+            # Dump the observers to a pickle file
+            if experiment.pre_example_training_observers:
+                pickle.dump(
+                    experiment.pre_example_training_observers,
+                    open(observer_path / f"final_preobserver_state.pkl", "wb"),
+                    pickle.HIGHEST_PROTOCOL,
+                )
+            if experiment.post_example_training_observers:
+                pickle.dump(
+                    experiment.post_example_training_observers,
+                    open(observer_path / f"final_postobserver_state.pkl", "wb"),
+                    pickle.HIGHEST_PROTOCOL,
+                )
 
     logging.info("Warming up for tests")
     for warm_up_instance_group in experiment.warm_up_test_instance_groups:
@@ -397,7 +479,19 @@ def execute_experiment(
                     descriptions_from_learner,
                 )
 
-    for test_observer in experiment.test_observers:
-        test_observer.report()
+            if log_path and num_test_observations % log_hypotheses_every_n_examples == 0:
+                if experiment.test_observers:
+                    pickle.dump(
+                        experiment.test_observers,
+                        open(
+                            observer_path
+                            / f"testobserver_state_at_{str(num_observations)}.pkl",
+                            "wb",
+                        ),
+                        pickle.HIGHEST_PROTOCOL,
+                    )
+
+        for test_observer in experiment.test_observers:
+            test_observer.report()
 
     logging.info("Experiment %s complete", experiment.name)

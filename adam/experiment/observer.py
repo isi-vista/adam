@@ -34,7 +34,6 @@ class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, Perception
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
-        offset: int = 0,
     ) -> None:
         r"""
         Observe a description provided by a `LanguageLearner`.
@@ -78,7 +77,6 @@ class TopChoiceExactMatchObserver(
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
-        offset: int = 0,
     ) -> None:
         self._num_observations += 1
 
@@ -119,7 +117,6 @@ class CandidateAccuracyObserver(
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
-        offset: int = 0,
     ) -> None:
         self._num_predictions += 1
 
@@ -194,7 +191,6 @@ class PrecisionRecallObserver(
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
-        offset: int = 0,
     ) -> None:
         self._num_predictions += 1
 
@@ -306,35 +302,36 @@ class LearningProgressHtmlLogger:  # pragma: no cover
 
         logging_dir = output_dir / experiment_name
         logging_dir.mkdir(parents=True, exist_ok=True)
-        output_html_path = str(logging_dir / "index.html")
+        output_html_path = logging_dir / "index.html"
 
         if include_links_to_images is None:
             include_links_to_images = False
 
         logging.info("Experiment will be logged to %s", output_html_path)
 
-        with open(output_html_path, "w") as outfile:
-            html_dumper = CurriculumToHtmlDumper()
+        html_dumper = CurriculumToHtmlDumper()
+        if not output_html_path.exists():
+            with open(str(output_html_path), "w") as outfile:
 
-            outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
-            outfile.write(f"\n<body>\n\t<h1>{experiment_name}</h1>")
-            # A JavaScript function to allow toggling perception information
-            outfile.write(
-                """
-                <script>
-                function myFunction(id) {
-                  var x = document.getElementById(id);
-                  if (x.style.display === "none") {
-                    x.style.display = "block";
-                  } else {
-                    x.style.display = "none";
-                  }
-                }
-                </script>
-                """
-            )
+                outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
+                outfile.write(f"\n<body>\n\t<h1>{experiment_name}</h1>")
+                # A JavaScript function to allow toggling perception information
+                outfile.write(
+                    """
+                    <script>
+                    function myFunction(id) {
+                      var x = document.getElementById(id);
+                      if (x.style.display === "none") {
+                        x.style.display = "block";
+                      } else {
+                        x.style.display = "none";
+                      }
+                    }
+                    </script>
+                    """
+                )
         return LearningProgressHtmlLogger(
-            outfile_dir=output_html_path,
+            outfile_dir=str(output_html_path),
             html_dumper=html_dumper,
             include_links_to_images=include_links_to_images,
             num_pretty_descriptions=num_pretty_descriptions,
@@ -648,7 +645,6 @@ class HTMLLoggerPreObserver(  # pragma: no cover
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
-        offset: int = 0,
     ) -> None:
         if self.candidate_accuracy_observer:
             self.candidate_accuracy_observer.observe(
@@ -706,7 +702,6 @@ class HTMLLoggerPostObserver(  # pragma: no cover
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_descriptions: Mapping[LinguisticDescription, float],
-        offset: int = 0,
     ) -> None:
         if self.candidate_accuracy_observer:
             self.candidate_accuracy_observer.observe(
@@ -724,7 +719,7 @@ class HTMLLoggerPostObserver(  # pragma: no cover
             )
         self.html_logger.post_observer_log(
             observer_name=self.name,
-            instance_number=self.counter + offset,
+            instance_number=self.counter,
             situation=situation,
             true_description=true_description,
             perceptual_representation=perceptual_representation,

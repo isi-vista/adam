@@ -2,6 +2,9 @@
 
 Our experiments can be influenced by a number of parameters. This guide is intended to list all potential parameters, their impacts on the relevant portion of the curriculum, and any conflicting settings.
 
+## State Restoration
+As described below, our experiments have a parameter `resume_from_latest_logged_state` which, if true, does attempt to restart an experiment from the latest logged state. However, currently the experiment may restore the observers and the learners to different states IF the 'latest state' doesn't match between these logged folders.
+
 ## Generic Parameter Control
 These parameters are independent of any specific experiment.
 ### Curriculum Params

@@ -1,5 +1,9 @@
 import logging
-from typing import Callable, Optional, Mapping, Iterable, Tuple
+import pickle
+
+from pathlib import Path
+
+from typing import Callable, Optional, Mapping, Iterable, Tuple, cast
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_size_curriculum,
@@ -7,6 +11,7 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_subtle_verb_distinctions_curriculum,
 )
 import random
+
 from adam.learner.objects import PursuitObjectLearnerNew, ProposeButVerifyObjectLearner
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
@@ -27,6 +32,7 @@ from adam.experiment.experiment_utils import (
     build_pursuit_curriculum,
     build_functionally_defined_objects_train_curriculum,
     build_object_learner_experiment_curriculum_train,
+    observer_states_by_most_recent,
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
@@ -106,6 +112,152 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
     experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
 
+    resume_from_last_logged_state = params.boolean(
+        "resume_from_latest_logged_state", default=False
+    )
+
+    # Check if we have explicit observer states to load
+    pre_observer_state = params.optional_existing_file("pre_observer_state_path")
+    post_observer_state = params.optional_existing_file("post_observer_state_path")
+    test_observer_state = params.optional_existing_file("test_observer_state_path")
+
+    test_observer = []  # type: ignore
+    pre_observer = []  # type: ignore
+    post_observer = []  # type: ignore
+
+    if resume_from_last_logged_state and (
+        pre_observer_state or post_observer_state or test_observer_state
+    ):
+        raise RuntimeError(
+            f"Can not resume from last logged state and provide explicit observer state paths"
+        )
+
+    if resume_from_last_logged_state:
+        # Try to Load Pre-Observers
+        for _, pre_observer_state_path in observer_states_by_most_recent(
+            cast(Path, experiment_group_dir) / "observer_state", "preobserver_state_at_"
+        ):
+            try:
+                with pre_observer_state_path.open("rb") as f:
+                    pre_observer = pickle.load(f)
+            except OSError:
+                logging.warning(
+                    "Unable to open preobserver state at %s; skipping.",
+                    str(pre_observer_state_path),
+                )
+            except pickle.UnpicklingError:
+                logging.warning(
+                    "Couldn't unpickle preobserver state at %s; skipping.",
+                    str(pre_observer_state_path),
+                )
+        # Try to Load Post-Observers
+        for _, post_observer_state_path in observer_states_by_most_recent(
+            cast(Path, experiment_group_dir) / "observer_state", "postobserver_state_at_"
+        ):
+            try:
+                with post_observer_state_path.open("rb") as f:
+                    post_observer = pickle.load(f)
+            except OSError:
+                logging.warning(
+                    "Unable to open postobserver state at %s; skipping.",
+                    str(post_observer_state_path),
+                )
+            except pickle.UnpicklingError:
+                logging.warning(
+                    "Couldn't unpickle postobserver state at %s; skipping.",
+                    str(post_observer_state_path),
+                )
+        # Try to Load Test-Observers
+        for _, test_observer_state_path in observer_states_by_most_recent(
+            cast(Path, experiment_group_dir) / "observer_state", "testobserver_state_at_"
+        ):
+            try:
+                with test_observer_state_path.open("rb") as f:
+                    test_observer = pickle.load(f)
+            except OSError:
+                logging.warning(
+                    "Unable to open testobserver state at %s; skipping.",
+                    str(test_observer_state_path),
+                )
+            except pickle.UnpicklingError:
+                logging.warning(
+                    "Couldn't unpickle testobserver state at %s; skipping.",
+                    str(test_observer_state_path),
+                )
+
+        if not pre_observer and not post_observer and not test_observer:
+            logging.warning("Reverting to default observers.")
+            pre_observer = [
+                logger.pre_observer(  # type: ignore
+                    params=params.namespace_or_empty("pre_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ]
+
+            post_observer = [
+                logger.post_observer(  # type: ignore
+                    params=params.namespace_or_empty("post_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ]
+
+            test_observer = [
+                logger.test_observer(  # type: ignore
+                    params=params.namespace_or_empty("test_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ]
+
+    elif pre_observer_state or post_observer_state or test_observer_state:
+        if pre_observer_state:
+            logging.info("Loading Pre-Observer from %s", str(pre_observer_state))
+            try:
+                pre_observer = [pickle.load(open(pre_observer_state, "rb"))]
+            except OSError:
+                logging.warning(
+                    "Unable to load Pre-Observer at %s, reverting to no pre-observer",
+                    pre_observer_state,
+                )
+        if post_observer_state:
+            logging.info("Loading Post-Observer from %s", str(post_observer_state))
+            try:
+                post_observer = [pickle.load(open(post_observer_state, "rb"))]
+            except OSError:
+                logging.warning(
+                    "Unable to load Post-Observer at %s, reverting to no post-observer",
+                    post_observer_state,
+                )
+        if test_observer_state:
+            logging.info("Loading Pre-Observer from %s", str(test_observer_state))
+            try:
+                test_observer = [pickle.load(open(test_observer_state, "rb"))]
+            except OSError:
+                logging.warning(
+                    "Unable to load Test-Observer at %s, reverting to no Test-observer",
+                    test_observer_state,
+                )
+    else:
+        pre_observer = [
+            logger.pre_observer(  # type: ignore
+                params=params.namespace_or_empty("pre_observer"),
+                experiment_group_dir=experiment_group_dir,
+            )
+        ]
+
+        post_observer = [
+            logger.post_observer(  # type: ignore
+                params=params.namespace_or_empty("post_observer"),
+                experiment_group_dir=experiment_group_dir,
+            )
+        ]
+
+        test_observer = [
+            logger.test_observer(  # type: ignore
+                params=params.namespace_or_empty("test_observer"),
+                experiment_group_dir=experiment_group_dir,
+            )
+        ]
+
     execute_experiment(
         Experiment(
             name=experiment_name,
@@ -113,25 +265,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
             learner_factory=learner_factory_from_params(
                 params, graph_logger, language_mode
             ),
-            pre_example_training_observers=[
-                logger.pre_observer(  # type: ignore
-                    params=params.namespace_or_empty("pre_observer"),
-                    experiment_group_dir=experiment_group_dir,
-                )
-            ],
-            post_example_training_observers=[
-                logger.post_observer(  # type: ignore
-                    params=params.namespace_or_empty("post_observer"),
-                    experiment_group_dir=experiment_group_dir,
-                )
-            ],
+            pre_example_training_observers=pre_observer,
+            post_example_training_observers=post_observer,
             test_instance_groups=test_instance_groups,
-            test_observers=[
-                logger.test_observer(  # type: ignore
-                    params=params.namespace_or_empty("test_observer"),
-                    experiment_group_dir=experiment_group_dir,
-                )
-            ],
+            test_observers=test_observer,
             sequence_chooser=RandomChooser.for_seed(0),
         ),
         log_path=params.optional_creatable_directory("hypothesis_log_dir"),
@@ -143,9 +280,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
         starting_point=params.integer("starting_point", default=0),
         point_to_log=params.integer("point_to_log", default=0),
         load_learner_state=params.optional_existing_file("learner_state_path"),
-        resume_from_latest_logged_state=params.boolean(
-            "resume_from_latest_logged_state", default=False
-        ),
+        resume_from_latest_logged_state=resume_from_last_logged_state,
         debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
     )
 
