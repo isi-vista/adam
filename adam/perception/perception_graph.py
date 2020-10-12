@@ -1722,20 +1722,38 @@ class PatternMatching:
             if node not in initial_partial_match
         )
 
-        # We want to iterate over all possible initial matchings, which means taking the product of
-        # the sequences of allowed pairings for each node in match_restrictions.
         logging.debug(
             "PatternMatcher code... After filtering, match restrictions were %s",
             match_restrictions,
         )
-        for merged_initial_partial_match_pairings in product(
-            *[((node, match),) for node, match in initial_partial_match.items()],
-            *[
-                zip(repeat(node), match_restrictions[node])
-                for node in match_restrictions.keys()
-            ],
-        ):
-            merged_initial_partial_match = immutabledict(merged_initial_partial_match_pairings)
+
+        # We want to iterate over all possible initial matchings, which means taking the product of
+        # the sequences of allowed pairings for each node in match_restrictions.
+        #
+        # For each node we make a list of things it could pair with
+        # (those) are the things being product-ed together
+        # and then we pick one possible pairing from each list
+        # (that's the product).
+        possible_initial_matches = (
+            product(
+                # For these nodes there is only one possible pairing:
+                # the one forced by our initial partial match.
+                *[((node, match),) for node, match in initial_partial_match.items()],
+                *[
+                    zip(repeat(node), match_restrictions[node])
+                    for node in match_restrictions.keys()
+                ],
+            )
+            # If initial_partial_match and match_restrictions are both empty,
+            # then the only reasonable initial partial match is the empty one.
+            # Note we have to handle this separately,
+            # since in this case the above product is empty.
+            if initial_partial_match or match_restrictions
+            else ((),)
+        )
+
+        for merged_initial_partial_match in possible_initial_matches:
+            merged_initial_partial_match = immutabledict(merged_initial_partial_match)
             logging.debug(
                 "PatternMatcher code... Using merged initial partial matching of  %s",
                 merged_initial_partial_match,
