@@ -551,7 +551,8 @@ def test_illegal_partial_match():
     pattern_digraph.add_node(object_pattern_node)
     pattern = PerceptionGraphPattern(graph=pattern_digraph, dynamic=False)
 
-    # Illegally attempt to align
+    # Match using illegal initial partial match
+    # that aligns the object node to the bird root node
     first_matcher = pattern.matcher(
         perception, match_mode=MatchMode.OBJECT
     )
