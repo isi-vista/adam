@@ -24,14 +24,12 @@ from adam.learner.relations import SubsetRelationLearnerNew
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_ontology import (
     BALL,
-    BOOK,
     CUP,
     GAILA_PHASE_1_ONTOLOGY,
     MOM,
     PERSON,
     TABLE,
     WATER,
-    PERSON_CAN_HAVE,
     WATERMELON,
 )
 from adam.situation.templates.phase1_templates import object_variable, sampled

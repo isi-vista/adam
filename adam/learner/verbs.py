@@ -2,7 +2,7 @@ import itertools
 import logging
 from abc import ABC
 
-from typing import AbstractSet, Mapping, Union, Iterable, Optional, Tuple, cast
+from typing import AbstractSet, Mapping, Union, Iterable, Optional, Tuple, cast, Any
 
 from more_itertools import only
 from networkx import connected_components
@@ -62,7 +62,12 @@ from adam.semantics import (
     ActionSemanticNode,
 )
 from attr import attrib, attrs
-from immutablecollections import immutabledict, immutableset, immutablesetmultidict
+from immutablecollections import (
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+    ImmutableSet,
+)
 from attr.validators import instance_of, deep_iterable
 from adam.learner.learner_utils import (
     candidate_templates,
@@ -75,6 +80,13 @@ from adam.learner.learner_utils import (
 from adam.utils.networkx_utils import subgraph
 
 _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH = 3
+
+
+# Workaround for https://github.com/python/mypy/issues/8389
+def _action_fallback_learner_tuple(
+    fallback_learners: Iterable[ActionFallbackLearnerProtocol]
+) -> Tuple[ActionFallbackLearnerProtocol, ...]:
+    return tuple(fallback_learners)
 
 
 @attrs
@@ -181,11 +193,11 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
         unmatched_pattern_nodes = immutableset(
             [
                 pattern_node
-                for pattern_node in graph_pattern_digraph.nodes  # pylint:disable=protected-access
+                for pattern_node in graph_pattern_digraph.nodes
                 if pattern_node
                 not in failure.largest_match_pattern_subgraph._graph.nodes  # pylint:disable=protected-access
             ]
-        )
+        )  # pylint:disable=protected-access
 
         # If the slot pattern nodes all matched,
         # AND we *failed* to match a pattern node that's `partOf` one of the slots...
@@ -251,11 +263,13 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                             template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
                         )
                         # We use an if so that we will fall through if this fails.
-                        return self._match_template(
+                        match_attempt = self._match_template(
                             concept=concept,
                             pattern=updated_template,
                             perception_graph=perception_graph,
                         )
+                        if isinstance(match_attempt, tuple):
+                            return match_attempt
 
         # Handle the case where a root-level non-slot matched object matched but one of its
         # subobjects failed to match.
@@ -296,12 +310,15 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                         graph_pattern=fixed_pattern,
                         template_variable_to_pattern_node=pattern.template_variable_to_pattern_node,
                     )
-                    return self._match_template(
+                    match_attempt = self._match_template(
                         concept=concept,
                         pattern=updated_template,
                         perception_graph=perception_graph,
                     )
+                    if isinstance(match_attempt, tuple):
+                        return match_attempt
                 break
+        return None
 
 
 @attrs
@@ -406,9 +423,10 @@ class SubsetVerbLearnerNew(
         kw_only=True,
         default=tuple(),
         validator=deep_iterable(
-            member_validator=instance_of(ActionFallbackLearnerProtocol)
+            member_validator=instance_of(ActionFallbackLearnerProtocol),
+            iterable_validator=instance_of(tuple),
         ),
-        converter=tuple,
+        converter=_action_fallback_learner_tuple,
     )
 
     def _can_learn_from(
@@ -568,8 +586,8 @@ def _delete_subobjects_of_object_in_pattern(
 
         return part_of
 
-    subobjects = immutableset(all_subobjects_of(object_))
-    subobject_properties = immutableset(
+    subobjects: ImmutableSet[Any] = immutableset(all_subobjects_of(object_))
+    subobject_properties: ImmutableSet[Any] = immutableset(
         [
             node
             for subobject in subobjects
@@ -577,7 +595,7 @@ def _delete_subobjects_of_object_in_pattern(
             if isinstance(node, IsOntologyNodePredicate)
         ]
     )
-    subobject_regions = immutableset(
+    subobject_regions: ImmutableSet[Any] = immutableset(
         [
             node
             for subobject in subobjects

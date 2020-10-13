@@ -3,22 +3,9 @@ import logging
 from attr.validators import instance_of
 from abc import ABC, abstractmethod
 
-from typing import (
-    AbstractSet,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-    Set,
-)
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
 from more_itertools import one
-from networkx import connected_components
-from vistautils.iter_utils import only
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import ComposableLearner, LearningExample, TopLevelLanguageLearner
@@ -38,8 +25,6 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.ontology import IN_REGION
-from adam.ontology.phase1_ontology import PART_OF
 from adam.perception import PerceptualRepresentation, ObjectPerception, MatchMode
 from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
@@ -48,14 +33,6 @@ from adam.perception.developmental_primitive_perception import (
 from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPatternMatch,
-    HoldsAtTemporalScopePredicate,
-    RelationTypeIsPredicate,
-    AnyObjectPerception,
-    ObjectSemanticNodePerceptionPredicate,
-    PerceptionGraphPattern,
-    IsOntologyNodePredicate,
-    RegionPredicate,
-    REFERENCE_OBJECT_LABEL,
     PatternMatching,
 )
 from adam.semantics import (
@@ -68,8 +45,6 @@ from adam.semantics import (
 from attr import attrib, attrs, evolve
 from immutablecollections import immutabledict, immutableset
 from vistautils.preconditions import check_state
-
-from adam.utils.networkx_utils import subgraph
 
 
 @attrs
@@ -420,8 +395,8 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             )
 
             # Its possible there is no match for the template in the graph
-            # So we handle a None return here
-            if rtrn:
+            # So we handle a None or a "match failure" return here
+            if isinstance(rtrn, tuple):
                 (match, semantic_node_for_match) = rtrn
                 match_to_score.append((semantic_node_for_match, score))
                 # We want to replace object matches with their semantic nodes,

@@ -11,6 +11,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 from attr import Factory, attrib, attrs
@@ -378,7 +379,9 @@ class AbstractTemplateSubsetLearnerNew(
                 )
 
     def _should_return_match_failure(
-        self, concept: Concept, pattern: PerceptionGraphTemplate
+        self,
+        concept: Concept,  # pylint:disable=unused-argument
+        pattern: PerceptionGraphTemplate,  # pylint:disable=unused-argument
     ) -> bool:
         """
         Return whether we should return a match failure when matching fails or just return None.
@@ -416,6 +419,8 @@ class AbstractTemplateSubsetLearnerNew(
             return match, semantic_node_for_match
 
         if self._should_return_match_failure(concept, pattern):
-            return matcher.first_match_or_failure_info()
+            return cast(
+                PatternMatching.MatchFailure, matcher.first_match_or_failure_info()
+            )
         else:
             return None

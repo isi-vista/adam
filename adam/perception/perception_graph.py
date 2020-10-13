@@ -24,7 +24,6 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    Collection,
     Dict,
     Iterable,
     List,
@@ -49,7 +48,6 @@ from networkx import (
     is_isomorphic,
     set_node_attributes,
     selfloop_edges,
-    set_edge_attributes,
 )
 from typing_extensions import Protocol
 
@@ -1734,7 +1732,7 @@ class PatternMatching:
         # (those) are the things being product-ed together
         # and then we pick one possible pairing from each list
         # (that's the product).
-        possible_initial_matches = (
+        possible_initial_matches: Iterable[Iterable[Tuple[Any, Any]]] = (
             product(
                 # For these nodes there is only one possible pairing:
                 # the one forced by our initial partial match.
@@ -1749,11 +1747,13 @@ class PatternMatching:
             # Note we have to handle this separately,
             # since in this case the above product is empty.
             if initial_partial_match or match_restrictions
-            else ((),)
+            else cast(Iterable[Iterable[Tuple[Any, Any]]], ((),))
         )
 
-        for merged_initial_partial_match in possible_initial_matches:
-            merged_initial_partial_match = immutabledict(merged_initial_partial_match)
+        for possible_initial_partial_match in possible_initial_matches:
+            merged_initial_partial_match: Mapping[Any, Any] = immutabledict(
+                possible_initial_partial_match
+            )
             logging.debug(
                 "PatternMatcher code... Using merged initial partial matching of  %s",
                 merged_initial_partial_match,
