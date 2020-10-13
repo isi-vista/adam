@@ -560,7 +560,7 @@ def test_illegal_partial_match():
         object_pattern_node: bird_root
     })
     assert isinstance(failure, PatternMatching.MatchFailure)
-    assert failure.last_failed_pattern_node is not None
+    assert failure.last_failed_pattern_node == object_pattern_node
 
 
 def test_match_restrictions_with_bad_partial_match():
