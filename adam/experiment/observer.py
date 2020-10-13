@@ -311,7 +311,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
 
         html_dumper = CurriculumToHtmlDumper()
         if not output_html_path.exists():
-            with open(str(output_html_path), "w") as outfile:
+            with output_html_path.open("w") as outfile:
 
                 outfile.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
                 outfile.write(f"\n<body>\n\t<h1>{experiment_name}</h1>")
