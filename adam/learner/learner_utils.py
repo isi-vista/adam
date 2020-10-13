@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import (
     Mapping,
     Tuple,
@@ -12,6 +13,7 @@ from typing import (
     Callable,
     Sequence,
 )
+import graphviz
 import itertools
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
 from attr.validators import instance_of, optional
@@ -19,7 +21,7 @@ from networkx import (
     number_weakly_connected_components,
     DiGraph,
     weakly_connected_components,
-)
+    Graph)
 from attr import attrib, attrs
 from enum import Enum, auto
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
@@ -54,7 +56,7 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     DebugCallableType,
     GraphLogger,
-)
+    Incrementer)
 from adam.semantics import (
     Concept,
     ObjectSemanticNode,
@@ -764,3 +766,41 @@ def get_slot_from_semantic_node(
         if object_node.concept == object_concept:
             return slot_var.name
     return slot
+
+
+def render_semantics_to_file(  # pragma: no cover
+    graph: Graph, graph_name: str, output_file: Path
+) -> None:
+
+    dot_graph = graphviz.Graph(graph_name)
+    dot_graph.attr(rankdir="LR")
+    # combine parallel edges to cut down on clutter
+    dot_graph.attr(concentrate="true")
+
+    next_node_id = Incrementer()
+
+    # add all nodes to the graph
+    semantics_nodes_to_dot_node_ids = {
+        semantics_node: to_dot_node(dot_graph, semantics_node, next_node_id)
+        for semantics_node in graph.nodes
+    }
+
+    for (source_node, target_node, data) in graph.edges.data():
+        edge_label = "slot=" + str(data["slot"]) + " weight=" + str(data["weight"])
+        source_dot_node = semantics_nodes_to_dot_node_ids[source_node]
+        target_dot_node = semantics_nodes_to_dot_node_ids[target_node]
+        dot_graph.edge(source_dot_node, target_dot_node, edge_label)
+
+    dot_graph.render(str(output_file))
+
+
+def to_dot_node(
+    dot_graph: graphviz.Graph,
+    semantics_node: Concept,
+    next_node_id: Incrementer,
+) -> str:
+    attributes = {"label": semantics_node.debug_string, "style": "solid"}
+    node_id = f"node-{next_node_id.value()}"
+    next_node_id.increment()
+    dot_graph.node(node_id, **attributes)
+    return node_id
