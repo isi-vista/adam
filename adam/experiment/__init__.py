@@ -331,7 +331,9 @@ def execute_experiment(
             num_observations += 1
 
             # don't learn from anything until we've reached the starting of the the learning
-            if num_observations < starting_point:
+            # This is <= because we actually want to restart observations from one *past* the starting point
+            # as we've already observed that instanced.
+            if num_observations <= starting_point:
                 continue
 
             # log the start of the learning
