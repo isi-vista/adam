@@ -510,6 +510,58 @@ def test_syntactically_infeasible_partial_match():
         )
 
 
+def test_illegal_partial_match():
+    """
+    Tests whether the matching code fails properly when an illegal initial partial match is passed
+    """
+
+    # We use a situation to generate the perceptual representation
+    # for a bird with color.
+    # We use a bird because we need an object with internal structure,
+    # since matches are only ever illegal if they align a pattern node to a graph node
+    # without covering the subobjects of the graph node.
+    target_object = BIRD
+    train_obj_object = object_variable("obj-with-color", target_object)
+    obj_template = Phase1SituationTemplate(
+        "colored-obj-object", salient_object_variables=[train_obj_object]
+    )
+    template = all_possible(
+        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+    )
+
+    train_curriculum = phase1_instances("all obj situations", situations=template)
+
+    perceptual_representation = only(train_curriculum.instances())[2]
+
+    # Original perception graph
+    perception = graph_without_learner(
+        PerceptionGraph.from_frame(perceptual_representation.frames[0])
+    )
+
+    # Get bird root node
+    perception_digraph = perception.copy_as_digraph()
+    bird_root = first(
+        node for node in perception_digraph.nodes
+        if isinstance(node, ObjectPerception) and node.debug_handle == "**bird_0"
+    )
+
+    # Create a simple perception graph pattern
+    pattern_digraph = DiGraph()
+    object_pattern_node = AnyObjectPerception(debug_handle="ball")
+    pattern_digraph.add_node(object_pattern_node)
+    pattern = PerceptionGraphPattern(graph=pattern_digraph, dynamic=False)
+
+    # Illegally attempt to align
+    first_matcher = pattern.matcher(
+        perception, match_mode=MatchMode.OBJECT
+    )
+    failure = first_matcher.first_match_or_failure_info(initial_partial_match={
+        object_pattern_node: bird_root
+    })
+    assert isinstance(failure, PatternMatching.MatchFailure)
+    assert failure.last_failed_pattern_node is not None
+
+
 def test_match_restrictions_with_bad_partial_match():
     """
     Tests whether PatternMarching's match_restrictions functionality works as intended when a bad
