@@ -68,6 +68,7 @@ from immutablecollections import (
     immutablesetmultidict,
     ImmutableSet,
 )
+from immutablecollections.converter_utils import _to_tuple
 from attr.validators import instance_of, deep_iterable
 from adam.learner.learner_utils import (
     candidate_templates,
@@ -80,13 +81,6 @@ from adam.learner.learner_utils import (
 from adam.utils.networkx_utils import subgraph
 
 _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH = 3
-
-
-# Workaround for https://github.com/python/mypy/issues/8389
-def _action_fallback_learner_tuple(
-    fallback_learners: Iterable[ActionFallbackLearnerProtocol]
-) -> Tuple[ActionFallbackLearnerProtocol, ...]:
-    return tuple(fallback_learners)
 
 
 @attrs
@@ -426,7 +420,8 @@ class SubsetVerbLearnerNew(
             member_validator=instance_of(ActionFallbackLearnerProtocol),
             iterable_validator=instance_of(tuple),
         ),
-        converter=_action_fallback_learner_tuple,
+        # We use _to_tuple as a workaround for https://github.com/python/mypy/issues/8389
+        converter=_to_tuple,
     )
 
     def _can_learn_from(
