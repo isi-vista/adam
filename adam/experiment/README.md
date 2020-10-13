@@ -34,6 +34,7 @@ These parameters are independent of any specific experiment.
 - starting_point: Integer (Optional) - Useful when debugging to start training from a specific situation number in the curriculum. Can not be used if `resume_from_latest_logged_state` is true.
 - point_to_log: Integer (Optional) - Useful debugging tool causes a specific log of hypotheses, learner, & observer states (future functionality for Observers)
 - learner_state_path: Path (Optional) - Provide a path to a pickled learner file to load to continue an experiment with. Used commonly in combination with `starting_point`. Can not be used if `resume_from_latest_logged_state` is true.
+- observers_state_path: Path (Optional) - Provide a path to a pickled observers state to load to continue an experiment with observation. Used commonly in combinationed with `starting_point`. Can not be used if `resume_from_latest_logged_state` is true.
 - resume_from_latest_logged_state: Boolean (Optional) - Restart an experiment from the most recent logged state that can be located in the directory structure
 - debug_learner_pickling: Boolean (Optional) - If true, log additional debug information for the learner when pickling
 

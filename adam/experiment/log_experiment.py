@@ -117,72 +117,37 @@ def log_experiment_entry_point(params: Parameters) -> None:
     )
 
     # Check if we have explicit observer states to load
-    pre_observer_state = params.optional_existing_file("pre_observer_state_path")
-    post_observer_state = params.optional_existing_file("post_observer_state_path")
-    test_observer_state = params.optional_existing_file("test_observer_state_path")
+    observers_state = params.optional_existing_file("observers_state_path")
 
     test_observer = []  # type: ignore
     pre_observer = []  # type: ignore
     post_observer = []  # type: ignore
 
-    if resume_from_last_logged_state and (
-        pre_observer_state or post_observer_state or test_observer_state
-    ):
+    if resume_from_last_logged_state and observers_state:
         raise RuntimeError(
             f"Can not resume from last logged state and provide explicit observer state paths"
         )
 
     if resume_from_last_logged_state:
-        # Try to Load Pre-Observers
-        for _, pre_observer_state_path in observer_states_by_most_recent(
-            cast(Path, experiment_group_dir) / "observer_state", "preobserver_state_at_"
+        # Try to Load Observers
+        for _, observers_state_path in observer_states_by_most_recent(
+            cast(Path, experiment_group_dir) / "observer_state", "observers_state_at_"
         ):
             try:
-                with pre_observer_state_path.open("rb") as f:
-                    pre_observer = pickle.load(f)
+                with observers_state_path.open("rb") as f:
+                    observers_holder = pickle.load(f)
+                    pre_observer = observers_holder.pre_observers
+                    post_observer = observers_holder.post_observers
+                    test_observer = observers_holder.test_observers
             except OSError:
                 logging.warning(
                     "Unable to open preobserver state at %s; skipping.",
-                    str(pre_observer_state_path),
+                    str(observers_state_path),
                 )
             except pickle.UnpicklingError:
                 logging.warning(
                     "Couldn't unpickle preobserver state at %s; skipping.",
-                    str(pre_observer_state_path),
-                )
-        # Try to Load Post-Observers
-        for _, post_observer_state_path in observer_states_by_most_recent(
-            cast(Path, experiment_group_dir) / "observer_state", "postobserver_state_at_"
-        ):
-            try:
-                with post_observer_state_path.open("rb") as f:
-                    post_observer = pickle.load(f)
-            except OSError:
-                logging.warning(
-                    "Unable to open postobserver state at %s; skipping.",
-                    str(post_observer_state_path),
-                )
-            except pickle.UnpicklingError:
-                logging.warning(
-                    "Couldn't unpickle postobserver state at %s; skipping.",
-                    str(post_observer_state_path),
-                )
-        # Try to Load Test-Observers
-        for _, test_observer_state_path in observer_states_by_most_recent(
-            cast(Path, experiment_group_dir) / "observer_state", "testobserver_state_at_"
-        ):
-            try:
-                with test_observer_state_path.open("rb") as f:
-                    test_observer = pickle.load(f)
-            except OSError:
-                logging.warning(
-                    "Unable to open testobserver state at %s; skipping.",
-                    str(test_observer_state_path),
-                )
-            except pickle.UnpicklingError:
-                logging.warning(
-                    "Couldn't unpickle testobserver state at %s; skipping.",
-                    str(test_observer_state_path),
+                    str(observers_state_path),
                 )
 
         if not pre_observer and not post_observer and not test_observer:
@@ -208,34 +173,22 @@ def log_experiment_entry_point(params: Parameters) -> None:
                 )
             ]
 
-    elif pre_observer_state or post_observer_state or test_observer_state:
-        if pre_observer_state:
-            logging.info("Loading Pre-Observer from %s", str(pre_observer_state))
-            try:
-                pre_observer = [pickle.load(open(pre_observer_state, "rb"))]
-            except OSError:
-                logging.warning(
-                    "Unable to load Pre-Observer at %s, reverting to no pre-observer",
-                    pre_observer_state,
-                )
-        if post_observer_state:
-            logging.info("Loading Post-Observer from %s", str(post_observer_state))
-            try:
-                post_observer = [pickle.load(open(post_observer_state, "rb"))]
-            except OSError:
-                logging.warning(
-                    "Unable to load Post-Observer at %s, reverting to no post-observer",
-                    post_observer_state,
-                )
-        if test_observer_state:
-            logging.info("Loading Pre-Observer from %s", str(test_observer_state))
-            try:
-                test_observer = [pickle.load(open(test_observer_state, "rb"))]
-            except OSError:
-                logging.warning(
-                    "Unable to load Test-Observer at %s, reverting to no Test-observer",
-                    test_observer_state,
-                )
+    elif observers_state:
+        try:
+            with observers_state.open("rb") as f:
+                observers_holder = pickle.load(f)
+                pre_observer = observers_holder.pre_observers
+                post_observer = observers_holder.post_observers
+                test_observer = observers_holder.test_observers
+        except OSError:
+            logging.warning(
+                "Unable to open preobserver state at %s; skipping.", str(observers_state)
+            )
+        except pickle.UnpicklingError:
+            logging.warning(
+                "Couldn't unpickle preobserver state at %s; skipping.",
+                str(observers_state),
+            )
     else:
         pre_observer = [
             logger.pre_observer(  # type: ignore

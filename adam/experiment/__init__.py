@@ -45,6 +45,23 @@ from adam.random_utils import SequenceChooser
 
 
 @attrs(frozen=True)
+class ObserversHolder:
+    """
+    This object holds observers states so that
+    """
+
+    pre_observers: "Optional[Tuple[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]]" = attrib(  # type: ignore
+        default=None, kw_only=True
+    )
+    post_observers: "Optional[Tuple[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]]" = attrib(  # type: ignore
+        default=None, kw_only=True
+    )
+    test_observers: "Optional[Tuple[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]]" = attrib(  # type: ignore
+        default=None, kw_only=True
+    )
+
+
+@attrs(frozen=True)
 class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     r"""
     A particular experimental configuration.
@@ -121,7 +138,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     the trained `LanguageLearner` will be asked to describe for evaluation.
     These are specified by `InstanceGroup`\ s, just like the training data.
     """
-    test_observers: "Sequence[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(
+    test_observers: "Tuple[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(  # type: ignore
         converter=_to_tuple, default=tuple(), kw_only=True
     )
     r"""
@@ -338,6 +355,21 @@ def execute_experiment(
                     pickle.HIGHEST_PROTOCOL,
                 )
 
+                # Dump the observers to a pickle file
+                observers_holder = ObserversHolder(
+                    pre_observers=experiment.pre_example_training_observers,
+                    post_observers=experiment.post_example_training_observers,
+                    test_observers=experiment.test_observers,
+                )
+                pickle.dump(
+                    observers_holder,
+                    open(
+                        observer_path / f"observers_state_at_{str(point_to_log)}.pkl",
+                        "wb",
+                    ),
+                    pickle.HIGHEST_PROTOCOL,
+                )
+
             # if we've reached the next num_observations where we should log hypotheses, log the hypotheses
             if log_path and num_observations % log_hypotheses_every_n_examples == 0:
                 learner.log_hypotheses(log_path / str(num_observations))
@@ -360,26 +392,19 @@ def execute_experiment(
                         )
                         logging.info("Pickled and unpickled.")
                 # Dump the observers to a pickle file
-                if experiment.pre_example_training_observers:
-                    pickle.dump(
-                        experiment.pre_example_training_observers,
-                        open(
-                            observer_path
-                            / f"preobserver_state_at_{str(num_observations)}.pkl",
-                            "wb",
-                        ),
-                        pickle.HIGHEST_PROTOCOL,
-                    )
-                if experiment.post_example_training_observers:
-                    pickle.dump(
-                        experiment.post_example_training_observers,
-                        open(
-                            observer_path
-                            / f"postobserver_state_at_{str(num_observations)}.pkl",
-                            "wb",
-                        ),
-                        pickle.HIGHEST_PROTOCOL,
-                    )
+                observers_holder = ObserversHolder(
+                    pre_observers=experiment.pre_example_training_observers,
+                    post_observers=experiment.post_example_training_observers,
+                    test_observers=experiment.test_observers,
+                )
+                pickle.dump(
+                    observers_holder,
+                    open(
+                        observer_path / f"observers_state_at_{str(num_observations)}.pkl",
+                        "wb",
+                    ),
+                    pickle.HIGHEST_PROTOCOL,
+                )
 
             if experiment.pre_example_training_observers:
                 learner_descriptions_before_seeing_example = learner.describe(
@@ -434,18 +459,16 @@ def execute_experiment(
                 pickle.HIGHEST_PROTOCOL,
             )
             # Dump the observers to a pickle file
-            if experiment.pre_example_training_observers:
-                pickle.dump(
-                    experiment.pre_example_training_observers,
-                    open(observer_path / f"final_preobserver_state.pkl", "wb"),
-                    pickle.HIGHEST_PROTOCOL,
-                )
-            if experiment.post_example_training_observers:
-                pickle.dump(
-                    experiment.post_example_training_observers,
-                    open(observer_path / f"final_postobserver_state.pkl", "wb"),
-                    pickle.HIGHEST_PROTOCOL,
-                )
+            observers_holder = ObserversHolder(
+                pre_observers=experiment.pre_example_training_observers,
+                post_observers=experiment.post_example_training_observers,
+                test_observers=experiment.test_observers,
+            )
+            pickle.dump(
+                observers_holder,
+                open(observer_path / f"final_observers_state.pkl", "wb"),
+                pickle.HIGHEST_PROTOCOL,
+            )
 
     logging.info("Warming up for tests")
     for warm_up_instance_group in experiment.warm_up_test_instance_groups:
@@ -480,16 +503,21 @@ def execute_experiment(
                 )
 
             if log_path and num_test_observations % log_hypotheses_every_n_examples == 0:
-                if experiment.test_observers:
-                    pickle.dump(
-                        experiment.test_observers,
-                        open(
-                            observer_path
-                            / f"testobserver_state_at_{str(num_observations)}.pkl",
-                            "wb",
-                        ),
-                        pickle.HIGHEST_PROTOCOL,
-                    )
+                # Dump the observers to a pickle file
+                observers_holder = ObserversHolder(
+                    pre_observers=experiment.pre_example_training_observers,
+                    post_observers=experiment.post_example_training_observers,
+                    test_observers=experiment.test_observers,
+                )
+                pickle.dump(
+                    observers_holder,
+                    open(
+                        observer_path
+                        / f"observers_state_at_{str(num_observations+num_test_observations)}.pkl",
+                        "wb",
+                    ),
+                    pickle.HIGHEST_PROTOCOL,
+                )
 
         for test_observer in experiment.test_observers:
             test_observer.report()
