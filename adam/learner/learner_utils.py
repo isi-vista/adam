@@ -21,7 +21,8 @@ from networkx import (
     number_weakly_connected_components,
     DiGraph,
     weakly_connected_components,
-    Graph)
+    Graph,
+)
 from attr import attrib, attrs
 from enum import Enum, auto
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
@@ -56,7 +57,8 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     DebugCallableType,
     GraphLogger,
-    Incrementer)
+    Incrementer,
+)
 from adam.semantics import (
     Concept,
     ObjectSemanticNode,
@@ -795,9 +797,7 @@ def render_semantics_to_file(  # pragma: no cover
 
 
 def to_dot_node(
-    dot_graph: graphviz.Graph,
-    semantics_node: Concept,
-    next_node_id: Incrementer,
+    dot_graph: graphviz.Graph, semantics_node: Concept, next_node_id: Incrementer
 ) -> str:
     attributes = {"label": semantics_node.debug_string, "style": "solid"}
     node_id = f"node-{next_node_id.value()}"

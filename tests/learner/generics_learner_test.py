@@ -1,10 +1,7 @@
 import random
-from pathlib import Path
 from typing import Iterable
 
 import pytest
-from immutablecollections import ImmutableDict
-from networkx import ego_graph
 
 from adam.axes import AxesInfo
 from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
@@ -25,8 +22,6 @@ from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_utils import render_semantics_to_file
-from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.ontology import Ontology
@@ -36,9 +31,7 @@ from adam.ontology.phase1_ontology import (
     LIQUID,
     is_recognized_particular,
 )
-from adam.perception.perception_graph import PerceptionGraphPattern, GeonPredicate
 from adam.random_utils import RandomChooser
-from adam.semantics import ObjectConcept
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
@@ -131,39 +124,39 @@ def run_generics_test(learner, language_mode):
             )
 
     # learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
-    concepts_to_static_patterns: ImmutableDict[
-        ObjectConcept, PerceptionGraphPattern
-    ] = learner.object_learner._object_recognizer._concepts_to_static_patterns
-    for concept, hypothesis in concepts_to_static_patterns.items():
-        if concept.debug_string == 'bear':
-            rmv = []
-
-            for n in hypothesis._graph.nodes:
-                if isinstance(n, GeonPredicate):
-                    rmv.append(n)
-            hypothesis._graph.remove_nodes_from(rmv)
-            hypothesis.render_to_file(
-                graph_name="bear_perception",
-                output_file=Path(f"./renders/{language_mode.name}-bear-perception.png"),
-            )
-
-    bear_node = [n for n in learner.semantics_graph.nodes if n.debug_string == 'bear'][0]
-    animal_node = [n for n in learner.semantics_graph.nodes if n.debug_string == 'animal'][0]
-    render_semantics_to_file(
-        graph=ego_graph(learner.semantics_graph, bear_node, radius=1),
-        graph_name="semantics",
-        output_file=Path(f"./renders/{language_mode.name}-bear.png"),
-    )
-    render_semantics_to_file(
-        graph=ego_graph(learner.semantics_graph, animal_node, radius=1),
-        graph_name="semantics",
-        output_file=Path(f"./renders/{language_mode.name}-animal.png"),
-    )
-    render_semantics_to_file(
-        graph=learner.semantics_graph,
-        graph_name="semantics",
-        output_file=Path(f"./renders/{language_mode.name}-semantics.png"),
-    )
+    # concepts_to_static_patterns: ImmutableDict[
+    #     ObjectConcept, PerceptionGraphPattern
+    # ] = learner.object_learner._object_recognizer._concepts_to_static_patterns
+    # for concept, hypothesis in concepts_to_static_patterns.items():
+    #     if concept.debug_string == 'bear':
+    #         rmv = []
+    #
+    #         for n in hypothesis._graph.nodes:
+    #             if isinstance(n, GeonPredicate):
+    #                 rmv.append(n)
+    #         hypothesis._graph.remove_nodes_from(rmv)
+    #         hypothesis.render_to_file(
+    #             graph_name="bear_perception",
+    #             output_file=Path(f"./renders/{language_mode.name}-bear-perception.png"),
+    #         )
+    #
+    # bear_node = [n for n in learner.semantics_graph.nodes if n.debug_string == 'bear'][0]
+    # animal_node = [n for n in learner.semantics_graph.nodes if n.debug_string == 'animal'][0]
+    # render_semantics_to_file(
+    #     graph=ego_graph(learner.semantics_graph, bear_node, radius=1),
+    #     graph_name="semantics",
+    #     output_file=Path(f"./renders/{language_mode.name}-bear.png"),
+    # )
+    # render_semantics_to_file(
+    #     graph=ego_graph(learner.semantics_graph, animal_node, radius=1),
+    #     graph_name="semantics",
+    #     output_file=Path(f"./renders/{language_mode.name}-animal.png"),
+    # )
+    # render_semantics_to_file(
+    #     graph=learner.semantics_graph,
+    #     graph_name="semantics",
+    #     output_file=Path(f"./renders/{language_mode.name}-semantics.png"),
+    # )
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])

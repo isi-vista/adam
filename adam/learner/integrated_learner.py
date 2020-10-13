@@ -601,5 +601,3 @@ class IntegratedTemplateLearner(
                     self.semantics_graph.add_edge(
                         obj_con, other_con, slot=slot, weight=1.0
                     )
-
-
