@@ -371,7 +371,9 @@ class GraphMatching:
                                 # Thus we set the failing pattern node
                                 # to the one that matched to this graph node.
                                 if not self.failing_pattern_node_for_deepest_match:
-                                    self.failing_pattern_node_for_deepest_match = self.graph_node_to_pattern_node[graph_node]
+                                    self.failing_pattern_node_for_deepest_match = self.graph_node_to_pattern_node[
+                                        graph_node
+                                    ]
                                 logging.info(
                                     "Blocking match against a non-sub-object portion of another "
                                     "object"

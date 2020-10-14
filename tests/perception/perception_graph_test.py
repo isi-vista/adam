@@ -541,7 +541,8 @@ def test_illegal_partial_match():
     # Get bird root node
     perception_digraph = perception.copy_as_digraph()
     bird_root = first(
-        node for node in perception_digraph.nodes
+        node
+        for node in perception_digraph.nodes
         if isinstance(node, ObjectPerception) and node.debug_handle == "**bird_0"
     )
 
@@ -553,12 +554,10 @@ def test_illegal_partial_match():
 
     # Match using illegal initial partial match
     # that aligns the object node to the bird root node
-    first_matcher = pattern.matcher(
-        perception, match_mode=MatchMode.OBJECT
+    first_matcher = pattern.matcher(perception, match_mode=MatchMode.OBJECT)
+    failure = first_matcher.first_match_or_failure_info(
+        initial_partial_match={object_pattern_node: bird_root}
     )
-    failure = first_matcher.first_match_or_failure_info(initial_partial_match={
-        object_pattern_node: bird_root
-    })
     assert isinstance(failure, PatternMatching.MatchFailure)
     assert failure.last_failed_pattern_node == object_pattern_node
 
