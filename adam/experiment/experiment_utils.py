@@ -85,13 +85,13 @@ def restore_report_state(path: Path, num_instances: int) -> None:
     Restore the output report files to the appropriate number of instances to match the loaded observer
     """
     lines_to_write_back: List[str] = []
-    with open(str(path), "r") as file:
+    with path.open("r") as file:
         for num, line in enumerate(file):
             if num < num_instances:
                 lines_to_write_back.append(line.strip())
 
     # Remove the old file
-    os.remove(str(path))
+    path.unlink()
 
     # Replace it with our new one
     path.write_text("\n".join(lines_to_write_back))
@@ -103,7 +103,7 @@ def restore_html_state(path: Path, num_instance: int) -> None:
     """
     lines_to_write_back: List[str] = []
     count_instances: int = 0
-    with open(str(path), "r") as file:
+    with path.open("r") as file:
         for line in file:
             lines_to_write_back.append(line)
             if "</table>" in line:
@@ -113,7 +113,7 @@ def restore_html_state(path: Path, num_instance: int) -> None:
                 break
 
     # Remove the old file
-    os.remove(str(path))
+    path.unlink()
 
     # Replace it with our new one
     path.write_text("".join(lines_to_write_back))

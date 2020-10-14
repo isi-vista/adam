@@ -229,7 +229,7 @@ def execute_experiment(
         observer_path = learner_logging_path / "observer_state"
         if not observer_path.exists():
             try:
-                os.mkdir(observer_path)
+                observer_path.mkdir()
             # if we don't have a directory where we can log our observer state, we simply don't log it
             except OSError:
                 logging.warning("Cannot log observer state to %s", str(observer_path))
