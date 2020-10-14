@@ -27,6 +27,7 @@ from adam.learner import LearningExample, get_largest_matching_pattern
 from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.language_mode import LanguageMode
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
+from adam.ontology import IN_REGION
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import PerceptualRepresentation, MatchMode, ObjectPerception
@@ -163,7 +164,8 @@ def pattern_remove_incomplete_region_or_spatial_path(
 ) -> PerceptionGraphPattern:
     """
     Helper function to return a `PerceptionGraphPattern` verifying
-    that region and spatial path perceptions contain a reference object.
+    that region and spatial path perceptions contain a reference object,
+    and that regions have at least one object in them.
     """
     graph = perception_graph.copy_as_digraph()
     region_and_path_nodes: ImmutableSet[NodePredicate] = immutableset(
@@ -191,6 +193,24 @@ def pattern_remove_incomplete_region_or_spatial_path(
                     break
         if not has_reference_edge:
             nodes_without_reference.append(node)
+
+    regions_without_objects_in_them: List[NodePredicate] = []
+    for node in region_and_path_nodes:
+        if isinstance(node, RegionPredicate):
+            object_in_region: bool = False
+            for predecessor in graph.predecessors(node):
+                predicate = graph.edges[predecessor, node]["predicate"]
+
+                # Unwrap temporally-scoped edges before checking whether they're in-region edges.
+                if isinstance(predicate, HoldsAtTemporalScopePredicate):
+                    predicate = predicate.wrapped_edge_predicate
+
+                if isinstance(predicate, RelationTypeIsPredicate):
+                    if predicate.relation_type == IN_REGION:
+                        object_in_region = True
+                        break
+            if not object_in_region:
+                regions_without_objects_in_them.append(node)
 
     logging.info(
         f"Removing incomplete regions and paths. "
