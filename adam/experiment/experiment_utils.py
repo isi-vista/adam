@@ -91,7 +91,7 @@ def restore_report_state(path: Path, num_instances: int) -> None:
                 lines_to_write_back.append(line.strip())
 
     # Remove the old file
-    os.remove(str(path))
+    path.unlink()
 
     # Replace it with our new one
     path.write_text("\n".join(lines_to_write_back))
