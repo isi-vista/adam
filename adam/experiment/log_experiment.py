@@ -480,6 +480,8 @@ def curriculum_from_params(
     ]
 
     num_samples = params.optional_positive_integer("num_samples")
+    # We need to be able to accept 0 as the number of noise objects but optional_integer doesn't currently
+    # support specifying a range of acceptable values: https://github.com/isi-vista/vistautils/issues/142
     num_noise_objects = params.optional_integer("num_noise_objects")
 
     if curriculum_name == "pursuit":
