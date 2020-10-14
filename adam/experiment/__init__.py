@@ -47,7 +47,7 @@ from adam.random_utils import SequenceChooser
 @attrs(frozen=True)
 class ObserversHolder:
     """
-    This object holds observers states so that
+    This object holds observers states so that the observers remain in a synchronized state when pickle is used
     """
 
     pre_observers: "Optional[Tuple[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]]" = attrib(  # type: ignore
@@ -223,7 +223,9 @@ def execute_experiment(
             except OSError:
                 logging.warning("Cannot log learner state to %s", str(learner_path))
                 log_learner_state = False
-                logging.warning("Proceeding without logging learner state")
+                logging.warning(
+                    "Proceeding without logging learner state. The experiment results from the observers won't be valid if this is not logged."
+                )
         observer_path = learner_logging_path / "observer_state"
         if not observer_path.exists():
             try:
@@ -232,7 +234,9 @@ def execute_experiment(
             except OSError:
                 logging.warning("Cannot log observer state to %s", str(observer_path))
                 log_learner_state = False
-                logging.warning("Proceeding without logging learner state")
+                logging.warning(
+                    "Proceeding without logging learner state. The experiment results from the observers won't be valid if this is not logged."
+                )
 
     logging.info("Beginning experiment %s", experiment.name)
 

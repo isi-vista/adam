@@ -7,7 +7,7 @@ from typing import Generic, Mapping, Optional, Tuple
 from more_itertools import only, take
 
 from attr import attrib, attrs
-from attr.validators import instance_of
+from attr.validators import instance_of, optional
 
 from adam.language.dependency import LinearizedDependencyTree
 from vistautils.parameters import Parameters
@@ -445,16 +445,16 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             if experiment_group_dir
             else "pr_test_out.txt",
         )
-        a_ob = None
-        pr_ob = None
+        accuracy_observer = None
+        precision_recall_observer = None
         if track_accuracy:
-            a_ob = CandidateAccuracyObserver(
+            accuracy_observer = CandidateAccuracyObserver(
                 name="Test-observer-acc",
                 accuracy_to_txt=log_accuracy,
                 txt_path=log_accuracy_path,
             )
         if track_precision_recall:
-            pr_ob = PrecisionRecallObserver(
+            precision_recall_observer = PrecisionRecallObserver(
                 name="Test-observer-pr",
                 make_report=log_precision_recall,
                 txt_path=log_precision_recall_path,
@@ -463,8 +463,8 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         return HTMLLoggerPostObserver(
             name="t-observer",
             html_logger=self,
-            candidate_accuracy_observer=a_ob,
-            precision_recall_observer=pr_ob,
+            candidate_accuracy_observer=accuracy_observer,
+            precision_recall_observer=precision_recall_observer,
             test_mode=True,
         )
 
@@ -636,8 +636,16 @@ class HTMLLoggerPreObserver(  # pragma: no cover
     html_logger: LearningProgressHtmlLogger = attrib(
         init=True, validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
-    candidate_accuracy_observer = attrib(kw_only=True)  # type: ignore
-    precision_recall_observer = attrib(kw_only=True)  # type: ignore
+    candidate_accuracy_observer: Optional[
+        CandidateAccuracyObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+    ] = attrib(
+        kw_only=True, validator=optional(instance_of(CandidateAccuracyObserver))
+    )  # type: ignore
+    precision_recall_observer: Optional[
+        PrecisionRecallObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+    ] = attrib(
+        kw_only=True, validator=optional(instance_of(PrecisionRecallObserver))
+    )  # type: ignore
 
     def observe(  # pylint: disable=unused-argument
         self,

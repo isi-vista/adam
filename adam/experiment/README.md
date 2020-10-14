@@ -31,11 +31,11 @@ These parameters are independent of any specific experiment.
 - hypothesis_log_dir: Path (Optional) - This path is a directory to log internal learner hypotheses into
 - log_hypothesis_every_n_steps: Integer (Optional) - The number of situations to observe before the system logs the internal state of the experiment
 - log_learner_state: Boolean (Optional) - If true, save the internal trained learner state in a pickle.
-- starting_point: Integer (Optional) - Useful when debugging to start training from a specific situation number in the curriculum. Can not be used if `resume_from_latest_logged_state` is true.
+- starting_point: Integer (Optional) - Useful when debugging to start training from a specific situation number in the curriculum. Please enter the LAST observed situation and the system will restart from the next situation. Can not be used if `resume_from_latest_logged_state` is true.
 - point_to_log: Integer (Optional) - Useful debugging tool causes a specific log of hypotheses, learner, & observer states (future functionality for Observers)
 - learner_state_path: Path (Optional) - Provide a path to a pickled learner file to load to continue an experiment with. Used commonly in combination with `starting_point`. Can not be used if `resume_from_latest_logged_state` is true.
 - observers_state_path: Path (Optional) - Provide a path to a pickled observers state to load to continue an experiment with observation. Used commonly in combinationed with `starting_point`. Can not be used if `resume_from_latest_logged_state` is true.
-- resume_from_latest_logged_state: Boolean (Optional) - Restart an experiment from the most recent logged state that can be located in the directory structure
+- resume_from_latest_logged_state: Boolean (Optional) - Restart an experiment from the most recent logged state that can be located in the directory structure pointed to by `hypothesis_log_dir`.
 - debug_learner_pickling: Boolean (Optional) - If true, log additional debug information for the learner when pickling
 
 ### Observer Params
@@ -72,6 +72,7 @@ None
 Any experiment specific parameters that are built into the program are explained below.
 
 ### Gaze Ablation
+TODO: https://github.com/isi-vista/adam/issues/982
 
 ### Object Language Ablation
 - object_learner_type: String - Defines which specific learning algorithm to implement for Objects
