@@ -141,12 +141,12 @@ def log_experiment_entry_point(params: Parameters) -> None:
                     test_observer = observers_holder.test_observers
             except OSError:
                 logging.warning(
-                    "Unable to open preobserver state at %s; skipping.",
+                    "Unable to open observer state at %s; skipping.",
                     str(observers_state_path),
                 )
             except pickle.UnpicklingError:
                 logging.warning(
-                    "Couldn't unpickle preobserver state at %s; skipping.",
+                    "Couldn't unpickle observer state at %s; skipping.",
                     str(observers_state_path),
                 )
 
@@ -182,11 +182,11 @@ def log_experiment_entry_point(params: Parameters) -> None:
                 test_observer = observers_holder.test_observers
         except OSError:
             logging.warning(
-                "Unable to open preobserver state at %s; skipping.", str(observers_state)
+                "Unable to open observer state at %s; skipping.", str(observers_state)
             )
         except pickle.UnpicklingError:
             logging.warning(
-                "Couldn't unpickle preobserver state at %s; skipping.",
+                "Couldn't unpickle observer state at %s; skipping.",
                 str(observers_state),
             )
     else:
