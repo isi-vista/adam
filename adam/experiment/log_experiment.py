@@ -186,8 +186,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
             )
         except pickle.UnpicklingError:
             logging.warning(
-                "Couldn't unpickle observer state at %s; skipping.",
-                str(observers_state),
+                "Couldn't unpickle observer state at %s; skipping.", str(observers_state)
             )
     else:
         pre_observer = [

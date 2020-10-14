@@ -18,19 +18,19 @@ These parameters are independent of any specific experiment.
 ### Experiment Params
 - experiment: String - The experiment name
 - debug_log_directory: Path (Optional) - The path to log associated debug information, in this case it enables debug graph logging
-- language_mode: String - The language the experiment should use. This string value converts to an enumerated value
+- language_mode: String [Default: "English"] - The language the experiment should use. This string value converts to an enumerated value
     - Valid options: "English", "Chinese"
 - experiment_group_dir: Path - The path where the experiment will be logged to
 - learner: String - The name of the learner type to use
     - Valid options: "pursuit", "object-subset", "preposition-subset", "attribute-subset", "verb-subset", "integrated-learner", "integrated-learner-recognizer", "pursuit-gaze", "integrated-object-only"
-- beam_size: Integer (Optional) - Used to constrain the search space for learner algorithms
+- beam_size: Integer (Optional) [Default: 10] - Used to constrain the search space for learner algorithms
 
 - pre_observer: namespace (Optional) - This namespace parameter is an Observer Params section. This observer reviews the learner's output of a situation before the learn process is run on the new input.
 - post_observer: namespace (Optional) - This namespace parameter is an Observer Params section. This observer reviews the learner's output of a situation after the learning process is ran on the new input.
 - test_observer: namespace (Optional) - This namespace parameter is an Observer Params section. This observer reviews the learner's performance on the test situations.
 - hypothesis_log_dir: Path (Optional) - This path is a directory to log internal learner hypotheses into
-- log_hypothesis_every_n_steps: Integer (Optional) - The number of situations to observe before the system logs the internal state of the experiment
-- log_learner_state: Boolean (Optional) - If true, save the internal trained learner state in a pickle.
+- log_hypothesis_every_n_steps: Integer (Optional) [Default: 250] - The number of situations to observe before the system logs the internal state of the experiment
+- log_learner_state: Boolean (Optional) [Default: True] - If true, save the internal trained learner state in a pickle.
 - starting_point: Integer (Optional) - Useful when debugging to start training from a specific situation number in the curriculum. Please enter the LAST observed situation and the system will restart from the next situation. Can not be used if `resume_from_latest_logged_state` is true.
 - point_to_log: Integer (Optional) - Useful debugging tool causes a specific log of hypotheses, learner, & observer states (future functionality for Observers)
 - learner_state_path: Path (Optional) - Provide a path to a pickled learner file to load to continue an experiment with. Used commonly in combination with `starting_point`. Can not be used if `resume_from_latest_logged_state` is true.
