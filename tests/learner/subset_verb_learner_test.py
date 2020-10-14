@@ -96,14 +96,14 @@ def integrated_learner_factory(language_mode: LanguageMode):
 #     )  # type: ignore
 
 
-def run_verb_test(learner, situation_template, language_generator):
+def run_verb_test(learner, situation_template, language_generator, *, train_samples=10):
     train_curriculum = phase1_instances(
         "train",
         chain(
             *[
                 sampled(
                     situation_template,
-                    max_to_sample=10,
+                    max_to_sample=train_samples,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     block_multiple_of_the_same_type=True,
@@ -223,6 +223,7 @@ def test_sit(language_mode, learner):
             learner(language_mode),
             situation_template,
             language_generator=phase1_language_generator(language_mode),
+            train_samples=16,
         )
 
 
