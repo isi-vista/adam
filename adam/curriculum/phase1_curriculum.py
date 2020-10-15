@@ -2,6 +2,8 @@
 Curricula for DARPA GAILA Phase 1
 """
 from math import ceil
+
+from adam.language_specific.english import DETERMINERS
 from adam.ontology.phase1_ontology import DISTAL
 from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
@@ -386,7 +388,7 @@ def _make_kind_predicates_curriculum(
     """Creates situations and descriptions such as `dogs are animals` with
     a perception of a dog"""
     all_instances = []
-    # chinese mapping of objects to the colours they usually are
+    # chinese mapping of objects to their kinds
     chinese_kind_dictionary = {
         "syung2": ["dung4 wu4"],
         "gou3": ["dung4 wu4"],
@@ -396,7 +398,7 @@ def _make_kind_predicates_curriculum(
         "ba4 ba4": ["ren2"],
         "bau3 bau3": ["ren2"],
     }
-    # english mapping of objects to the colours they usually are
+    # english mapping of objects to their kinds
     english_kind_dictionary = {
         "bear": ["animal", "s"],
         "dog": ["animal", "s"],
@@ -448,18 +450,7 @@ def _make_kind_predicates_curriculum(
                                 linguistic_tokens[-1],
                                 "s",
                                 "are",
-                                english_kind_dictionary[linguistic_tokens[-1]][0],
-                                english_kind_dictionary[linguistic_tokens[-1]][-1],
-                            )
-                        )
-                        # deal with regular + s vs. other plurals
-                        if len(english_kind_dictionary[linguistic_tokens[-1]]) > 1
-                        else TokenSequenceLinguisticDescription(
-                            (
-                                linguistic_tokens[-1],
-                                "s",
-                                "are",
-                                english_kind_dictionary[linguistic_tokens[-1]][0],
+                                *english_kind_dictionary[linguistic_tokens[-1]],
                             )
                         ),
                         perception,
@@ -584,7 +575,7 @@ def _make_generic_statements_curriculum(
             subject = [
                 token
                 for token in description.as_token_sequence()
-                if token not in ["a", "the"] and token[0:3] != "yi1"
+                if token not in DETERMINERS
             ][0]
             all_instances.append(
                 (

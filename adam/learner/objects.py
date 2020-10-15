@@ -8,6 +8,7 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
 from adam.language import LinguisticDescription
+from adam.language_specific.english import DETERMINERS
 from adam.learner import (
     LearningExample,
     get_largest_matching_pattern,
@@ -129,7 +130,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             )
             if not language_alignment.token_index_is_aligned(tok_idx)
             # ignore determiners
-            and token not in ["a", "the"] and not token[:3] == "yi1"
+            and token not in DETERMINERS
         )
 
     def _enrich_post_process(

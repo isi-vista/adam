@@ -1031,7 +1031,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     and not self.situation.is_dynamic
                 ):
                     pass
-                    # TODO: we currently return here since we can't handle one possessive node and one not for the third person (i.e. I have my ball, you have your ball
+                    # TODO: we currently pass this case since we can't handle one possessive node and one not for the third person (i.e. I have my ball, you have your ball
                     # but right now, we just have "Dad has a ball" since otherwise we'll end up adding "de" (equivalent of 's in English) to both instances (e.g. Dad's has Dad's ball)
                     # since the nodes aren't unique). https://github.com/isi-vista/adam/issues/55
                 # handle the 3rd person possessor based on the relation

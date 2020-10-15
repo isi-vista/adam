@@ -294,7 +294,10 @@ class IntegratedTemplateLearner(
                 return cur_string
 
         # handle English determiners
-        else:
+        elif (
+            self.object_learner._language_mode  # pylint: disable=protected-access
+            == LanguageMode.ENGLISH
+        ):
             # If plural, we want to strip any "a" that might preceed a noun after "many" or "two"
             if self.plural_learner:
                 if "a" in cur_string:
@@ -321,6 +324,8 @@ class IntegratedTemplateLearner(
                 return tuple(chain(("a",), cur_string))
             else:
                 return cur_string
+        else:
+            return cur_string
 
     def _instantiate_object(
         self, object_node: ObjectSemanticNode, learner_semantics: LearnerSemantics

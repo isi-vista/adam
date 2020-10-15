@@ -154,12 +154,10 @@ class SurfaceTemplate:
                             slot_filler_span.start : slot_filler_span.end
                         ]
                     )
+                # If template contains an element not found in the mapping of slots to spans, we can return empty here.
+                # We don't want to do this now because of generics.
                 # else:
-                #     raise RuntimeError(
-                #         f"Template contained variable {element}, "
-                #         f"but it was not found in the mapping of slots to spans: "
-                #         f"{slots_to_filler_spans}"
-                #     )
+                #   return None
 
         # Now we need to check if the tokens to match occur in the given token sequence to
         # match against.  We don't expect these sequences to be long, so an inefficient solution
