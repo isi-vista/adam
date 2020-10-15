@@ -3,7 +3,7 @@ from abc import ABC
 from itertools import chain
 from pathlib import Path
 from random import Random
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, Tuple
+from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, Tuple, Dict
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -695,6 +695,11 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         pass
+
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        return {
+            k: v for k, v in self._object_recognizer._concepts_to_static_patterns.items()
+        }
 
     @_concepts_to_templates.default
     def _init_concepts_to_templates(

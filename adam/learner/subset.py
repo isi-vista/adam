@@ -5,7 +5,7 @@ from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutabledict, immutableset
+from immutablecollections import ImmutableSet, immutabledict, immutableset, ImmutableDict
 
 from adam.language import TokenSequenceLinguisticDescription
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
@@ -26,6 +26,7 @@ from adam.perception.perception_graph import (
     DebugCallableType,
     PerceptionGraph,
     PerceptionGraphPatternMatch,
+    PerceptionGraphPattern,
 )
 from adam.semantics import Concept, SemanticNode
 
@@ -332,6 +333,9 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
             for hypothesis in hypotheses[1:]
             if len(hypotheses) > 1
         )
+
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        return {k: v.graph_pattern for k, v, _ in self._primary_templates()}
 
 
 @attrs  # pylint:disable=abstract-method

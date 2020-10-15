@@ -11,13 +11,14 @@ from adam.learner.alignments import (
 )
 from adam.learner.learner_utils import get_slot_from_semantic_node
 from adam.learner.template_learner import TemplateLearner
+from adam.perception.perception_graph import PerceptionGraphPattern
 from adam.semantics import (
     Concept,
     ObjectSemanticNode,
     ActionSemanticNode,
     AttributeSemanticNode,
     AttributeConcept,
-)
+    KindConcept)
 
 
 @attrs
@@ -39,6 +40,9 @@ class SimpleGenericsLearner(TemplateLearner):
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
         return perception_semantic_alignment
+
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        return dict()
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         logging.info(
@@ -118,7 +122,7 @@ class SimpleGenericsLearner(TemplateLearner):
                 kind = sequence[sequence.index(pred) + 1]
                 # Create a concept for the kind
                 if kind not in self.learned_kinds:
-                    kind_concept = AttributeConcept(kind)
+                    kind_concept = KindConcept(kind)
                     self.learned_kinds[kind] = kind_concept
                 self.learned_representations[sequence] = (
                     significant_object_concept,

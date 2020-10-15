@@ -1,21 +1,10 @@
 """
 Interfaces for language learning code.
 """
-from adam.learner.language_mode import LanguageMode
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, Generic, Mapping, Optional, Callable
-from adam.learner.alignments import (
-    LanguagePerceptionSemanticAlignment,
-    PerceptionSemanticAlignment,
-)
-from adam.learner.surface_templates import (
-    STANDARD_SLOT_VARIABLES,
-    SurfaceTemplate,
-    SurfaceTemplateBoundToSemanticNodes,
-)
-from adam.learner.alignments import LanguageConceptAlignment
-from adam.ontology.ontology import Ontology
+
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from immutablecollections import immutabledict
@@ -23,6 +12,18 @@ from more_itertools import first
 from networkx import isolates
 
 from adam.language import LinguisticDescription, LinguisticDescriptionT
+from adam.learner.alignments import LanguageConceptAlignment
+from adam.learner.alignments import (
+    LanguagePerceptionSemanticAlignment,
+    PerceptionSemanticAlignment,
+)
+from adam.learner.language_mode import LanguageMode
+from adam.learner.surface_templates import (
+    STANDARD_SLOT_VARIABLES,
+    SurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
+)
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import LEARNER
 from adam.perception import (
     PerceptionT,
@@ -36,6 +37,7 @@ from adam.perception.perception_graph import (
     DebugCallableType,
     GraphLogger,
 )
+from adam.semantics import Concept
 
 
 @attrs(frozen=True)
@@ -232,4 +234,10 @@ class ComposableLearner(ABC):
         """
         Log some representation of the learner's current hypothesized semantics for words/phrases to
         *log_output_path*.
+        """
+
+    @abstractmethod
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        """
+        Return a dictionary of learner's current hypothesized semantics for words/phrases
         """

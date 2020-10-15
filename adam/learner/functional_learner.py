@@ -16,6 +16,7 @@ from adam.learner import (
     SurfaceTemplate,
 )
 from adam.learner.template_learner import TemplateLearner
+from adam.perception.perception_graph import PerceptionGraphPattern
 from adam.semantics import (
     SyntaxSemanticsVariable,
     LearnerSemantics,
@@ -179,6 +180,9 @@ class FunctionalLearner(TemplateLearner):
         # Our Functional Learner doesn't store concepts the same way as other
         # Template learners
         pass
+
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        return dict()
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         # Could possibly be improved see: https://github.com/isi-vista/adam/issues/938
