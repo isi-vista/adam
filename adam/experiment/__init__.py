@@ -224,7 +224,7 @@ def execute_experiment(
                 logging.warning("Cannot log learner state to %s", str(learner_path))
                 log_learner_state = False
                 logging.warning(
-                    "Proceeding without logging learner state. The experiment results from the observers won't be valid if this is not logged."
+                    "Proceeding without logging learner state. The experiment results from the observers won't be valid if the experiment is resumed without a log of the learner state."
                 )
         observer_path = learner_logging_path / "observer_state"
         if not observer_path.exists():
@@ -235,7 +235,7 @@ def execute_experiment(
                 logging.warning("Cannot log observer state to %s", str(observer_path))
                 log_learner_state = False
                 logging.warning(
-                    "Proceeding without logging learner state. The experiment results from the observers won't be valid if this is not logged."
+                    "Proceeding without logging learner. The experiment results from the observers won't be valid if the experiment is resumed without a log of the observer state."
                 )
 
     logging.info("Beginning experiment %s", experiment.name)
