@@ -129,6 +129,11 @@ def log_experiment_entry_point(params: Parameters) -> None:
         )
 
     if resume_from_last_logged_state:
+        if not experiment_group_dir:
+            raise RuntimeError(
+                "experiment_group_dir must be specified when resume_from_last_logged_state is true."
+            )
+
         # Try to Load Observers
         for _, observers_state_path in observer_states_by_most_recent(
             cast(Path, experiment_group_dir) / "observer_state", "observers_state_at_"
