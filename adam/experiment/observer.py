@@ -275,7 +275,7 @@ table td { p
 @attrs(slots=True)
 class LearningProgressHtmlLogger:  # pragma: no cover
 
-    outfile_dir: str = attrib(validator=instance_of(str))
+    output_file: str = attrib(validator=instance_of(str))
     html_dumper: CurriculumToHtmlDumper = attrib(
         validator=instance_of(CurriculumToHtmlDumper)
     )
@@ -331,7 +331,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
                     """
                 )
         return LearningProgressHtmlLogger(
-            outfile_dir=str(output_html_path),
+            output_file=str(output_html_path),
             html_dumper=html_dumper,
             include_links_to_images=include_links_to_images,
             num_pretty_descriptions=num_pretty_descriptions,
@@ -534,7 +534,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
 
         # Log into html file
         # We want to log the true description, the learners guess, the perception, and situation
-        with open(self.outfile_dir, "a+") as outfile:
+        with open(self.output_file, "a+") as outfile:
             outfile.write(
                 f"\n\t<table>\n"
                 f"\t\t<thead>\n"
