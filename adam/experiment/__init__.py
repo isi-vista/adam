@@ -298,7 +298,7 @@ def execute_experiment(
                     observer_iter, HTMLLoggerPostObserver
                 ):
                     restore_html_state(
-                        Path(observer_iter.html_logger.output_file), starting_point
+                        Path(observer_iter.html_logger.output_file_str), starting_point
                     )
                     if (
                         observer_iter.candidate_accuracy_observer
