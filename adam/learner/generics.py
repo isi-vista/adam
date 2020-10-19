@@ -100,7 +100,7 @@ class SimpleGenericsLearner(TemplateLearner):
         # If there is a recognized object node that matches the scene, and a generic action OR attribute, learn!
         for nodes in [action_nodes, attribute_nodes]:
             if significant_object_concept and nodes:
-                # Get the slot of object for each recognized action in the statement
+                # Get the slot of object for each recognized action in the scene
                 other_concepts_and_object_slots = []
                 for node in nodes:  # type: ignore
                     slot = get_slot_from_semantic_node(significant_object_concept, node)
