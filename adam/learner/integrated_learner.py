@@ -658,7 +658,7 @@ class IntegratedTemplateLearner(
             self, graph: Graph, graph_name: str, output_file: Path
     ) -> None:
 
-        dot_graph = graphviz.Digraph(graph_name)
+        dot_graph = graphviz.Graph(graph_name)
         dot_graph.attr(rankdir="LR")
         # combine parallel edges to cut down on clutter
         dot_graph.attr(concentrate="true")
@@ -680,7 +680,7 @@ class IntegratedTemplateLearner(
         dot_graph.render(str(output_file))
 
     def to_dot_node(
-            self, dot_graph: graphviz.Digraph, node: Concept, next_node_id: Incrementer
+            self, dot_graph: graphviz.Graph, node: Concept, next_node_id: Incrementer
     ) -> str:
         label = node.dot_label() if isinstance(node, NodePredicate) else node.debug_string
         attributes = {"label": label, "style": "solid"}

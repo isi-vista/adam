@@ -18,12 +18,14 @@ from adam.curriculum.phase1_curriculum import (
     _make_kind_predicates_curriculum,
     _make_objects_with_colors_curriculum,
 )
-from adam.language.language_utils import phase1_language_generator
+from adam.curriculum.phase2_curriculum import build_gaila_m13_curriculum
+from adam.language.language_utils import phase1_language_generator, phase2_language_generator
 from adam.learner import LearningExample
 from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
+from adam.learner.learner_utils import semantics_as_weighted_adjacency_matrix
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.ontology import Ontology
@@ -84,7 +86,7 @@ def run_generics_test(learner, language_mode):
                         axis_info=AxesInfo(),
                     )
 
-    language_generator = phase1_language_generator(language_mode)
+    language_generator = phase2_language_generator(language_mode)
     # Teach plurals
     plurals = phase1_instances(
         "plurals pretraining",
@@ -114,7 +116,8 @@ def run_generics_test(learner, language_mode):
         # ),
     ]
 
-    for curriculum in curricula:
+    for curriculum in build_gaila_m13_curriculum(num_samples=10, num_noise_objects=0, language_generator=language_generator):
+    # for curriculum in curricula:
         for (
             _,
             linguistic_description,
@@ -126,20 +129,20 @@ def run_generics_test(learner, language_mode):
                 LearningExample(perceptual_representation, linguistic_description)
             )
 
-    learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
+    # learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
     # learner.generics_learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
-    for concept, hypothesis in learner.object_learner.concepts_to_patterns().items():
-        # if concept.debug_string == "bear":
-        if concept.debug_string == "cat":
-            # rmv = []
-            # for n in hypothesis._graph.nodes:
-            #     if isinstance(n, GeonPredicate):
-            #         rmv.append(n)
-            # hypothesis._graph.remove_nodes_from(rmv)
-            hypothesis.render_to_file(
-                graph_name="bear_perception",
-                output_file=Path(f"./renders/{language_mode.name}-{concept.debug_string}-perception.png"),
-            )
+    # for concept, hypothesis in learner.object_learner.concepts_to_patterns().items():
+    #     if concept.debug_string == "bear":
+    #     # if concept.debug_string == "cat":
+    #         rmv = []
+    #         for n in hypothesis._graph.nodes:
+    #             if isinstance(n, GeonPredicate):
+    #                 rmv.append(n)
+    #         hypothesis._graph.remove_nodes_from(rmv)
+    #         hypothesis.render_to_file(
+    #             graph_name="bear_perception",
+    #             output_file=Path(f"./renders/{language_mode.name}-{concept.debug_string}-perception.png"),
+    #         )
 
     # bear_node = [n for n in learner.semantics_graph.nodes if n.debug_string == "bear"][0]
     # learner.render_semantics_to_file(
@@ -160,15 +163,28 @@ def run_generics_test(learner, language_mode):
         graph_name="semantics",
         output_file=Path(f"./renders/{language_mode.name}-semantics.png"),
     )
-    learner.render_semantics_to_file(
-        graph=learner.get_semantics_with_patterns(),
-        graph_name="complete-semantics",
-        output_file=Path(f"./renders/{language_mode.name}-complete-semantics.png"),
-    )
+    # learner.render_semantics_to_file(
+    #     graph=learner.get_semantics_with_patterns(),
+    #     graph_name="complete-semantics",
+    #     output_file=Path(f"./renders/{language_mode.name}-complete-semantics.png"),
+    # )
+    print('Semantics Network:')
+    print(len(learner.semantics_graph.nodes), 'nodes')
+    print(len(learner.semantics_graph.edges), 'edges')
+    semantic_matrix = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
+    print(semantic_matrix.shape)
+
+    print('Semantics Network w Patterns:')
+    complete_semantics = learner.get_semantics_with_patterns()
+    # print(semantic_matrix)
+    print(len(complete_semantics.nodes), 'nodes')
+    print(len(complete_semantics.edges), 'edges')
+    complete_semantic_matrix = semantics_as_weighted_adjacency_matrix(complete_semantics)
+    print(complete_semantic_matrix.shape)
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH,
-                                           # LanguageMode.CHINESE
+                                           LanguageMode.CHINESE
                                            ])
 def test_generics(language_mode):
     learner = integrated_learner_factory(language_mode)
