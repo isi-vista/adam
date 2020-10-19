@@ -176,7 +176,7 @@ class IntegratedTemplateLearner(
 
         # Engage generics learner if the utterance is indefinite
         if self.generics_learner and not self.is_definite(current_learner_state):
-            # Lack of definiteness could me marking a generic statement
+            # Lack of definiteness could be marking a generic statement
             # Check if the known descriptions match the utterance
             descs = self._linguistic_descriptions_from_semantics(
                 current_learner_state.perception_semantic_alignment
