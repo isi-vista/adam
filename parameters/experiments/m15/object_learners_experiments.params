@@ -1,0 +1,46 @@
+_includes:
+   - "../../root.params"
+
+experiment: 'object_language_ablation'
+experiment_group_dir: '%adam_experiment_root%/%experiment%'
+
+# Configuration Params - Prelim
+min_num_objects: 3
+max_num_objects : 5
+min_language_accuracy: 0.4
+max_language_accuracy: 0.6
+num_language_accuracy_increment: 3
+
+# Configuration Params - Desired
+#min_num_objects: 1
+#max_num_objects : 7
+#min_language_accuracy: 0.3
+#max_language_accuracy: 0.7
+#num_language_accuracy_increment: 5
+
+# Baseline experiment params
+object_language_ablation:
+   num_samples: 400
+   sort_learner_descriptions_by_length: true
+   num_pretty_descriptions: 5
+
+   log_hypothesis_every_n_steps: 100
+   debug_learner_pickling: false
+
+# Workflow Params
+workflow_name: 'gaze_ablation_pegasus'
+workflow_directory: '%adam_experiment_root%/%experiment%'
+site: 'saga'
+namespace: 'saga'
+
+backend: slurm
+partition: ephemeral
+num_cpus: 1
+num_gpus: 0
+memory: '4G'  # not sure how much is needed
+job_time_in_minutes: 720  # We request 12 hours as this is the maximum allotment for Ephemeral
+                          # By requesting this much we can easily just restart the pegasus workflow
+                          # And continue from the last checkpointed time. This is very useful for
+                          # pursuit. It may also be wise to log more than every 100 instances
+                          # to decrease the number of 'lost' training instances that can occur
+                          # If the process is killed or errors out.
