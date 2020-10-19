@@ -43,6 +43,7 @@ from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.relations import SubsetRelationLearnerNew
+from adam.learner.template_learner import TemplateLearner
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
@@ -393,36 +394,55 @@ def learner_factory_from_params(
             valid_options=["subset", "pbv", "pursuit"],
             default="subset",
         )
-        learner_params = params.namespace_or_empty("learner_params")
-        if not learner_params:
-            learner_params = Parameters.empty(namespace_prefix="learner_params")
+
+        if params.has_namespace("learner_params"):
+            learner_params = params.namespace("learner_params")
+        else:
+            learner_params = params.empty(namespace_prefix="learner_params")
+
+        object_learner_factory: Callable[[], TemplateLearner]
         if object_learner_type == "subset":
-            object_learner = SubsetObjectLearnerNew(  # type: ignore
-                ontology=GAILA_PHASE_2_ONTOLOGY,
-                beam_size=beam_size,
-                language_mode=language_mode,
-            )
+
+            def subset_factory() -> SubsetObjectLearnerNew:
+                return SubsetObjectLearnerNew(  # type: ignore
+                    ontology=GAILA_PHASE_2_ONTOLOGY,
+                    beam_size=beam_size,
+                    language_mode=language_mode,
+                )
+
+            object_learner_factory = subset_factory
+
         elif object_learner_type == "pbv":
-            object_learner = ProposeButVerifyObjectLearner.from_params(  # type: ignore
-                learner_params
-            )
+
+            def pbv_factory() -> ProposeButVerifyObjectLearner:
+                return ProposeButVerifyObjectLearner.from_params(  # type: ignore
+                    learner_params
+                )
+
+            object_learner_factory = pbv_factory
         elif object_learner_type == "pursuit":
-            object_learner = PursuitObjectLearnerNew(  # type: ignore
-                learning_factor=learner_params.floating_point("learning_factor"),
-                graph_match_confirmation_threshold=learner_params.floating_point(
-                    "graph_match_confirmation_threshold"
-                ),
-                lexicon_entry_threshold=learner_params.floating_point(
-                    "lexicon_entry_threshold"
-                ),
-                rng=rng,
-                smoothing_parameter=learner_params.floating_point("smoothing_parameter"),
-                ontology=GAILA_PHASE_2_ONTOLOGY,
-                language_mode=language_mode,
-            )
+
+            def pursuit_factory() -> PursuitObjectLearnerNew:
+                return PursuitObjectLearnerNew(  # type: ignore
+                    learning_factor=learner_params.floating_point("learning_factor"),
+                    graph_match_confirmation_threshold=learner_params.floating_point(
+                        "graph_match_confirmation_threshold"
+                    ),
+                    lexicon_entry_threshold=learner_params.floating_point(
+                        "lexicon_entry_threshold"
+                    ),
+                    rng=rng,
+                    smoothing_parameter=learner_params.floating_point(
+                        "smoothing_parameter"
+                    ),
+                    ontology=GAILA_PHASE_2_ONTOLOGY,
+                    language_mode=language_mode,
+                )
+
+            object_learner_factory = pursuit_factory
         else:
             raise RuntimeError(f"Invalid Object Learner Type Selected: {learner_type}")
-        return lambda: IntegratedTemplateLearner(object_learner=object_learner)
+        return lambda: IntegratedTemplateLearner(object_learner=object_learner_factory())
     else:
         raise RuntimeError("can't happen")
 
