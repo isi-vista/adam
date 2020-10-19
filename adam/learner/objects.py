@@ -698,7 +698,8 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
 
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
         return {
-            k: v for k, v in self._object_recognizer._concepts_to_static_patterns.items()
+            k: v
+            for k, v in self._object_recognizer._concepts_to_static_patterns.items()  # pylint:disable=protected-access
         }
 
     @_concepts_to_templates.default

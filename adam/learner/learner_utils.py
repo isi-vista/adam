@@ -1,5 +1,6 @@
+import itertools
 import logging
-from pathlib import Path
+from enum import Enum, auto
 from typing import (
     Mapping,
     Tuple,
@@ -12,27 +13,32 @@ from typing import (
     Optional,
     Callable,
     Sequence,
-    Any)
-import graphviz
-import itertools
+    Any,
+)
 
-import numpy as np
-
-from adam.learner.alignments import LanguagePerceptionSemanticAlignment
+from attr import attrib, attrs
 from attr.validators import instance_of, optional
+from immutablecollections import immutabledict, immutableset, ImmutableSet
 from networkx import (
     number_weakly_connected_components,
     DiGraph,
     weakly_connected_components,
     Graph,
-    to_numpy_matrix)
-from attr import attrib, attrs
-from enum import Enum, auto
+    to_numpy_matrix,
+)
+from vistautils.span import Span
+
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import LearningExample, get_largest_matching_pattern
 from adam.learner.alignments import LanguageConceptAlignment
+from adam.learner.alignments import LanguagePerceptionSemanticAlignment
 from adam.learner.language_mode import LanguageMode
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
+from adam.learner.surface_templates import (
+    STANDARD_SLOT_VARIABLES,
+    SurfaceTemplate,
+    SurfaceTemplateBoundToSemanticNodes,
+)
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import PerceptualRepresentation, MatchMode, ObjectPerception
@@ -40,12 +46,6 @@ from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
     RgbColorPerception,
 )
-from adam.learner.surface_templates import (
-    STANDARD_SLOT_VARIABLES,
-    SurfaceTemplate,
-    SurfaceTemplateBoundToSemanticNodes,
-)
-
 from adam.perception.perception_graph import (
     ObjectSemanticNodePerceptionPredicate,
     PerceptionGraphPatternMatch,
@@ -60,7 +60,6 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     DebugCallableType,
     GraphLogger,
-    Incrementer,
 )
 from adam.semantics import (
     Concept,
@@ -68,11 +67,8 @@ from adam.semantics import (
     SemanticNode,
     SyntaxSemanticsVariable,
 )
-from immutablecollections import immutabledict, immutableset, ImmutableSet
-
 from adam.utils import networkx_utils
 from adam.utils.networkx_utils import subgraph
-from vistautils.span import Span
 
 
 def get_classifier_for_string(input_string: str) -> Optional[str]:
@@ -108,11 +104,11 @@ def get_classifier_for_string(input_string: str) -> Optional[str]:
 
 
 def pattern_match_to_description(
-        *,
-        surface_template: SurfaceTemplate,
-        pattern: PerceptionGraphTemplate,
-        match: PerceptionGraphPatternMatch,
-        matched_objects_to_names: Mapping[ObjectSemanticNode, Tuple[str, ...]],
+    *,
+    surface_template: SurfaceTemplate,
+    pattern: PerceptionGraphTemplate,
+    match: PerceptionGraphPatternMatch,
+    matched_objects_to_names: Mapping[ObjectSemanticNode, Tuple[str, ...]],
 ) -> TokenSequenceLinguisticDescription:
     """
     Given a `SurfaceTemplate`, will fill it in using a *match* for a *pattern*.
@@ -148,10 +144,10 @@ def pattern_match_to_description(
 
 
 def pattern_match_to_semantic_node(
-        *,
-        concept: Concept,
-        pattern: PerceptionGraphTemplate,
-        match: PerceptionGraphPatternMatch,
+    *,
+    concept: Concept,
+    pattern: PerceptionGraphTemplate,
+    match: PerceptionGraphPatternMatch,
 ) -> SemanticNode:
     template_variable_to_filler: Mapping[
         SyntaxSemanticsVariable, ObjectSemanticNode
@@ -179,10 +175,10 @@ def pattern_match_to_semantic_node(
 
 
 def assert_static_situation(
-        to_check: Union[
-            LearningExample[DevelopmentalPrimitivePerceptionFrame, LinguisticDescription],
-            PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
-        ]
+    to_check: Union[
+        LearningExample[DevelopmentalPrimitivePerceptionFrame, LinguisticDescription],
+        PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
+    ]
 ):
     if isinstance(to_check, LearningExample):
         perception = to_check.perception
@@ -196,7 +192,7 @@ def assert_static_situation(
 
 
 def pattern_remove_incomplete_region_or_spatial_path(
-        perception_graph: PerceptionGraphPattern
+    perception_graph: PerceptionGraphPattern
 ) -> PerceptionGraphPattern:
     """
     Helper function to return a `PerceptionGraphPattern` verifying
@@ -255,10 +251,10 @@ def pattern_remove_incomplete_region_or_spatial_path(
 
 
 def covers_entire_utterance(
-        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
-        language_concept_alignment: LanguageConceptAlignment,
-        *,
-        ignore_determiners: bool = False,
+    bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+    language_concept_alignment: LanguageConceptAlignment,
+    *,
+    ignore_determiners: bool = False,
 ) -> bool:
     num_covered_tokens = 0
     for element in bound_surface_template.surface_template.elements:
@@ -269,8 +265,8 @@ def covers_entire_utterance(
                 bound_surface_template.slot_to_semantic_node[element]
             ]
             aligned_strings_for_slot = language_concept_alignment.language[
-                                       slot_for_element.start: slot_for_element.end
-                                       ]
+                slot_for_element.start : slot_for_element.end
+            ]
             # we need to check here that the determiners aren't getting aligned; otherwise it can mess up our count
             if ignore_determiners:
                 num_covered_tokens += len(
@@ -318,10 +314,10 @@ class SemanticNodeWithSpan:
 
 
 def candidate_templates(
-        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        max_length: int,
-        language_mode: LanguageMode,
-        candidate_templates_function: Callable[[], Iterable[Tuple[AlignmentSlots, ...]]],
+    language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+    max_length: int,
+    language_mode: LanguageMode,
+    candidate_templates_function: Callable[[], Iterable[Tuple[AlignmentSlots, ...]]],
 ) -> AbstractSet[SurfaceTemplateBoundToSemanticNodes]:
     ret = []
     language_concept_alignment = (
@@ -360,7 +356,7 @@ def candidate_templates(
     # which is an undesired output. So if we provide the spans where
     # aligned objects are we can invalidate templates like the problem one above
     def is_legal_template_span(
-            candidate_token_span: Span, *, invalid_token_spans: ImmutableSet[Span]
+        candidate_token_span: Span, *, invalid_token_spans: ImmutableSet[Span]
     ) -> bool:
         # A template token span can't exceed the bounds of the utterance
         if candidate_token_span.start < 0:
@@ -384,11 +380,11 @@ def candidate_templates(
         return True
 
     def aligned_object_nodes(
-            num_arguments: int,
-            num_arguments_to_alignments_sets: Dict[
-                int, ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]
-            ],
-            language_concept_alignment: LanguageConceptAlignment,
+        num_arguments: int,
+        num_arguments_to_alignments_sets: Dict[
+            int, ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]
+        ],
+        language_concept_alignment: LanguageConceptAlignment,
     ) -> ImmutableSet[Tuple[SemanticNodeWithSpan, ...]]:
         if num_arguments not in num_arguments_to_alignments_sets.keys():
             # we haven't seen a request for this number of arguments before so we need to generate all the valid options
@@ -409,10 +405,10 @@ def candidate_templates(
         return num_arguments_to_alignments_sets[num_arguments]
 
     def process_aligned_objects_with_template(
-            candidate_template: Tuple[AlignmentSlots, ...],
-            aligned_nodes: Tuple[SemanticNodeWithSpan, ...],
-            *,
-            invalid_token_spans: ImmutableSet[Span],
+        candidate_template: Tuple[AlignmentSlots, ...],
+        aligned_nodes: Tuple[SemanticNodeWithSpan, ...],
+        *,
+        invalid_token_spans: ImmutableSet[Span],
     ) -> Iterable[Optional[SurfaceTemplateBoundToSemanticNodes]]:
 
         aligned_node_index = 0
@@ -455,21 +451,21 @@ def candidate_templates(
                     # If our FixedString is flanked by two Arguments we just want to acquire all the tokens
                     # between them
                     if (
-                            aligned_nodes[aligned_node_index - 1].span.end
-                            != aligned_nodes[aligned_node_index].span.start
+                        aligned_nodes[aligned_node_index - 1].span.end
+                        != aligned_nodes[aligned_node_index].span.start
                     ):
                         candidate_token_span = Span(
                             aligned_nodes[aligned_node_index - 1].span.end,
                             aligned_nodes[aligned_node_index].span.start,
                         )
                         if not is_legal_template_span(
-                                candidate_token_span, invalid_token_spans=invalid_token_spans
+                            candidate_token_span, invalid_token_spans=invalid_token_spans
                         ):
                             # If not a valid span, ignore this attempt
                             continue
                         template_elements.extend(
                             sentence_tokens[
-                            candidate_token_span.start: candidate_token_span.end
+                                candidate_token_span.start : candidate_token_span.end
                             ]
                         )
                     previous_node_was_string = True
@@ -483,7 +479,7 @@ def candidate_templates(
                     prefix_string_end,
                 )
                 if is_legal_template_span(
-                        prefix_candidate_token_span, invalid_token_spans=invalid_token_spans
+                    prefix_candidate_token_span, invalid_token_spans=invalid_token_spans
                 ):
                     for max_token_length_for_template_postfix in range(1, max_length + 1):
                         postfix_candidate_token_span = Span(
@@ -491,20 +487,20 @@ def candidate_templates(
                             postfix_string_start + max_token_length_for_template_postfix,
                         )
                         if is_legal_template_span(
-                                postfix_candidate_token_span,
-                                invalid_token_spans=invalid_token_spans,
+                            postfix_candidate_token_span,
+                            invalid_token_spans=invalid_token_spans,
                         ):
                             final_template_elements: List[
                                 Union[str, SyntaxSemanticsVariable]
                             ] = list(
                                 sentence_tokens[
-                                prefix_candidate_token_span.start: prefix_candidate_token_span.end
+                                    prefix_candidate_token_span.start : prefix_candidate_token_span.end
                                 ]
                             )
                             final_template_elements.extend(template_elements)
                             final_template_elements.extend(
                                 sentence_tokens[
-                                postfix_candidate_token_span.start: postfix_candidate_token_span.end
+                                    postfix_candidate_token_span.start : postfix_candidate_token_span.end
                                 ]
                             )
                             yield SurfaceTemplateBoundToSemanticNodes(
@@ -524,11 +520,11 @@ def candidate_templates(
                     prefix_string_end,
                 )
                 if is_legal_template_span(
-                        prefix_candidate_token_span, invalid_token_spans=invalid_token_spans
+                    prefix_candidate_token_span, invalid_token_spans=invalid_token_spans
                 ):
                     final_template_elements = list(
                         sentence_tokens[
-                        prefix_candidate_token_span.start: prefix_candidate_token_span.end
+                            prefix_candidate_token_span.start : prefix_candidate_token_span.end
                         ]
                     )
                     final_template_elements.extend(template_elements)
@@ -549,12 +545,12 @@ def candidate_templates(
                     postfix_string_start + max_token_length_for_template_postfix,
                 )
                 if is_legal_template_span(
-                        postfix_candidate_token_span, invalid_token_spans=invalid_token_spans
+                    postfix_candidate_token_span, invalid_token_spans=invalid_token_spans
                 ):
                     final_template_elements = list(template_elements)
                     final_template_elements.extend(
                         sentence_tokens[
-                        postfix_candidate_token_span.start: postfix_candidate_token_span.end
+                            postfix_candidate_token_span.start : postfix_candidate_token_span.end
                         ]
                     )
                     yield SurfaceTemplateBoundToSemanticNodes(
@@ -580,9 +576,9 @@ def candidate_templates(
     # Generate all the possible verb template alignments
     for candidate_template in candidate_templates_function():
         for aligned_nodes in aligned_object_nodes(
-                sum(1 for token in candidate_template if token == AlignmentSlots.Argument),
-                num_arguments_to_alignments_sets,
-                language_concept_alignment,
+            sum(1 for token in candidate_template if token == AlignmentSlots.Argument),
+            num_arguments_to_alignments_sets,
+            language_concept_alignment,
         ):
             # aligned_object_nodes is guaranteed to only give us alignments
             # Which the spans go from left most to right most
@@ -593,7 +589,7 @@ def candidate_templates(
                 language_concept_alignment.node_to_language_span.values()
             )
             for (
-                    surface_template_bound_to_semantic_nodes
+                surface_template_bound_to_semantic_nodes
             ) in process_aligned_objects_with_template(
                 candidate_template, aligned_nodes, invalid_token_spans=invalid_token_spans
             ):
@@ -609,8 +605,8 @@ def candidate_templates(
 
 
 def default_post_process_enrichment(
-        perception_graph_after_matching: PerceptionGraph,
-        immutable_new_nodes: AbstractSet[SemanticNode],
+    perception_graph_after_matching: PerceptionGraph,
+    immutable_new_nodes: AbstractSet[SemanticNode],
 ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
     return perception_graph_after_matching, immutable_new_nodes
 
@@ -639,12 +635,12 @@ class PartialMatchRatio:
 
 
 def compute_match_ratio(
-        pattern: PerceptionGraphTemplate,
-        graph: PerceptionGraph,
-        ontology: Ontology,
-        *,
-        graph_logger: Optional[GraphLogger] = None,
-        debug_callback: Optional[DebugCallableType] = None,
+    pattern: PerceptionGraphTemplate,
+    graph: PerceptionGraph,
+    ontology: Ontology,
+    *,
+    graph_logger: Optional[GraphLogger] = None,
+    debug_callback: Optional[DebugCallableType] = None,
 ) -> PartialMatchRatio:
     """
     Computes the fraction of pattern graph nodes of *pattern* which match *graph*.
@@ -670,7 +666,7 @@ def compute_match_ratio(
 
 
 def get_objects_from_perception(
-        observed_perception_graph: PerceptionGraph
+    observed_perception_graph: PerceptionGraph
 ) -> List[PerceptionGraph]:
     """
     Utility function to get a list of `PerceptionGraphs` which are independent objects in the scene
@@ -685,10 +681,10 @@ def get_objects_from_perception(
     for node in perception_as_graph.nodes:
         if isinstance(node, ObjectPerception) and node.debug_handle != "the ground":
             if not any(
-                    [
-                        u == node and str(data["label"]) == "partOf"
-                        for u, v, data in perception_as_digraph.edges.data()
-                    ]
+                [
+                    u == node and str(data["label"]) == "partOf"
+                    for u, v, data in perception_as_digraph.edges.data()
+                ]
             ):
                 root_object_percetion_nodes.append(node)
 
@@ -726,9 +722,9 @@ def get_objects_from_perception(
                 # TODO: We currently remove colors to achieve a match - otherwise finding
                 #  patterns fails.
                 if (
-                        isinstance(neighbor, Region)
-                        and neighbor.reference_object not in all_object_perception_nodes
-                        or isinstance(neighbor, RgbColorPerception)
+                    isinstance(neighbor, Region)
+                    and neighbor.reference_object not in all_object_perception_nodes
+                    or isinstance(neighbor, RgbColorPerception)
                 ):
                     continue
                 # Append all other none-object nodes to be kept in the subgraph
@@ -745,7 +741,7 @@ def get_objects_from_perception(
 
 
 def candidate_object_hypotheses(
-        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
 ) -> Sequence[PerceptionGraphTemplate]:
     """
     Given a learning input, returns all possible meaning hypotheses.
@@ -763,7 +759,7 @@ def candidate_object_hypotheses(
 
 
 def get_slot_from_semantic_node(
-        object_concept: Concept, semantic_node: SemanticNode
+    object_concept: Concept, semantic_node: SemanticNode
 ) -> str:
     slot = ""
     for slot_var, object_node in semantic_node.slot_fillings.items():

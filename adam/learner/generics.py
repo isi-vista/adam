@@ -17,8 +17,8 @@ from adam.semantics import (
     ObjectSemanticNode,
     ActionSemanticNode,
     AttributeSemanticNode,
-    AttributeConcept,
-    KindConcept)
+    KindConcept,
+)
 
 
 @attrs
@@ -27,7 +27,7 @@ class SimpleGenericsLearner(TemplateLearner):
         Tuple[str, ...], Tuple[Concept, Set[Tuple[Concept, str]]]
     ] = attrib(init=False, default=Factory(dict))
 
-    learned_kinds: Dict[str, AttributeConcept] = attrib(init=False, default=Factory(dict))
+    learned_kinds: Dict[str, KindConcept] = attrib(init=False, default=Factory(dict))
 
     plural_markers: List[str] = attrib(init=False, default=Factory(list))
 

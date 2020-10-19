@@ -5,7 +5,7 @@ from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutabledict, immutableset, ImmutableDict
+from immutablecollections import ImmutableSet, immutabledict, immutableset
 
 from adam.language import TokenSequenceLinguisticDescription
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment

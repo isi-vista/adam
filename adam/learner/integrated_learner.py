@@ -1,10 +1,9 @@
 import collections
 import itertools
 import logging
-import typing
 from itertools import chain, combinations
 from pathlib import Path
-from typing import Iterator, Mapping, Optional, Tuple, List, Dict
+from typing import Iterator, Mapping, Optional, Tuple, List, Dict, Union, Counter, Set
 
 import graphviz
 from attr import attrib, attrs
@@ -36,8 +35,14 @@ from adam.perception import PerceptualRepresentation
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPattern, Incrementer, NodePredicate, \
-    AnyObjectPerception, ObjectSemanticNodePerceptionPredicate
+from adam.perception.perception_graph import (
+    PerceptionGraph,
+    PerceptionGraphPattern,
+    Incrementer,
+    NodePredicate,
+    AnyObjectPerception,
+    ObjectSemanticNodePerceptionPredicate,
+)
 from adam.semantics import (
     ActionSemanticNode,
     ObjectSemanticNode,
@@ -53,11 +58,11 @@ from adam.semantics import (
 
 class LanguageLearnerNew:
     def observe(
-            self,
-            learning_example: LearningExample[
-                DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
-            ],
-            offset: int = 0,
+        self,
+        learning_example: LearningExample[
+            DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
+        ],
+        offset: int = 0,
     ) -> None:
         pass
 
@@ -102,7 +107,7 @@ class IntegratedTemplateLearner(
     _observation_num: int = attrib(init=False, default=0)
     _sub_learners: List[TemplateLearner] = attrib(init=False)
 
-    potential_definiteness_markers: typing.Counter[str] = attrib(
+    potential_definiteness_markers: Counter[str] = attrib(
         init=False, default=collections.Counter()
     )
 
@@ -112,11 +117,11 @@ class IntegratedTemplateLearner(
     )
 
     def observe(
-            self,
-            learning_example: LearningExample[
-                DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
-            ],
-            offset: int = 0,
+        self,
+        learning_example: LearningExample[
+            DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
+        ],
+        offset: int = 0,
     ) -> None:
 
         logging.info(
@@ -196,7 +201,7 @@ class IntegratedTemplateLearner(
         self.update_concept_semantics(current_learner_state)
 
     def describe(
-            self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> Mapping[LinguisticDescription, float]:
 
         perception_graph = self._extract_perception_graph(perception)
@@ -228,7 +233,7 @@ class IntegratedTemplateLearner(
         return self._linguistic_descriptions_from_semantics(cur_description_state)
 
     def _linguistic_descriptions_from_semantics(
-            self, description_state: PerceptionSemanticAlignment
+        self, description_state: PerceptionSemanticAlignment
     ) -> Mapping[LinguisticDescription, float]:
 
         learner_semantics = LearnerSemantics.from_nodes(
@@ -242,8 +247,8 @@ class IntegratedTemplateLearner(
                     (action_tokens, 1.0)
                     for action in learner_semantics.actions
                     for action_tokens in self._instantiate_action(
-                    action, learner_semantics
-                )
+                        action, learner_semantics
+                    )
                     # ensure we have some way of expressing this action
                     if self.action_learner.templates_for_concept(action.concept)
                 ]
@@ -255,8 +260,8 @@ class IntegratedTemplateLearner(
                     (relation_tokens, 1.0)
                     for relation in learner_semantics.relations
                     for relation_tokens in self._instantiate_relation(
-                    relation, learner_semantics
-                )
+                        relation, learner_semantics
+                    )
                     # ensure we have some way of expressing this relation
                     if self.relation_learner.templates_for_concept(relation.concept)
                 ]
@@ -275,12 +280,12 @@ class IntegratedTemplateLearner(
         )
 
     def _add_determiners(
-            self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
+        self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
     ) -> Tuple[str, ...]:
         # handle Chinese Classifiers by casing on the words -- this is hackish
         if (
-                self.object_learner._language_mode  # pylint: disable=protected-access
-                == LanguageMode.CHINESE
+            self.object_learner._language_mode  # pylint: disable=protected-access
+            == LanguageMode.CHINESE
         ):
             if self.plural_learner:
                 return tuple([token for token in cur_string if token[:3] != "yi1"])
@@ -302,8 +307,8 @@ class IntegratedTemplateLearner(
 
         # handle English determiners
         elif (
-                self.object_learner._language_mode  # pylint: disable=protected-access
-                == LanguageMode.ENGLISH
+            self.object_learner._language_mode  # pylint: disable=protected-access
+            == LanguageMode.ENGLISH
         ):
             # If plural, we want to strip any "a" that might preceed a noun after "many" or "two"
             if self.plural_learner:
@@ -324,9 +329,9 @@ class IntegratedTemplateLearner(
             if object_node.concept == GROUND_OBJECT_CONCEPT:
                 return tuple(chain(("the",), cur_string))
             elif (
-                    object_node.concept.debug_string not in MASS_NOUNS
-                    and object_node.concept.debug_string.islower()
-                    and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
+                object_node.concept.debug_string not in MASS_NOUNS
+                and object_node.concept.debug_string.islower()
+                and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
             ):
                 return tuple(chain(("a",), cur_string))
             else:
@@ -335,7 +340,7 @@ class IntegratedTemplateLearner(
             return cur_string
 
     def _instantiate_object(
-            self, object_node: ObjectSemanticNode, learner_semantics: LearnerSemantics
+        self, object_node: ObjectSemanticNode, learner_semantics: LearnerSemantics
     ) -> Iterator[Tuple[str, ...]]:
         for learner in [self.attribute_learner, self.plural_learner]:
             # For now, we assume the order in which modifiers is expressed is arbitrary.
@@ -353,9 +358,9 @@ class IntegratedTemplateLearner(
             # relations_for_object = learner_semantics.objects_to_relation_in_slot1[object_node]
 
             if (
-                    isinstance(object_node.concept, FunctionalObjectConcept)
-                    and object_node.concept
-                    in learner_semantics.functional_concept_to_object_concept.keys()
+                isinstance(object_node.concept, FunctionalObjectConcept)
+                and object_node.concept
+                in learner_semantics.functional_concept_to_object_concept.keys()
             ):
                 concept = learner_semantics.functional_concept_to_object_concept[
                     object_node.concept
@@ -370,17 +375,17 @@ class IntegratedTemplateLearner(
                 ).as_token_sequence()
 
                 for num_attributes in range(
-                        min(len(attributes_we_can_express), self._max_attributes_per_word)
+                    min(len(attributes_we_can_express), self._max_attributes_per_word)
                 ):
                     for attribute_combinations in combinations(
-                            attributes_we_can_express,
-                            # +1 because the range starts at 0
-                            num_attributes + 1,
+                        attributes_we_can_express,
+                        # +1 because the range starts at 0
+                        num_attributes + 1,
                     ):
                         for attribute in attribute_combinations:
                             # we know, but mypy does not, that self.attribute_learner is not None
                             for (
-                                    attribute_template
+                                attribute_template
                             ) in learner.templates_for_concept(  # type: ignore
                                 attribute.concept
                             ):
@@ -394,7 +399,7 @@ class IntegratedTemplateLearner(
                 yield self._add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
-            self, relation_node: RelationSemanticNode, learner_semantics: LearnerSemantics
+        self, relation_node: RelationSemanticNode, learner_semantics: LearnerSemantics
     ) -> Iterator[Tuple[str, ...]]:
         if not self.relation_learner:
             raise RuntimeError("Cannot instantiate relations without a relation learner")
@@ -406,7 +411,7 @@ class IntegratedTemplateLearner(
         slot_order = tuple(slots_to_instantiations.keys())
 
         for relation_template in self.relation_learner.templates_for_concept(
-                relation_node.concept
+            relation_node.concept
         ):
             all_possible_slot_fillings = itertools.product(
                 *slots_to_instantiations.values()
@@ -417,13 +422,13 @@ class IntegratedTemplateLearner(
                 ).as_token_sequence()
 
     def _instantiate_action(
-            self, action_node: ActionSemanticNode, learner_semantics: LearnerSemantics
+        self, action_node: ActionSemanticNode, learner_semantics: LearnerSemantics
     ) -> Iterator[Tuple[str, ...]]:
         if not self.action_learner:
             raise RuntimeError("Cannot instantiate an action without an action learner")
 
         for action_template in self.action_learner.templates_for_concept(
-                action_node.concept
+            action_node.concept
         ):
             # TODO: Handle instantiate objects returning no result from functional learner
             # If that happens we should break from instantiating this utterance
@@ -446,7 +451,7 @@ class IntegratedTemplateLearner(
             sub_learner.log_hypotheses(log_output_path)
 
     def _extract_perception_graph(
-            self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
     ) -> PerceptionGraph:
         if perception.is_dynamic():
             return PerceptionGraph.from_dynamic_perceptual_representation(perception)
@@ -475,7 +480,7 @@ class IntegratedTemplateLearner(
     def learned_attribute_tokens(self) -> List[str]:
         attribute_tokens = []
         if self.attribute_learner and isinstance(
-                self.attribute_learner, SubsetAttributeLearnerNew
+            self.attribute_learner, SubsetAttributeLearnerNew
         ):
             for template in self.attribute_learner.surface_template_to_concept.keys():
                 for element in template.elements:
@@ -489,10 +494,10 @@ class IntegratedTemplateLearner(
             current_learner_state.language_concept_alignment.language.as_token_sequence()
         )
         for (
-                _,
-                span,
+            _,
+            span,
         ) in (
-                current_learner_state.language_concept_alignment.node_to_language_span.items()
+            current_learner_state.language_concept_alignment.node_to_language_span.items()
         ):
             potential_marker = None
             # Special case: Could be a object with a determiner included in the span
@@ -502,8 +507,8 @@ class IntegratedTemplateLearner(
             elif span.start > 0:
                 # If it's an attribute, look for the token preceeding the attribute
                 if (
-                        sequence[span.start - 1] in self.learned_attribute_tokens()
-                        and span.start > 1
+                    sequence[span.start - 1] in self.learned_attribute_tokens()
+                    and span.start > 1
                 ):
                     potential_marker = sequence[span.start - 2]
                 else:
@@ -530,10 +535,10 @@ class IntegratedTemplateLearner(
 
         # Check if any token in the sequence is a potential definiteness marker:
         for (
-                node,
-                span,
+            node,
+            span,
         ) in (
-                current_learner_state.language_concept_alignment.node_to_language_span.items()
+            current_learner_state.language_concept_alignment.node_to_language_span.items()
         ):
             if isinstance(node, ObjectSemanticNode):
                 # Special case: Could be a object with a determiner included in the span
@@ -543,8 +548,8 @@ class IntegratedTemplateLearner(
                 elif span.start > 0:
                     # If it's an attribute, look for the token preceeding the attribute
                     if (
-                            sequence[span.start - 1] in self.learned_attribute_tokens()
-                            and span.start > 1
+                        sequence[span.start - 1] in self.learned_attribute_tokens()
+                        and span.start > 1
                     ):
                         definite_marker_matches.append(
                             sequence[span.start - 2] in markers
@@ -556,7 +561,7 @@ class IntegratedTemplateLearner(
         return any(definite_marker_matches)
 
     def update_concept_semantics(
-            self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ):
         recognized_semantic_nodes = list(
             language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
@@ -587,9 +592,9 @@ class IntegratedTemplateLearner(
                 if slot:
                     # Update if the association exists, otherwise create
                     if (
-                            self.semantics_graph.has_edge(object_concept, other_concept)
-                            and slot
-                            == self.semantics_graph[object_concept][other_concept]["slot"]
+                        self.semantics_graph.has_edge(object_concept, other_concept)
+                        and slot
+                        == self.semantics_graph[object_concept][other_concept]["slot"]
                     ):
                         old_score = self.semantics_graph[object_concept][other_concept][
                             "weight"
@@ -606,8 +611,8 @@ class IntegratedTemplateLearner(
         # For each object - other concept pair learner through generics, set a high association strength
         if self.generics_learner:
             for (
-                    obj_con,
-                    other_concepts_and_object_slots,
+                obj_con,
+                other_concepts_and_object_slots,
             ) in self.generics_learner.learned_representations.values():
                 for other_con, slot in other_concepts_and_object_slots:
                     self.semantics_graph.add_edge(
@@ -623,39 +628,59 @@ class IntegratedTemplateLearner(
     def get_semantics_with_patterns(self) -> DiGraph:
         complete_semantics_graph = self.semantics_graph.to_directed()
         for concept, pattern in self.concepts_to_patterns.items():
-            pattern_graph = pattern._graph.to_directed()
+            pattern_graph = pattern.copy_as_digraph().to_directed()
             if concept not in complete_semantics_graph.nodes:
-                print(concept, 'not found')
+                print(concept, "not found")
                 continue
             if isinstance(concept, ObjectConcept):
                 # Get root object perception of pattern
-                potential_roots = set([n for n in pattern_graph.nodes if isinstance(n, AnyObjectPerception)])
+                potential_roots: Set[
+                    Union[AnyObjectPerception, ObjectSemanticNodePerceptionPredicate]
+                ] = set(
+                    [n for n in pattern_graph.nodes if isinstance(n, AnyObjectPerception)]
+                )
                 for u, v, data in pattern_graph.edges.data():
-                    if isinstance(v, AnyObjectPerception) and isinstance(u, AnyObjectPerception):
-                        if data['predicate'].relation_type == PART_OF and u in potential_roots:
+                    if isinstance(v, AnyObjectPerception) and isinstance(
+                        u, AnyObjectPerception
+                    ):
+                        if (
+                            data["predicate"].relation_type == PART_OF
+                            and u in potential_roots
+                        ):
                             potential_roots.remove(u)
                 try:
                     root = list(potential_roots)[0]
-                except:
+                except Exception as e:  # pylint: disable=broad-except
+                    logging.exception(e)
                     continue
             else:
                 # Many x s; red x s; x sits;
-                potential_roots = set([n for n in pattern_graph.nodes if isinstance(n, ObjectSemanticNodePerceptionPredicate)])
+                potential_roots = set(
+                    [
+                        n
+                        for n in pattern_graph.nodes
+                        if isinstance(n, ObjectSemanticNodePerceptionPredicate)
+                    ]
+                )
                 for u, v, data in pattern_graph.edges.data():
-                    if isinstance(v, ObjectSemanticNodePerceptionPredicate) and v in potential_roots:
+                    if (
+                        isinstance(v, ObjectSemanticNodePerceptionPredicate)
+                        and v in potential_roots
+                    ):
                         potential_roots.remove(v)
                 try:
                     root = list(potential_roots)[0]
-                except:
+                except Exception as e:  # pylint: disable=broad-except
+                    logging.exception(e)
                     continue
             complete_semantics_graph.add_edge(concept, root, pattern=type(concept))
-            for u,v,data in pattern_graph.edges.data():
+            for u, v, data in pattern_graph.edges.data():
                 complete_semantics_graph.add_edge(u, v, **data)
 
         return complete_semantics_graph
 
     def render_semantics_to_file(  # pragma: no cover
-            self, graph: Graph, graph_name: str, output_file: Path
+        self, graph: Graph, graph_name: str, output_file: Path
     ) -> None:
 
         dot_graph = graphviz.Graph(graph_name)
@@ -672,7 +697,7 @@ class IntegratedTemplateLearner(
         }
 
         for (source_node, target_node, data) in graph.edges.data():
-            edge_label = ' '.join([f'{k}={str(v)}' for k, v in data.items()])
+            edge_label = " ".join([f"{k}={str(v)}" for k, v in data.items()])
             source_dot_node = semantics_nodes_to_dot_node_ids[source_node]
             target_dot_node = semantics_nodes_to_dot_node_ids[target_node]
             dot_graph.edge(source_dot_node, target_dot_node, edge_label)
@@ -680,7 +705,10 @@ class IntegratedTemplateLearner(
         dot_graph.render(str(output_file))
 
     def to_dot_node(
-            self, dot_graph: graphviz.Graph, node: Concept, next_node_id: Incrementer
+        self,
+        dot_graph: graphviz.Graph,
+        node: Union[Concept, NodePredicate],
+        next_node_id: Incrementer,
     ) -> str:
         label = node.dot_label() if isinstance(node, NodePredicate) else node.debug_string
         attributes = {"label": label, "style": "solid"}
