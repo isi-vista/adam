@@ -3,11 +3,12 @@ from abc import ABC
 from itertools import chain
 from pathlib import Path
 from random import Random
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, Tuple
+from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, Tuple, Dict
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
 from adam.language import LinguisticDescription
+from adam.language_specific.english import DETERMINERS
 from adam.learner import (
     LearningExample,
     get_largest_matching_pattern,
@@ -129,7 +130,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             )
             if not language_alignment.token_index_is_aligned(tok_idx)
             # ignore determiners
-            and token not in ["a", "the"]
+            and token not in DETERMINERS
         )
 
     def _enrich_post_process(
@@ -694,6 +695,12 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         pass
+
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        return {
+            k: v
+            for k, v in self._object_recognizer._concepts_to_static_patterns.items()  # pylint:disable=protected-access
+        }
 
     @_concepts_to_templates.default
     def _init_concepts_to_templates(

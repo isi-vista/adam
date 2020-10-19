@@ -26,6 +26,7 @@ from adam.perception.perception_graph import (
     DebugCallableType,
     PerceptionGraph,
     PerceptionGraphPatternMatch,
+    PerceptionGraphPattern,
 )
 from adam.semantics import Concept, SemanticNode
 
@@ -132,10 +133,10 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
     _concept_to_hypotheses: Dict[Concept, ImmutableSet[PerceptionGraphTemplate]] = attrib(
         init=False, default=Factory(dict)
     )
-    _concept_to_surface_template: Dict[Concept, SurfaceTemplate] = attrib(
+    concept_to_surface_template: Dict[Concept, SurfaceTemplate] = attrib(
         init=False, default=Factory(dict)
     )
-    _surface_template_to_concept: Dict[SurfaceTemplate, Concept] = attrib(
+    surface_template_to_concept: Dict[SurfaceTemplate, Concept] = attrib(
         init=False, default=Factory(dict)
     )
     _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
@@ -173,7 +174,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
             # but eventually we will become quite sure it isn't one.
             return
 
-        if bound_surface_template.surface_template in self._surface_template_to_concept:
+        if bound_surface_template.surface_template in self.surface_template_to_concept:
             # We've seen this template before and already have some hypothesis about what it means
             # which we need to confirm or refine.
             # If already observed, get the largest matching subgraph of the pattern in the
@@ -184,7 +185,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
             # Instead we mediate the relationship with "concept" objects.
             # These don't matter now, but the split might be helpful in the future
             # when we might have multiple ways of expressing the same idea.
-            concept_for_surface_template = self._surface_template_to_concept[
+            concept_for_surface_template = self.surface_template_to_concept[
                 bound_surface_template.surface_template
             ]
             # What is our current hypotheses about what this template might mean?
@@ -258,10 +259,10 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
             concept = self._new_concept(
                 debug_string=bound_surface_template.surface_template.to_short_string()
             )
-            self._surface_template_to_concept[
+            self.surface_template_to_concept[
                 bound_surface_template.surface_template
             ] = concept
-            self._concept_to_surface_template[
+            self.concept_to_surface_template[
                 concept
             ] = bound_surface_template.surface_template
 
@@ -272,8 +273,8 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
             )
 
     def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
-        if concept in self._concept_to_surface_template:
-            return immutableset([self._concept_to_surface_template[concept]])
+        if concept in self.concept_to_surface_template:
+            return immutableset([self.concept_to_surface_template[concept]])
         else:
             return immutableset()
 
@@ -332,6 +333,9 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
             for hypothesis in hypotheses[1:]
             if len(hypotheses) > 1
         )
+
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        return {k: v.graph_pattern for k, v, _ in self._primary_templates()}
 
 
 @attrs  # pylint:disable=abstract-method

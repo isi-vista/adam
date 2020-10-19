@@ -46,6 +46,11 @@ class AttributeConcept(Concept):
 
 
 @attrs(frozen=True, eq=False)
+class KindConcept(Concept):
+    debug_string: str = attrib(validator=instance_of(str))
+
+
+@attrs(frozen=True, eq=False)
 class RelationConcept(Concept):
     debug_string: str = attrib(validator=instance_of(str))
 
@@ -57,6 +62,11 @@ class ActionConcept(Concept):
 
 @attrs(frozen=True, eq=False)
 class FunctionalObjectConcept(ObjectConcept):
+    debug_string: str = attrib(validator=instance_of(str))
+
+
+@attrs(frozen=True, eq=False)
+class GenericConcept(Concept):
     debug_string: str = attrib(validator=instance_of(str))
 
 

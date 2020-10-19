@@ -12,6 +12,7 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
 )
 import random
 
+from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.objects import PursuitObjectLearnerNew, ProposeButVerifyObjectLearner
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
@@ -31,13 +32,14 @@ from adam.experiment.experiment_utils import (
     build_m6_prepositions_curriculum,
     build_pursuit_curriculum,
     build_functionally_defined_objects_train_curriculum,
+    build_actions_and_generics_curriculum,
     build_object_learner_experiment_curriculum_train,
     observer_states_by_most_recent,
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import phase2_language_generator
-from adam.language_specific.english import ENGLISH_DETERMINERS
+from adam.language_specific.english import DETERMINERS
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
@@ -257,6 +259,7 @@ def learner_factory_from_params(
             "attribute-subset",
             "verb-subset",
             "integrated-learner",
+            "integrated-learner-recognizer-without-generics",
             "integrated-learner-recognizer",
             "pursuit-gaze",
             "integrated-object-only",
@@ -281,7 +284,7 @@ def learner_factory_from_params(
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
         objects,
-        determiners=ENGLISH_DETERMINERS,
+        determiners=DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
         perception_generator=perception_generator,
@@ -367,6 +370,29 @@ def learner_factory_from_params(
             functional_learner=FunctionalLearner(language_mode=language_mode),
         )
     elif learner_type == "integrated-learner-recognizer":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=object_recognizer, language_mode=language_mode
+            ),
+            attribute_learner=SubsetAttributeLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            relation_learner=SubsetRelationLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            functional_learner=FunctionalLearner(language_mode=language_mode),
+            generics_learner=SimpleGenericsLearner(),
+        )
+    elif learner_type == "integrated-learner-recognizer-without-generics":
         return lambda: IntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=object_recognizer, language_mode=language_mode
@@ -485,6 +511,7 @@ def curriculum_from_params(
         ),
         "m13-shuffled": (build_m13_shuffled_curriculum, build_gaila_m13_curriculum),
         "m13-relations": (make_prepositions_curriculum, None),
+        "actions-and-generics-curriculum": (build_actions_and_generics_curriculum, None),
         "m15-object-noise-experiments": (
             build_object_learner_experiment_curriculum_train,
             build_each_object_by_itself_curriculum_test,

@@ -10,6 +10,7 @@ from adam.perception import MatchMode
 from adam.perception.perception_graph import (
     IsOntologyNodePredicate,
     PerceptionGraphPatternMatch,
+    PerceptionGraphPattern,
 )
 from adam.ontology.phase1_ontology import GAZED_AT
 from typing import (
@@ -1211,6 +1212,9 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         ) in self._concept_to_hypotheses_and_scores.items():
             for (graph_pattern, score) in graph_patterns_to_scores.items():
                 yield (concept, graph_pattern, score)
+
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        return {k: v.graph_pattern for k, v, _ in self._primary_templates()}
 
     def _match_template(
         self,

@@ -2,6 +2,7 @@ from abc import ABC
 
 from typing import AbstractSet, Union, Optional, Tuple
 from adam.language import LinguisticDescription
+from adam.language_specific.english import DETERMINERS
 from adam.learner import LearningExample
 from adam.learner.language_mode import LanguageMode
 from adam.learner.alignments import (
@@ -118,7 +119,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             # later learning of attributes since the learner may consider both the attribute and the object to be objects initially,
             # leading it to try to match two objects with a template that only has one slot
             and not all(
-                (e in ["a", "the"] or isinstance(e, SyntaxSemanticsVariable))
+                (e in DETERMINERS or isinstance(e, SyntaxSemanticsVariable))
                 for e in bound_surface_template.surface_template.elements
             )
         )

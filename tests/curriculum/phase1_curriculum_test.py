@@ -1,5 +1,7 @@
 from adam.curriculum.phase1_curriculum import (
     Phase1InstanceGroup,
+    _make_kind_predicates_curriculum,
+    _make_colour_predicates_curriculum,
     _make_behind_in_front_curriculum,
     _make_come_curriculum,
     _make_drink_curriculum,
@@ -101,7 +103,7 @@ def test_objects_with_colors_is_curriculum(language_generator):
             and c[1].as_token_sequence()[2] == "is"
         ) or (
             language_generator == GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
-            and c[1].as_token_sequence()[1] == "shr4"
+            and c[1].as_token_sequence()[2] == "shr4"
         )
     curriculum_test(
         _make_objects_with_colors_is_curriculum(None, None, language_generator)
@@ -348,3 +350,19 @@ def test_behind_in_front_curriculum(language_generator):
 )
 def test_generics_curriculum(language_generator):
     curriculum_test(_make_generic_statements_curriculum(None, None, language_generator))
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_colour_predicates_curriculum(language_generator):
+    curriculum_test(_make_colour_predicates_curriculum(None, None, language_generator))
+
+
+@pytest.mark.parametrize(
+    "language_generator",
+    [GAILA_PHASE_1_LANGUAGE_GENERATOR, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR],
+)
+def test_kind_predicates_curriculum(language_generator):
+    curriculum_test(_make_kind_predicates_curriculum(None, None, language_generator))

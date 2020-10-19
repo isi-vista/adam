@@ -28,9 +28,9 @@ GAILA_PHASE_2_CHINESE_LEXICON = OntologyLexicon(
         (CUP_2, LexiconEntry("bei1 dz", NOUN)),
         (CUP_3, LexiconEntry("bei1 dz", NOUN)),
         (CUP_4, LexiconEntry("bei1 dz", NOUN)),
-        (CHAIR_2, LexiconEntry("yi3 dz", NOUN)),
-        (CHAIR_3, LexiconEntry("yi3 dz", NOUN)),
-        (CHAIR_4, LexiconEntry("yi3 dz", NOUN)),
-        (CHAIR_5, LexiconEntry("yi3 dz", NOUN)),
+        (CHAIR_2, LexiconEntry("yi3 dz", NOUN, counting_classifier="ba3")),
+        (CHAIR_3, LexiconEntry("yi3 dz", NOUN, counting_classifier="ba3")),
+        (CHAIR_4, LexiconEntry("yi3 dz", NOUN, counting_classifier="ba3")),
+        (CHAIR_5, LexiconEntry("yi3 dz", NOUN, counting_classifier="ba3")),
     ],
 )
