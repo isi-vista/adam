@@ -1079,12 +1079,14 @@ class DumpPartialMatchCallback:
         render_path,
         seconds_to_wait_before_rendering: int = 0,
         dump_every_x_calls: int = 100,
+        graphs_are_dynamic: bool = False,
     ) -> None:
         self.render_path = render_path
         self.calls_to_match_counter = 0
         self.start_time = process_time()
         self.seconds_to_wait_before_rendering = seconds_to_wait_before_rendering
         self.dump_every_x_calls = dump_every_x_calls
+        self.graphs_are_dynamic = graphs_are_dynamic
 
     def __call__(
         self, graph: DiGraph, graph_node_to_pattern_node: Dict[Any, Any]
@@ -1097,7 +1099,7 @@ class DumpPartialMatchCallback:
         ):
             perception_graph: PerceptionGraphProtocol
             try:
-                perception_graph = PerceptionGraph(graph)
+                perception_graph = PerceptionGraph(graph, dynamic=self.graphs_are_dynamic)
             except RuntimeError:
                 perception_graph = PerceptionGraphPattern(graph)
             title = (
