@@ -1,6 +1,10 @@
+import logging
+
+from pathlib import Path
+
 from itertools import repeat, chain
 from more_itertools import only
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Iterable, Tuple, List
 import random
 
 from adam.curriculum import AblatedLanguageSituationsInstanceGroup
@@ -50,6 +54,71 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 
 
+# Experiment Utils
+def observer_states_by_most_recent(
+    pickled_path: Path, pickel_name: str
+) -> Iterable[Tuple[int, Path]]:
+    paths = []
+    for logged_state_path in pickled_path.glob(f"{pickel_name}*.pkl"):
+        if not logged_state_path.is_file():
+            logging.warning("Skipping non-file learner state %s.", str(logged_state_path))
+            continue
+        iteration_number_string = logged_state_path.name.replace(
+            f"{pickel_name}", ""
+        ).replace(".pkl", "")
+        try:
+            iteration_number = int(iteration_number_string)
+        except ValueError:
+            logging.warning(
+                "Skipping Observer state file with bad iteration number %s.",
+                iteration_number_string,
+            )
+            continue
+        paths.append((iteration_number, logged_state_path))
+        logged_state_path.stat()
+    return sorted(paths, reverse=True)
+
+
+def restore_report_state(path: Path, num_instances: int) -> None:
+    """
+    Restore the output report files to the appropriate number of instances to match the loaded observer
+    """
+    lines_to_write_back: List[str] = []
+    with path.open("r") as file:
+        for num, line in enumerate(file):
+            if num < num_instances:
+                lines_to_write_back.append(line.strip())
+
+    # Remove the old file
+    path.unlink()
+
+    # Replace it with our new one
+    path.write_text("\n".join(lines_to_write_back))
+
+
+def restore_html_state(path: Path, num_instance: int) -> None:
+    """
+    Restore an experiment HTML output to a specific number of instances to match the experiment state
+    """
+    lines_to_write_back: List[str] = []
+    count_instances: int = 0
+    with path.open("r") as file:
+        for line in file:
+            lines_to_write_back.append(line)
+            if "</table>" in line:
+                count_instances = count_instances + 1
+
+            if count_instances >= num_instance:
+                break
+
+    # Remove the old file
+    path.unlink()
+
+    # Replace it with our new one
+    path.write_text("".join(lines_to_write_back))
+
+
+# Curriculum Construction
 def build_each_object_by_itself_curriculum_train(
     num_samples: Optional[int],
     num_noise_objects: Optional[int],

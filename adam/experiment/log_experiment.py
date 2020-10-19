@@ -1,5 +1,9 @@
 import logging
-from typing import Callable, Optional, Mapping, Iterable, Tuple
+import pickle
+
+from pathlib import Path
+
+from typing import Callable, Optional, Mapping, Iterable, Tuple, cast
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_size_curriculum,
@@ -7,7 +11,8 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
     make_subtle_verb_distinctions_curriculum,
 )
 import random
-from adam.learner.objects import PursuitObjectLearnerNew
+
+from adam.learner.objects import PursuitObjectLearnerNew, ProposeButVerifyObjectLearner
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
     build_gaila_m13_curriculum,
@@ -27,6 +32,7 @@ from adam.experiment.experiment_utils import (
     build_pursuit_curriculum,
     build_functionally_defined_objects_train_curriculum,
     build_object_learner_experiment_curriculum_train,
+    observer_states_by_most_recent,
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
@@ -37,6 +43,7 @@ from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.relations import SubsetRelationLearnerNew
+from adam.learner.template_learner import TemplateLearner
 from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
@@ -106,6 +113,109 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
     experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
 
+    resume_from_last_logged_state = params.boolean(
+        "resume_from_latest_logged_state", default=False
+    )
+
+    # Check if we have explicit observer states to load
+    observers_state = params.optional_existing_file("observers_state_path")
+
+    test_observer = []  # type: ignore
+    pre_observer = []  # type: ignore
+    post_observer = []  # type: ignore
+
+    if resume_from_last_logged_state and observers_state:
+        raise RuntimeError(
+            f"Can not resume from last logged state and provide explicit observer state paths"
+        )
+
+    if resume_from_last_logged_state:
+        if not experiment_group_dir:
+            raise RuntimeError(
+                "experiment_group_dir must be specified when resume_from_last_logged_state is true."
+            )
+
+        # Try to Load Observers
+        for _, observers_state_path in observer_states_by_most_recent(
+            cast(Path, experiment_group_dir) / "observer_state", "observers_state_at_"
+        ):
+            try:
+                with observers_state_path.open("rb") as f:
+                    observers_holder = pickle.load(f)
+                    pre_observer = observers_holder.pre_observers
+                    post_observer = observers_holder.post_observers
+                    test_observer = observers_holder.test_observers
+            except OSError:
+                logging.warning(
+                    "Unable to open observer state at %s; skipping.",
+                    str(observers_state_path),
+                )
+            except pickle.UnpicklingError:
+                logging.warning(
+                    "Couldn't unpickle observer state at %s; skipping.",
+                    str(observers_state_path),
+                )
+
+        if not pre_observer and not post_observer and not test_observer:
+            logging.warning("Reverting to default observers.")
+            pre_observer = [
+                logger.pre_observer(  # type: ignore
+                    params=params.namespace_or_empty("pre_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ]
+
+            post_observer = [
+                logger.post_observer(  # type: ignore
+                    params=params.namespace_or_empty("post_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ]
+
+            test_observer = [
+                logger.test_observer(  # type: ignore
+                    params=params.namespace_or_empty("test_observer"),
+                    experiment_group_dir=experiment_group_dir,
+                )
+            ]
+
+    elif observers_state:
+        try:
+            with observers_state.open("rb") as f:
+                observers_holder = pickle.load(f)
+                pre_observer = observers_holder.pre_observers
+                post_observer = observers_holder.post_observers
+                test_observer = observers_holder.test_observers
+        except OSError:
+            logging.warning(
+                "Unable to open observer state at %s; skipping.", str(observers_state)
+            )
+        except pickle.UnpicklingError:
+            logging.warning(
+                "Couldn't unpickle observer state at %s; skipping.", str(observers_state)
+            )
+    else:
+        pre_observer = [
+            logger.pre_observer(  # type: ignore
+                params=params.namespace_or_empty("pre_observer"),
+                experiment_group_dir=experiment_group_dir,
+            )
+        ]
+
+        post_observer = [
+            logger.post_observer(  # type: ignore
+                params=params.namespace_or_empty("post_observer"),
+                experiment_group_dir=experiment_group_dir,
+            )
+        ]
+
+        test_observer = [
+            logger.test_observer(  # type: ignore
+                params=params.namespace_or_empty("test_observer"),
+                experiment_group_dir=experiment_group_dir,
+            )
+        ]
+
     execute_experiment(
         Experiment(
             name=experiment_name,
@@ -113,25 +223,10 @@ def log_experiment_entry_point(params: Parameters) -> None:
             learner_factory=learner_factory_from_params(
                 params, graph_logger, language_mode
             ),
-            pre_example_training_observers=[
-                logger.pre_observer(  # type: ignore
-                    params=params.namespace_or_empty("pre_observer"),
-                    experiment_group_dir=experiment_group_dir,
-                )
-            ],
-            post_example_training_observers=[
-                logger.post_observer(  # type: ignore
-                    params=params.namespace_or_empty("post_observer"),
-                    experiment_group_dir=experiment_group_dir,
-                )
-            ],
+            pre_example_training_observers=pre_observer,
+            post_example_training_observers=post_observer,
             test_instance_groups=test_instance_groups,
-            test_observers=[
-                logger.test_observer(  # type: ignore
-                    params=params.namespace_or_empty("test_observer"),
-                    experiment_group_dir=experiment_group_dir,
-                )
-            ],
+            test_observers=test_observer,
             sequence_chooser=RandomChooser.for_seed(0),
         ),
         log_path=params.optional_creatable_directory("hypothesis_log_dir"),
@@ -143,9 +238,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
         starting_point=params.integer("starting_point", default=0),
         point_to_log=params.integer("point_to_log", default=0),
         load_learner_state=params.optional_existing_file("learner_state_path"),
-        resume_from_latest_logged_state=params.boolean(
-            "resume_from_latest_logged_state", default=False
-        ),
+        resume_from_latest_logged_state=resume_from_last_logged_state,
         debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
     )
 
@@ -166,6 +259,7 @@ def learner_factory_from_params(
             "integrated-learner",
             "integrated-learner-recognizer",
             "pursuit-gaze",
+            "integrated-object-only",
         ],
     )
 
@@ -294,6 +388,61 @@ def learner_factory_from_params(
             ),
             functional_learner=FunctionalLearner(language_mode=language_mode),
         )
+    elif learner_type == "integrated-object-only":
+        object_learner_type = params.string(
+            "object_learner_type",
+            valid_options=["subset", "pbv", "pursuit"],
+            default="subset",
+        )
+
+        if params.has_namespace("learner_params"):
+            learner_params = params.namespace("learner_params")
+        else:
+            learner_params = params.empty(namespace_prefix="learner_params")
+
+        object_learner_factory: Callable[[], TemplateLearner]
+        if object_learner_type == "subset":
+
+            def subset_factory() -> SubsetObjectLearnerNew:
+                return SubsetObjectLearnerNew(  # type: ignore
+                    ontology=GAILA_PHASE_2_ONTOLOGY,
+                    beam_size=beam_size,
+                    language_mode=language_mode,
+                )
+
+            object_learner_factory = subset_factory
+
+        elif object_learner_type == "pbv":
+
+            def pbv_factory() -> ProposeButVerifyObjectLearner:
+                return ProposeButVerifyObjectLearner.from_params(  # type: ignore
+                    learner_params
+                )
+
+            object_learner_factory = pbv_factory
+        elif object_learner_type == "pursuit":
+
+            def pursuit_factory() -> PursuitObjectLearnerNew:
+                return PursuitObjectLearnerNew(  # type: ignore
+                    learning_factor=learner_params.floating_point("learning_factor"),
+                    graph_match_confirmation_threshold=learner_params.floating_point(
+                        "graph_match_confirmation_threshold"
+                    ),
+                    lexicon_entry_threshold=learner_params.floating_point(
+                        "lexicon_entry_threshold"
+                    ),
+                    rng=rng,
+                    smoothing_parameter=learner_params.floating_point(
+                        "smoothing_parameter"
+                    ),
+                    ontology=GAILA_PHASE_2_ONTOLOGY,
+                    language_mode=language_mode,
+                )
+
+            object_learner_factory = pursuit_factory
+        else:
+            raise RuntimeError(f"Invalid Object Learner Type Selected: {learner_type}")
+        return lambda: IntegratedTemplateLearner(object_learner=object_learner_factory())
     else:
         raise RuntimeError("can't happen")
 
@@ -356,7 +505,9 @@ def curriculum_from_params(
     ]
 
     num_samples = params.optional_positive_integer("num_samples")
-    num_noise_objects = params.optional_positive_integer("num_noise_objects")
+    # We need to be able to accept 0 as the number of noise objects but optional_integer doesn't currently
+    # support specifying a range of acceptable values: https://github.com/isi-vista/vistautils/issues/142
+    num_noise_objects = params.optional_integer("num_noise_objects")
 
     if curriculum_name == "pursuit":
         return (
@@ -394,7 +545,7 @@ def curriculum_from_params(
                 num_samples,
                 num_noise_objects,
                 language_generator,
-                params=params.namespace_or_empty("situation"),
+                params=params.namespace_or_empty("train_curriculum"),
             ),
             test_instance_groups(num_samples, num_noise_objects, language_generator)
             if test_instance_groups
