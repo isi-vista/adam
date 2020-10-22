@@ -1453,8 +1453,8 @@ class PatternMatching:
 
             ```
             [[root_node],
-             [neighbors_of_root_node, ...],
-             [neighbors_of_neighbors_of_root_node, ...],
+             [neighbor_of_root_node, ...],
+             [neighbor_of_neighbors_of_root_node, ...],
              ...]
             ```
             """
