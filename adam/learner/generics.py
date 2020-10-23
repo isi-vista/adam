@@ -18,6 +18,7 @@ from adam.semantics import (
     ActionSemanticNode,
     AttributeSemanticNode,
     KindConcept,
+    ObjectConcept,
 )
 
 
@@ -128,3 +129,16 @@ class SimpleGenericsLearner(TemplateLearner):
                     significant_object_concept,
                     {(self.learned_kinds[kind], "is")},
                 )
+            # Potential "Wugs are aniamls"
+            elif not significant_object_concept and (
+                "are" in sequence or "shr4" in sequence
+            ):
+                # Filter out the kind words and use that for semantic encoding.
+                pred = "shr4" if "shr4" in sequence else "are"
+                potential_kind = sequence[sequence.index(pred) + 1]
+                # If we know the kind, generalize wug as an animal
+                if potential_kind in self.learned_kinds:
+                    self.learned_representations[sequence] = (
+                        ObjectConcept(sequence[0]),
+                        {(self.learned_kinds[potential_kind], "is")},
+                    )

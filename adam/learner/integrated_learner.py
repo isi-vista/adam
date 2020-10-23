@@ -53,6 +53,7 @@ from adam.semantics import (
     ObjectConcept,
     AttributeSemanticNode,
     Concept,
+    KindConcept,
 )
 
 
@@ -618,6 +619,36 @@ class IntegratedTemplateLearner(
                     self.semantics_graph.add_edge(
                         obj_con, other_con, slot=slot, weight=1.0
                     )
+                    # if the object is a wug - a new object heard through generics
+                    if not any(
+                        [
+                            obj_con.debug_string == c.debug_string
+                            for c in self.object_learner.concepts_to_patterns().keys()
+                        ]
+                    ) and isinstance(other_con, KindConcept):
+                        # Create a representation of the kind using association of its neighbors
+                        kind_neighbor_associations: Counter[
+                            Concept
+                        ] = collections.Counter()
+                        for member_of_kind in self.semantics_graph.predecessors(
+                            other_con
+                        ):
+                            if member_of_kind == obj_con:
+                                continue
+                            # We want this node to share the properties other members of that kind
+                            for n in self.semantics_graph.neighbors(member_of_kind):
+                                if isinstance(n, KindConcept):
+                                    continue
+                                kind_neighbor_associations[n] += 1
+
+                        coefficient = 1 / max(kind_neighbor_associations.values())
+                        for association, strength in kind_neighbor_associations.items():
+                            self.semantics_graph.add_edge(
+                                obj_con,
+                                association,
+                                slot="kind-based",
+                                weight=coefficient * strength,
+                            )
 
         for sub_learner in self._sub_learners:
             if isinstance(sub_learner, FunctionalLearner):
