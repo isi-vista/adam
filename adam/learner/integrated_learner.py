@@ -641,6 +641,7 @@ class IntegratedTemplateLearner(
                                     continue
                                 kind_neighbor_associations[n] += 1
 
+                        if len(kind_neighbor_associations.values()) == 0: continue
                         coefficient = 1 / max(kind_neighbor_associations.values())
                         for association, strength in kind_neighbor_associations.items():
                             self.semantics_graph.add_edge(
