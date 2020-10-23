@@ -1,3 +1,11 @@
+"""
+A script that generates a single curriculum for a single experiment.
+
+Takes two parameters:
+- curriculum_repository_path, the path to a curriculum repostiory where the script should write the
+  curriculum.
+- language_mode, the language mode for which the curriculum should be generated.
+"""
 from typing import List, Iterable
 
 from immutablecollections import immutableset
