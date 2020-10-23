@@ -116,6 +116,7 @@ subtype(SPAD, INANIMATE_OBJECT)
 DAYGIN = OntologyNode(
     "daygin", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, GREEN]
 )
+subtype(DAYGIN, INANIMATE_OBJECT)
 
 INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS = immutableset(
     [MAWG, TOMBUR, GLIM, ZUP, SPAD, DAYGIN, CAT, DOG, BIRD, CUP, BOOK]
@@ -157,7 +158,7 @@ INTEGRATED_EXPERIMENT_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
 )
 
 INTEGRATED_EXPERIMENT_ONTOLOGY = Ontology(
-    "gaila-phase-2",
+    "integrated_experiment_ontology",
     _ontology_graph,
     structural_schemata=[
         schemata
