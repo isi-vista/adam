@@ -18,6 +18,9 @@ from adam.ontology import (
 )
 from adam.ontology.action_description import ActionDescription, ActionDescriptionVariable
 from adam.ontology.during import DuringAction
+from adam.ontology.integrated_learner_experiement_ontology import (
+    INTEGRATED_EXPERIMENT_ONTOLOGY,
+)
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     ABOUT_THE_SAME_SIZE_AS_LEARNER,
@@ -1524,6 +1527,9 @@ GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalP
 )
 GAILA_PHASE_2_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_2_ONTOLOGY
+)
+INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+    INTEGRATED_EXPERIMENT_ONTOLOGY
 )
 
 GAILA_M6_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
