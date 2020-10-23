@@ -8,6 +8,7 @@ from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.experiment.log_experiment import curriculum_from_params
 from adam.experiment.curriculum_repository import (
+    ExperimentCurriculum,
     write_experiment_curriculum,
     IGNORED_PARAMETERS,
 )
@@ -44,9 +45,8 @@ def main(params: Parameters):
     train_curriculum, test_curriculum = curriculum_from_params(
         params, language_mode=language_mode
     )
-    strict_curriculum = (
-        evaluate_curriculum(train_curriculum),
-        evaluate_curriculum(test_curriculum),
+    strict_curriculum = ExperimentCurriculum(
+        evaluate_curriculum(train_curriculum), evaluate_curriculum(test_curriculum)
     )
     write_experiment_curriculum(
         curriculum_repository_path,

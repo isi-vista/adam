@@ -114,8 +114,12 @@ def log_experiment_entry_point(params: Parameters) -> None:
         "load_from_curriculum_repository"
     )
     if curriculum_repository_path:
-        (training_instance_groups, test_instance_groups) = read_experiment_curriculum(
+        curriculum = read_experiment_curriculum(
             curriculum_repository_path, params, language_mode
+        )
+        (training_instance_groups, test_instance_groups) = (
+            curriculum.train_curriculum,
+            curriculum.test_curriculum,
         )
     else:
         (training_instance_groups, test_instance_groups) = curriculum_from_params(

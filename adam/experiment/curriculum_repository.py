@@ -1,8 +1,12 @@
-from typing import Iterable, Tuple, AbstractSet
+from typing import Tuple, AbstractSet
 from pathlib import Path
 import pickle
 
+from attr import attrs, attrib
+from attr.validators import instance_of, deep_iterable
+
 from immutablecollections import immutableset, ImmutableSet
+from immutablecollections.converter_utils import _to_tuple
 from vistautils.parameters import Parameters
 
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
@@ -46,8 +50,20 @@ IGNORED_PARAMETERS: ImmutableSet[str] = immutableset(
 )
 
 
-Curriculum = Iterable[Phase1InstanceGroup]
-ExperimentCurriculum = Tuple[Curriculum, Curriculum]
+@attrs
+class ExperimentCurriculum:
+    """
+    Represents a saved curriculum for some experiment.
+    """
+
+    train_curriculum: Tuple[Phase1InstanceGroup, ...] = attrib(
+        validator=deep_iterable(member_validator=instance_of(Phase1InstanceGroup)),
+        converter=_to_tuple,
+    )
+    test_curriculum: Tuple[Phase1InstanceGroup, ...] = attrib(
+        validator=deep_iterable(member_validator=instance_of(Phase1InstanceGroup)),
+        converter=_to_tuple,
+    )
 
 
 _EXPERIMENT_CURRICULUM_FILE_NAME = "curriculum.pkl"
