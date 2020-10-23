@@ -1,16 +1,32 @@
 """
 Additions for the Curricula for DARPA GAILA Phase 2
 """
+import math
 
+from immutablecollections import immutableset, ImmutableSet
+
+from adam.language_specific.english.english_language_generator import IGNORE_COLORS
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import random
 
 from itertools import chain
-from typing import Sequence, Optional, Iterable
+from typing import Sequence, Optional, Iterable, Any, Tuple
 
 from more_itertools import flatten
 
 from adam.language.language_generator import LanguageGenerator
+from adam.ontology.integrated_learner_experiement_ontology import (
+    INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS,
+    INTEGRATED_EXPERIMENT_ONTOLOGY,
+    ZUP,
+    SPAD,
+    DAYGIN,
+    MAWG,
+    TOMBUR,
+    GLIM,
+)
+from adam.random_utils import RandomChooser
+from adam.relation import Relation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
@@ -20,6 +36,7 @@ from adam.curriculum.curriculum_utils import (
     phase2_instances,
     phase1_instances,
     make_noise_objects,
+    shuffle_curriculum,
 )
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_temporal_descriptions,
@@ -41,7 +58,13 @@ from adam.curriculum.phase1_curriculum import (
     make_sit_transitive,
     make_sit_template_intransitive,
 )
-from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
+from adam.curriculum.preposition_curriculum import (
+    make_prepositions_curriculum,
+    _on_template,
+    _beside_template,
+    _behind_template,
+    _in_front_template,
+)
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
@@ -61,6 +84,10 @@ from adam.ontology.phase1_ontology import (
     THEME,
     DRINK_CONTAINER_AUX,
     inside,
+    WHITE,
+    LIGHT_BROWN,
+    DARK_BROWN,
+    BLACK,
 )
 from adam.ontology.phase2_ontology import (
     CHAIR_2,
@@ -74,6 +101,7 @@ from adam.ontology.phase2_ontology import (
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
+    INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
 )
 from adam.situation import Action
 from adam.situation.templates.phase1_situation_templates import _put_in_template
@@ -86,6 +114,7 @@ from adam.situation.templates.phase1_templates import (
 )
 
 # TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
+from vistautils.parameters import Parameters
 
 
 def _make_sit_on_chair_curriculum(
@@ -424,4 +453,218 @@ def make_multiple_object_situation(
             block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
+    )
+
+
+INTEGRATED_EXPERIMENT_COLORS = immutableset([BLACK, WHITE, LIGHT_BROWN, DARK_BROWN])
+BOOL_SET = (True, False)
+
+
+def integrated_pursuit_learner_experiment_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+    *,
+    params: Parameters = Parameters.empty(),
+) -> Sequence[Phase1InstanceGroup]:
+
+    # Load Parameters
+    add_noise = params.boolean("add_noise", default=False)
+    block_multiple_of_same_type = params.boolean(
+        "block_multiple_of_same_type", default=False
+    )
+    if num_samples is None:
+        num_samples = 50
+
+    # Random Number Generator for Curriculum Use
+    rng = random.Random()
+    rng.seed(params.integer("random_seed", default=0))
+
+    # Random Chooser for Curriculum Generation
+    chooser = RandomChooser.for_seed(params.integer("chooser_seed", default=0))
+
+    # Noise Functions
+    def background_objects_builder(
+        target: TemplateObjectVariable, *, num_background_objects: int
+    ) -> ImmutableSet[TemplateObjectVariable]:
+        background_objs = []
+        for i, node in enumerate(INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS):
+            if i > num_background_objects:
+                break
+            node = chooser.choice(INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS)
+            # TODO: Introduce check to not duplicate target object if set
+            background_objs.append(standard_object(f"{node.handle}_{i}", node))
+
+        return immutableset(background_objs)
+
+    def background_relations_builder(
+        target: TemplateObjectVariable,
+        background_objects: Iterable[TemplateObjectVariable],
+    ) -> Iterable[Tuple[Relation[Any], ...]]:
+        raise NotImplementedError()
+
+    target_objects = [
+        standard_object(node.handle, node)
+        for node in INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS
+    ]
+    target_color_objects = [
+        standard_object(f"{node.handle}_{color.handle}", node, added_properties=[color])
+        for node in INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS
+        for color in INTEGRATED_EXPERIMENT_COLORS
+        if node not in [ZUP, SPAD, DAYGIN, MAWG, TOMBUR, GLIM]
+    ]
+
+    # Sub-Curriculums
+    def single_object_described_curriculum(max_to_sample: int) -> Phase1InstanceGroup:
+        def single_object_described_template(
+            target: TemplateObjectVariable,
+            *,
+            background_objects: Iterable[TemplateObjectVariable] = immutableset(),
+            relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+        ) -> Phase1SituationTemplate:
+            return Phase1SituationTemplate(
+                name=f"single-object-{target.handle}",
+                salient_object_variables=[target],
+                background_object_variables=background_objects,
+                asserted_always_relations=relations,
+                syntax_hints=[IGNORE_COLORS],
+            )
+
+        return phase2_instances(
+            "Single Object",
+            flatten(
+                [
+                    sampled(
+                        single_object_described_template(target_object),
+                        ontology=INTEGRATED_EXPERIMENT_ONTOLOGY,
+                        chooser=chooser,
+                        max_to_sample=max(
+                            math.ceil(max_to_sample / len(target_objects)), 6
+                        ),
+                        block_multiple_of_the_same_type=block_multiple_of_same_type,
+                    )
+                    for target_object in target_objects
+                ]
+            ),
+            language_generator=language_generator,
+            perception_generator=INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
+        )
+
+    def single_attribute_described_curriculum(max_to_sample: int) -> Phase1InstanceGroup:
+        def object_with_color(
+            target_with_color: TemplateObjectVariable,
+            *,
+            background_objects: Iterable[TemplateObjectVariable] = immutableset(),
+            background_relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+        ) -> Phase1SituationTemplate:
+            return Phase1SituationTemplate(
+                name=f"single-attribute-color-{target_with_color.handle}",
+                salient_object_variables=[target_with_color],
+                background_object_variables=background_objects
+                if add_noise
+                else immutableset(),
+                asserted_always_relations=background_relations
+                if add_noise
+                else immutableset(),
+            )
+
+        templates = [
+            object_with_color(target_object) for target_object in target_color_objects
+        ]
+        return phase2_instances(
+            "Single Attribute",
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=INTEGRATED_EXPERIMENT_ONTOLOGY,
+                        chooser=chooser,
+                        max_to_sample=max(
+                            math.ceil(max_to_sample / len(target_color_objects)), 6
+                        ),
+                        block_multiple_of_the_same_type=block_multiple_of_same_type,
+                    )
+                    for template in templates
+                ]
+            ),
+            language_generator=language_generator,
+            perception_generator=INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
+        )
+
+    def prepositional_relation_described_curriculum(
+        max_to_sample: int
+    ) -> Phase1InstanceGroup:
+        templates = [
+            _on_template(target_1, target_2, immutableset(), is_training=True)
+            for target_1 in target_objects
+            for target_2 in target_objects
+            if target_1 != target_2 and block_multiple_of_same_type
+        ]
+        templates.extend(
+            [
+                _beside_template(
+                    target_1,
+                    target_2,
+                    immutableset(),
+                    is_right=is_right,
+                    is_training=True,
+                )
+                for target_1 in target_objects
+                for target_2 in target_objects
+                for is_right in BOOL_SET
+                if target_1 != target_2 and block_multiple_of_same_type
+            ]
+        )
+        templates.extend(
+            [
+                _behind_template(
+                    target_1, target_2, immutableset(), is_near=is_near, is_training=True
+                )
+                for target_1 in target_objects
+                for target_2 in target_objects
+                for is_near in BOOL_SET
+                if target_1 != target_2 and block_multiple_of_same_type
+            ]
+        )
+        templates.extend(
+            [
+                _in_front_template(
+                    target_1, target_2, immutableset(), is_near=is_near, is_training=True
+                )
+                for target_1 in target_objects
+                for target_2 in target_objects
+                for is_near in BOOL_SET
+                if target_1 != target_2 and block_multiple_of_same_type
+            ]
+        )
+
+        return phase2_instances(
+            "Prepositional Relation",
+            flatten(
+                [
+                    sampled(
+                        template,
+                        ontology=INTEGRATED_EXPERIMENT_ONTOLOGY,
+                        chooser=chooser,
+                        max_to_sample=max(math.ceil(max_to_sample / 4), 10),
+                        block_multiple_of_the_same_type=block_multiple_of_same_type,
+                    )
+                    for template in templates
+                ]
+            ),
+            language_generator=language_generator,
+            perception_generator=INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
+        )
+
+    ordered_curriculum = [
+        single_object_described_curriculum(num_samples),
+        single_attribute_described_curriculum(num_samples),
+        prepositional_relation_described_curriculum(num_samples),
+    ]
+    return (
+        ordered_curriculum
+        if not params.boolean("random_order", default=False)
+        else shuffle_curriculum(ordered_curriculum, rng=rng)
     )
