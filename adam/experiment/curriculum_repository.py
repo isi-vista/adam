@@ -1,3 +1,15 @@
+"""
+Code for working with *curriculum repositories*, which are structured directories containing
+saved curricula to be used in experiments.
+
+Curricula are saved and loaded to paths within the repository directory based on the parameters to
+the curriculum or script. We use a fixed parameter ordering to insure that curriculum paths are
+consistent across different runs and scripts.
+
+Since the curriculum parameters are not currently "sandboxed" away from script parameters, we
+include all parameters other than the ones that have been specifically ignored. The user can specify
+additional ignored parameters as appropriate. Unrecognized parameters are an error.
+"""
 from typing import Tuple, AbstractSet
 from pathlib import Path
 import pickle
