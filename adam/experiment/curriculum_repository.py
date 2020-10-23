@@ -76,7 +76,7 @@ def _build_curriculum_path(
     *,
     ignored_parameters: AbstractSet[str] = IGNORED_PARAMETERS,
 ) -> Path:
-    path: Path = repository / LANGUAGE_MODE_TO_NAME[language_mode]
+    curriculum_file_path: Path = repository / LANGUAGE_MODE_TO_NAME[language_mode]
     unignored = immutableset(
         parameter
         for parameter, _ in parameters.namespaced_items()
@@ -91,9 +91,9 @@ def _build_curriculum_path(
 
     for parameter in iter(_PARAMETER_ORDER):
         value = parameters.get_optional(parameter, object)
-        path = path / f"{value}_{parameter}"
+        curriculum_file_path = curriculum_file_path / f"{value}_{parameter}"
 
-    return path / _EXPERIMENT_CURRICULUM_FILE_NAME
+    return curriculum_file_path / _EXPERIMENT_CURRICULUM_FILE_NAME
 
 
 def read_experiment_curriculum(
@@ -103,11 +103,11 @@ def read_experiment_curriculum(
     *,
     ignored_parameters: AbstractSet[str] = IGNORED_PARAMETERS,
 ) -> ExperimentCurriculum:
-    path = _build_curriculum_path(
+    curriculum_file_path = _build_curriculum_path(
         repository, parameters, language_mode, ignored_parameters=ignored_parameters
     )
 
-    with path.open("rb") as f:
+    with curriculum_file_path.open("rb") as f:
         unpickler = AdamUnpickler(file=f)
         curriculum = unpickler.load()
 
@@ -122,12 +122,12 @@ def write_experiment_curriculum(
     *,
     ignored_parameters: AbstractSet[str] = IGNORED_PARAMETERS,
 ):
-    path = _build_curriculum_path(
+    curriculum_file_path = _build_curriculum_path(
         repository, parameters, language_mode, ignored_parameters=ignored_parameters
     )
     # Create the parent directory if it doesn't exist, otherwise we can't write to it
-    path.parent.mkdir(exist_ok=True, parents=True)
+    curriculum_file_path.parent.mkdir(exist_ok=True, parents=True)
 
-    with path.open("wb") as f:
+    with curriculum_file_path.open("wb") as f:
         pickler = AdamPickler(file=f, protocol=pickle.HIGHEST_PROTOCOL)
         pickler.dump(curriculum)
