@@ -1,21 +1,18 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-
 from typing import Generic, Mapping, Optional, Tuple
-
-from more_itertools import only, take
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-
-from adam.language.dependency import LinearizedDependencyTree
+from more_itertools import only, take
 from vistautils.parameters import Parameters
 
 from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
-from adam.situation import SituationT
+from adam.language.dependency import LinearizedDependencyTree
 from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.situation import SituationT
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 
@@ -636,16 +633,18 @@ class HTMLLoggerPreObserver(  # pragma: no cover
     html_logger: LearningProgressHtmlLogger = attrib(
         init=True, validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
-    candidate_accuracy_observer: Optional[
-        CandidateAccuracyObserver
-    ] = attrib(
-        kw_only=True, validator=optional(instance_of(CandidateAccuracyObserver))
-    )  # type: ignore
-    precision_recall_observer: Optional[
-        PrecisionRecallObserver
-    ] = attrib(
-        kw_only=True, validator=optional(instance_of(PrecisionRecallObserver))
-    )  # type: ignore
+
+    # fmt: off
+    candidate_accuracy_observer: Optional[CandidateAccuracyObserver] = attrib(  # type: ignore
+        kw_only=True,
+        validator=optional(instance_of(CandidateAccuracyObserver)),
+    )
+
+    precision_recall_observer: Optional[PrecisionRecallObserver] = attrib(  # type: ignore
+        kw_only=True,
+        validator=optional(instance_of(PrecisionRecallObserver)),
+    )
+    # fmt: on
 
     def observe(  # pylint: disable=unused-argument
         self,

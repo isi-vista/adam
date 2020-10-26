@@ -109,12 +109,12 @@ class IntegratedTemplateLearner(
     _sub_learners: List[TemplateLearner] = attrib(init=False)
 
     potential_definiteness_markers: Counter[str] = attrib(
-        init=False, default=collections.Counter()
+        init=False, factory=collections.Counter
     )
 
-    semantics_graph: DiGraph = attrib(init=False, default=DiGraph())
+    semantics_graph: DiGraph = attrib(init=False, factory=DiGraph)
     concepts_to_patterns: Dict[Concept, PerceptionGraphPattern] = attrib(
-        init=False, default=dict()
+        init=False, factory=dict
     )
 
     def observe(
@@ -640,8 +640,8 @@ class IntegratedTemplateLearner(
                                 if isinstance(n, KindConcept):
                                     continue
                                 kind_neighbor_associations[n] += 1
-
-                        if len(kind_neighbor_associations.values()) == 0: continue
+                        if not kind_neighbor_associations.values():
+                            continue
                         coefficient = 1 / max(kind_neighbor_associations.values())
                         for association, strength in kind_neighbor_associations.items():
                             self.semantics_graph.add_edge(

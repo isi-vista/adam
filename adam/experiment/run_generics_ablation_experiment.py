@@ -26,11 +26,13 @@ def main(params: Parameters):
         ),
     ]:
         logging.info("Running %s", experiment)
-        setup_specifications = YAMLParametersLoader().load_string(CONFIGURATION_STRING.format(
-            experiment=experiment, learner=learner, curriculum=curriculum
-        ))
+        setup_specifications = YAMLParametersLoader().load_string(
+            CONFIGURATION_STRING.format(
+                experiment=experiment, learner=learner, curriculum=curriculum
+            )
+        )
         experiment_params = params.unify(setup_specifications)
-        print('Configuration specifications: \n', experiment_params)
+        print("Configuration specifications: \n", experiment_params)
         log_experiment_entry_point(experiment_params)
 
 
