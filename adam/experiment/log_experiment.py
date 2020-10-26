@@ -12,6 +12,7 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
 )
 import random
 
+from adam.experiment.curriculum_repository import read_experiment_curriculum
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.objects import PursuitObjectLearnerNew, ProposeButVerifyObjectLearner
 from adam.curriculum.phase2_curriculum import (
@@ -109,9 +110,21 @@ def log_experiment_entry_point(params: Parameters) -> None:
         "language_mode", LanguageMode, default=LanguageMode.ENGLISH
     )
 
-    (training_instance_groups, test_instance_groups) = curriculum_from_params(
-        params, language_mode
+    curriculum_repository_path = params.optional_existing_directory(
+        "load_from_curriculum_repository"
     )
+    if curriculum_repository_path:
+        curriculum = read_experiment_curriculum(
+            curriculum_repository_path, params, language_mode
+        )
+        (training_instance_groups, test_instance_groups) = (
+            curriculum.train_curriculum,
+            curriculum.test_curriculum,
+        )
+    else:
+        (training_instance_groups, test_instance_groups) = curriculum_from_params(
+            params, language_mode
+        )
 
     experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
 
