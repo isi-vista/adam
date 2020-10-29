@@ -567,7 +567,7 @@ class _PerceptionGeneration:
             # If it is a liquid not inside a container, add two-dimensional property
             if (
                 LIQUID
-                in GAILA_PHASE_2_ONTOLOGY.properties_for_node(
+                in self._generator.ontology.properties_for_node(
                     ontology_node
                     # TODO: Handle non-explicit liquid objects (subobjects, etc.)
                 )
@@ -578,7 +578,7 @@ class _PerceptionGeneration:
                     and r.relation_type == IN_REGION
                     and isinstance(r.second_slot, Region)
                     and HOLLOW
-                    in GAILA_PHASE_2_ONTOLOGY.properties_for_node(
+                    in self._generator.ontology.properties_for_node(
                         r.second_slot.reference_object.ontology_node
                     )
                     and r.second_slot.distance == INTERIOR
