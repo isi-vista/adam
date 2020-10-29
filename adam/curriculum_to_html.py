@@ -173,6 +173,9 @@ def main(params: Parameters) -> None:
             num_samples,
             num_noise_objects,
             integrated_experiment_language_generator(language_mode),
+            params=params.namespace("curriculum_params")
+            if params.has_namespace("curriculum_params")
+            else Parameters.empty(namespace_prefix="curriculum_params"),
         )
     else:
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](

@@ -2,6 +2,8 @@
 Additions for the Curricula for DARPA GAILA Phase 2
 """
 import math
+from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
+from adam.ontology.phase1_spatial_relations import Direction, PROXIMAL, DISTAL
 
 from immutablecollections import immutableset, ImmutableSet
 
@@ -26,7 +28,7 @@ from adam.ontology.integrated_learner_experiement_ontology import (
     GLIM,
 )
 from adam.random_utils import RandomChooser
-from adam.relation import Relation
+from adam.relation import Relation, flatten_relations
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
@@ -88,6 +90,12 @@ from adam.ontology.phase1_ontology import (
     LIGHT_BROWN,
     DARK_BROWN,
     BLACK,
+    INTEGRATED_EXPERIMENT_PROP,
+    CAN_HAVE_THINGS_RESTING_ON_THEM,
+    on,
+    near,
+    strictly_under,
+    far,
 )
 from adam.ontology.phase2_ontology import (
     CHAIR_2,
@@ -112,9 +120,9 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     TemplateObjectVariable,
 )
+from vistautils.parameters import Parameters
 
 # TODO: fix https://github.com/isi-vista/adam/issues/917 which causes us to have to specify that we don't wish to include ME_HACK and YOU_HACK in our curriculum design
-from vistautils.parameters import Parameters
 
 
 def _make_sit_on_chair_curriculum(
@@ -458,6 +466,7 @@ def make_multiple_object_situation(
 
 INTEGRATED_EXPERIMENT_COLORS = immutableset([BLACK, WHITE, LIGHT_BROWN, DARK_BROWN])
 BOOL_SET = (True, False)
+NOISE_RELATION_DSL_OPTIONS = immutableset(["on", "beside", "under", "in_front"])
 
 
 def integrated_pursuit_learner_experiment_curriculum(
@@ -473,8 +482,17 @@ def integrated_pursuit_learner_experiment_curriculum(
     # Load Parameters
     add_noise = params.boolean("add_noise", default=False)
     block_multiple_of_same_type = params.boolean(
-        "block_multiple_of_same_type", default=False
+        "block_multiple_of_same_type", default=True
     )
+    include_targets_in_noise = params.boolean("targets_in_noise", default=False)
+
+    min_noise_objects = params.integer("min_noise_objects", default=0)
+    max_noise_objects = params.integer(
+        "max_noise_objects", default=num_noise_objects if num_noise_objects else 10
+    )
+    min_noise_relations = params.integer("min_noise_relations", default=0)
+    max_noise_relations = params.integer("max_noise_relations", default=5)
+
     if num_samples is None:
         num_samples = 50
 
@@ -485,25 +503,99 @@ def integrated_pursuit_learner_experiment_curriculum(
     # Random Chooser for Curriculum Generation
     chooser = RandomChooser.for_seed(params.integer("chooser_seed", default=0))
 
-    # Noise Functions
-    def background_objects_builder(
-        target: TemplateObjectVariable, *, num_background_objects: int
-    ) -> ImmutableSet[TemplateObjectVariable]:
-        background_objs = []
-        for i, node in enumerate(INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS):
-            if i > num_background_objects:
-                break
-            node = chooser.choice(INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS)
-            # TODO: Introduce check to not duplicate target object if set
-            background_objs.append(standard_object(f"{node.handle}_{i}", node))
-
-        return immutableset(background_objs)
+    # Noise Elements
+    noise_objects_sets: ImmutableSet[ImmutableSet[TemplateObjectVariable]] = immutableset(
+        [
+            immutableset(
+                [
+                    standard_object(
+                        f"{i}_noise_object_{num}",
+                        THING,
+                        required_properties=[INTEGRATED_EXPERIMENT_PROP],
+                    )
+                    for num in range(i)
+                ]
+            )
+            for i in range(min_noise_objects, max_noise_objects)
+        ]
+    )
+    if noise_objects_sets.empty() or not add_noise:
+        noise_objects_sets = immutableset(immutableset())
 
     def background_relations_builder(
-        target: TemplateObjectVariable,
         background_objects: Iterable[TemplateObjectVariable],
-    ) -> Iterable[Tuple[Relation[Any], ...]]:
-        raise NotImplementedError()
+        num_relations: int,
+        *,
+        target: Optional[TemplateObjectVariable] = None,
+        target_2: Optional[TemplateObjectVariable] = None,
+    ) -> Iterable[Relation[Any]]:
+        if add_noise:
+            potential_objects = list(background_objects)
+            if target and include_targets_in_noise:
+                potential_objects.append(target)
+            if target_2 and include_targets_in_noise:
+                potential_objects.append(target_2)
+
+            if len(potential_objects) < 2:
+                return immutableset()
+
+            relations = []
+            for _ in range(num_relations):
+                choice = chooser.choice(NOISE_RELATION_DSL_OPTIONS)
+                if choice == "on":
+                    relations.append(
+                        on(
+                            chooser.choice(potential_objects),
+                            chooser.choice(potential_objects),
+                        )
+                    )
+                elif choice == "beside":
+                    obj_choice_2 = chooser.choice(potential_objects)
+                    relations.append(
+                        near(
+                            chooser.choice(potential_objects),
+                            obj_choice_2,
+                            direction=Direction(
+                                positive=chooser.choice(BOOL_SET),
+                                relative_to_axis=HorizontalAxisOfObject(
+                                    obj_choice_2, index=0
+                                ),
+                            ),
+                        )
+                    )
+                elif choice == "under":
+                    relations.append(
+                        strictly_under(
+                            chooser.choice(potential_objects),
+                            chooser.choice(potential_objects),
+                            dist=DISTAL if chooser.choice(BOOL_SET) else PROXIMAL,
+                        )
+                    )
+                elif choice == "in_front":
+                    obj_choice_2 = chooser.choice(potential_objects)
+                    direction = Direction(
+                        positive=chooser.choice(BOOL_SET),
+                        relative_to_axis=FacingAddresseeAxis(obj_choice_2),
+                    )
+                    relations.append(
+                        near(
+                            chooser.choice(potential_objects),
+                            obj_choice_2,
+                            direction=direction,
+                        )
+                        if chooser.choice(BOOL_SET)
+                        else far(
+                            chooser.choice(potential_objects),
+                            obj_choice_2,
+                            direction=direction,
+                        )
+                    )
+                else:
+                    raise RuntimeError("Invalid relation type in background relations")
+
+            return flatten_relations(relations)
+        else:
+            return immutableset()
 
     target_objects = [
         standard_object(node.handle, node)
@@ -515,6 +607,12 @@ def integrated_pursuit_learner_experiment_curriculum(
         for color in INTEGRATED_EXPERIMENT_COLORS
         if node not in [ZUP, SPAD, DAYGIN, MAWG, TOMBUR, GLIM]
     ]
+
+    samples_to_template_den = (
+        len(target_objects)
+        * len(noise_objects_sets)
+        * (max_noise_relations - min_noise_relations)
+    )
 
     # Sub-Curriculums
     def single_object_described_curriculum(max_to_sample: int) -> Phase1InstanceGroup:
@@ -532,20 +630,28 @@ def integrated_pursuit_learner_experiment_curriculum(
                 syntax_hints=[IGNORE_COLORS],
             )
 
+        templates = [
+            single_object_described_template(
+                target_object, background_objects=background_objects
+            )
+            for target_object in target_objects
+            for background_objects in noise_objects_sets
+        ]
+
         return phase2_instances(
             "Single Object",
             flatten(
                 [
                     sampled(
-                        single_object_described_template(target_object),
+                        template,
                         ontology=INTEGRATED_EXPERIMENT_ONTOLOGY,
                         chooser=chooser,
                         max_to_sample=max(
-                            math.ceil(max_to_sample / len(target_objects)), 6
+                            math.ceil(max_to_sample / samples_to_template_den), 5
                         ),
                         block_multiple_of_the_same_type=block_multiple_of_same_type,
                     )
-                    for target_object in target_objects
+                    for template in templates
                 ]
             ),
             language_generator=language_generator,
@@ -557,7 +663,7 @@ def integrated_pursuit_learner_experiment_curriculum(
             target_with_color: TemplateObjectVariable,
             *,
             background_objects: Iterable[TemplateObjectVariable] = immutableset(),
-            background_relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+            background_relations: Iterable[Relation[Any]] = immutableset(),
         ) -> Phase1SituationTemplate:
             return Phase1SituationTemplate(
                 name=f"single-attribute-color-{target_with_color.handle}",
@@ -571,7 +677,16 @@ def integrated_pursuit_learner_experiment_curriculum(
             )
 
         templates = [
-            object_with_color(target_object) for target_object in target_color_objects
+            object_with_color(
+                target_object,
+                background_objects=background_objects,
+                background_relations=background_relations_builder(
+                    background_objects, num_relations, target=target_object
+                ),
+            )
+            for target_object in target_color_objects
+            for background_objects in noise_objects_sets
+            for num_relations in range(min_noise_relations, max_noise_relations)
         ]
         return phase2_instances(
             "Single Attribute",
@@ -582,7 +697,7 @@ def integrated_pursuit_learner_experiment_curriculum(
                         ontology=INTEGRATED_EXPERIMENT_ONTOLOGY,
                         chooser=chooser,
                         max_to_sample=max(
-                            math.ceil(max_to_sample / len(target_color_objects)), 6
+                            math.ceil(max_to_sample / samples_to_template_den), 5
                         ),
                         block_multiple_of_the_same_type=block_multiple_of_same_type,
                     )
@@ -596,47 +711,94 @@ def integrated_pursuit_learner_experiment_curriculum(
     def prepositional_relation_described_curriculum(
         max_to_sample: int
     ) -> Phase1InstanceGroup:
+        target_1 = standard_object(
+            "target_1", THING, required_properties=[INTEGRATED_EXPERIMENT_PROP]
+        )
+        target_2 = standard_object(
+            "target_2", THING, required_properties=[INTEGRATED_EXPERIMENT_PROP]
+        )
+        target_with_object_on = standard_object(
+            "target with object on",
+            INANIMATE_OBJECT,
+            required_properties=[
+                INTEGRATED_EXPERIMENT_PROP,
+                CAN_HAVE_THINGS_RESTING_ON_THEM,
+            ],
+        )
         templates = [
-            _on_template(target_1, target_2, immutableset(), is_training=True)
-            for target_1 in target_objects
-            for target_2 in target_objects
-            if target_1 != target_2 and block_multiple_of_same_type
+            _on_template(
+                target_1,
+                target_with_object_on,
+                background_objects,
+                is_training=True,
+                background_relations=background_relations_builder(
+                    background_objects,
+                    num_relations,
+                    target=target_1,
+                    target_2=target_with_object_on,
+                ),
+            )
+            for background_objects in noise_objects_sets
+            for num_relations in range(min_noise_relations, max_noise_relations)
         ]
         templates.extend(
             [
                 _beside_template(
                     target_1,
                     target_2,
-                    immutableset(),
+                    background_objects,
                     is_right=is_right,
                     is_training=True,
+                    background_relations=background_relations_builder(
+                        background_objects,
+                        num_relations,
+                        target=target_1,
+                        target_2=target_2,
+                    ),
                 )
-                for target_1 in target_objects
-                for target_2 in target_objects
                 for is_right in BOOL_SET
-                if target_1 != target_2 and block_multiple_of_same_type
+                for background_objects in noise_objects_sets
+                for num_relations in range(min_noise_relations, max_noise_relations)
             ]
         )
         templates.extend(
             [
                 _behind_template(
-                    target_1, target_2, immutableset(), is_near=is_near, is_training=True
+                    target_1,
+                    target_2,
+                    background_objects,
+                    is_near=is_near,
+                    is_training=True,
+                    background_relations=background_relations_builder(
+                        background_objects,
+                        num_relations,
+                        target=target_1,
+                        target_2=target_2,
+                    ),
                 )
-                for target_1 in target_objects
-                for target_2 in target_objects
                 for is_near in BOOL_SET
-                if target_1 != target_2 and block_multiple_of_same_type
+                for background_objects in noise_objects_sets
+                for num_relations in range(min_noise_relations, max_noise_relations)
             ]
         )
         templates.extend(
             [
                 _in_front_template(
-                    target_1, target_2, immutableset(), is_near=is_near, is_training=True
+                    target_1,
+                    target_2,
+                    background_objects,
+                    is_near=is_near,
+                    is_training=True,
+                    background_relations=background_relations_builder(
+                        background_objects,
+                        num_relations,
+                        target=target_1,
+                        target_2=target_2,
+                    ),
                 )
-                for target_1 in target_objects
-                for target_2 in target_objects
                 for is_near in BOOL_SET
-                if target_1 != target_2 and block_multiple_of_same_type
+                for background_objects in noise_objects_sets
+                for num_relations in range(min_noise_relations, max_noise_relations)
             ]
         )
 
@@ -648,7 +810,9 @@ def integrated_pursuit_learner_experiment_curriculum(
                         template,
                         ontology=INTEGRATED_EXPERIMENT_ONTOLOGY,
                         chooser=chooser,
-                        max_to_sample=max(math.ceil(max_to_sample / 4), 10),
+                        max_to_sample=max(
+                            math.ceil(max_to_sample / samples_to_template_den), 5
+                        ),
                         block_multiple_of_the_same_type=block_multiple_of_same_type,
                     )
                     for template in templates

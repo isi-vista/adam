@@ -2,3 +2,14 @@ _includes:
     - curriculum_to_html.params
 
 curriculum: "integrated-experiment"
+
+curriculum_params:
+    add_noise: False
+    block_multiple_of_same_type: True
+    min_noise_objects: 0
+    max_noise_objects: 10
+    min_noise_relations: 0
+    max_noise_relations: 5
+
+    random_seed: 0
+    chooser_seed: 0

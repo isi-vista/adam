@@ -1,9 +1,9 @@
 from itertools import chain
-from typing import Iterable, Sequence, Optional, Any, Tuple
+from typing import Iterable, Sequence, Optional, Any
 from immutablecollections import immutableset
 from more_itertools import flatten
 from adam.language.language_generator import LanguageGenerator
-from adam.relation import Relation
+from adam.relation import Relation, flatten_relations
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
@@ -68,16 +68,16 @@ def _on_template(
     background: Iterable[TemplateObjectVariable],
     *,
     is_training: bool,
-    background_relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+    background_relations: Iterable[Relation[Any]] = immutableset(),
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     relations = [on(figure, ground)]
-    relations.extend(background_relations)
+    relations.extend(background_relations)  # type: ignore
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-on-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
-        asserted_always_relations=relations,
+        asserted_always_relations=flatten_relations(relations),
         gazed_objects=[figure],
     )
 
@@ -89,7 +89,7 @@ def _beside_template(
     *,
     is_right: bool,
     is_training: bool,
-    background_relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+    background_relations: Iterable[Relation[Any]] = immutableset(),
 ) -> Phase1SituationTemplate:
     direction_str = "right" if is_right else "left"
     handle = "training" if is_training else "testing"
@@ -103,12 +103,12 @@ def _beside_template(
             ),
         )
     ]
-    relations.extend(background_relations)
+    relations.extend(background_relations)  # type: ignore
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-beside-{ground.handle}-{direction_str}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
-        asserted_always_relations=relations,
+        asserted_always_relations=flatten_relations(relations),
         gazed_objects=[figure],
     )
 
@@ -121,19 +121,19 @@ def _under_template(
     is_training: bool,
     is_distal: bool,
     syntax_hints: Iterable[str] = immutableset(),
-    background_relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+    background_relations: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     relations = [
         negate(on(figure, GROUND_OBJECT_TEMPLATE)),
         strictly_under(ground, figure, dist=DISTAL if is_distal else PROXIMAL),
     ]
-    relations.extend(background_relations)
+    relations.extend(background_relations)  # type: ignore
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-under-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
-        asserted_always_relations=relations,
+        asserted_always_relations=flatten_relations(relations),
         constraining_relations=[bigger_than(ground, figure)],
         gazed_objects=[figure],
         syntax_hints=syntax_hints,
@@ -148,19 +148,19 @@ def _over_template(
     is_training: bool,
     is_distal: bool,
     syntax_hints: Iterable[str] = immutableset(),
-    background_relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+    background_relations: Iterable[TemplateObjectVariable] = immutableset(),
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     relations = [
         negate(on(figure, GROUND_OBJECT_TEMPLATE)),
         strictly_over(figure, ground, dist=DISTAL if is_distal else PROXIMAL),
     ]
-    relations.extend(background_relations)
+    relations.extend(background_relations)  # type: ignore
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-over-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=background,
-        asserted_always_relations=relations,
+        asserted_always_relations=flatten_relations(relations),
         gazed_objects=[figure],
         syntax_hints=syntax_hints,
     )
@@ -191,7 +191,7 @@ def _behind_template(
     is_training: bool,
     is_near: bool,
     speaker_root_node: OntologyNode = PERSON,
-    background_relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+    background_relations: Iterable[Relation[Any]] = immutableset(),
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     direction = Direction(positive=False, relative_to_axis=FacingAddresseeAxis(ground))
@@ -204,12 +204,12 @@ def _behind_template(
         if is_near
         else far(figure, ground, direction=direction)
     ]
-    relations.extend(background_relations)
+    relations.extend(background_relations)  # type: ignore
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=computed_background,
-        asserted_always_relations=relations,
+        asserted_always_relations=flatten_relations(relations),
         gazed_objects=[figure],
     )
 
@@ -222,7 +222,7 @@ def _in_front_template(
     is_training: bool,
     is_near: bool,
     speaker_root_node: OntologyNode = PERSON,
-    background_relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+    background_relations: Iterable[Relation[Any]] = immutableset(),
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     direction = Direction(positive=True, relative_to_axis=FacingAddresseeAxis(ground))
@@ -235,12 +235,12 @@ def _in_front_template(
         if is_near
         else far(figure, ground, direction=direction)
     ]
-    relations.extend(background_relations)
+    relations.extend(background_relations)  # type: ignore
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
         background_object_variables=computed_background,
-        asserted_always_relations=relations,
+        asserted_always_relations=flatten_relations(relations),
         gazed_objects=[figure],
     )
 
