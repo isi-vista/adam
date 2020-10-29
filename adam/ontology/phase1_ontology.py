@@ -227,6 +227,10 @@ subtype(HARD_FORCE, PROPERTY)
 SOFT_FORCE = OntologyNode("soft-force")
 subtype(SOFT_FORCE, PROPERTY)
 
+# Specific Experiment Selector Property
+INTEGRATED_EXPERIMENT_PROP = OntologyNode("integrated-experiment-selector")
+subtype(INTEGRATED_EXPERIMENT_PROP, PROPERTY)
+
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
 RED = OntologyNode("red", [CAN_FILL_TEMPLATE_SLOT])
@@ -364,6 +368,7 @@ BOOK = OntologyNode(
         RED,
         BLUE,
         GREEN,
+        INTEGRATED_EXPERIMENT_PROP,
     ],
 )
 subtype(BOOK, INANIMATE_OBJECT)
@@ -396,7 +401,16 @@ JUICE = OntologyNode(
 subtype(JUICE, SUBSTANCE)
 CUP = OntologyNode(
     "cup",
-    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, BLUE, GREEN, TRANSPARENT],
+    [
+        HOLLOW,
+        CAN_FILL_TEMPLATE_SLOT,
+        PERSON_CAN_HAVE,
+        RED,
+        BLUE,
+        GREEN,
+        TRANSPARENT,
+        INTEGRATED_EXPERIMENT_PROP,
+    ],
 )
 subtype(CUP, INANIMATE_OBJECT)
 
@@ -502,16 +516,48 @@ subtype(LEARNER, BABY)
 NONHUMAN_ANIMAL = OntologyNode("animal", inheritable_properties=[ANIMATE])
 subtype(NONHUMAN_ANIMAL, THING)
 DOG = OntologyNode(
-    "dog", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
+    "dog",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_JUMP,
+        BLACK,
+        WHITE,
+        LIGHT_BROWN,
+        DARK_BROWN,
+        INTEGRATED_EXPERIMENT_PROP,
+    ],
 )
 subtype(DOG, NONHUMAN_ANIMAL)
 CAT = OntologyNode(
-    "cat", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, WHITE, LIGHT_BROWN, DARK_BROWN]
+    "cat",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_JUMP,
+        BLACK,
+        WHITE,
+        LIGHT_BROWN,
+        DARK_BROWN,
+        INTEGRATED_EXPERIMENT_PROP,
+    ],
 )
 subtype(CAT, NONHUMAN_ANIMAL)
-BEAR = OntologyNode("bear", [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, DARK_BROWN])
+BEAR = OntologyNode(
+    "bear",
+    [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, DARK_BROWN, INTEGRATED_EXPERIMENT_PROP],
+)
 subtype(BEAR, NONHUMAN_ANIMAL)
-BIRD = OntologyNode("bird", [CAN_FILL_TEMPLATE_SLOT, CAN_FLY, RED, BLUE, BLACK, WHITE])
+BIRD = OntologyNode(
+    "bird",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_FLY,
+        RED,
+        BLUE,
+        BLACK,
+        WHITE,
+        INTEGRATED_EXPERIMENT_PROP,
+    ],
+)
 subtype(BIRD, NONHUMAN_ANIMAL)
 
 PHASE_1_CURRICULUM_OBJECTS = immutableset(
