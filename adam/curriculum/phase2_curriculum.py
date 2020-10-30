@@ -484,7 +484,7 @@ def integrated_pursuit_learner_experiment_curriculum(
     block_multiple_of_same_type = params.boolean(
         "block_multiple_of_same_type", default=True
     )
-    include_targets_in_noise = params.boolean("targets_in_noise", default=False)
+    include_targets_in_noise = params.boolean("include_targets_in_noise", default=False)
 
     min_noise_objects = params.integer("min_noise_objects", default=0)
     max_noise_objects = params.integer(
