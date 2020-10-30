@@ -1,4 +1,7 @@
-from typing import Iterable, Union, Optional
+from random import Random
+
+from more_itertools import flatten
+from typing import Iterable, Union, Optional, Sequence, List
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from immutablecollections import immutableset
 from adam.language.language_generator import LanguageGenerator
@@ -23,6 +26,7 @@ from adam.perception.developmental_primitive_perception import (
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+    GAILA_PHASE_2_PERCEPTION_GENERATOR,
 )
 from adam.random_utils import RandomChooser
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -117,7 +121,7 @@ def phase1_instances(
 def phase2_instances(
     description: str,
     situations: Iterable[HighLevelSemanticsSituation],
-    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ] = GAILA_PHASE_2_LANGUAGE_GENERATOR,
@@ -154,3 +158,11 @@ def make_noise_objects(noise_objects: Optional[int]) -> Iterable[TemplateObjectV
 
 def learner_template_factory() -> TemplateObjectVariable:
     return standard_object("learner_factory", LEARNER)
+
+
+def shuffle_curriculum(
+    curriculum: List[Phase1InstanceGroup], *, rng: Random
+) -> Sequence[Phase1InstanceGroup]:
+    curriculum = flatten(curriculum)
+    rng.shuffle(curriculum)
+    return curriculum

@@ -14,7 +14,10 @@ from typing import (
     Dict,
     Mapping,
 )
-from adam.language.language_utils import phase2_language_generator
+from adam.language.language_utils import (
+    phase2_language_generator,
+    integrated_experiment_language_generator,
+)
 from adam.learner.language_mode import LanguageMode
 from adam.language.language_generator import LanguageGenerator
 from adam.axis import GeonAxis
@@ -41,7 +44,10 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
 from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
 
 from adam.curriculum.m6_curriculum import make_m6_curriculum
-from adam.curriculum.phase2_curriculum import build_gaila_m8_curriculum
+from adam.curriculum.phase2_curriculum import (
+    build_gaila_m8_curriculum,
+    integrated_pursuit_learner_experiment_curriculum,
+)
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
 from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
@@ -143,6 +149,7 @@ STR_TO_CURRICULUM: Mapping[str, CURRICULUM_BUILDER] = {
     "imprecise-temporal": make_imprecise_temporal_descriptions,
     "imprecise-size": make_imprecise_size_curriculum,
     "subtle-verb-distinction": make_subtle_verb_distinctions_curriculum,
+    "integrated-experiment": integrated_pursuit_learner_experiment_curriculum,
 }
 
 
@@ -161,9 +168,19 @@ def main(params: Parameters) -> None:
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
     # We lazily instantiate the curriculum so we don't need to worry
     # about any of them we don't actually use.
-    curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-        num_samples, num_noise_objects, phase2_language_generator(language_mode)
-    )
+    if curriculum_string == "integrated-experiment":
+        curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
+            num_samples,
+            num_noise_objects,
+            integrated_experiment_language_generator(language_mode),
+            params=params.namespace("curriculum_params")
+            if params.has_namespace("curriculum_params")
+            else Parameters.empty(namespace_prefix="curriculum_params"),
+        )
+    else:
+        curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
+            num_samples, num_noise_objects, phase2_language_generator(language_mode)
+        )
     sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:
         random_seed = params.integer("random_seed", default=1)
