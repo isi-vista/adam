@@ -157,8 +157,10 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             fake_object_semantic_node = ObjectSemanticNode(
                 concept=FunctionalObjectConcept("unknown_object")
             )
-            perception_graph_after_processing = replace_match_root_with_object_semantic_node(
-                object_semantic_node=fake_object_semantic_node,
+            # perception_graph_after_processing = replace_match_root_with_object_semantic_node(
+            #     object_semantic_node=fake_object_semantic_node,
+            perception_graph_after_processing = replace_match_with_object_graph_node(
+                matched_object_node=fake_object_semantic_node,
                 current_perception=perception_graph_after_processing,
                 pattern_match=PerceptionGraphPatternMatch(
                     matched_pattern=fake_pattern_graph.perception_graph_pattern,
@@ -694,7 +696,11 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         raise RuntimeError(f"Invalid concept {concept}")
 
     def log_hypotheses(self, log_output_path: Path) -> None:
-        pass
+        for concept,hypothesis in self.concepts_to_patterns().items():
+            hypothesis.render_to_file(
+                graph_name="perception",
+                output_file=Path(log_output_path / f'{str(type(self))}-{concept.debug_string}'),
+            )
 
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
         return {

@@ -41,18 +41,18 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 
     @abstractmethod
     def _update_hypothesis(
-        self,
-        previous_pattern_hypothesis: PerceptionGraphTemplate,
-        current_pattern_hypothesis: PerceptionGraphTemplate,
+            self,
+            previous_pattern_hypothesis: PerceptionGraphTemplate,
+            current_pattern_hypothesis: PerceptionGraphTemplate,
     ) -> Optional[PerceptionGraphTemplate]:
         """
         Method to handle how to intersect hypothesis to possibly update hypothesis
         """
 
     def _learning_step(
-        self,
-        preprocessed_input: LanguageAlignedPerception,
-        surface_template: SurfaceTemplate,
+            self,
+            preprocessed_input: LanguageAlignedPerception,
+            surface_template: SurfaceTemplate,
     ) -> None:
         if surface_template in self._surface_template_to_hypothesis:
             # If already observed, get the largest matching subgraph of the pattern in the
@@ -88,31 +88,31 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 
     @abstractmethod
     def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageAlignedPerception
+            self, preprocessed_input: LanguageAlignedPerception
     ) -> PerceptionGraphTemplate:
         pass
 
     def _primary_templates(
-        self
+            self
     ) -> Iterable[Tuple[SurfaceTemplate, PerceptionGraphTemplate, float]]:
         return (
             (surface_template, hypothesis, 1.0)
             for (
-                surface_template,
-                hypothesis,
-            ) in self._surface_template_to_hypothesis.items()
+            surface_template,
+            hypothesis,
+        ) in self._surface_template_to_hypothesis.items()
         )
 
     def _fallback_templates(
-        self
+            self
     ) -> Iterable[Tuple[SurfaceTemplate, PerceptionGraphTemplate, float]]:
         return tuple()
 
     def _post_process_descriptions(
-        self,
-        match_results: Sequence[
-            Tuple[TokenSequenceLinguisticDescription, PerceptionGraphTemplate, float]
-        ],
+            self,
+            match_results: Sequence[
+                Tuple[TokenSequenceLinguisticDescription, PerceptionGraphTemplate, float]
+            ],
     ) -> Mapping[TokenSequenceLinguisticDescription, float]:
         if not match_results:
             return immutabledict()
@@ -146,18 +146,18 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
 
     @abstractmethod
     def _update_hypothesis(
-        self,
-        previous_pattern_hypothesis: PerceptionGraphTemplate,
-        current_pattern_hypothesis: PerceptionGraphTemplate,
+            self,
+            previous_pattern_hypothesis: PerceptionGraphTemplate,
+            current_pattern_hypothesis: PerceptionGraphTemplate,
     ) -> Optional[PerceptionGraphTemplate]:
         """
         Method to handle how to intersect hypothesis to possibly update hypothesis
         """
 
     def _learning_step(
-        self,
-        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
-        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+            self,
+            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+            bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> None:
         """
         Try to learn the semantics of a `SurfaceTemplate` given the assumption
@@ -219,7 +219,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
 
             def should_keep_hypothesis(hypothesis: PerceptionGraphTemplate) -> bool:
                 if len(hypothesis.template_variable_to_pattern_node) != len(
-                    bound_surface_template.slot_to_semantic_node
+                        bound_surface_template.slot_to_semantic_node
                 ):
                     # We've managed to lose our wildcard slot somehow.
                     return False
@@ -254,6 +254,11 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
                 )
                 self._known_bad_patterns.add(bound_surface_template.surface_template)
         else:
+            # # Skip if a template is already recognized in perception (prevents learning "two" in two "ball" s)
+            # if any(cand.surface_template in self.surface_template_to_concept for cand in
+            #        self._candidate_templates(language_perception_semantic_alignment)):
+            #     return
+
             # If it's a new template, learn a new hypothesis/pattern, generated as a pattern
             # graph from the perception graph.
             concept = self._new_concept(
@@ -286,10 +291,10 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
 
     @abstractmethod
     def _keep_hypothesis(
-        self,
-        *,
-        hypothesis: PerceptionGraphTemplate,
-        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+            self,
+            *,
+            hypothesis: PerceptionGraphTemplate,
+            bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> bool:
         """
         Should a candidate hypothesis for the meaning of *bound_surface_template* be kept,
@@ -305,16 +310,16 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
 
     @abstractmethod
     def _hypotheses_from_perception(
-        self,
-        learning_state: LanguagePerceptionSemanticAlignment,
-        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+            self,
+            learning_state: LanguagePerceptionSemanticAlignment,
+            bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> AbstractSet[PerceptionGraphTemplate]:
         """
         Get a hypothesis for the meaning of *surface_template* from a given *learning_state*.
         """
 
     def _primary_templates(
-        self
+            self
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         return (
             (concept, hypotheses[0], 1.0)

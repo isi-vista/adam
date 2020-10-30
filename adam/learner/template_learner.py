@@ -30,7 +30,7 @@ from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
     replace_match_root_with_object_semantic_node,
     _get_root_object_perception,
-)
+    replace_match_with_object_graph_node)
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
     SurfaceTemplate,
@@ -41,7 +41,7 @@ from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPatternMatch
+from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPatternMatch, ENTIRE_SCENE
 from adam.semantics import (
     Concept,
     ObjectConcept,
@@ -393,7 +393,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         ) -> None:
             rtrn = self._match_template(
                 concept=concept,
-                pattern=pattern,
+                pattern=pattern.copy_with_temporal_scopes(ENTIRE_SCENE) if preprocessed_perception_graph.dynamic and not pattern.graph_pattern.dynamic else pattern,
                 perception_graph=preprocessed_perception_graph,
             )
             # Its possible there is no match for the template in the graph
@@ -416,6 +416,9 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 == graph_pattern.graph_pattern.dynamic
             ):
                 match_template(concept=concept, pattern=graph_pattern, score=score)
+            elif preprocessed_perception_graph.dynamic and not graph_pattern.graph_pattern.dynamic:
+                match_template(concept=concept, pattern=graph_pattern.copy_with_temporal_scopes(
+                        ENTIRE_SCENE), score=score)
             else:
                 logging.debug(
                     f"Unable to try and match {concept} to {preprocessed_perception_graph} "
@@ -439,7 +442,14 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         matched_objects.sort(key=by_pattern_complexity, reverse=True)
         already_replaced: Set[ObjectPerception] = set()
         new_nodes: List[SemanticNode] = []
+        # print('matched obj', matched_objects)
         for (matched_object_node, pattern_match) in matched_objects:
+            if matched_object_node not in perception_graph_after_matching.copy_as_digraph().nodes: continue
+            # perception_graph_after_matching = replace_match_with_object_graph_node(
+            #     matched_object_node=cast(ObjectSemanticNode, matched_object_node),
+            #     current_perception=perception_graph_after_matching,
+            #     pattern_match=pattern_match
+            # )
             root: ObjectPerception = _get_root_object_perception(
                 pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
                 immutableset(
@@ -448,10 +458,10 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 ),
             )
             if root not in already_replaced:
-                perception_graph_after_matching = replace_match_root_with_object_semantic_node(
-                    object_semantic_node=cast(ObjectSemanticNode, matched_object_node),
+                perception_graph_after_matching = replace_match_with_object_graph_node(
+                    matched_object_node=cast(ObjectSemanticNode, matched_object_node),
                     current_perception=perception_graph_after_matching,
-                    pattern_match=pattern_match,
+                    pattern_match=pattern_match
                 )
                 already_replaced.add(root)
                 new_nodes.append(matched_object_node)
@@ -460,10 +470,10 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     f"Matched pattern for {matched_object_node} "
                     f"but root object {root} already replaced."
                 )
-        if matched_objects:
-            immutable_new_nodes = immutableset(new_nodes)
-        else:
-            immutable_new_nodes = immutableset(node for (node, _) in match_to_score)
+        # if matched_objects:
+        #     immutable_new_nodes = immutableset(new_nodes)
+        # else:
+        immutable_new_nodes = immutableset(node for (node, _) in match_to_score)
 
         (
             perception_graph_after_post_processing,

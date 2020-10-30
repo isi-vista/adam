@@ -6,42 +6,23 @@ import numpy as np
 import pandas as pd
 import seaborn as sb
 
-from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY
 from adam.curriculum.phase1_curriculum import (
-    _make_kind_predicates_curriculum,
     _make_each_object_by_itself_curriculum,
-    _make_generic_statements_curriculum,
-    _make_eat_curriculum,
-    _make_drink_curriculum,
-    _make_sit_curriculum,
-    _make_jump_curriculum,
-    _make_fly_curriculum,
-    _make_plural_objects_curriculum,
     _make_objects_with_colors_curriculum,
-    _make_colour_predicates_curriculum,
-    _make_objects_with_colors_is_curriculum)
-from adam.language import TokenSequenceLinguisticDescription
-from adam.language.language_utils import phase2_language_generator, phase1_language_generator
+    _make_colour_predicates_curriculum)
+from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import (
-    semantics_as_weighted_adjacency_matrix,
-    evaluate_kind_membership,
     cos_sim,
     get_concept_node_from_graph)
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.verbs import SubsetVerbLearnerNew
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, GROUND
-from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
-from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
-    GAILA_PHASE_2_PERCEPTION_GENERATOR,
-)
-from adam.semantics import Concept, ObjectConcept, AttributeConcept
-from adam.situation import SituationObject
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.semantics import Concept, AttributeConcept
 from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 
 
@@ -68,7 +49,6 @@ def run_experiment(learner, curricula, experiment_id):
         "watermelon": "green",
         "cookie": "light brown",
         "paper": "white",
-        # "bear": "dark brown",
     }
 
     # Teach pretraining curriculum
@@ -108,6 +88,7 @@ def run_experiment(learner, curricula, experiment_id):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
+        print(' '.join(linguistic_description.as_token_sequence()))
 
     # Evaluate assocations after generics
     for word, color in english_color_dictionary.items():
@@ -121,9 +102,7 @@ def run_experiment(learner, curricula, experiment_id):
         ]
         results.sort(key=lambda x: x[1], reverse=True)
         print(results)
-    # Teach each kind member
 
-    # Teach generics colors
     #
     #
     #     embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)

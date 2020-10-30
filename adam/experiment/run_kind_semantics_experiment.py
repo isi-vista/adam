@@ -1,4 +1,5 @@
 import random
+from pathlib import Path
 from typing import Any, Dict
 
 import matplotlib.pyplot as plt
@@ -32,6 +33,7 @@ from adam.learner.learner_utils import (
     evaluate_kind_membership,
     cos_sim,
 )
+from adam.learner.objects import PursuitObjectLearnerNew, SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, GROUND
@@ -49,7 +51,10 @@ def integrated_learner_factory(language_mode: LanguageMode):
     rng = random.Random()
     rng.seed(0)
     return IntegratedTemplateLearner(
-        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
+        # object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
+        object_learner=SubsetObjectLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+        ),
         attribute_learner=SubsetAttributeLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
@@ -71,55 +76,70 @@ def run_experiment(learner, curricula, experiment_id):
             linguistic_description,
             perceptual_representation,
         ) in curriculum.instances():
-            # Get the object matches first - preposition learner can't learn without already recognized objects
+            # Get the object matches first - prepositison learner can't learn without already recognized objects
+            print(' '.join(linguistic_description.as_token_sequence()))
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
             )
 
-    # Teach each kind member
-    empty_situation = HighLevelSemanticsSituation(
-        ontology=GAILA_PHASE_2_ONTOLOGY,
-        salient_objects=[
-            SituationObject.instantiate_ontology_node(
-                ontology_node=GROUND,
-                debug_handle=GROUND.handle,
-                ontology=GAILA_PHASE_1_ONTOLOGY,
-            )
-        ],
-    )
-    empty_perception = GAILA_PHASE_2_PERCEPTION_GENERATOR.generate_perception(
-        empty_situation, PHASE1_CHOOSER_FACTORY()
-    )
-    pseudoword_to_kind = {"wug": "animal", "vonk": "food", "snarp": "people"}
-    for word, kind in pseudoword_to_kind.items():
-        learner.observe(
-            LearningExample(
-                empty_perception,
-                TokenSequenceLinguisticDescription(tokens=(word, "s", "are", kind, "s"))
-                if kind != "people"
-                else TokenSequenceLinguisticDescription(
-                    tokens=(word, "s", "are", kind, "s")
-                ),
-            )
-        )
+    learner.object_learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
+    learner.action_learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
 
-    for word, gold_kind in pseudoword_to_kind.items():
-        print(word, gold_kind)
-        results = [
-            (kind, evaluate_kind_membership(learner.semantics_graph, word, kind))
-            for kind in pseudoword_to_kind.values()
-        ]
-        results.sort(key=lambda x: x[1], reverse=True)
-        print(results)
 
-        embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
-        objects_to_embeddings = {
-            n: embeddings[i]
-            for i, n in enumerate(learner.semantics_graph.nodes)
-            if isinstance(n, ObjectConcept)
-        }
-        generate_heatmap(objects_to_embeddings, experiment_id)
+    # # Teach each kind member
+    # empty_situation = HighLevelSemanticsSituation(
+    #     ontology=GAILA_PHASE_2_ONTOLOGY,
+    #     salient_objects=[
+    #         SituationObject.instantiate_ontology_node(
+    #             ontology_node=GROUND,
+    #             debug_handle=GROUND.handle,
+    #             ontology=GAILA_PHASE_1_ONTOLOGY,
+    #         )
+    #     ],
+    # )
+    # empty_perception = GAILA_PHASE_2_PERCEPTION_GENERATOR.generate_perception(
+    #     empty_situation, PHASE1_CHOOSER_FACTORY()
+    # )
+    # pseudoword_to_kind = {"wug": "animal", "vonk": "food", "snarp": "people"}
+    # for word, kind in pseudoword_to_kind.items():
+    #     print(word, "s", "are", kind, "s")
+    #     learner.observe(
+    #         LearningExample(
+    #             empty_perception,
+    #             TokenSequenceLinguisticDescription(tokens=(word, "s", "are", kind, "s"))
+    #             if kind != "people"
+    #             else TokenSequenceLinguisticDescription(
+    #                 tokens=(word, "s", "are", kind, "s")
+    #             ),
+    #         )
+    #     )
+    #
+    # complete_results = []
+    # print('Results for ', experiment_id)
+    # for word, gold_kind in pseudoword_to_kind.items():
+    #     results = [
+    #         (kind, evaluate_kind_membership(learner.semantics_graph, word, kind))
+    #         for kind in pseudoword_to_kind.values()
+    #     ]
+    #     complete_results.append(results)
+    #
+    # results_df = pd.DataFrame([[np.asscalar(i[1]) for i in l] for l in complete_results], columns=['Animal', 'Food', 'People'])
+    # results_df.insert(0,'Words',pseudoword_to_kind.keys())
+    # print(results_df.to_csv(index=False))
 
+    # embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
+    # objects_to_embeddings = {
+    #     n: embeddings[i]
+    #     for i, n in enumerate(learner.semantics_graph.nodes)
+    #     if isinstance(n, ObjectConcept)
+    # }
+    # generate_heatmap(objects_to_embeddings, experiment_id)
+    #
+    # learner.render_semantics_to_file(
+    #     graph=learner.semantics_graph,
+    #     graph_name="semantics",
+    #     output_file=Path(f"./renders/{experiment_id}.png"),
+    # )
     # learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
     # generate_similarities(semantic_matrix, list(learner.semantics_graph.nodes()), ObjectConcept)
 
@@ -148,54 +168,54 @@ def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
 if __name__ == "__main__":
     for lm in [LanguageMode.ENGLISH]:
         language_generator = phase2_language_generator(lm)
-        for num_samples in [1, 3, 5]:
+        for num_samples in [50]:
             pretraining_curriculas = {
-                "just-objects": [
-                    _make_each_object_by_itself_curriculum(
-                        num_samples, 0, language_generator
-                    )
-                ],
-                "objects-and-kinds": [
-                    _make_each_object_by_itself_curriculum(
-                        num_samples, 0, language_generator
-                    ),
-                    _make_kind_predicates_curriculum(None, None, language_generator),
-                ],
-                "kinds-and-generics": [
-                    _make_each_object_by_itself_curriculum(
-                        num_samples, 0, language_generator
-                    ),
-                    _make_kind_predicates_curriculum(None, None, language_generator),
-                    _make_generic_statements_curriculum(
-                        num_samples=3,
-                        noise_objects=0,
-                        language_generator=language_generator,
-                    ),
-                ],
+                # "just-objects": [
+                #     _make_each_object_by_itself_curriculum(
+                #         num_samples, 0, language_generator
+                #     )
+                # ],
+                # "objects-and-kinds": [
+                #     _make_each_object_by_itself_curriculum(
+                #         num_samples, 0, language_generator
+                #     ),
+                #     _make_kind_predicates_curriculum(None, None, language_generator),
+                # ],
+                # "kinds-and-generics": [
+                #     _make_each_object_by_itself_curriculum(
+                #         num_samples, 0, language_generator
+                #     ),
+                #     # _make_plural_objects_curriculum(num_samples, 0, language_generator),
+                #     _make_kind_predicates_curriculum(None, None, language_generator),
+                #     _make_generic_statements_curriculum(
+                #         num_samples=3,
+                #         noise_objects=0,
+                #         language_generator=language_generator,
+                #     ),
+                # ],
                 "obj-actions-kinds-generics": [
                     _make_each_object_by_itself_curriculum(
                         num_samples, 0, language_generator
                     ),
                     # Actions - verbs in generics
-                    _make_eat_curriculum(num_samples, 0, language_generator),
-                    _make_drink_curriculum(num_samples, 0, language_generator),
-                    _make_sit_curriculum(num_samples, 0, language_generator),
-                    _make_jump_curriculum(num_samples, 0, language_generator),
-                    _make_fly_curriculum(num_samples, 0, language_generator),
+                    # _make_eat_curriculum(10, 0, language_generator),
+                    _make_drink_curriculum(10, 0, language_generator),
+                    # _make_sit_curriculum(10, 0, language_generator),
+                    # _make_jump_curriculum(10, 0, language_generator),
+                    # _make_fly_curriculum(10, 0, language_generator),
                     # Plurals
-                    _make_plural_objects_curriculum(num_samples, 0, language_generator),
-                    # plurals,
-                    # Color attributes
-                    _make_objects_with_colors_curriculum(None, None, language_generator),
-                    # Predicates
-                    _make_colour_predicates_curriculum(None, None, language_generator),
-                    _make_kind_predicates_curriculum(None, None, language_generator),
-                    # Generics
-                    _make_generic_statements_curriculum(
-                        num_samples=3,
-                        noise_objects=0,
-                        language_generator=language_generator,
-                    ),
+                    # _make_plural_objects_curriculum(num_samples, 0, language_generator),
+                    # # Color attributes
+                    # _make_objects_with_colors_curriculum(None, None, language_generator),
+                    # # Predicates
+                    # _make_colour_predicates_curriculum(None, None, language_generator),
+                    # _make_kind_predicates_curriculum(None, None, language_generator),
+                    # # Generics
+                    # _make_generic_statements_curriculum(
+                    #     num_samples=3,
+                    #     noise_objects=0,
+                    #     language_generator=language_generator,
+                    # ),
                 ],
                 # build_gaila_m13_curriculum(num_samples=num_samples, num_noise_objects=0, language_generator=language_generator)
             }
@@ -203,7 +223,7 @@ if __name__ == "__main__":
             for curricula_name, pretraining_curricula in pretraining_curriculas.items():
                 # Run experiment
                 experiment = f"kind_semantics_lang-{lm}_num-samples-{num_samples}_cur-{curricula_name}"
-                print("Running experiment:", experiment)
+                print("\nRunning experiment:", experiment)
                 integrated_learner = integrated_learner_factory(lm)
                 run_experiment(
                     learner=integrated_learner,

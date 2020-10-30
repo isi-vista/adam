@@ -162,14 +162,17 @@ class IntegratedTemplateLearner(
                 # because the static learners do not know how to deal with the temporal
                 # perception graph edge wrappers.
                 # See https://github.com/isi-vista/adam/issues/792 .
-                if not learning_example.perception.is_dynamic():
-                    sub_learner.learn_from(current_learner_state, offset=offset)
-                current_learner_state = sub_learner.enrich_during_learning(
-                    current_learner_state
-                )
-                # Check definiteness after recognizing objects
-                if sub_learner == self.object_learner:
-                    self.learn_definiteness_markers(current_learner_state)
+                try:
+                    if not learning_example.perception.is_dynamic():
+                        sub_learner.learn_from(current_learner_state, offset=offset)
+                    current_learner_state = sub_learner.enrich_during_learning(
+                        current_learner_state
+                    )
+                    # Check definiteness after recognizing objects
+                    if sub_learner == self.object_learner:
+                        self.learn_definiteness_markers(current_learner_state)
+                except Exception as e: # pylint:disable=broad-except
+                    logging.exception(e)
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
@@ -180,6 +183,8 @@ class IntegratedTemplateLearner(
             if self.functional_learner:
                 self.functional_learner.learn_from(current_learner_state, offset=offset)
 
+        print('Enriched:', current_learner_state.perception_semantic_alignment.semantic_nodes)
+
         # Engage generics learner if the utterance is indefinite
         if self.generics_learner and not self.is_definite(current_learner_state):
             # Lack of definiteness could be marking a generic statement
@@ -187,7 +192,7 @@ class IntegratedTemplateLearner(
             descs = self._linguistic_descriptions_from_semantics(
                 current_learner_state.perception_semantic_alignment
             )
-            # If the statement isn't a recognized sentence, run learner
+            # If the statemesnt isn't a recognized sentence, run learner
             if not learning_example.linguistic_description.as_token_sequence() in [
                 desc.as_token_sequence() for desc in descs
             ]:
