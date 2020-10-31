@@ -822,11 +822,12 @@ def integrated_pursuit_learner_experiment_curriculum(
             perception_generator=INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
         )
 
-    ordered_curriculum = [
-        single_object_described_curriculum(num_samples),
-        single_attribute_described_curriculum(num_samples),
-        prepositional_relation_described_curriculum(num_samples),
-    ]
+    ordered_curriculum = [single_object_described_curriculum(num_samples)]
+    if params.boolean("include_attributes", default=True):
+        ordered_curriculum.append(single_attribute_described_curriculum(num_samples))
+    if params.boolean("include_relations", default=True):
+        prepositional_relation_described_curriculum(num_samples)
+
     return (
         ordered_curriculum
         if not params.boolean("random_order", default=False)
