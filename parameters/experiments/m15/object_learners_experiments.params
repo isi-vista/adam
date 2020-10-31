@@ -28,7 +28,7 @@ object_language_ablation:
    debug_learner_pickling: false
 
 # Workflow Params
-workflow_name: 'gaze_ablation_pegasus'
+workflow_name: 'object_language_ablation_pegasus'
 workflow_directory: '%adam_experiment_root%/%experiment%'
 site: 'saga'
 namespace: 'saga'
