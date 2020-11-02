@@ -7,6 +7,7 @@ from pegasus_wrapper import (
     Locator,
     directory_for,
     run_python_on_parameters,
+    write_workflow_description,
 )
 from pegasus_wrapper.resource_request import SlurmResourceRequest
 
@@ -71,7 +72,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
                         )
                         .as_mapping()
                     }
-                ),
+                ).unify(FIXED_PARAMETERS),
                 language_mode,
             ),
             run_python_on_parameters(
@@ -97,7 +98,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
                         )
                         .as_mapping()
                     }
-                ),
+                ).unify(FIXED_PARAMETERS),
                 depends_on=[],
             ),
         )
@@ -118,9 +119,9 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
         )
         experiment_name_string = EXPERIMENT_NAME_FORMAT.format(
             curriculum_name=curriculum_str.replace("-", "+"),
-            object_learner="object_learner_type",
-            attribute_learner="attribute_learner_type",
-            relation_learner="relation_learner_type",
+            object_learner=object_learner_type,
+            attribute_learner=attribute_learner_type,
+            relation_learner=relation_learner_type,
         )
         experiment_name = Locator(experiment_name_string.split("-"))
 
@@ -158,8 +159,10 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
             else "subset",
         )
 
+    write_workflow_description()
 
-EXPERIMENT_NAME_FORMAT = "{curriculum_name}-object_learner_{object_learner}-attribute_learner_{attribute_learner}-relation_learner_{relation_learner}"
+
+EXPERIMENT_NAME_FORMAT = "{curriculum_name}-object_learner:{object_learner}-attribute_learner:{attribute_learner}-relation_learner:{relation_learner}"
 CURRICULUM_NAME_FORMAT = (
     "noise={noise}-shuffled={shuffled}-attributes={attributes}-relations={relations}"
 )

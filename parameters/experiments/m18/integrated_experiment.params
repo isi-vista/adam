@@ -1,7 +1,7 @@
 _includes:
-   - "../root.params"
+   - "../../root.params"
 
-experiment: 'integrated_experiment_pegasus'
+experiment: "integrated_experiment_pegasus"
 experiment_group_dir: '%adam_experiment_root%/%experiment%'
 
 # Consistent Params
@@ -25,10 +25,9 @@ integrated_learners_experiment:
    num_pretty_descriptions: 5
 
    log_hypothesis_every_n_steps: 100
-   debug_learner_pickling: false
 
 # Workflow Params
-workflow_name: integrated_experiment_pegasus'
+workflow_name: "integrated_experiment_pegasus"
 workflow_directory: '%adam_experiment_root%/%experiment%'
 site: 'saga'
 namespace: 'saga'

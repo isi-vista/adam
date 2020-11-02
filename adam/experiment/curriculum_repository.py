@@ -35,6 +35,18 @@ _PARAMETER_ORDER: ImmutableSet[str] = immutableset(
         "pursuit-curriculum-params.num_noise_instances",
         "pursuit-curriculum-params.num_objects_in_instance",
         "pursuit-curriculum-params.add_gaze",
+        "train_curriculum.block_multiple_of_same_type",
+        "train_curriculum.include_targets_in_noise",
+        "train_curriculum.min_noise_relations",
+        "train_curriculum.max_noise_relations",
+        "train_curriculum.add_noise",
+        "train_curriculum.shuffled",
+        "train_curriculum.include_attributes",
+        "train_curriculum.include_relations",
+        "train_curriculum.random_seed",
+        "train_curriculum.chooser_seed",
+        "train_curriculum.min_noise_objects",
+        "train_curriculum.max_noise_objects",
     ]
 )
 
@@ -58,6 +70,14 @@ IGNORED_PARAMETERS: ImmutableSet[str] = immutableset(
         "conda_base_path",
         "conda_environment",
         "language_mode",
+        "log_hypothesis_every_n_steps",
+        "post_observer.include_acc_observer",
+        "post_observer.include_pr_observer",
+        "post_observer.log_pr",
+        "test_observer.accuracy_to_txt",
+        "action_learner.learner_type",
+        "include_functional_learner",
+        "include_generics_learner",
     ]
 )
 
