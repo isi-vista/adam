@@ -288,6 +288,7 @@ def learner_factory_from_params(
             "integrated-learner",
             "integrated-learner-recognizer-without-generics",
             "integrated-learner-recognizer",
+            "integrated-learner-no-functional",
             "pursuit-gaze",
             "integrated-object-only",
             "integrated-learner-params",
@@ -398,6 +399,29 @@ def learner_factory_from_params(
             ),
             functional_learner=FunctionalLearner(language_mode=language_mode),
         )
+    elif learner_type == "integrated-learner-no-functional":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=SubsetObjectLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            attribute_learner=SubsetAttributeLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            relation_learner=SubsetRelationLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+            action_learner=SubsetVerbLearnerNew(
+                ontology=GAILA_PHASE_2_ONTOLOGY,
+                beam_size=beam_size,
+                language_mode=language_mode,
+            ),
+        )
     elif learner_type == "integrated-learner-recognizer":
         return lambda: IntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
@@ -421,7 +445,7 @@ def learner_factory_from_params(
             functional_learner=FunctionalLearner(language_mode=language_mode),
             generics_learner=SimpleGenericsLearner(),
         )
-    elif learner_type == "integrated-learner-recognizer-without-generics":
+    elif learner_type == "ic":
         return lambda: IntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=object_recognizer, language_mode=language_mode
