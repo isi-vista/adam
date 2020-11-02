@@ -3443,6 +3443,21 @@ def build_gaila_phase1_attribute_curriculum(
     ]
 
 
+def build_classifier_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Sequence[Phase1InstanceGroup]:
+    """One particular instantiation of the Chinese classifier learning curriculum"""
+    return [
+        _make_chinese_classifier_single_object_curriculum(
+            num_samples, num_noise_objects, language_generator
+        )
+    ]
+
+
 def build_gaila_phase1_relation_curriculum(
     num_samples: Optional[int],
     num_noise_objects: Optional[int],
