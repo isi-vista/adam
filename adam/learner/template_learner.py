@@ -30,7 +30,8 @@ from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
     replace_match_root_with_object_semantic_node,
     _get_root_object_perception,
-    replace_match_with_object_graph_node)
+    replace_match_with_object_graph_node,
+)
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
     SurfaceTemplate,
@@ -444,7 +445,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         new_nodes: List[SemanticNode] = []
         # print('matched obj', matched_objects)
         for (matched_object_node, pattern_match) in matched_objects:
-            if matched_object_node not in perception_graph_after_matching.copy_as_digraph().nodes: continue
             # perception_graph_after_matching = replace_match_with_object_graph_node(
             #     matched_object_node=cast(ObjectSemanticNode, matched_object_node),
             #     current_perception=perception_graph_after_matching,
