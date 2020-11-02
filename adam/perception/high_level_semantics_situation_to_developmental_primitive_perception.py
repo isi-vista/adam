@@ -582,7 +582,8 @@ class _PerceptionGeneration:
                     for r in self._situation.always_relations
                 )
             ):
-                properties_to_perceive.append(TWO_DIMENSIONAL)
+                # properties_to_perceive.append(TWO_DIMENSIONAL)
+                pass
 
             # Logic relevant only to situation_objects, such as gaze handling
             if object_perception in object_perceptions_to_situation_objects:
