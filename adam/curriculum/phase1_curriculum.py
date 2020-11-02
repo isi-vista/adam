@@ -1988,6 +1988,7 @@ def make_drink_template(
                 auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, container)],
             )
         ],
+        asserted_always_relations=[inside(liquid, container)],
     )
 
 
