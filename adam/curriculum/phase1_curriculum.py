@@ -295,30 +295,30 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
-                # flatten(
-                #     sampled(
-                #         _make_single_addressee_template(addressee=object),
-                #         ontology=GAILA_PHASE_1_ONTOLOGY,
-                #         chooser=PHASE1_CHOOSER_FACTORY(),
-                #         max_to_sample=5,
-                #         block_multiple_of_the_same_type=True,
-                #     )
-                #     for object in [MOM, DAD, BABY]
-                # ),
-                # flatten(
-                #     sampled(
-                #         _make_single_speaker_template(speaker=object),
-                #         ontology=GAILA_PHASE_1_ONTOLOGY,
-                #         chooser=PHASE1_CHOOSER_FACTORY(),
-                #         max_to_sample=5,
-                #         block_multiple_of_the_same_type=True,
-                #     )
-                #     for object in [MOM, DAD, BABY]
-                # ),
+                flatten(
+                    sampled(
+                        _make_single_addressee_template(addressee=object),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=5,
+                        block_multiple_of_the_same_type=True,
+                    )
+                    for object in [MOM, DAD, BABY]
+                ),
+                flatten(
+                    sampled(
+                        _make_single_speaker_template(speaker=object),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=5,
+                        block_multiple_of_the_same_type=True,
+                    )
+                    for object in [MOM, DAD, BABY]
+                ),
                 flatten(
                     sampled(
                         Phase1SituationTemplate(
-                            "single-addressee",
+                            "only-object",
                             salient_object_variables=[
                                 standard_object("addressee", object)
                             ],
