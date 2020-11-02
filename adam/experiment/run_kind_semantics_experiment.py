@@ -195,7 +195,7 @@ if __name__ == "__main__":
                 # ],
                 "obj-actions-kinds-generics": [
                     _make_each_object_by_itself_curriculum(
-                        num_samples, 0, language_generator
+                        2*num_samples, 0, language_generator
                     ),
                     # Actions - verbs in generics
                     # _make_eat_curriculum(10, 0, language_generator),
