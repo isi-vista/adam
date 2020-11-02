@@ -73,6 +73,7 @@ from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_object_curriculum,
     build_gaila_phase1_attribute_curriculum,
+    build_classifier_curriculum,
     build_gaila_phase1_relation_curriculum,
     build_gaila_phase1_verb_curriculum,
     build_gaila_phase_1_curriculum,
@@ -564,6 +565,7 @@ def curriculum_from_params(
         "m6-preposition": (build_m6_prepositions_curriculum, None),
         "m9-objects": (build_gaila_phase1_object_curriculum, None),
         "m9-attributes": (build_gaila_phase1_attribute_curriculum, None),
+        "chinese-classifiers": (build_classifier_curriculum, None),
         "m9-relations": (build_gaila_phase1_relation_curriculum, None),
         "m9-events": (build_gaila_phase1_verb_curriculum, None),
         "m9-debug": (build_debug_curriculum_train, build_debug_curriculum_test),
