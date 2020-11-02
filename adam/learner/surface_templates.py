@@ -5,6 +5,7 @@ from typing import List, Mapping, Optional, Tuple, Union
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
+from adam.language_specific.english import DETERMINERS
 from adam.learner.language_mode import LanguageMode
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
@@ -144,14 +145,34 @@ class SurfaceTemplate:
         tokens_to_match = []
         for element in self.elements:
             if isinstance(element, str):
-                tokens_to_match.append(element)
+                # Hack to handle determiners.
+                #
+                # This may not handle Chinese properly; see
+                # https://github.com/isi-vista/adam/issues/993
+                try:
+                    index = token_sequence_to_match_against.index(element)
+                    if index - 1 >= 0 and token_sequence_to_match_against[index - 1] in DETERMINERS:
+                        tokens_to_match.append(token_sequence_to_match_against[index - 1])
+                except ValueError:
+                    pass
+                finally:
+                    tokens_to_match.append(element)
             else:
                 slot_filler_span = slots_to_filler_spans.get(element)
                 if slot_filler_span:
                     # endpoints are exclusive
+                    start = slot_filler_span.start
+                    # Hack to handle determiners
+                    #
+                    # This may not handle Chinese properly; see
+                    # https://github.com/isi-vista/adam/issues/993
+                    if slot_filler_span.start - 1 >= 0 and token_sequence_to_match_against[
+                        slot_filler_span.start - 1
+                    ] in DETERMINERS:
+                        start -= 1
                     tokens_to_match.extend(
                         token_sequence_to_match_against[
-                            slot_filler_span.start : slot_filler_span.end
+                            start : slot_filler_span.end
                         ]
                     )
                 # If template contains an element not found in the mapping of slots to spans, we can return empty here.
