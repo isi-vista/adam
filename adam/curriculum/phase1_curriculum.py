@@ -8,7 +8,7 @@ from adam.ontology.phase1_ontology import DISTAL
 from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
 from itertools import chain
-from typing import Iterable, Sequence, List, Dict, Optional
+from typing import Iterable, Sequence, List, Dict, Optional, Tuple, Any
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
     GAILA_PHASE_2_LANGUAGE_GENERATOR,
@@ -553,6 +553,38 @@ def _make_kind_predicates_curriculum(
                         )
                     )
     return ExplicitWithSituationInstanceGroup("kind predicates", all_instances)
+
+
+def _make_chinese_classifier_single_object_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
+    """Creates situations and descriptions such as yi1 jr1 shou3 (one CLF hand)"""
+    all_instances: List[Tuple[Any, TokenSequenceLinguisticDescription, Any]] = []
+    objects_to_classifiers: Dict[str, str] = {
+        # TODO: implement this
+    }
+    for (instance, description, perception) in _make_each_object_by_itself_curriculum(
+        num_samples, noise_objects, language_generator
+    ).instances():
+        linguistic_tokens = description.as_token_sequence()
+        if linguistic_tokens[0] in objects_to_classifiers:
+            all_instances.append(
+                (
+                    instance,
+                    TokenSequenceLinguisticDescription(
+                        # TODO: here and elsewhere we consider one_classifier as one word, should we do multiple instead?
+                        "y1_" + objects_to_classifiers[linguistic_tokens[0]],
+                        linguistic_tokens[0],
+                    ),
+                    perception,
+                )
+            )
+
+    return ExplicitWithSituationInstanceGroup("single object classifiers", all_instances)
 
 
 def _make_colour_predicates_curriculum(
