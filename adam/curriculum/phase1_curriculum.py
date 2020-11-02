@@ -174,6 +174,68 @@ def _make_single_speaker_template(speaker: OntologyNode):
     )
 
 
+# this is used for cases where we want to learn colour since the single
+# object curriculum just assigns random colours
+def _make_each_object_without_colour_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],  # pylint: disable=unused-argument
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
+    single_object_template = Phase1SituationTemplate(
+        "single-object",
+        salient_object_variables=[
+            object_variable(
+                "object", banned_properties=[LIQUID, IS_SPEAKER, IS_ADDRESSEE]
+            )
+        ],
+        syntax_hints=[IGNORE_COLORS],
+    )
+
+    return phase1_instances(
+        "each object by itself",
+        chain(
+            *[
+                sampled(
+                    single_object_template,
+                    max_to_sample=num_samples,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                    block_multiple_of_the_same_type=True,
+                )
+                if num_samples
+                else all_possible(
+                    single_object_template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                ),
+                flatten(
+                    sampled(
+                        _make_single_addressee_template(addressee=object),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=5,
+                        block_multiple_of_the_same_type=True,
+                    )
+                    for object in [MOM, DAD, BABY]
+                ),
+                flatten(
+                    sampled(
+                        _make_single_speaker_template(speaker=object),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=5,
+                        block_multiple_of_the_same_type=True,
+                    )
+                    for object in [MOM, DAD, BABY]
+                ),
+            ]
+        ),
+        language_generator=language_generator,
+    )
+
+
 # Show each object once by itself
 # We ignore noise objects here as this curriculum is
 # explicitly noiseless
@@ -390,6 +452,8 @@ def _make_kind_predicates_curriculum(
     all_instances = []
     # chinese mapping of objects to their kinds
     chinese_kind_dictionary = {
+        "syi1 gwa1": ["shr2 wu4"],
+        "chyu1 chi2 bing3": ["shr2 wu4"],
         "syung2": ["dung4 wu4"],
         "gou3": ["dung4 wu4"],
         "mau1": ["dung4 wu4"],
@@ -407,6 +471,8 @@ def _make_kind_predicates_curriculum(
         "Mom": ["people"],
         "Dad": ["people"],
         "baby": ["people"],
+        "watermelon": ["food"],
+        "cookie": ["food"],
     }
     # we keep track of the subjects so we only generate one predicate for each subject
     all_subjects: List[str] = []
@@ -485,7 +551,11 @@ def _make_colour_predicates_curriculum(
     }
     # we keep track of the subjects so we only generate one predicate colour for each subject
     all_subjects: List[str] = []
-    for (instance, description, perception) in _make_each_object_by_itself_curriculum(
+    for (
+        instance,
+        description,
+        perception,
+    ) in _make_each_object_without_colour_curriculum(
         num_samples, noise_objects, language_generator
     ).instances():
         linguistic_tokens = description.as_token_sequence()

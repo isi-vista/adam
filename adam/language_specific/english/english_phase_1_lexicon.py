@@ -73,6 +73,7 @@ from adam.ontology.phase1_ontology import (
     BEAR,
     NONHUMAN_ANIMAL,
     PERSON,
+    FOOD,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -105,6 +106,7 @@ SHOVE = LexiconEntry("shove", VERB, verb_form_sg3_prs="shoves")
 GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
+        (FOOD, LexiconEntry("food", NOUN, plural_form="foods")),
         (PERSON, LexiconEntry("person", NOUN, plural_form="people")),
         (GROUND, LexiconEntry("ground", NOUN, plural_form="grounds")),
         (NONHUMAN_ANIMAL, LexiconEntry("animal", NOUN, plural_form="animals")),
