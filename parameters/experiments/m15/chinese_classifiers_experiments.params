@@ -1,6 +1,6 @@
 _includes:
    - "../../root.params"
-   - "m15.params"
+   - "../m9/m9.params"
 
 experiment: 'm9-attributes-subset'
 curriculum: 'm9-attributes'
