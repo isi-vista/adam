@@ -28,7 +28,6 @@ from networkx import (
     Graph,
     to_numpy_matrix,
 )
-from sklearn.metrics.pairwise import cosine_similarity
 from vistautils.span import Span
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
@@ -798,7 +797,10 @@ def get_concept_node_from_graph(
 
 
 def cos_sim(a, b) -> float:
-    return cosine_similarity(a.reshape(1, -1), b.reshape(1, -1))
+    dot = np.dot(a.reshape(1, -1), b.reshape(-1, 1))
+    norma = np.linalg.norm(a.reshape(1, -1))
+    normb = np.linalg.norm(b.reshape(1, -1))
+    return dot / (norma * normb)
 
 
 def evaluate_kind_membership(semantics: Graph, word: str, kind: str) -> float:
