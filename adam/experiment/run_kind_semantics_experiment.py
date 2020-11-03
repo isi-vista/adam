@@ -82,8 +82,8 @@ def run_experiment(learner, curricula, experiment_id):
                 LearningExample(perceptual_representation, linguistic_description)
             )
 
-    learner.object_learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
-    learner.action_learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
+    # learner.object_learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
+    learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
 
 
     # # Teach each kind member
@@ -195,22 +195,22 @@ if __name__ == "__main__":
                 # ],
                 "obj-actions-kinds-generics": [
                     _make_each_object_by_itself_curriculum(
-                        2*num_samples, 0, language_generator
+                        num_samples, 0, language_generator
                     ),
                     # Actions - verbs in generics
                     # _make_eat_curriculum(10, 0, language_generator),
-                    _make_drink_curriculum(10, 0, language_generator),
+                    # _make_drink_curriculum(10, 0, language_generator),
                     # _make_sit_curriculum(10, 0, language_generator),
                     # _make_jump_curriculum(10, 0, language_generator),
                     # _make_fly_curriculum(10, 0, language_generator),
                     # Plurals
-                    # _make_plural_objects_curriculum(num_samples, 0, language_generator),
-                    # # Color attributes
-                    # _make_objects_with_colors_curriculum(None, None, language_generator),
-                    # # Predicates
+                    _make_plural_objects_curriculum(num_samples, 0, language_generator),
+                    # Color attributes
+                    # _make_objects_with_colors_curriculum(num_samples, None, language_generator),
+                    # Predicates
                     # _make_colour_predicates_curriculum(None, None, language_generator),
                     # _make_kind_predicates_curriculum(None, None, language_generator),
-                    # # Generics
+                    # Generics
                     # _make_generic_statements_curriculum(
                     #     num_samples=3,
                     #     noise_objects=0,

@@ -254,10 +254,11 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
                 )
                 self._known_bad_patterns.add(bound_surface_template.surface_template)
         else:
-            # # Skip if a template is already recognized in perception (prevents learning "two" in two "ball" s)
-            # if any(cand.surface_template in self.surface_template_to_concept for cand in
-            #        self._candidate_templates(language_perception_semantic_alignment)):
-            #     return
+            # Skip if a template is already recognized in perception (prevents learning "two" in two "ball" s)
+            # This doesn't cause an issue for verbs bc slot1_sits and slot1_sits_on_slot2 differ
+            if any(cand.surface_template in self.surface_template_to_concept for cand in
+                   self._candidate_templates(language_perception_semantic_alignment)):
+                return
 
             # If it's a new template, learn a new hypothesis/pattern, generated as a pattern
             # graph from the perception graph.

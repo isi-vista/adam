@@ -1,5 +1,6 @@
 import logging
 
+import networkx
 from attr.validators import instance_of
 from abc import ABC, abstractmethod
 
@@ -443,7 +444,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         matched_objects.sort(key=by_pattern_complexity, reverse=True)
         already_replaced: Set[ObjectPerception] = set()
         new_nodes: List[SemanticNode] = []
-        # print('matched obj', matched_objects)
+
         for (matched_object_node, pattern_match) in matched_objects:
             # perception_graph_after_matching = replace_match_with_object_graph_node(
             #     matched_object_node=cast(ObjectSemanticNode, matched_object_node),
@@ -458,22 +459,38 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 ),
             )
             if root not in already_replaced:
-                perception_graph_after_matching = replace_match_with_object_graph_node(
-                    matched_object_node=cast(ObjectSemanticNode, matched_object_node),
-                    current_perception=perception_graph_after_matching,
-                    pattern_match=pattern_match
-                )
-                already_replaced.add(root)
-                new_nodes.append(matched_object_node)
+                try:
+                    perception_graph_after_matching = replace_match_with_object_graph_node(
+                        matched_object_node=cast(ObjectSemanticNode, matched_object_node),
+                        current_perception=perception_graph_after_matching,
+                        pattern_match=pattern_match
+                    )
+                    print('replaced', matched_object_node, root)
+                    already_replaced.add(root)
+                    new_nodes.append(matched_object_node)
+                except networkx.exception.NetworkXError:
+                    logging.info(
+                        f"Matched pattern for {matched_object_node} "
+                        f"contains nodes that are already replaced"
+                    )
             else:
                 logging.info(
                     f"Matched pattern for {matched_object_node} "
                     f"but root object {root} already replaced."
                 )
-        # if matched_objects:
-        #     immutable_new_nodes = immutableset(new_nodes)
-        # else:
-        immutable_new_nodes = immutableset(node for (node, _) in match_to_score)
+        # If objects, only include the replaced graph nodes in the enrichment
+        if new_nodes and isinstance(new_nodes[0], ObjectSemanticNode):
+            immutable_new_nodes = immutableset(new_nodes)
+        else:
+            immutable_new_nodes = immutableset(node for (node, _) in match_to_score)
+
+        # Keep recursively enriching so we can capture plurals. Do it only if we matched objects in the scene.
+        if new_nodes and isinstance(new_nodes[0], ObjectSemanticNode):
+            rec = self._enrich_common(perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
+                new_graph=perception_graph_after_matching,
+                new_nodes=immutable_new_nodes,
+            ))
+            return rec[0], set(immutable_new_nodes).union(rec[1])
 
         (
             perception_graph_after_post_processing,

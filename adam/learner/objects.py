@@ -511,7 +511,7 @@ class SubsetObjectLearnerNew(
         hypothesis: PerceptionGraphTemplate,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
     ) -> bool:
-        if len(hypothesis.graph_pattern) < 2:
+        if len(hypothesis.graph_pattern) < 3:
             # A one node graph is to small to meaningfully describe an object
             return False
         if all(isinstance(node, ObjectPerception) for node in hypothesis.graph_pattern):
@@ -769,7 +769,7 @@ class PursuitObjectLearnerNew(
         hypothesis: PerceptionGraphTemplate,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
     ) -> bool:
-        if len(hypothesis.graph_pattern) < 2:
+        if len(hypothesis.graph_pattern) < 3:
             # A one node graph is to small to meaningfully describe an object
             return False
         if all(isinstance(node, ObjectPerception) for node in hypothesis.graph_pattern):
