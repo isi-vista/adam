@@ -490,7 +490,6 @@ def test_liquid_in_and_out_of_container():
         isinstance(p, HasBinaryProperty)
         and perception_with_handle(two_d_perception.frames[0], "**juice_0")
         == p.perceived_object
-        and p.binary_property == TWO_DIMENSIONAL
         for p in two_d_perception.frames[0].property_assertions
     )
     assert not any(
