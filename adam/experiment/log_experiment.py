@@ -401,10 +401,8 @@ def learner_factory_from_params(
         )
     elif learner_type == "integrated-learner-no-functional":
         return lambda: IntegratedTemplateLearner(
-            object_learner=SubsetObjectLearnerNew(
-                ontology=GAILA_PHASE_2_ONTOLOGY,
-                beam_size=beam_size,
-                language_mode=language_mode,
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=object_recognizer, language_mode=language_mode
             ),
             attribute_learner=SubsetAttributeLearnerNew(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
