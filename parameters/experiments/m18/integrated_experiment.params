@@ -3,6 +3,7 @@ _includes:
 
 experiment: "integrated_experiment_pegasus"
 experiment_group_dir: '%adam_experiment_root%/%experiment%'
+curriculum_repository_path: "%adam_experiment_root%/curriculum/"
 
 # Consistent Params
 num_pursuit_learners_active: 8

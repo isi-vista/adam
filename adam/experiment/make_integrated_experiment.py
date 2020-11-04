@@ -42,10 +42,10 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
         "pursuit", params.integer("num_pursuit_learners_active", default=8)
     )
 
-    experiment_root = params.creatable_directory("experiment_group_dir")
     language_mode = params.enum(
         "language_mode", LanguageMode, default=LanguageMode.ENGLISH
     )
+    curriculum_repository_path = params.creatable_directory("curriculum_repository_path")
 
     # Job to build desired curriculum(s) which our learners use
 
@@ -53,12 +53,12 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
         (
             CURRICULUM_NAME_FORMAT.format(
                 noise=add_noise,
-                shuffled=add_noise,
+                shuffled=shuffle,
                 relations=include_relations,
                 attributes=include_attributes,
             ),
             _build_curriculum_path(
-                experiment_root,
+                curriculum_repository_path,
                 baseline_parameters.unify(
                     {
                         "train_curriculum": Parameters.from_mapping(CURRICULUM_PARAMS)
@@ -79,7 +79,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
                 Locator(
                     CURRICULUM_NAME_FORMAT.format(
                         noise=add_noise,
-                        shuffled=add_noise,
+                        shuffled=shuffle,
                         relations=include_relations,
                         attributes=include_attributes,
                     ).split("-")
@@ -98,7 +98,9 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
                         )
                         .as_mapping()
                     }
-                ).unify(FIXED_PARAMETERS),
+                )
+                .unify(FIXED_PARAMETERS)
+                .unify({"curriculum_repository_path": curriculum_repository_path}),
                 depends_on=[],
             ),
         )
@@ -208,7 +210,7 @@ FIXED_PARAMETERS = {
 
 PURSUIT_RESOURCE_REQUEST = Parameters.from_mapping(
     {
-        "exclude_list": f"saga01,saga02,saga03,saga04,saga05,saga06,saga07,saga08,saga09,saga10,saga11,saga12,saga13,"
+        "exclude_list": f"saga01,saga02,saga03,saga04,saga05,saga06,saga07,saga08,saga10,saga11,saga12,saga13,"
         f"saga14,saga15,saga16,saga17,saga18,saga19,saga20,saga21,saga22,saga23,saga24,saga25,saga26,"
         f"gaia01,gaia02",
         "partition": "ephemeral",
