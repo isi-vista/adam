@@ -432,7 +432,7 @@ subtype(CHAIR, INANIMATE_OBJECT)
 # but we eventually want something more sophisticated.
 HEAD = OntologyNode(
     "head",
-    [HOLLOW, CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
+    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
 )
 subtype(HEAD, THING)
 MILK = OntologyNode(
@@ -440,7 +440,7 @@ MILK = OntologyNode(
 )
 subtype(MILK, SUBSTANCE)
 HAND = OntologyNode(
-    "hand", [CAN_MANIPULATE_OBJECTS, IS_BODY_PART]
+    "hand", [CAN_FILL_TEMPLATE_SLOT, CAN_MANIPULATE_OBJECTS, IS_BODY_PART]
 )
 subtype(HAND, THING)
 TRUCK = OntologyNode(
