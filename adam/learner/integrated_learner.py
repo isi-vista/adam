@@ -183,8 +183,6 @@ class IntegratedTemplateLearner(
             if self.functional_learner:
                 self.functional_learner.learn_from(current_learner_state, offset=offset)
 
-        print('Enriched:', current_learner_state.perception_semantic_alignment.semantic_nodes)
-
         # Engage generics learner if the utterance is indefinite
         if self.generics_learner and not self.is_definite(current_learner_state):
             # Lack of definiteness could be marking a generic statement

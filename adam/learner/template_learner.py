@@ -465,7 +465,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                         current_perception=perception_graph_after_matching,
                         pattern_match=pattern_match
                     )
-                    print('replaced', matched_object_node, root)
                     already_replaced.add(root)
                     new_nodes.append(matched_object_node)
                 except networkx.exception.NetworkXError:
