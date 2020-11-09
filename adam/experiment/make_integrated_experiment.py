@@ -166,7 +166,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
 
 EXPERIMENT_NAME_FORMAT = "{curriculum_name}-object_learner:{object_learner}-attribute_learner:{attribute_learner}-relation_learner:{relation_learner}"
 CURRICULUM_NAME_FORMAT = (
-    "noise={noise}-shuffled={shuffled}-attributes={attributes}-relations={relations}"
+    "noise@{noise}-shuffled@{shuffled}-attributes@{attributes}-relations@{relations}"
 )
 
 LEARNER_TO_PARAMS = {
