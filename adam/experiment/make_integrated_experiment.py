@@ -109,7 +109,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
     )
 
     # jobs to build experiment
-    for curriculum_str, curriculum_path, curriculum_dep in curriculum_dependencies:
+    for curriculum_str, _curriculum_path, curriculum_dep in curriculum_dependencies:
         object_learner_type = params.string(
             "object_learner_type", valid_options=LEARNER_TO_PARAMS.keys()
         )
@@ -140,7 +140,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
                 "object_learner": LEARNER_TO_PARAMS[object_learner_type],
                 "attribute_learner": LEARNER_TO_PARAMS[attribute_learner_type],
                 "relation_learner": LEARNER_TO_PARAMS[relation_learner_type],
-                "load_from_curriculum_repository": curriculum_path,
+                "load_from_curriculum_repository": curriculum_repository_path,
             }
         )
 
