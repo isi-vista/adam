@@ -128,7 +128,7 @@ def run_experiment(learner, curricula, experiment_id):
     results_df.insert(0,'Words',pseudoword_to_kind.keys())
     print(results_df.to_csv(index=False))
 
-    embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
+    # embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
     # objects_to_embeddings = {
     #     n: embeddings[i]
     #     for i, n in enumerate(learner.semantics_graph.nodes)
@@ -138,12 +138,12 @@ def run_experiment(learner, curricula, experiment_id):
     #
     # generate_similarities(semantic_matrix, list(learner.semantics_graph.nodes()), ObjectConcept)
 
-    learner.render_semantics_to_file(
-        graph=learner.semantics_graph,
-        graph_name="semantics",
-        output_file=Path(f"./renders/{experiment_id}/semantics.png"),
-    )
-    learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
+    # learner.render_semantics_to_file(
+    #     graph=learner.semantics_graph,
+    #     graph_name="semantics",
+    #     output_file=Path(f"./renders/{experiment_id}/semantics.png"),
+    # )
+    # learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
 
 
 def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
@@ -170,7 +170,7 @@ def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
 if __name__ == "__main__":
     for lm in [LanguageMode.ENGLISH]:
         language_generator = phase2_language_generator(lm)
-        for num_samples in [50]:
+        for num_samples in [5, 10, 25, 50]:
             pretraining_curriculas = {
                 # "just-objects": [
                 #     _make_each_object_by_itself_curriculum(
@@ -183,18 +183,18 @@ if __name__ == "__main__":
                 #     ),
                 #     _make_kind_predicates_curriculum(None, None, language_generator),
                 # ],
-                # "kinds-and-generics": [
-                #     _make_each_object_by_itself_curriculum(
-                #         num_samples, 0, language_generator
-                #     ),
-                #     # _make_plural_objects_curriculum(num_samples, 0, language_generator),
-                #     _make_kind_predicates_curriculum(None, None, language_generator),
-                #     _make_generic_statements_curriculum(
-                #         num_samples=3,
-                #         noise_objects=0,
-                #         language_generator=language_generator,
-                #     ),
-                # ],
+                "kinds-and-generics": [
+                    _make_each_object_by_itself_curriculum(
+                        num_samples, 0, language_generator
+                    ),
+                    # _make_plural_objects_curriculum(num_samples, 0, language_generator),
+                    _make_kind_predicates_curriculum(None, None, language_generator),
+                    _make_generic_statements_curriculum(
+                        num_samples=3,
+                        noise_objects=0,
+                        language_generator=language_generator,
+                    ),
+                ],
                 "obj-actions-kinds-generics": [
                     _make_each_object_by_itself_curriculum(
                         num_samples, 0, language_generator

@@ -168,7 +168,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
                     matched_sub_graph=fake_perception_graph,
                     pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
                 ),
-            )
+            ).perception_graph_after_replacement
             new_nodes.append(fake_object_semantic_node)
 
         return (
@@ -634,7 +634,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
                     matched_sub_graph=candiate_object_graph,
                     pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
                 ),
-            )
+            ).perception_graph_after_replacement
             new_nodes.append(fake_object_semantic_node)
 
         return (

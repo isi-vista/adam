@@ -460,12 +460,13 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             )
             if root not in already_replaced:
                 try:
-                    perception_graph_after_matching = replace_match_with_object_graph_node(
+                    replacement_result = replace_match_with_object_graph_node(
                         matched_object_node=cast(ObjectSemanticNode, matched_object_node),
                         current_perception=perception_graph_after_matching,
                         pattern_match=pattern_match
                     )
-                    already_replaced.add(root)
+                    perception_graph_after_matching = replacement_result.perception_graph_after_replacement
+                    already_replaced.update(replacement_result.removed_nodes)
                     new_nodes.append(matched_object_node)
                 except networkx.exception.NetworkXError:
                     logging.info(
