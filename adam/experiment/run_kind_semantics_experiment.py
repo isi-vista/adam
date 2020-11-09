@@ -84,7 +84,7 @@ def run_experiment(learner, curricula, experiment_id):
             )
 
     # learner.object_learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
-    learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
+    # learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
 
 
     # Teach each kind member
@@ -170,7 +170,7 @@ def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
 if __name__ == "__main__":
     for lm in [LanguageMode.ENGLISH]:
         language_generator = phase2_language_generator(lm)
-        for num_samples in [5, 10, 25, 50]:
+        for num_samples in [10, 25, 50]:
             pretraining_curriculas = {
                 # "just-objects": [
                 #     _make_each_object_by_itself_curriculum(
@@ -206,9 +206,9 @@ if __name__ == "__main__":
                     _make_jump_curriculum(10, 0, language_generator),
                     _make_fly_curriculum(10, 0, language_generator),
                     # Plurals
-                    _make_plural_objects_curriculum(num_samples, 0, language_generator),
+                    _make_plural_objects_curriculum(None, 0, language_generator),
                     # Color attributes
-                    _make_objects_with_colors_curriculum(num_samples, None, language_generator),
+                    _make_objects_with_colors_curriculum(None, None, language_generator),
                     # Predicates
                     _make_colour_predicates_curriculum(None, None, language_generator),
                     _make_kind_predicates_curriculum(None, None, language_generator),

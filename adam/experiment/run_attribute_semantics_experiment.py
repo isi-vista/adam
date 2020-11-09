@@ -1,4 +1,5 @@
 import random
+from pathlib import Path
 from typing import Any, Dict
 
 import matplotlib.pyplot as plt
@@ -19,6 +20,7 @@ from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import (
     cos_sim,
     get_concept_node_from_graph)
+from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
@@ -30,7 +32,10 @@ def integrated_learner_factory(language_mode: LanguageMode):
     rng = random.Random()
     rng.seed(0)
     return IntegratedTemplateLearner(
-        object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
+        # object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
+        object_learner=SubsetObjectLearnerNew(
+            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+        ),
         attribute_learner=SubsetAttributeLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
@@ -113,7 +118,7 @@ def run_experiment(learner, curricula, experiment_id):
     #     }
     #     generate_heatmap(objects_to_embeddings, experiment_id)
 
-    # learner.log_hypotheses(Path(f"./renders/{language_mode.name}"))
+    learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
     # generate_similarities(semantic_matrix, list(learner.semantics_graph.nodes()), ObjectConcept)
 
 

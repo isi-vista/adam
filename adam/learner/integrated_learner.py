@@ -171,8 +171,9 @@ class IntegratedTemplateLearner(
                     # Check definiteness after recognizing objects
                     if sub_learner == self.object_learner:
                         self.learn_definiteness_markers(current_learner_state)
-                except Exception as e: # pylint:disable=broad-except
-                    logging.exception(e)
+                except: # pylint:disable=broad-except
+                    # logging.exception(e)
+                    pass
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)

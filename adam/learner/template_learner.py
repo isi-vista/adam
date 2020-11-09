@@ -439,7 +439,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         # Replace any objects found
         def by_pattern_complexity(pair):
             _, pattern_match = pair
-            return len(pattern_match.matched_pattern)
+            return pattern_match.matched_pattern.pattern_complexity()
 
         matched_objects.sort(key=by_pattern_complexity, reverse=True)
         already_replaced: Set[ObjectPerception] = set()
