@@ -22,6 +22,7 @@ from adam.learner.learner_utils import (
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
+from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.semantics import Concept, AttributeConcept
 from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 
@@ -35,7 +36,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
         plural_learner=SubsetPluralLearnerNew(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_2_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
         action_learner=SubsetVerbLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
