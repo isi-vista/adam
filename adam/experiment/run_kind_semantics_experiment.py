@@ -59,7 +59,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
         plural_learner=SubsetPluralLearnerNew(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_2_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
         action_learner=SubsetVerbLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
