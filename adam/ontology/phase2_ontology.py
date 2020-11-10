@@ -87,7 +87,7 @@ from adam.relation import flatten_relations
 TWO = OntologyNode("two")
 subtype(TWO, PERCEIVABLE_PROPERTY)
 MANY = OntologyNode("many")
-subtype(TWO, PERCEIVABLE_PROPERTY)
+subtype(MANY, PERCEIVABLE_PROPERTY)
 HAS_COUNT = OntologyNode("has-count")
 
 CHAIR_2 = OntologyNode(
