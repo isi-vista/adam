@@ -127,6 +127,7 @@ def run_experiment(learner, curricula, experiment_id):
     results_df = pd.DataFrame([[np.asscalar(i[1]) for i in l] for l in complete_results], columns=['Animal', 'Food', 'People'])
     results_df.insert(0,'Words',pseudoword_to_kind.keys())
     print(results_df.to_csv(index=False))
+    learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
 
     # embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
     # objects_to_embeddings = {
@@ -143,7 +144,6 @@ def run_experiment(learner, curricula, experiment_id):
     #     graph_name="semantics",
     #     output_file=Path(f"./renders/{experiment_id}/semantics.png"),
     # )
-    # learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
 
 
 def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):

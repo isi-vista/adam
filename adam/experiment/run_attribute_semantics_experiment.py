@@ -72,7 +72,6 @@ def run_experiment(learner, curricula, experiment_id):
 
     # Evaluate assocations before generics
     for word, color in english_color_dictionary.items():
-        print(word, color)
         word_concept = get_concept_node_from_graph(word, learner.semantics_graph)
         if not word_concept: continue
         results = [
@@ -80,7 +79,9 @@ def run_experiment(learner, curricula, experiment_id):
             for color_concept in learner.semantics_graph.neighbors(word_concept) if isinstance(color_concept, AttributeConcept)
         ]
         results.sort(key=lambda x: x[1], reverse=True)
-        print(results)
+        for r in results:
+            print(f'{word}, {color}, {r[0].replace("_slot1","")}, {r[1]}')
+
 
     # Teach generics
     color_predicates = _make_colour_predicates_curriculum(None, None, language_generator)
@@ -97,7 +98,6 @@ def run_experiment(learner, curricula, experiment_id):
 
     # Evaluate assocations after generics
     for word, color in english_color_dictionary.items():
-        print(word, color)
         word_concept = get_concept_node_from_graph(word, learner.semantics_graph)
         if not word_concept: continue
         results = [
@@ -106,7 +106,8 @@ def run_experiment(learner, curricula, experiment_id):
             isinstance(color_concept, AttributeConcept)
         ]
         results.sort(key=lambda x: x[1], reverse=True)
-        print(results)
+        for r in results:
+            print(f'{word}, {color}, {r[0].replace("_slot1","")}, {r[1]}')
 
     #
     #
