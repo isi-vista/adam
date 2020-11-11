@@ -103,13 +103,26 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
                 .unify({"curriculum_repository_path": curriculum_repository_path}),
                 depends_on=[],
             ),
+            Parameters.from_mapping(CURRICULUM_PARAMS).unify(
+                {
+                    "add_noise": add_noise,
+                    "shuffled": shuffle,
+                    "include_attributes": include_attributes,
+                    "include_relations": include_relations,
+                }
+            ),
         )
         for add_noise in (True, False)
         for shuffle in (True, False)
     )
 
     # jobs to build experiment
-    for curriculum_str, _curriculum_path, curriculum_dep in curriculum_dependencies:
+    for (
+        curriculum_str,
+        _curriculum_path,
+        curriculum_dep,
+        curr_params,
+    ) in curriculum_dependencies:
         object_learner_type = params.string(
             "object_learner_type", valid_options=LEARNER_TO_PARAMS.keys()
         )
@@ -141,6 +154,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
                 "attribute_learner": LEARNER_TO_PARAMS[attribute_learner_type],
                 "relation_learner": LEARNER_TO_PARAMS[relation_learner_type],
                 "load_from_curriculum_repository": curriculum_repository_path,
+                "train_curriculum": curr_params,
             }
         )
 

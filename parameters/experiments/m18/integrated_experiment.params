@@ -16,6 +16,8 @@ attribute_learner_type: "none"
 relation_learner_type: "none"
 
 # Configuration Params - Desired
+#include_attributes: False
+#include_relations: False
 #object_learner_type: "pursuit"
 #attribute_learner_type: "pursuit"
 #relation_learner_type: "pursuit"
@@ -25,7 +27,7 @@ integrated_learners_experiment:
    sort_learner_descriptions_by_length: true
    num_pretty_descriptions: 5
 
-   log_hypothesis_every_n_steps: 100
+   log_hypothesis_every_n_steps: 50
 
 # Workflow Params
 workflow_name: "integrated_experiment_pegasus"

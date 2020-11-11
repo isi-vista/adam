@@ -44,7 +44,10 @@ from adam.experiment.experiment_utils import (
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
-from adam.language.language_utils import phase2_language_generator
+from adam.language.language_utils import (
+    phase2_language_generator,
+    integrated_experiment_language_generator,
+)
 from adam.language_specific.english import DETERMINERS
 from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
 from adam.learner.functional_learner import FunctionalLearner
@@ -281,6 +284,7 @@ def learner_factory_from_params(
             "integrated-learner-recognizer",
             "pursuit-gaze",
             "integrated-object-only",
+            "integrated-learner-params",
         ],
     )
 
@@ -506,10 +510,10 @@ def learner_factory_from_params(
             relation_learner=relation_learner,
             action_learner=action_learner,
             functional_learner=FunctionalLearner(language_mode=language_mode)
-            if params.boolean("include_functional", default=True)
+            if params.boolean("include_functional_learner", default=True)
             else None,
             generics_learner=SimpleGenericsLearner()
-            if params.boolean("include_generics", default=True)
+            if params.boolean("include_generics_learner", default=True)
             else None,
         )
     else:
@@ -566,7 +570,11 @@ def curriculum_from_params(
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
-    language_generator = phase2_language_generator(language_mode)
+    language_generator = (
+        integrated_experiment_language_generator(language_mode)
+        if curriculum_name == "m18-integrated-learners-experiment"
+        else phase2_language_generator(language_mode)
+    )
 
     if params.has_namespace("pursuit-curriculum-params"):
         pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")

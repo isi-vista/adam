@@ -15,7 +15,6 @@ from pathlib import Path
 import pickle
 
 from attr import attrs, attrib
-from attr.validators import instance_of, deep_iterable
 
 from immutablecollections import immutableset, ImmutableSet
 from immutablecollections.converter_utils import _to_tuple
@@ -71,11 +70,41 @@ IGNORED_PARAMETERS: ImmutableSet[str] = immutableset(
         "conda_environment",
         "language_mode",
         "log_hypothesis_every_n_steps",
+        "learner_logging_path",
+        "log_learner_state",
+        "resume_from_latest_logged_state",
         "post_observer.include_acc_observer",
         "post_observer.include_pr_observer",
         "post_observer.log_pr",
         "test_observer.accuracy_to_txt",
+        "object_learner.learner_type",
+        "object_learner.ontology",
+        "object_learner.random_seed",
+        "object_learner.learning_factor",
+        "object_learner.graph_match_confirmation_threshold",
+        "object_learner.lexicon_entry_threshold",
+        "object_learner.smoothing_parameter",
+        "attribute_learner.learner_type",
+        "attribute_learner.ontology",
+        "attribute_learner.random_seed",
+        "attribute_learner.learning_factor",
+        "attribute_learner.graph_match_confirmation_threshold",
+        "attribute_learner.lexicon_entry_threshold",
+        "attribute_learner.smoothing_parameter",
+        "relation_learner.learner_type",
+        "relation_learner.ontology",
+        "relation_learner.random_seed",
+        "relation_learner.learning_factor",
+        "relation_learner.graph_match_confirmation_threshold",
+        "relation_learner.lexicon_entry_threshold",
+        "relation_learner.smoothing_parameter",
         "action_learner.learner_type",
+        "action_learner.ontology",
+        "action_learner.random_seed",
+        "action_learner.learning_factor",
+        "action_learner.graph_match_confirmation_threshold",
+        "action_learner.lexicon_entry_threshold",
+        "action_learner.smoothing_parameter",
         "include_functional_learner",
         "include_generics_learner",
     ]
@@ -88,13 +117,14 @@ class ExperimentCurriculum:
     Represents a saved curriculum for some experiment.
     """
 
+    # Validators commented out because the `Phase1InstanceGroup` can't be used as it is a generic type
     train_curriculum: Tuple[Phase1InstanceGroup, ...] = attrib(
-        validator=deep_iterable(member_validator=instance_of(Phase1InstanceGroup)),
-        converter=_to_tuple,
+        # validator=deep_iterable(member_validator=instance_of(Phase1InstanceGroup)),
+        converter=_to_tuple
     )
     test_curriculum: Tuple[Phase1InstanceGroup, ...] = attrib(
-        validator=deep_iterable(member_validator=instance_of(Phase1InstanceGroup)),
-        converter=_to_tuple,
+        # validator=deep_iterable(member_validator=instance_of(Phase1InstanceGroup)),
+        converter=_to_tuple
     )
 
 

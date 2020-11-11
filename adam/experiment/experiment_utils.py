@@ -226,7 +226,7 @@ def build_attribute_learner_factory(
     params: Parameters, beam_size: int, language_mode: LanguageMode
 ) -> Optional[TemplateLearner]:
     learner_type = params.string(
-        "learner_type", valid_options=["subset", "pursuit"], default="subset"
+        "learner_type", valid_options=["subset", "pursuit", "none"], default="subset"
     )
     ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
         params.string(
@@ -251,7 +251,7 @@ def build_relation_learner_factory(
     params: Parameters, beam_size: int, language_mode: LanguageMode
 ) -> Optional[TemplateLearner]:
     learner_type = params.string(
-        "learner_type", valid_options=["subset", "pursuit"], default="subset"
+        "learner_type", valid_options=["subset", "pursuit", "none"], default="subset"
     )
     ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
         params.string(
@@ -278,7 +278,7 @@ def build_action_learner_factory(
     params: Parameters, beam_size: int, language_mode: LanguageMode
 ) -> Optional[TemplateLearner]:
     learner_type = params.string(
-        "learner_type", valid_options=["subset"], default="subset"
+        "learner_type", valid_options=["subset", "none"], default="subset"
     )
     ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
         params.string(
