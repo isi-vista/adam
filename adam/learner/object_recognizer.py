@@ -701,11 +701,11 @@ def _add_external_properties_linked_to_root_object_perception(
 
 
 def _add_external_relationships_linked_to_root_object_perception(
-        *,
-        original_graph: DiGraph,
-        output_graph: DiGraph,
-        matched_nodes: AbstractSet[PerceptionGraphNode],
-        matched_object_node: ObjectSemanticNode,
+    *,
+    original_graph: DiGraph,
+    output_graph: DiGraph,
+    matched_nodes: AbstractSet[PerceptionGraphNode],
+    matched_object_node: ObjectSemanticNode,
 ) -> None:
     # We take two graphs as input because we need to get the root node's external relationships
     # from the original graph -- these relationships have already been deleted from the output_graph
@@ -720,9 +720,13 @@ def _add_external_relationships_linked_to_root_object_perception(
     for (predecessor, pred_edge_label) in linked_predecessors_and_labels:
         if (predecessor, matched_object_node) in output_graph:
             old_label = output_graph.edges[predecessor, matched_object_node]["label"]
-            logging.warning(f"Overwriting edge label {old_label} for edge {(predecessor, matched_object_node)}")
+            logging.warning(
+                f"Overwriting edge label {old_label} for edge {(predecessor, matched_object_node)}"
+            )
         output_graph.add_edge(predecessor, matched_object_node, label=pred_edge_label)
-    logging.debug(f"Added predecessor relationships {linked_predecessors_and_labels} to {matched_object_node}")
+    logging.debug(
+        f"Added predecessor relationships {linked_predecessors_and_labels} to {matched_object_node}"
+    )
 
     linked_successors_and_labels: List[Tuple[PerceptionGraphNode, EdgeLabel]] = []
     root_node = _get_root_object_perception(original_graph, matched_nodes)
@@ -733,9 +737,13 @@ def _add_external_relationships_linked_to_root_object_perception(
     for (successor, succ_edge_label) in linked_successors_and_labels:
         if (matched_object_node, successor) in output_graph:
             old_label = output_graph.edges[matched_object_node, successor]["label"]
-            logging.warning(f"Overwriting edge label {old_label} for edge {(matched_object_node, successor)}")
+            logging.warning(
+                f"Overwriting edge label {old_label} for edge {(matched_object_node, successor)}"
+            )
         output_graph.add_edge(matched_object_node, successor, label=succ_edge_label)
-    logging.debug(f"Added successor relationships {linked_successors_and_labels} to {matched_object_node}")
+    logging.debug(
+        f"Added successor relationships {linked_successors_and_labels} to {matched_object_node}"
+    )
 
 
 def _add_relationships_linked_to_root_object_perception(
@@ -770,8 +778,12 @@ def _add_relationships_linked_to_root_object_perception(
 # better name?
 @attrs(frozen=True)
 class PerceptionGraphWithReplacedObjectResult:
-    perception_graph_after_replacement: PerceptionGraph = attrib(validator=instance_of(PerceptionGraph))
-    removed_nodes: ImmutableSet[PerceptionGraphNode] = attrib(validator=instance_of(ImmutableSet))
+    perception_graph_after_replacement: PerceptionGraph = attrib(
+        validator=instance_of(PerceptionGraph)
+    )
+    removed_nodes: ImmutableSet[PerceptionGraphNode] = attrib(
+        validator=instance_of(ImmutableSet)
+    )
 
 
 def replace_match_with_object_graph_node(
@@ -790,7 +802,8 @@ def replace_match_with_object_graph_node(
 
     matched_subgraph_nodes: ImmutableSet[PerceptionGraphNode] = immutableset(
         [
-            node for node in pattern_match.matched_sub_graph._graph.nodes  # pylint:disable=protected-access
+            node
+            for node in pattern_match.matched_sub_graph._graph.nodes  # pylint:disable=protected-access
             if node in perception_digraph.nodes
         ],
         disable_order_check=True,
@@ -906,7 +919,8 @@ def replace_match_with_object_graph_node(
             matched_node
             for matched_node in matched_subgraph_nodes
             if matched_node not in SHARED_WORLD_ITEMS
-        ] + duplicate_nodes_to_remove
+        ]
+        + duplicate_nodes_to_remove
     )
     perception_digraph.remove_nodes_from(to_remove)
 
@@ -931,8 +945,7 @@ def replace_match_with_object_graph_node(
     )
 
     return PerceptionGraphWithReplacedObjectResult(
-        PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic),
-        to_remove,
+        PerceptionGraph(perception_digraph, dynamic=current_perception.dynamic), to_remove
     )
 
 

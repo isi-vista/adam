@@ -82,7 +82,8 @@ class SubsetPluralLearnerNew(
             for s in language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
         ]
         counts = collections.Counter(concepts)
-        if not counts.values(): return False
+        if not counts.values():
+            return False
         return max(counts.values()) > 1
 
     def _preprocess_scene(

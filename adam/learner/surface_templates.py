@@ -151,7 +151,10 @@ class SurfaceTemplate:
                 # https://github.com/isi-vista/adam/issues/993
                 try:
                     index = token_sequence_to_match_against.index(element)
-                    if index - 1 >= 0 and token_sequence_to_match_against[index - 1] in DETERMINERS:
+                    if (
+                        index - 1 >= 0
+                        and token_sequence_to_match_against[index - 1] in DETERMINERS
+                    ):
                         tokens_to_match.append(token_sequence_to_match_against[index - 1])
                 except ValueError:
                     pass
@@ -166,14 +169,14 @@ class SurfaceTemplate:
                     #
                     # This may not handle Chinese properly; see
                     # https://github.com/isi-vista/adam/issues/993
-                    if slot_filler_span.start - 1 >= 0 and token_sequence_to_match_against[
-                        slot_filler_span.start - 1
-                    ] in DETERMINERS:
+                    if (
+                        slot_filler_span.start - 1 >= 0
+                        and token_sequence_to_match_against[slot_filler_span.start - 1]
+                        in DETERMINERS
+                    ):
                         start -= 1
                     tokens_to_match.extend(
-                        token_sequence_to_match_against[
-                            start : slot_filler_span.end
-                        ]
+                        token_sequence_to_match_against[start : slot_filler_span.end]
                     )
                 # If template contains an element not found in the mapping of slots to spans, we can return empty here.
                 # We don't want to do this now because of generics.

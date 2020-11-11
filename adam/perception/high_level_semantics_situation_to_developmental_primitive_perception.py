@@ -2,9 +2,24 @@ from enum import Enum, auto
 from itertools import chain
 from random import Random
 from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Union, cast
-from typing_extensions import Protocol, runtime
+
+from attr import Factory, attrib, attrs
+from attr.validators import deep_mapping, in_, instance_of
+from immutablecollections import (
+    ImmutableDict,
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
+from immutablecollections.converter_utils import _to_immutabledict
 from more_itertools import only, quantify
 from networkx import DiGraph
+from typing_extensions import Protocol, runtime
+from vistautils.preconditions import check_arg
+from vistautils.range import Range
+
 from adam.axes import AxesInfo, WORLD_AXES
 from adam.axis import GeonAxis
 from adam.geon import Geon
@@ -32,7 +47,6 @@ from adam.ontology.phase1_ontology import (
     LIQUID,
     PART_OF,
     SIZE_RELATIONS,
-    TWO_DIMENSIONAL,
     on,
     BIGGER_THAN_SAME_TYPE,
     BIGGER_THAN,
@@ -65,19 +79,6 @@ from adam.random_utils import SequenceChooser
 from adam.relation import Relation
 from adam.situation import Action, SituationObject, SituationRegion
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from attr import Factory, attrib, attrs
-from attr.validators import deep_mapping, in_, instance_of
-from immutablecollections import (
-    ImmutableDict,
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutableset,
-    immutablesetmultidict,
-)
-from immutablecollections.converter_utils import _to_immutabledict
-from vistautils.preconditions import check_arg
-from vistautils.range import Range
 
 
 class ColorPerceptionMode(Enum):

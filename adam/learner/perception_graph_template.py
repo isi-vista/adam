@@ -2,8 +2,16 @@ from logging import INFO
 from pathlib import Path
 from typing import Any, Callable, List, Mapping, Optional, Union, Iterable
 
+from attr import attrib, attrs
 from attr.validators import deep_mapping, instance_of
-from networkx import number_weakly_connected_components, connected_components, nx
+from immutablecollections import (
+    ImmutableDict,
+    immutabledict,
+    immutablesetmultidict,
+    ImmutableSetMultiDict,
+)
+from immutablecollections.converter_utils import _to_immutabledict
+from networkx import number_weakly_connected_components
 
 from adam.ontology.ontology import Ontology
 from adam.perception import MatchMode
@@ -14,16 +22,9 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern,
     raise_graph_exception,
     NodePredicate,
-    TemporalScope)
-from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
-from attr import attrib, attrs
-from immutablecollections import (
-    ImmutableDict,
-    immutabledict,
-    immutablesetmultidict,
-    ImmutableSetMultiDict,
+    TemporalScope,
 )
-from immutablecollections.converter_utils import _to_immutabledict
+from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 
 
 @attrs(slots=True, eq=False)
@@ -214,6 +215,9 @@ class PerceptionGraphTemplate:
         where all edge predicates now require that the edge in the target graph being matched
         hold at all of the *required_temporal_scopes*.
         """
-        return PerceptionGraphTemplate(graph_pattern=self.graph_pattern.copy_with_temporal_scopes(required_temporal_scopes),
-                                       template_variable_to_pattern_node=self.template_variable_to_pattern_node,
-                                       )
+        return PerceptionGraphTemplate(
+            graph_pattern=self.graph_pattern.copy_with_temporal_scopes(
+                required_temporal_scopes
+            ),
+            template_variable_to_pattern_node=self.template_variable_to_pattern_node,
+        )

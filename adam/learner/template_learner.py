@@ -1,9 +1,5 @@
 import logging
-
-import networkx
-from attr.validators import instance_of
 from abc import ABC, abstractmethod
-
 from typing import (
     AbstractSet,
     Iterable,
@@ -17,7 +13,12 @@ from typing import (
     Optional,
 )
 
+import networkx
+from attr import attrib, attrs, evolve
+from attr.validators import instance_of
+from immutablecollections import immutabledict, immutableset
 from more_itertools import one
+from vistautils.preconditions import check_state
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import ComposableLearner, LearningExample, TopLevelLanguageLearner
@@ -29,7 +30,6 @@ from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import pattern_match_to_description
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
-    replace_match_root_with_object_semantic_node,
     _get_root_object_perception,
     replace_match_with_object_graph_node,
 )
@@ -43,7 +43,11 @@ from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPatternMatch, ENTIRE_SCENE
+from adam.perception.perception_graph import (
+    PerceptionGraph,
+    PerceptionGraphPatternMatch,
+    ENTIRE_SCENE,
+)
 from adam.semantics import (
     Concept,
     ObjectConcept,
@@ -51,9 +55,6 @@ from adam.semantics import (
     SemanticNode,
     FunctionalObjectConcept,
 )
-from attr import attrib, attrs, evolve
-from immutablecollections import immutabledict, immutableset
-from vistautils.preconditions import check_state
 
 
 @attrs
@@ -395,7 +396,10 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         ) -> None:
             rtrn = self._match_template(
                 concept=concept,
-                pattern=pattern.copy_with_temporal_scopes(ENTIRE_SCENE) if preprocessed_perception_graph.dynamic and not pattern.graph_pattern.dynamic else pattern,
+                pattern=pattern.copy_with_temporal_scopes(ENTIRE_SCENE)
+                if preprocessed_perception_graph.dynamic
+                and not pattern.graph_pattern.dynamic
+                else pattern,
                 perception_graph=preprocessed_perception_graph,
             )
             # Its possible there is no match for the template in the graph
@@ -418,9 +422,15 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 == graph_pattern.graph_pattern.dynamic
             ):
                 match_template(concept=concept, pattern=graph_pattern, score=score)
-            elif preprocessed_perception_graph.dynamic and not graph_pattern.graph_pattern.dynamic:
-                match_template(concept=concept, pattern=graph_pattern.copy_with_temporal_scopes(
-                        ENTIRE_SCENE), score=score)
+            elif (
+                preprocessed_perception_graph.dynamic
+                and not graph_pattern.graph_pattern.dynamic
+            ):
+                match_template(
+                    concept=concept,
+                    pattern=graph_pattern.copy_with_temporal_scopes(ENTIRE_SCENE),
+                    score=score,
+                )
             else:
                 logging.debug(
                     f"Unable to try and match {concept} to {preprocessed_perception_graph} "
@@ -463,10 +473,14 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                     replacement_result = replace_match_with_object_graph_node(
                         matched_object_node=cast(ObjectSemanticNode, matched_object_node),
                         current_perception=perception_graph_after_matching,
-                        pattern_match=pattern_match
+                        pattern_match=pattern_match,
                     )
-                    perception_graph_after_matching = replacement_result.perception_graph_after_replacement
-                    already_replaced.update(replacement_result.removed_nodes)
+                    perception_graph_after_matching = (
+                        replacement_result.perception_graph_after_replacement
+                    )
+                    already_replaced.update(  # type: ignore
+                        replacement_result.removed_nodes
+                    )
                     new_nodes.append(matched_object_node)
                 except networkx.exception.NetworkXError:
                     logging.info(
@@ -486,10 +500,12 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
 
         # Keep recursively enriching so we can capture plurals. Do it only if we matched objects in the scene.
         if new_nodes and isinstance(new_nodes[0], ObjectSemanticNode):
-            rec = self._enrich_common(perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
-                new_graph=perception_graph_after_matching,
-                new_nodes=immutable_new_nodes,
-            ))
+            rec = self._enrich_common(
+                perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
+                    new_graph=perception_graph_after_matching,
+                    new_nodes=immutable_new_nodes,
+                )
+            )
             return rec[0], set(immutable_new_nodes).union(rec[1])
 
         (

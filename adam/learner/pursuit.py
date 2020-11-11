@@ -710,11 +710,13 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         # We want h_0 = arg_min_(m in M_U) max(A_m); i.e. h_0 is pattern_hypothesis
 
         # TODO: only consider those hypotheses for which we don't already have a mapping https://github.com/isi-vista/adam/issues/930
-        hypotheses: List[PerceptionGraphTemplate] = list(self._hypotheses_from_perception(
+        hypotheses: List[PerceptionGraphTemplate] = list(
+            self._hypotheses_from_perception(
                 language_perception_semantic_alignment, bound_surface_template
             )
         )
-        if not hypotheses: return
+        if not hypotheses:
+            return
 
         pattern_hypothesis = first(hypotheses)
         min_score = float("inf")

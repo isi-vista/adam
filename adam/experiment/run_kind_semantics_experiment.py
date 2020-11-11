@@ -28,12 +28,8 @@ from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_utils import (
-    semantics_as_weighted_adjacency_matrix,
-    evaluate_kind_membership,
-    cos_sim,
-)
-from adam.learner.objects import PursuitObjectLearnerNew, SubsetObjectLearnerNew
+from adam.learner.learner_utils import evaluate_kind_membership, cos_sim
+from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, GROUND
@@ -41,10 +37,9 @@ from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
 )
-from adam.semantics import Concept, ObjectConcept
+from adam.semantics import Concept
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 
 
 def integrated_learner_factory(language_mode: LanguageMode):
@@ -71,7 +66,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
 def run_experiment(learner, curricula, experiment_id):
     # Teach each pretraining curriculum
     for curriculum in curricula:
-        print('Teaching', curriculum.name())
+        print("Teaching", curriculum.name())
         for (
             _,
             linguistic_description,
@@ -85,7 +80,6 @@ def run_experiment(learner, curricula, experiment_id):
 
     # learner.object_learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
     # learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
-
 
     # Teach each kind member
     empty_situation = HighLevelSemanticsSituation(
@@ -116,16 +110,19 @@ def run_experiment(learner, curricula, experiment_id):
         )
 
     complete_results = []
-    print('Results for ', experiment_id)
-    for word, gold_kind in pseudoword_to_kind.items():
+    print("Results for ", experiment_id)
+    for word, _ in pseudoword_to_kind.items():
         results = [
             (kind, evaluate_kind_membership(learner.semantics_graph, word, kind))
             for kind in pseudoword_to_kind.values()
         ]
         complete_results.append(results)
 
-    results_df = pd.DataFrame([[np.asscalar(i[1]) for i in l] for l in complete_results], columns=['Animal', 'Food', 'People'])
-    results_df.insert(0,'Words',pseudoword_to_kind.keys())
+    results_df = pd.DataFrame(
+        [[np.asscalar(i[1]) for i in l] for l in complete_results],
+        columns=["Animal", "Food", "People"],
+    )
+    results_df.insert(0, "Words", pseudoword_to_kind.keys())
     print(results_df.to_csv(index=False))
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
 

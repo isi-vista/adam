@@ -4,10 +4,22 @@ from itertools import chain
 from pathlib import Path
 from random import Random
 from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, Tuple, Dict
+
+from attr import attrib, attrs, evolve
+from attr.validators import instance_of, optional
+from immutablecollections import (
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
+from vistautils.parameters import Parameters
+
+from adam.language import LinguisticDescription
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
-from adam.language import LinguisticDescription
 from adam.language_specific.english import DETERMINERS
 from adam.learner import (
     LearningExample,
@@ -27,7 +39,6 @@ from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
     extract_candidate_objects,
-    replace_match_root_with_object_semantic_node,
     replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -74,18 +85,7 @@ from adam.semantics import (
     FunctionalObjectConcept,
 )
 from adam.utils import networkx_utils
-from attr import attrib, attrs, evolve
-from attr.validators import instance_of, optional
-from immutablecollections import (
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutableset,
-    immutablesetmultidict,
-)
-
 from adam.utils.networkx_utils import subgraph
-from vistautils.parameters import Parameters
 
 
 class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
@@ -696,10 +696,12 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         raise RuntimeError(f"Invalid concept {concept}")
 
     def log_hypotheses(self, log_output_path: Path) -> None:
-        for concept,hypothesis in self.concepts_to_patterns().items():
+        for concept, hypothesis in self.concepts_to_patterns().items():
             hypothesis.render_to_file(
                 graph_name="perception",
-                output_file=Path(log_output_path / f'{str(type(self))}-{concept.debug_string}'),
+                output_file=Path(
+                    log_output_path / f"{str(type(self))}-{concept.debug_string}"
+                ),
             )
 
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
