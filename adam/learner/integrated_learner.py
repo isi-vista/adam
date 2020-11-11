@@ -392,7 +392,8 @@ class IntegratedTemplateLearner(
                                 yield self._add_determiners(
                                     object_node,
                                     attribute_template.instantiate(
-                                        template_variable_to_filler={SLOT1: cur_string}
+                                        template_variable_to_filler={SLOT1: cur_string},
+                                        attribute_template=True,
                                     ).as_token_sequence(),
                                 )
 
