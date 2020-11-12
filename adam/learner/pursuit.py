@@ -971,33 +971,23 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     else:
                         hypothesis_object_to_reward = hypothesis_to_reward_without_gaze
 
-                # Shouldn't be needed. If it's in hypotheses_for_item then it's a pre-existing
-                # hypothesis and gaze should already have been removed (see initialization_step).
-                # hypothesis_object_to_reward_without_gaze = self.remove_gaze_from_hypothesis(
-                #     hypothesis_object_to_reward
-                # )
                 if (
-                    # hypothesis_object_to_reward_without_gaze
+                    # hypothesis_object_to_reward
                     # not in hypothesis_objects_boosted_on_this_update
                     not self._find_identical_hypothesis(
-                        # hypothesis_object_to_reward_without_gaze,
                         hypothesis_object_to_reward,
                         candidates=hypothesis_objects_boosted_on_this_update,
                     )
                 ):
 
                     cur_score_for_new_hypothesis = hypotheses_for_item.get(
-                        # hypothesis_object_to_reward_without_gaze, 0.0
-                        hypothesis_object_to_reward,
-                        0.0,
+                        hypothesis_object_to_reward, 0.0
                     )
-                    # hypotheses_for_item[hypothesis_object_to_reward_without_gaze] = (
                     hypotheses_for_item[hypothesis_object_to_reward] = (
                         cur_score_for_new_hypothesis
                         + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
                     )
                     hypothesis_objects_boosted_on_this_update.add(
-                        # hypothesis_object_to_reward_without_gaze
                         hypothesis_object_to_reward
                     )
 
