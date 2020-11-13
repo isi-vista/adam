@@ -173,6 +173,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
             if "pursuit"
             in [object_learner_type, attribute_learner_type, relation_learner_type]
             else "subset",
+            use_pypy=True,
         )
 
     write_workflow_description()
