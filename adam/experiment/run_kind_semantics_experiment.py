@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sb
+from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY
 from adam.curriculum.phase1_curriculum import (
@@ -28,9 +29,9 @@ from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_utils import evaluate_kind_membership, cos_sim
 from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
+from adam.learner.semantics_utils import cos_sim, evaluate_kind_membership
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, GROUND
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
@@ -46,7 +47,6 @@ def integrated_learner_factory(language_mode: LanguageMode):
     rng = random.Random()
     rng.seed(0)
     return IntegratedTemplateLearner(
-        # object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         object_learner=SubsetObjectLearnerNew(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
@@ -73,24 +73,22 @@ def run_experiment(learner, curricula, experiment_id):
             perceptual_representation,
         ) in curriculum.instances():
             # Get the object matches first - prepositison learner can't learn without already recognized objects
-            # print(' '.join(linguistic_description.as_token_sequence()))
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
             )
 
-    # learner.object_learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
-    # learner.log_hypotheses(Path(f"./{experiment_id}-{type(learner.object_learner)}"))
-
     # Teach each kind member
     empty_situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_2_ONTOLOGY,
-        salient_objects=[
-            SituationObject.instantiate_ontology_node(
-                ontology_node=GROUND,
-                debug_handle=GROUND.handle,
-                ontology=GAILA_PHASE_1_ONTOLOGY,
-            )
-        ],
+        salient_objects=immutableset(
+            [
+                SituationObject.instantiate_ontology_node(
+                    ontology_node=GROUND,
+                    debug_handle=GROUND.handle,
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+                )
+            ]
+        ),
     )
     empty_perception = GAILA_PHASE_2_PERCEPTION_GENERATOR.generate_perception(
         empty_situation, PHASE1_CHOOSER_FACTORY()
@@ -133,7 +131,6 @@ def run_experiment(learner, curricula, experiment_id):
     #     if isinstance(n, ObjectConcept)
     # }
     # generate_heatmap(objects_to_embeddings, experiment_id)
-    #
     # generate_similarities(semantic_matrix, list(learner.semantics_graph.nodes()), ObjectConcept)
 
     # learner.render_semantics_to_file(
@@ -169,17 +166,12 @@ if __name__ == "__main__":
         language_generator = phase2_language_generator(lm)
         for num_samples in [10, 25, 50]:
             pretraining_curriculas = {
-                # "just-objects": [
-                #     _make_each_object_by_itself_curriculum(
-                #         num_samples, 0, language_generator
-                #     )
-                # ],
-                # "objects-and-kinds": [
-                #     _make_each_object_by_itself_curriculum(
-                #         num_samples, 0, language_generator
-                #     ),
-                #     _make_kind_predicates_curriculum(None, None, language_generator),
-                # ],
+                "objects-and-kinds": [
+                    _make_each_object_by_itself_curriculum(
+                        num_samples, 0, language_generator
+                    ),
+                    _make_kind_predicates_curriculum(None, None, language_generator),
+                ],
                 "kinds-and-generics": [
                     _make_each_object_by_itself_curriculum(
                         num_samples, 0, language_generator

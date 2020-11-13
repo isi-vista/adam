@@ -8,10 +8,6 @@ from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_inst
 from adam.curriculum.phase1_curriculum import (
     _make_generic_statements_curriculum,
     _make_eat_curriculum,
-    _make_drink_curriculum,
-    _make_sit_curriculum,
-    _make_jump_curriculum,
-    _make_fly_curriculum,
     _make_colour_predicates_curriculum,
     _make_kind_predicates_curriculum,
     _make_objects_with_colors_curriculum,
@@ -94,10 +90,6 @@ def run_generics_test(learner, language_mode):
     curricula = [
         # Actions - verbs in generics
         _make_eat_curriculum(10, 0, language_generator),
-        _make_drink_curriculum(10, 0, language_generator),
-        _make_sit_curriculum(10, 0, language_generator),
-        _make_jump_curriculum(10, 0, language_generator),
-        _make_fly_curriculum(10, 0, language_generator),
         # Plurals
         plurals,
         # Color attributes
@@ -107,7 +99,7 @@ def run_generics_test(learner, language_mode):
         _make_kind_predicates_curriculum(None, None, language_generator),
         # Generics
         _make_generic_statements_curriculum(
-            num_samples=20, noise_objects=0, language_generator=language_generator
+            num_samples=3, noise_objects=0, language_generator=language_generator
         ),
     ]
 

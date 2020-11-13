@@ -18,9 +18,9 @@ from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.learner_utils import cos_sim, get_concept_node_from_graph
 from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
+from adam.learner.semantics_utils import get_concept_node_from_graph, cos_sim
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
@@ -116,8 +116,6 @@ def run_experiment(learner, curricula, experiment_id):
         for r in results:
             print(f'{word}, {color}, {r[0].replace("_slot1","")}, {r[1]}')
 
-    #
-    #
     #     embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
     #     objects_to_embeddings = {
     #         n: embeddings[i]
@@ -163,33 +161,7 @@ if __name__ == "__main__":
                     _make_objects_with_colors_curriculum(
                         num_samples, None, language_generator
                     ),
-                ],
-                # "obj-actions-kinds-generics": [
-                #     _make_each_object_by_itself_curriculum(
-                #         num_samples, 0, language_generator
-                #     ),
-                #     # Actions - verbs in generics
-                #     _make_eat_curriculum(num_samples, 0, language_generator),
-                #     _make_drink_curriculum(num_samples, 0, language_generator),
-                #     _make_sit_curriculum(num_samples, 0, language_generator),
-                #     _make_jump_curriculum(num_samples, 0, language_generator),
-                #     _make_fly_curriculum(num_samples, 0, language_generator),
-                #     # Plurals
-                #     _make_plural_objects_curriculum(num_samples, 0, language_generator),
-                #     # plurals,
-                #     # Color attributes
-                #     _make_objects_with_colors_curriculum(None, None, language_generator),
-                #     # Predicates
-                #     _make_colour_predicates_curriculum(None, None, language_generator),
-                #     _make_kind_predicates_curriculum(None, None, language_generator),
-                #     # Generics
-                #     _make_generic_statements_curriculum(
-                #         num_samples=3,
-                #         noise_objects=0,
-                #         language_generator=language_generator,
-                #     ),
-                # ],
-                # build_gaila_m13_curriculum(num_samples=num_samples, num_noise_objects=0, language_generator=language_generator)
+                ]
             }
 
             for curricula_name, pretraining_curricula in pretraining_curriculas.items():
