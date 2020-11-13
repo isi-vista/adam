@@ -448,9 +448,7 @@ class PursuitAttributeLearnerNew(  # should it be called new? there is no old on
                 )
 
         logging.info(
-            "Logging %s lexicon items to %s",
-            len(self._lexicon),
-            log_output_path,
+            "Logging %s lexicon items to %s", len(self._lexicon), log_output_path
         )
         for (
             surface_template,
