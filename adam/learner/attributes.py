@@ -449,7 +449,7 @@ class PursuitAttributeLearnerNew(  # should it be called new? there is no old on
 
         logging.info(
             "Logging %s lexicon items to %s",
-            len(self._concept_to_hypotheses_and_scores),
+            len(self._lexicon),
             log_output_path,
         )
         for (
