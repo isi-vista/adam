@@ -3,6 +3,7 @@ _includes:
    - "m18.params"
 
 experiment_group_dir: '%adam_experiment_root%/integrated_pursuit_attribute_only/'
+hypothesis_log_dir: "%experiment_group_dir%/hypotheses"
 
 experiment: 'debug'
 curriculum: 'm9-attributes'
