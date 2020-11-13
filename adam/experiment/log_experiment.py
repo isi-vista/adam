@@ -41,7 +41,11 @@ from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import phase2_language_generator
 from adam.language_specific.english import DETERMINERS
-from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
+from adam.learner.attributes import (
+    SubsetAttributeLearner,
+    SubsetAttributeLearnerNew,
+    PursuitAttributeLearnerNew,
+)
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
@@ -276,6 +280,7 @@ def learner_factory_from_params(
             "integrated-learner-recognizer",
             "pursuit-gaze",
             "integrated-object-only",
+            "integrated-pursuit-attribute-only",
         ],
     )
 
@@ -482,6 +487,22 @@ def learner_factory_from_params(
         else:
             raise RuntimeError(f"Invalid Object Learner Type Selected: {learner_type}")
         return lambda: IntegratedTemplateLearner(object_learner=object_learner_factory())
+    elif learner_type == "integrated-pursuit-attribute-only":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=object_recognizer, language_mode=language_mode
+            ),
+            attribute_learner=PursuitAttributeLearnerNew(
+                learning_factor=0.05,
+                graph_match_confirmation_threshold=0.7,
+                lexicon_entry_threshold=0.7,
+                rng=rng,
+                smoothing_parameter=0.002,
+                rank_gaze_higher=False,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                language_mode=language_mode,
+            ),
+        )
     else:
         raise RuntimeError("can't happen")
 

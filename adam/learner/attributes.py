@@ -447,6 +447,20 @@ class PursuitAttributeLearnerNew(  # should it be called new? there is no old on
                     log_output_path / f"{concept.debug_string}.{i}.score_{score}",
                 )
 
+        logging.info(
+            "Logging %s lexicon items to %s",
+            len(self._concept_to_hypotheses_and_scores),
+            log_output_path,
+        )
+        for (
+            surface_template,
+            meaning_as_perception_graph_template,
+        ) in self._lexicon.items():
+            meaning_as_perception_graph_template.render_to_file(
+                surface_template.to_short_string(),
+                log_output_path / f"lexicon-{surface_template.to_short_string()}",
+            )
+
 
 def _extract_candidate_attributes(
     whole_scene_perception_graph: PerceptionGraph,
