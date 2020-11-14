@@ -28,7 +28,7 @@ class SimpleGenericsLearner(TemplateLearner):
         Tuple[str, ...], Tuple[Concept, Set[Tuple[Concept, str]]]
     ] = attrib(init=False, default=Factory(dict))
 
-    learned_kinds: Dict[str, KindConcept] = attrib(init=False, default=Factory(dict))
+    learned_concepts: Dict[str, Concept] = attrib(init=False, default=Factory(dict))
 
     plural_markers: List[str] = attrib(init=False, default=Factory(list))
 
@@ -122,12 +122,12 @@ class SimpleGenericsLearner(TemplateLearner):
                 pred = "shr4" if "shr4" in sequence else "are"
                 kind = sequence[sequence.index(pred) + 1]
                 # Create a concept for the kind
-                if kind not in self.learned_kinds:
+                if kind not in self.learned_concepts:
                     kind_concept = KindConcept(kind)
-                    self.learned_kinds[kind] = kind_concept
+                    self.learned_concepts[kind] = kind_concept
                 self.learned_representations[sequence] = (
                     significant_object_concept,
-                    {(self.learned_kinds[kind], "is")},
+                    {(self.learned_concepts[kind], "is")},
                 )
             # Potential "Wugs are aniamls"
             elif not significant_object_concept and (
@@ -136,9 +136,13 @@ class SimpleGenericsLearner(TemplateLearner):
                 # Filter out the kind words and use that for semantic encoding.
                 pred = "shr4" if "shr4" in sequence else "are"
                 potential_kind = sequence[sequence.index(pred) + 1]
+                new_object_text = sequence[0]
                 # If we know the kind, generalize wug as an animal
-                if potential_kind in self.learned_kinds:
+                if potential_kind in self.learned_concepts:
+                    if new_object_text not in self.learned_concepts:
+                        new_object_concept = ObjectConcept(new_object_text)
+                        self.learned_concepts[new_object_text] = new_object_concept
                     self.learned_representations[sequence] = (
-                        ObjectConcept(sequence[0]),
-                        {(self.learned_kinds[potential_kind], "is")},
+                        self.learned_concepts[new_object_text],
+                        {(self.learned_concepts[potential_kind], "is")},
                     )

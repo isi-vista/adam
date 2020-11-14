@@ -33,7 +33,7 @@ from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.semantics_utils import cos_sim, evaluate_kind_membership
 from adam.learner.verbs import SubsetVerbLearnerNew
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, GROUND
+from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, GROUND, CHICKEN, BEEF, COW
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
@@ -73,6 +73,7 @@ def run_experiment(learner, curricula, experiment_id):
             perceptual_representation,
         ) in curriculum.instances():
             # Get the object matches first - prepositison learner can't learn without already recognized objects
+            # print(' '.join(linguistic_description.as_token_sequence()))
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
             )
@@ -165,56 +166,43 @@ if __name__ == "__main__":
     for lm in [LanguageMode.ENGLISH]:
         language_generator = phase2_language_generator(lm)
         num_samples = 50
-        pretraining_curricula = {
-            "objects-and-kinds": [
-                _make_each_object_by_itself_curriculum(
-                    num_samples, 0, language_generator
-                ),
-                _make_kind_predicates_curriculum(None, None, language_generator),
-            ],
-            "kinds-and-generics": [
-                _make_each_object_by_itself_curriculum(
-                    num_samples, 0, language_generator
-                ),
-                # _make_plural_objects_curriculum(num_samples, 0, language_generator),
-                _make_kind_predicates_curriculum(None, None, language_generator),
-                _make_generic_statements_curriculum(
-                    num_samples=3, noise_objects=0, language_generator=language_generator
-                ),
-            ],
-            "obj-actions-kinds-generics": [
-                _make_each_object_by_itself_curriculum(
-                    num_samples, 0, language_generator
-                ),
-                # Actions - verbs in generics
-                _make_eat_curriculum(10, 0, language_generator),
-                _make_drink_curriculum(10, 0, language_generator),
-                _make_sit_curriculum(10, 0, language_generator),
-                _make_jump_curriculum(10, 0, language_generator),
-                _make_fly_curriculum(10, 0, language_generator),
-                # Plurals
-                _make_plural_objects_curriculum(None, 0, language_generator),
-                # Color attributes
-                _make_objects_with_colors_curriculum(None, None, language_generator),
-                # Predicates
-                _make_colour_predicates_curriculum(None, None, language_generator),
-                _make_kind_predicates_curriculum(None, None, language_generator),
-                # Generics
-                _make_generic_statements_curriculum(
-                    num_samples=3, noise_objects=0, language_generator=language_generator
-                ),
-            ],
-        }
+        ban_all = [CHICKEN, BEEF, COW]
+        condition_and_banned_objects = {
+                                        'standard': [CHICKEN, BEEF, COW],
+                                        'chicken': [BEEF, COW],
+                                        'beef-cow': [CHICKEN],
+                                        'chicken-beef-cow': immutableset(),}
+        for condition, banned_objects in condition_and_banned_objects.items():
+            pretraining_curricula = [
+                    _make_each_object_by_itself_curriculum(
+                        num_samples, 0, language_generator, banned_ontology_types=banned_objects
+                    ),
+                    # Actions - verbs in generics
+                    _make_eat_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
+                    _make_drink_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
+                    _make_sit_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
+                    _make_jump_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
+                    _make_fly_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
+                    # Color attributes
+                    _make_objects_with_colors_curriculum(None, None, language_generator, banned_ontology_types=banned_objects),
+                    # Predicates
+                    _make_colour_predicates_curriculum(None, None, language_generator, banned_ontology_types=banned_objects),
+                    _make_kind_predicates_curriculum(None, None, language_generator, banned_ontology_types=banned_objects),
+                    # Generics
+                    _make_generic_statements_curriculum(
+                        num_samples=3,
+                        noise_objects=0,
+                        language_generator=language_generator,
+                        banned_ontology_types = banned_objects
+                    ),
+                ]
 
-        for curricula_name, pretraining_curriculum in pretraining_curricula.items():
             # Run experiment
-            experiment = (
-                f"kind_semantics_lang-{lm}_num-samples-{num_samples}_cur-{curricula_name}"
-            )
+            experiment = f"kind_semantics_lang-{lm}_num-samples-{num_samples}_cur-{condition}"
             print("\nRunning experiment:", experiment)
             integrated_learner = integrated_learner_factory(lm)
             run_experiment(
                 learner=integrated_learner,
-                curricula=pretraining_curriculum,
+                curricula=pretraining_curricula,
                 experiment_id=experiment,
             )

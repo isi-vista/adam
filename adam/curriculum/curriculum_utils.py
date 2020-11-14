@@ -145,9 +145,16 @@ def make_background(
     return immutableset(object_ for object_ in all_objects if object_ not in salient)
 
 
-def make_noise_objects(noise_objects: Optional[int]) -> Iterable[TemplateObjectVariable]:
+def make_noise_objects(
+    noise_objects: Optional[int],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
+) -> Iterable[TemplateObjectVariable]:
     return immutableset(
-        standard_object(f"noise_object_{x}", banned_properties=[IS_SPEAKER, IS_ADDRESSEE])
+        standard_object(
+            f"noise_object_{x}",
+            banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+            banned_ontology_types=banned_ontology_types,
+        )
         for x in range(noise_objects if noise_objects else 0)
     )
 
