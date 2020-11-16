@@ -107,7 +107,9 @@ def run_experiment(learner, curricula, experiment_id):
             )
         )
 
-    semantics_manager: SemanticsManager = SemanticsManager(semantics_graph=learner.semantics_graph)
+    semantics_manager: SemanticsManager = SemanticsManager(
+        semantics_graph=learner.semantics_graph
+    )
     complete_results = []
     print("Results for ", experiment_id)
     for word, _ in pseudoword_to_kind.items():

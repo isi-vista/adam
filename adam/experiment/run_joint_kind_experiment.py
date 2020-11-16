@@ -18,7 +18,6 @@ from adam.curriculum.phase1_curriculum import (
     _make_sit_curriculum,
     _make_jump_curriculum,
     _make_fly_curriculum,
-    _make_plural_objects_curriculum,
     _make_objects_with_colors_curriculum,
     _make_colour_predicates_curriculum,
 )
@@ -33,7 +32,13 @@ from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.semantics_utils import SemanticsManager, cos_sim
 from adam.learner.verbs import SubsetVerbLearnerNew
-from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, GROUND, CHICKEN, BEEF, COW
+from adam.ontology.phase1_ontology import (
+    GAILA_PHASE_1_ONTOLOGY,
+    GROUND,
+    CHICKEN,
+    BEEF,
+    COW,
+)
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
@@ -108,7 +113,9 @@ def run_experiment(learner, curricula, experiment_id):
             )
         )
 
-    semantics_manager: SemanticsManager = SemanticsManager(semantics_graph=learner.semantics_graph)
+    semantics_manager: SemanticsManager = SemanticsManager(
+        semantics_graph=learner.semantics_graph
+    )
     complete_results = []
     print("Results for ", experiment_id)
     for word, _ in pseudoword_to_kind.items():
@@ -125,21 +132,6 @@ def run_experiment(learner, curricula, experiment_id):
     results_df.insert(0, "Words", pseudoword_to_kind.keys())
     print(results_df.to_csv(index=False))
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
-
-    # embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
-    # objects_to_embeddings = {
-    #     n: embeddings[i]
-    #     for i, n in enumerate(learner.semantics_graph.nodes)
-    #     if isinstance(n, ObjectConcept)
-    # }
-    # generate_heatmap(objects_to_embeddings, experiment_id)
-    # generate_similarities(semantic_matrix, list(learner.semantics_graph.nodes()), ObjectConcept)
-
-    # learner.render_semantics_to_file(
-    #     graph=learner.semantics_graph,
-    #     graph_name="semantics",
-    #     output_file=Path(f"./renders/{experiment_id}/semantics.png"),
-    # )
 
 
 def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
@@ -169,37 +161,59 @@ if __name__ == "__main__":
         num_samples = 50
         ban_all = [CHICKEN, BEEF, COW]
         condition_and_banned_objects = {
-                                        'without-chicken-beef-cow': [CHICKEN, BEEF, COW],
-                                        'chicken': [BEEF, COW],
-                                        'beef-cow': [CHICKEN],
-                                        'chicken-beef-cow': immutableset(),}
+            "without-chicken-beef-cow": [CHICKEN, BEEF, COW],
+            "chicken": [BEEF, COW],
+            "beef-cow": [CHICKEN],
+            "chicken-beef-cow": immutableset(),
+        }
         for condition, banned_objects in condition_and_banned_objects.items():
             pretraining_curricula = [
-                    _make_each_object_by_itself_curriculum(
-                        num_samples, 0, language_generator, banned_ontology_types=banned_objects
-                    ),
-                    # Actions - verbs in generics
-                    _make_eat_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
-                    _make_drink_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
-                    _make_sit_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
-                    _make_jump_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
-                    _make_fly_curriculum(10, 0, language_generator, banned_ontology_types=banned_objects),
-                    # Color attributes
-                    _make_objects_with_colors_curriculum(None, None, language_generator, banned_ontology_types=banned_objects),
-                    # Predicates
-                    _make_colour_predicates_curriculum(None, None, language_generator, banned_ontology_types=banned_objects),
-                    _make_kind_predicates_curriculum(None, None, language_generator, banned_ontology_types=banned_objects),
-                    # Generics
-                    _make_generic_statements_curriculum(
-                        num_samples=3,
-                        noise_objects=0,
-                        language_generator=language_generator,
-                        banned_ontology_types = banned_objects
-                    ),
-                ]
+                _make_each_object_by_itself_curriculum(
+                    num_samples,
+                    0,
+                    language_generator,
+                    banned_ontology_types=banned_objects,
+                ),
+                # Actions - verbs in generics
+                _make_eat_curriculum(
+                    10, 0, language_generator, banned_ontology_types=banned_objects
+                ),
+                _make_drink_curriculum(
+                    10, 0, language_generator, banned_ontology_types=banned_objects
+                ),
+                _make_sit_curriculum(
+                    10, 0, language_generator, banned_ontology_types=banned_objects
+                ),
+                _make_jump_curriculum(
+                    10, 0, language_generator, banned_ontology_types=banned_objects
+                ),
+                _make_fly_curriculum(
+                    10, 0, language_generator, banned_ontology_types=banned_objects
+                ),
+                # Color attributes
+                _make_objects_with_colors_curriculum(
+                    None, None, language_generator, banned_ontology_types=banned_objects
+                ),
+                # Predicates
+                _make_colour_predicates_curriculum(
+                    None, None, language_generator, banned_ontology_types=banned_objects
+                ),
+                _make_kind_predicates_curriculum(
+                    None, None, language_generator, banned_ontology_types=banned_objects
+                ),
+                # Generics
+                _make_generic_statements_curriculum(
+                    num_samples=3,
+                    noise_objects=0,
+                    language_generator=language_generator,
+                    banned_ontology_types=banned_objects,
+                ),
+            ]
 
             # Run experiment
-            experiment = f"kind_semantics_lang-{lm}_num-samples-{num_samples}_cur-{condition}"
+            experiment = (
+                f"kind_semantics_lang-{lm}_num-samples-{num_samples}_cur-{condition}"
+            )
             print("\nRunning experiment:", experiment)
             integrated_learner = integrated_learner_factory(lm)
             run_experiment(

@@ -632,7 +632,7 @@ class IntegratedTemplateLearner(
                     ) and isinstance(other_con, KindConcept):
                         # Create a representation of the kind using association of its neighbors
                         kind_neighbor_associations: Counter[
-                            Concept
+                            Tuple[Concept, str]
                         ] = collections.Counter()
                         for member_of_kind in self.semantics_graph.predecessors(
                             other_con
@@ -643,16 +643,21 @@ class IntegratedTemplateLearner(
                             for n in self.semantics_graph.neighbors(member_of_kind):
                                 if isinstance(n, KindConcept):
                                     continue
-                                slot = self.semantics_graph.get_edge_data(member_of_kind, n)['slot']
-                                kind_neighbor_associations[n, slot] += 1
+                                kind_neighbor_slot = self.semantics_graph.get_edge_data(
+                                    member_of_kind, n
+                                )["slot"]
+                                kind_neighbor_associations[(n, kind_neighbor_slot)] += 1
                         if not kind_neighbor_associations.values():
                             continue
                         coefficient = 1 / max(kind_neighbor_associations.values())
-                        for (associated_concept, slot), strength in kind_neighbor_associations.items():
+                        for (
+                            (associated_concept, associated_slot),
+                            strength,
+                        ) in kind_neighbor_associations.items():
                             self.semantics_graph.add_edge(
                                 obj_con,
                                 associated_concept,
-                                slot=slot,
+                                slot=associated_slot,
                                 weight=coefficient * strength,
                             )
 

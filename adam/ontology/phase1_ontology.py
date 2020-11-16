@@ -527,13 +527,7 @@ BEEF = OntologyNode("beef", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, DARK_
 subtype(BEEF, FOOD)
 COW = OntologyNode(
     "cow",
-    [
-        CAN_FILL_TEMPLATE_SLOT,
-        CAN_HAVE_THINGS_RESTING_ON_THEM,
-        CAN_JUMP,
-        WHITE,
-        BLACK,
-    ],
+    [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, CAN_JUMP, WHITE, BLACK],
 )
 subtype(COW, NONHUMAN_ANIMAL)
 

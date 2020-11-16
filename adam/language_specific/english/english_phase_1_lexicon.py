@@ -74,7 +74,10 @@ from adam.ontology.phase1_ontology import (
     NONHUMAN_ANIMAL,
     PERSON,
     FOOD,
-    COW, BEEF, CHICKEN)
+    COW,
+    BEEF,
+    CHICKEN,
+)
 
 I = LexiconEntry(  # noqa: E741
     "I",

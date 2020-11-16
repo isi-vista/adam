@@ -506,7 +506,7 @@ def _make_kind_predicates_curriculum(
         "cookie": [["food"]],
         "cow": [["animal", "s"]],
         "beef": [["food"]],
-        "chicken": [["animal", "s"],['food']]
+        "chicken": [["animal", "s"], ["food"]],
     }
     # we keep track of the subjects so we only generate one predicate for each subject
     all_subjects: List[str] = []
@@ -547,12 +547,7 @@ def _make_kind_predicates_curriculum(
                         (
                             instance,
                             TokenSequenceLinguisticDescription(
-                                (
-                                    linguistic_tokens[-1],
-                                    "s",
-                                    "are",
-                                    *kind,
-                                )
+                                (linguistic_tokens[-1], "s", "are", *kind)
                             ),
                             perception,
                         )

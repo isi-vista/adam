@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Optional, Any
 
 import numpy as np
@@ -9,16 +8,23 @@ from adam.semantics import Concept, KindConcept, ObjectConcept, ActionConcept
 
 
 class SemanticsManager:
-
-    def __init__(self, semantics_graph: Graph):
-        self.semantics_graph = Graph()
+    def __init__(self, semantics_graph: Graph) -> None:
+        self.semantics_graph: Graph = Graph()
         # Create a new type of edge for each edge in the original semantics graph
         # If any of the nodes is an action concept, we want to make a distinct new node to track syntax
-        for u, v, data, in semantics_graph.edges(data=True):
-            syntactic_position = data['slot']
-            new_u = self.concept_as_str_node(u, syntactic_position) if isinstance(u, ActionConcept) else self.concept_as_str_node(u)
-            new_v = self.concept_as_str_node(v, syntactic_position) if isinstance(v, ActionConcept) else self.concept_as_str_node(v)
-            self.semantics_graph.add_edge(new_u, new_v, weight=data['weight'])
+        for u, v, data in semantics_graph.edges(data=True):
+            syntactic_position = data["slot"]
+            new_u = (
+                self.concept_as_str_node(u, syntactic_position)
+                if isinstance(u, ActionConcept)
+                else self.concept_as_str_node(u)
+            )
+            new_v = (
+                self.concept_as_str_node(v, syntactic_position)
+                if isinstance(v, ActionConcept)
+                else self.concept_as_str_node(v)
+            )
+            self.semantics_graph.add_edge(new_u, new_v, weight=data["weight"])
 
         self.nodes = list(self.semantics_graph.nodes)
         self.semantics_matrix = to_numpy_matrix(self.semantics_graph)
@@ -30,7 +36,10 @@ class SemanticsManager:
     def kind_concept_embedding(self, concept: str) -> Any:
         # Get a numpy array weighted adjacency embedding averaging the members of a kind concept in the graph
         member_embeddings = np.vstack(
-            [self.object_concept_embedding(member) for member in self.semantics_graph.neighbors(concept)]
+            [
+                self.object_concept_embedding(member)
+                for member in self.semantics_graph.neighbors(concept)
+            ]
         )
         return np.mean(member_embeddings, axis=0)
 
@@ -41,18 +50,20 @@ class SemanticsManager:
             return 0
         return cos_sim(
             self.object_concept_embedding(word_node),
-            self.kind_concept_embedding(kind_node)
+            self.kind_concept_embedding(kind_node),
         )
 
     @staticmethod
-    def concept_as_str_node(concept: Concept, syntactic_position='') -> str:
+    def concept_as_str_node(concept: Concept, syntactic_position="") -> str:
         if syntactic_position:
-            return f'{concept.debug_string}_{str(type(concept))}_{syntactic_position}'
+            return f"{concept.debug_string}_{str(type(concept))}_{syntactic_position}"
         else:
-            return f'{concept.debug_string}_{str(type(concept))}'
+            return f"{concept.debug_string}_{str(type(concept))}"
 
 
-def get_concept_node_from_graph(identifier: str, semantics_graph: Graph) -> Optional[Concept]:
+def get_concept_node_from_graph(
+    identifier: str, semantics_graph: Graph
+) -> Optional[Concept]:
     return first([n for n in semantics_graph.nodes if n.debug_string == identifier], None)
 
 
