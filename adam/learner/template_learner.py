@@ -3,18 +3,7 @@ import logging
 from attr.validators import instance_of
 from abc import ABC, abstractmethod
 
-from typing import (
-    AbstractSet,
-    Iterable,
-    List,
-    Mapping,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-    Set,
-    Optional,
-)
+from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
 from more_itertools import one
 
@@ -362,9 +351,10 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
-    ) -> Optional[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         """
-        Try to match our model of the semantics to the perception graph
+        Try to match our model of the semantics to the perception graph,
+        returning an iterable of such matches (some of which might be duplicates)
         """
 
     def _enrich_common(
@@ -391,15 +381,18 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         def match_template(
             *, concept: Concept, pattern: PerceptionGraphTemplate, score: float
         ) -> None:
-            rtrn = self._match_template(
+            matches_with_nodes = self._match_template(
                 concept=concept,
                 pattern=pattern,
                 perception_graph=preprocessed_perception_graph,
             )
-            # Its possible there is no match for the template in the graph
-            # So we handle a None return here
-            if rtrn:
-                (match, semantic_node_for_match) = rtrn
+            # The template may have zero, one, or many matches, so we loop over the matches found
+            # Note that, with the exception of the object learners,
+            # some matches may be essentially identical to each other.
+            # This is fine because the corresponding semantic nodes will be equal,
+            # so they'll get thrown out when we take the immutable set of new nodes.
+            for match_with_node in matches_with_nodes:
+                (match, semantic_node_for_match) = match_with_node
                 match_to_score.append((semantic_node_for_match, score))
                 # We want to replace object matches with their semantic nodes,
                 # but we don't want to alter the graph while matching it,

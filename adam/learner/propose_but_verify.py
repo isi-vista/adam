@@ -188,7 +188,7 @@ class AbstractProposeButVerifyLearner(AbstractTemplateLearnerNew, ABC):
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
-    ) -> Optional[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         """
         Try to match our model of the semantics to the perception graph
         """
@@ -217,8 +217,7 @@ class AbstractProposeButVerifyLearner(AbstractTemplateLearnerNew, ABC):
                 semantic_node_for_match = pattern_match_to_semantic_node(
                     concept=concept, pattern=pattern, match=match
                 )
-                # A template only has to match once; we don't care about finding additional matches.
-                return match, semantic_node_for_match
+                yield match, semantic_node_for_match
             # We raise an error if we find a partial match but don't manage to match it to the scene
             raise RuntimeError(
                 f"Partial Match found for {concept} below match ratio however pattern "
@@ -226,4 +225,3 @@ class AbstractProposeButVerifyLearner(AbstractTemplateLearnerNew, ABC):
                 f"Partial Match: {partial_match}\n"
                 f"Perception Graph: {perception_graph}"
             )
-        return None

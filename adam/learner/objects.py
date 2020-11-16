@@ -14,6 +14,9 @@ from typing import (
     Dict,
     Mapping,
 )
+
+from more_itertools import first
+
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -548,6 +551,24 @@ class SubsetObjectLearnerNew(
             ),
         )
 
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        # In the case of the object learner,
+        # A template only has to match once; we don't care about finding additional matches.
+        match = first(
+            super()._match_template(
+                concept=concept, pattern=pattern, perception_graph=perception_graph
+            ),
+            None,
+        )
+        if match is not None:
+            yield match
+
 
 @attrs(slots=True)
 class ProposeButVerifyObjectLearner(
@@ -599,6 +620,24 @@ class ProposeButVerifyObjectLearner(
 
     def _new_concept(self, debug_string: str) -> Concept:
         return ObjectConcept(debug_string)
+
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        # In the case of the object learner,
+        # A template only has to match once; we don't care about finding additional matches.
+        match = first(
+            super()._match_template(
+                concept=concept, pattern=pattern, perception_graph=perception_graph
+            ),
+            None,
+        )
+        if match is not None:
+            yield match
 
 
 @attrs(frozen=True, kw_only=True)
@@ -857,3 +896,21 @@ class PursuitObjectLearnerNew(
                 hypothesis.render_to_file(
                     concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
                 )
+
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        # In the case of the object learner,
+        # A template only has to match once; we don't care about finding additional matches.
+        match = first(
+            super()._match_template(
+                concept=concept, pattern=pattern, perception_graph=perception_graph
+            ),
+            None,
+        )
+        if match is not None:
+            yield match
