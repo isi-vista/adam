@@ -129,7 +129,7 @@ class SimpleGenericsLearner(TemplateLearner):
                     significant_object_concept,
                     {(self.learned_concepts[kind], "is")},
                 )
-            # Potential "Wugs are aniamls"
+            # Potential "Wugs are animals"
             elif not significant_object_concept and (
                 "are" in sequence or "shr4" in sequence
             ):

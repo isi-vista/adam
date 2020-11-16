@@ -643,15 +643,16 @@ class IntegratedTemplateLearner(
                             for n in self.semantics_graph.neighbors(member_of_kind):
                                 if isinstance(n, KindConcept):
                                     continue
-                                kind_neighbor_associations[n] += 1
+                                slot = self.semantics_graph.get_edge_data(member_of_kind, n)['slot']
+                                kind_neighbor_associations[n, slot] += 1
                         if not kind_neighbor_associations.values():
                             continue
                         coefficient = 1 / max(kind_neighbor_associations.values())
-                        for association, strength in kind_neighbor_associations.items():
+                        for (associated_concept, slot), strength in kind_neighbor_associations.items():
                             self.semantics_graph.add_edge(
                                 obj_con,
-                                association,
-                                slot="kind-based",
+                                associated_concept,
+                                slot=slot,
                                 weight=coefficient * strength,
                             )
 

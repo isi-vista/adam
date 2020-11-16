@@ -169,7 +169,7 @@ if __name__ == "__main__":
         num_samples = 50
         ban_all = [CHICKEN, BEEF, COW]
         condition_and_banned_objects = {
-                                        'standard': [CHICKEN, BEEF, COW],
+                                        'without-chicken-beef-cow': [CHICKEN, BEEF, COW],
                                         'chicken': [BEEF, COW],
                                         'beef-cow': [CHICKEN],
                                         'chicken-beef-cow': immutableset(),}

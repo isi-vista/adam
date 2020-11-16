@@ -12,10 +12,12 @@ class SemanticsManager:
 
     def __init__(self, semantics_graph: Graph):
         self.semantics_graph = Graph()
+        # Create a new type of edge for each edge in the original semantics graph
+        # If any of the nodes is an action concept, we want to make a distinct new node to track syntax
         for u, v, data, in semantics_graph.edges(data=True):
             syntactic_position = data['slot']
-            new_u = self.concept_as_string(u, syntactic_position) if isinstance(u, ActionConcept) else self.concept_as_string(u)
-            new_v = self.concept_as_string(v, syntactic_position) if isinstance(v, ActionConcept) else self.concept_as_string(v)
+            new_u = self.concept_as_str_node(u, syntactic_position) if isinstance(u, ActionConcept) else self.concept_as_str_node(u)
+            new_v = self.concept_as_str_node(v, syntactic_position) if isinstance(v, ActionConcept) else self.concept_as_str_node(v)
             self.semantics_graph.add_edge(new_u, new_v, weight=data['weight'])
 
         self.nodes = list(self.semantics_graph.nodes)
@@ -32,13 +34,9 @@ class SemanticsManager:
         )
         return np.mean(member_embeddings, axis=0)
 
-    def get_concept_node_with_id(self, identifier: str) -> Optional[Concept]:
-        return first([n for n in self.nodes if identifier == n], None)
-
     def evaluate_kind_membership(self, word: str, kind: str) -> float:
-        word_node = self.concept_as_string(ObjectConcept(word))
-        kind_node = self.concept_as_string(KindConcept(kind))
-        print(word_node, kind_node)
+        word_node = self.concept_as_str_node(ObjectConcept(word))
+        kind_node = self.concept_as_str_node(KindConcept(kind))
         if kind_node not in self.nodes or word_node not in self.nodes:
             return 0
         return cos_sim(
@@ -47,11 +45,15 @@ class SemanticsManager:
         )
 
     @staticmethod
-    def concept_as_string(concept: Concept, syntactic_position='') -> str:
+    def concept_as_str_node(concept: Concept, syntactic_position='') -> str:
         if syntactic_position:
             return f'{concept.debug_string}_{str(type(concept))}_{syntactic_position}'
         else:
             return f'{concept.debug_string}_{str(type(concept))}'
+
+
+def get_concept_node_from_graph(identifier: str, semantics_graph: Graph) -> Optional[Concept]:
+    return first([n for n in semantics_graph.nodes if n.debug_string == identifier], None)
 
 
 def cos_sim(a, b) -> float:
