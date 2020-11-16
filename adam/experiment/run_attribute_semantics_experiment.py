@@ -20,7 +20,7 @@ from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
-from adam.learner.semantics_utils import get_concept_node_from_graph, cos_sim
+from adam.learner.semantics_utils import cos_sim, SemanticsManager
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
@@ -69,9 +69,10 @@ def run_experiment(learner, curricula, experiment_id):
 
     print(learner.semantics_graph.nodes)
 
+    semantics_manager: SemanticsManager = SemanticsManager(semantics_graph=learner.semantics_graph)
     # Evaluate assocations before generics
     for word, color in english_color_dictionary.items():
-        word_concept = get_concept_node_from_graph(word, learner.semantics_graph)
+        word_concept = semantics_manager.get_concept_node_with_id(word)
         if not word_concept:
             continue
         results = [
@@ -99,9 +100,10 @@ def run_experiment(learner, curricula, experiment_id):
         )
         print(" ".join(linguistic_description.as_token_sequence()))
 
+    post_semantics_manager = SemanticsManager(semantics_graph=learner.semantics_graph)
     # Evaluate assocations after generics
     for word, color in english_color_dictionary.items():
-        word_concept = get_concept_node_from_graph(word, learner.semantics_graph)
+        word_concept = post_semantics_manager.get_concept_node_with_id(word)
         if not word_concept:
             continue
         results = [

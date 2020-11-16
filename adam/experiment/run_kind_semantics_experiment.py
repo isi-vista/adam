@@ -31,7 +31,7 @@ from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
-from adam.learner.semantics_utils import cos_sim, evaluate_kind_membership
+from adam.learner.semantics_utils import cos_sim, SemanticsManager
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, GROUND
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
@@ -107,11 +107,12 @@ def run_experiment(learner, curricula, experiment_id):
             )
         )
 
+    semantics_manager: SemanticsManager = SemanticsManager(semantics_graph=learner.semantics_graph)
     complete_results = []
     print("Results for ", experiment_id)
     for word, _ in pseudoword_to_kind.items():
         results = [
-            (kind, evaluate_kind_membership(learner.semantics_graph, word, kind))
+            (kind, semantics_manager.evaluate_kind_membership(word, kind))
             for kind in pseudoword_to_kind.values()
         ]
         complete_results.append(results)
