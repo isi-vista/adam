@@ -475,11 +475,6 @@ def _extract_candidate_attributes(
             if label == HAS_PROPERTY_LABEL
         ]
     )
-    # candidate_attribute_subgraph_node_sets = [
-    #     immutableset(chain([object_with_attribute], properties_subset))
-    #     for properties_subset in powerset(properties)
-    #     if properties_subset
-    # ]
     # For testing purposes, use the much smaller set of candidate attributes
     # where we consider only single properties as possible attributes.
     candidate_attribute_subgraph_node_sets = [
