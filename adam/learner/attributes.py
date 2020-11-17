@@ -475,8 +475,11 @@ def _extract_candidate_attributes(
             if label == HAS_PROPERTY_LABEL
         ]
     )
-    # For testing purposes, use the much smaller set of candidate attributes
+    # Furthermore, we limit the search space to the even smaller set of hypotheses
     # where we consider only single properties as possible attributes.
+    # Otherwise there are too many hypotheses for the pursuit learner to search through
+    # and it's unlikely to converge on the correct hypothesis
+    # in any reasonable amount of time or number of examples.
     candidate_attribute_subgraph_node_sets = [
         immutableset([object_with_attribute, property]) for property in properties
     ]
