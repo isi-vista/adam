@@ -23,7 +23,7 @@ from adam.learner.template_learner import AbstractTemplateLearnerNew
 from adam.ontology.phase2_ontology import TWO, HAS_COUNT, MANY
 from adam.perception import MatchMode
 from adam.perception.perception_graph import PerceptionGraph
-from adam.semantics import AttributeConcept, SemanticNode
+from adam.semantics import AttributeConcept, SemanticNode, ObjectSemanticNode
 
 _MAXIMUM_PLURAL_TEMPLATE_TOKEN_LENGTH = 5
 
@@ -87,7 +87,11 @@ class SubsetPluralLearnerNew(
     def _preprocess_scene(
         self, perception_semantic_alignment: PerceptionSemanticAlignment
     ) -> PerceptionSemanticAlignment:
-        nodes = [s for s in perception_semantic_alignment.semantic_nodes]
+        nodes = [
+            s
+            for s in perception_semantic_alignment.semantic_nodes
+            if isinstance(s, ObjectSemanticNode)
+        ]
         counts = collections.Counter([s.concept for s in nodes])
         digraph = perception_semantic_alignment.perception_graph.copy_as_digraph()
         for node in nodes:
