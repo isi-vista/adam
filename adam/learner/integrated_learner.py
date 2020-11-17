@@ -3,7 +3,7 @@ import itertools
 import logging
 from itertools import chain, combinations
 from pathlib import Path
-from typing import Iterator, Mapping, Optional, Tuple, List, Dict, Union, Counter, Set
+from typing import Iterator, Mapping, Optional, Tuple, List, Dict, Union, Counter, Set, DefaultDict
 
 import graphviz
 from attr import attrib, attrs
@@ -631,9 +631,9 @@ class IntegratedTemplateLearner(
                         ]
                     ) and isinstance(other_con, KindConcept):
                         # Create a representation of the kind using association of its neighbors
-                        kind_neighbor_associations: Counter[
+                        kind_neighbor_associations: DefaultDict[
                             Tuple[Concept, str]
-                        ] = collections.Counter()
+                        ] = collections.defaultdict(float)
                         for member_of_kind in self.semantics_graph.predecessors(
                             other_con
                         ):
@@ -643,13 +643,13 @@ class IntegratedTemplateLearner(
                             for n in self.semantics_graph.neighbors(member_of_kind):
                                 if isinstance(n, KindConcept):
                                     continue
-                                kind_neighbor_slot = self.semantics_graph.get_edge_data(
-                                    member_of_kind, n
-                                )["slot"]
-                                kind_neighbor_associations[(n, kind_neighbor_slot)] += 1
+                                data = self.semantics_graph.get_edge_data(member_of_kind, n)
+                                kind_neighbor_slot = data["slot"]
+                                kind_neighbor_strength = data["weight"]
+                                kind_neighbor_associations[(n, kind_neighbor_slot)] += kind_neighbor_strength
                         if not kind_neighbor_associations.values():
                             continue
-                        coefficient = 1 / max(kind_neighbor_associations.values())
+                        coefficient = 1.0 / max(kind_neighbor_associations.values())
                         for (
                             (associated_concept, associated_slot),
                             strength,

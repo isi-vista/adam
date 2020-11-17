@@ -132,33 +132,17 @@ def run_experiment(learner, curricula, experiment_id):
     results_df.insert(0, "Words", pseudoword_to_kind.keys())
     print(results_df.to_csv(index=False))
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
-
-
-def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
-    if not nodes_to_embeddings:
-        return
-    similarity_matrix = np.zeros((len(nodes_to_embeddings), len(nodes_to_embeddings)))
-    for i, (_, embedding_1) in enumerate(nodes_to_embeddings.items()):
-        for j, (_, embedding_2) in enumerate(nodes_to_embeddings.items()):
-            similarity_matrix[i][j] = cos_sim(embedding_1, embedding_2)
-    names = [n.debug_string for n in nodes_to_embeddings.keys()]
-    df = pd.DataFrame(data=similarity_matrix, index=names, columns=names)
-    plt.rcParams["figure.figsize"] = (20.0, 20.0)
-    plt.rcParams["font.family"] = "serif"
-    # sb.heatmap(df)
-    # sb.clustermap(df)
-    sb.clustermap(df, row_cluster=True, col_cluster=True)
-    # cm.ax_row_dendrogram.set_visible(False)
-    # cm.ax_col_dendrogram.set_visible(False)
-    # plt.show()
-    plt.savefig(f"plots/{filename}.png")
-    plt.close()
+    learner.render_semantics_to_file(
+        graph=learner.semantics_graph,
+        graph_name="semantics",
+        output_file=Path(f"./renders/{experiment_id}/semantics.png"),
+    )
 
 
 if __name__ == "__main__":
     for lm in [LanguageMode.ENGLISH]:
         language_generator = phase2_language_generator(lm)
-        num_samples = 50
+        num_samples = 200
         ban_all = [CHICKEN, BEEF, COW]
         condition_and_banned_objects = {
             "without-chicken-beef-cow": [CHICKEN, BEEF, COW],
@@ -212,7 +196,7 @@ if __name__ == "__main__":
 
             # Run experiment
             experiment = (
-                f"kind_semantics_lang-{lm}_num-samples-{num_samples}_cur-{condition}"
+                f"joint_kind_semantics_ns-{num_samples}_cur-{condition}"
             )
             print("\nRunning experiment:", experiment)
             integrated_learner = integrated_learner_factory(lm)

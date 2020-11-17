@@ -1,8 +1,11 @@
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 import numpy as np
+import pandas as pd
 from more_itertools import first
 from networkx import Graph, to_numpy_matrix
+import matplotlib.pyplot as plt
+import seaborn as sb
 
 from adam.semantics import Concept, KindConcept, ObjectConcept, ActionConcept
 
@@ -72,3 +75,24 @@ def cos_sim(a, b) -> float:
     norma = np.linalg.norm(a.reshape(1, -1))
     normb = np.linalg.norm(b.reshape(1, -1))
     return dot / (norma * normb)
+
+
+def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
+    if not nodes_to_embeddings:
+        return
+    similarity_matrix = np.zeros((len(nodes_to_embeddings), len(nodes_to_embeddings)))
+    for i, (_, embedding_1) in enumerate(nodes_to_embeddings.items()):
+        for j, (_, embedding_2) in enumerate(nodes_to_embeddings.items()):
+            similarity_matrix[i][j] = cos_sim(embedding_1, embedding_2)
+    names = [n.debug_string for n in nodes_to_embeddings.keys()]
+    df = pd.DataFrame(data=similarity_matrix, index=names, columns=names)
+    plt.rcParams["figure.figsize"] = (20.0, 20.0)
+    plt.rcParams["font.family"] = "serif"
+    # sb.heatmap(df)
+    # sb.clustermap(df)
+    sb.clustermap(df, row_cluster=True, col_cluster=True)
+    # cm.ax_row_dendrogram.set_visible(False)
+    # cm.ax_col_dendrogram.set_visible(False)
+    # plt.show()
+    plt.savefig(f"plots/{filename}.png")
+    plt.close()

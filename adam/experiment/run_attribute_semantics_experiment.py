@@ -116,37 +116,12 @@ def run_experiment(learner, curricula, experiment_id):
         for r in results:
             print(f'{word}, {color}, {r[0].replace("_slot1","")}, {r[1]}')
 
-    #     embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
-    #     objects_to_embeddings = {
-    #         n: embeddings[i]
-    #         for i, n in enumerate(learner.semantics_graph.nodes)
-    #         if isinstance(n, ObjectConcept)
-    #     }
-    #     generate_heatmap(objects_to_embeddings, experiment_id)
-
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
-    # generate_similarities(semantic_matrix, list(learner.semantics_graph.nodes()), ObjectConcept)
-
-
-def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
-    if not nodes_to_embeddings:
-        return
-    similarity_matrix = np.zeros((len(nodes_to_embeddings), len(nodes_to_embeddings)))
-    for i, (_, embedding_1) in enumerate(nodes_to_embeddings.items()):
-        for j, (_, embedding_2) in enumerate(nodes_to_embeddings.items()):
-            similarity_matrix[i][j] = cos_sim(embedding_1, embedding_2)
-    names = [n.debug_string for n in nodes_to_embeddings.keys()]
-    df = pd.DataFrame(data=similarity_matrix, index=names, columns=names)
-    plt.rcParams["figure.figsize"] = (20.0, 20.0)
-    plt.rcParams["font.family"] = "serif"
-    # sb.heatmap(df)
-    # sb.clustermap(df)
-    sb.clustermap(df, row_cluster=True, col_cluster=True)
-    # cm.ax_row_dendrogram.set_visible(False)
-    # cm.ax_col_dendrogram.set_visible(False)
-    # plt.show()
-    plt.savefig(f"plots/{filename}.png")
-    plt.close()
+    learner.render_semantics_to_file(
+        graph=learner.semantics_graph,
+        graph_name="semantics",
+        output_file=Path(f"./renders/{experiment_id}/semantics.png"),
+    )
 
 
 if __name__ == "__main__":
@@ -166,7 +141,7 @@ if __name__ == "__main__":
 
             for curricula_name, pretraining_curricula in pretraining_curriculas.items():
                 # Run experiment
-                experiment = f"attribute_semantics_lang-{lm}_num-samples-{num_samples}_cur-{curricula_name}"
+                experiment = f"attribute_semantics_ns-{num_samples}_cur-{curricula_name}"
                 print("Running experiment:", experiment)
                 integrated_learner = integrated_learner_factory(lm)
                 run_experiment(

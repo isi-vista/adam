@@ -1,11 +1,9 @@
 import random
 from pathlib import Path
-from typing import Any, Dict
 
-import matplotlib.pyplot as plt
+import networkx as nx
 import numpy as np
 import pandas as pd
-import seaborn as sb
 from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY
@@ -31,14 +29,13 @@ from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
-from adam.learner.semantics_utils import cos_sim, SemanticsManager
+from adam.learner.semantics_utils import SemanticsManager
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY, GROUND
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
 )
-from adam.semantics import Concept
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
@@ -72,6 +69,7 @@ def run_experiment(learner, curricula, experiment_id):
             linguistic_description,
             perceptual_representation,
         ) in curriculum.instances():
+            # print(' '.join(linguistic_description.as_token_sequence()))
             # Get the object matches first - prepositison learner can't learn without already recognized objects
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
@@ -127,47 +125,18 @@ def run_experiment(learner, curricula, experiment_id):
     print(results_df.to_csv(index=False))
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
 
-    # embeddings = semantics_as_weighted_adjacency_matrix(learner.semantics_graph)
-    # objects_to_embeddings = {
-    #     n: embeddings[i]
-    #     for i, n in enumerate(learner.semantics_graph.nodes)
-    #     if isinstance(n, ObjectConcept)
-    # }
-    # generate_heatmap(objects_to_embeddings, experiment_id)
-    # generate_similarities(semantic_matrix, list(learner.semantics_graph.nodes()), ObjectConcept)
-
-    # learner.render_semantics_to_file(
-    #     graph=learner.semantics_graph,
-    #     graph_name="semantics",
-    #     output_file=Path(f"./renders/{experiment_id}/semantics.png"),
-    # )
-
-
-def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
-    if not nodes_to_embeddings:
-        return
-    similarity_matrix = np.zeros((len(nodes_to_embeddings), len(nodes_to_embeddings)))
-    for i, (_, embedding_1) in enumerate(nodes_to_embeddings.items()):
-        for j, (_, embedding_2) in enumerate(nodes_to_embeddings.items()):
-            similarity_matrix[i][j] = cos_sim(embedding_1, embedding_2)
-    names = [n.debug_string for n in nodes_to_embeddings.keys()]
-    df = pd.DataFrame(data=similarity_matrix, index=names, columns=names)
-    plt.rcParams["figure.figsize"] = (20.0, 20.0)
-    plt.rcParams["font.family"] = "serif"
-    # sb.heatmap(df)
-    # sb.clustermap(df)
-    sb.clustermap(df, row_cluster=True, col_cluster=True)
-    # cm.ax_row_dendrogram.set_visible(False)
-    # cm.ax_col_dendrogram.set_visible(False)
-    # plt.show()
-    plt.savefig(f"plots/{filename}.png")
-    plt.close()
+    learner.render_semantics_to_file(
+        graph=learner.semantics_graph,
+        graph_name="semantics",
+        output_file=Path(f"./renders/{experiment_id}/semantics.png"),
+    )
+    # nx.write_gpickle(learner.semantics_graph, f"{experiment_id}_graph.gpickle")
 
 
 if __name__ == "__main__":
     for lm in [LanguageMode.ENGLISH]:
         language_generator = phase2_language_generator(lm)
-        num_samples = 50
+        num_samples = 200
         pretraining_curricula = {
             "objects-and-kinds": [
                 _make_each_object_by_itself_curriculum(
@@ -179,7 +148,6 @@ if __name__ == "__main__":
                 _make_each_object_by_itself_curriculum(
                     num_samples, 0, language_generator
                 ),
-                # _make_plural_objects_curriculum(num_samples, 0, language_generator),
                 _make_kind_predicates_curriculum(None, None, language_generator),
                 _make_generic_statements_curriculum(
                     num_samples=3, noise_objects=0, language_generator=language_generator
@@ -212,7 +180,7 @@ if __name__ == "__main__":
         for curricula_name, pretraining_curriculum in pretraining_curricula.items():
             # Run experiment
             experiment = (
-                f"kind_semantics_lang-{lm}_num-samples-{num_samples}_cur-{curricula_name}"
+                f"kind_semantics_ns-{num_samples}_cur-{curricula_name}"
             )
             print("\nRunning experiment:", experiment)
             integrated_learner = integrated_learner_factory(lm)
