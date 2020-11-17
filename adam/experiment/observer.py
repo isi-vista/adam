@@ -636,16 +636,12 @@ class HTMLLoggerPreObserver(  # pragma: no cover
     html_logger: LearningProgressHtmlLogger = attrib(
         init=True, validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
-    candidate_accuracy_observer: Optional[
-        CandidateAccuracyObserver[SituationT, LinguisticDescriptionT, PerceptionT]
-    ] = attrib(
-        kw_only=True, validator=optional(instance_of(CandidateAccuracyObserver))
-    )  # type: ignore
-    precision_recall_observer: Optional[
-        PrecisionRecallObserver[SituationT, LinguisticDescriptionT, PerceptionT]
-    ] = attrib(
+    candidate_accuracy_observer: Optional[  # type: ignore
+        CandidateAccuracyObserver
+    ] = attrib(kw_only=True, validator=optional(instance_of(CandidateAccuracyObserver)))
+    precision_recall_observer: Optional[PrecisionRecallObserver] = attrib(  # type: ignore
         kw_only=True, validator=optional(instance_of(PrecisionRecallObserver))
-    )  # type: ignore
+    )
 
     def observe(  # pylint: disable=unused-argument
         self,
