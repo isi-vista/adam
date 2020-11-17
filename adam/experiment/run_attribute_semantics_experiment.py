@@ -1,11 +1,5 @@
 import random
 from pathlib import Path
-from typing import Any, Dict
-
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sb
 
 from adam.curriculum.phase1_curriculum import (
     _make_each_object_by_itself_curriculum,
@@ -20,11 +14,11 @@ from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
-from adam.learner.semantics_utils import get_concept_node_from_graph, cos_sim
+from adam.learner.semantics_utils import get_concept_node_from_graph
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
-from adam.semantics import Concept, AttributeConcept
+from adam.semantics import AttributeConcept
 
 
 def integrated_learner_factory(language_mode: LanguageMode):

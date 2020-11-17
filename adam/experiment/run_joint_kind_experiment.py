@@ -1,11 +1,8 @@
 import random
 from pathlib import Path
-from typing import Any, Dict
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sb
 from immutablecollections import immutableset
 
 from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY
@@ -30,7 +27,7 @@ from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import SubsetObjectLearnerNew
 from adam.learner.plurals import SubsetPluralLearnerNew
-from adam.learner.semantics_utils import SemanticsManager, cos_sim
+from adam.learner.semantics_utils import SemanticsManager
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
@@ -43,7 +40,6 @@ from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
 )
-from adam.semantics import Concept
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
@@ -195,9 +191,7 @@ if __name__ == "__main__":
             ]
 
             # Run experiment
-            experiment = (
-                f"joint_kind_semantics_ns-{num_samples}_cur-{condition}"
-            )
+            experiment = f"joint_kind_semantics_ns-{num_samples}_cur-{condition}"
             print("\nRunning experiment:", experiment)
             integrated_learner = integrated_learner_factory(lm)
             run_experiment(

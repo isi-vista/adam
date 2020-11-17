@@ -1,7 +1,6 @@
 import random
 from pathlib import Path
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 from immutablecollections import immutableset
@@ -179,9 +178,7 @@ if __name__ == "__main__":
 
         for curricula_name, pretraining_curriculum in pretraining_curricula.items():
             # Run experiment
-            experiment = (
-                f"kind_semantics_ns-{num_samples}_cur-{curricula_name}"
-            )
+            experiment = f"kind_semantics_ns-{num_samples}_cur-{curricula_name}"
             print("\nRunning experiment:", experiment)
             integrated_learner = integrated_learner_factory(lm)
             run_experiment(
