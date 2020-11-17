@@ -307,7 +307,7 @@ class SubsetAttributeLearnerNew(
 
 
 @attrs
-class PursuitAttributeLearnerNew(  # should it be called new? there is no old one as far as I know
+class PursuitAttributeLearnerNew(
     AbstractPursuitLearnerNew, AbstractAttributeTemplateLearnerNew
 ):
     def _find_identical_hypothesis(
