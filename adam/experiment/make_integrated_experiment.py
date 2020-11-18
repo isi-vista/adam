@@ -1,5 +1,3 @@
-from adam.learner import LanguageMode
-
 from pegasus_wrapper import (
     initialize_vista_pegasus_wrapper,
     limit_jobs_for_category,
@@ -41,9 +39,6 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
         "pursuit_job_limit", params.integer("num_pursuit_learners_active", default=8)
     )
 
-    language_mode = params.enum(
-        "language_mode", LanguageMode, default=LanguageMode.ENGLISH
-    )
     curriculum_repository_path = params.creatable_directory("curriculum_repository_path")
 
     # Job to build desired curriculum(s) which our learners use
@@ -98,11 +93,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
     )
 
     # jobs to build experiment
-    for (
-        curriculum_str,
-        curriculum_dep,
-        curr_params,
-    ) in curriculum_dependencies:
+    for (curriculum_str, curriculum_dep, curr_params) in curriculum_dependencies:
         object_learner_type = params.string(
             "object_learner_type", valid_options=LEARNER_TO_PARAMS.keys()
         )
