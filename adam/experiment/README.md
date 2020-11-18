@@ -1,9 +1,11 @@
 # Experimentation Setup
-
 Our experiments can be influenced by a number of parameters. This guide is intended to list all potential parameters, their impacts on the relevant portion of the curriculum, and any conflicting settings.
 
 ## State Restoration
 As described below, our experiments have a parameter `resume_from_latest_logged_state` which, if true, does attempt to restart an experiment from the latest logged state. However, currently the experiment may restore the observers and the learners to different states IF the 'latest state' doesn't match between these logged folders.
+
+### Curriculum Pre-Generation
+- curriculum_repository_path: Path - A directory to store pre-generated curriculum in to save on recreating the curriculum each time an experiment runs
 
 ## Generic Parameter Control
 These parameters are independent of any specific experiment.
@@ -93,3 +95,8 @@ TODO: https://github.com/isi-vista/adam/issues/982
     - accurate_language_percentage: Float - A value between 0 and 1 which is the chance of the accurate language being associated with a situation
     - random_seed: Integer - Seed for the random generator used to pick which situations language is not accurate
     - language_random_seed: Integer - Seed for the random chooser which picks the incorrect object to make language for if the situation language should be inaccurate
+
+### Pursuit Integrated Learner Experiment
+- include_attributes: Boolean (Optional: True)
+- include_relations: Boolean (Optional: True)
+- pursuit_job_limit: Int (Optional: 8)

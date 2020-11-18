@@ -39,7 +39,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
     include_relations = params.boolean("include_relations", default=True)
 
     limit_jobs_for_category(
-        "pursuit", params.integer("num_pursuit_learners_active", default=8)
+        "pursuit_job_limit", params.integer("num_pursuit_learners_active", default=8)
     )
 
     language_mode = params.enum(
