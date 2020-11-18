@@ -872,7 +872,9 @@ def integrated_pursuit_learner_experiment_curriculum(
     if params.boolean("include_attributes", default=True):
         ordered_curriculum.append(single_attribute_described_curriculum(num_samples))
     if params.boolean("include_relations", default=True):
-        prepositional_relation_described_curriculum(num_samples)
+        ordered_curriculum.append(
+            prepositional_relation_described_curriculum(num_samples)
+        )
 
     return (
         ordered_curriculum

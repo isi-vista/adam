@@ -1,6 +1,6 @@
 # Experimentation Setup
 Our experiments can be influenced by a number of parameters. This guide is intended to list all potential parameters, their impacts on the relevant portion of the curriculum, and any conflicting settings. Parameters are written using the following line format:
-`- param_name: type (Optional: Default)`
+`- param_name: type (Optional: Default) - Description`
 
 ## State Restoration
 As described below, our experiments have a parameter `resume_from_latest_logged_state` which, if true, does attempt to restart an experiment from the latest logged state. However, currently the experiment may restore the observers and the learners to different states IF the 'latest state' doesn't match between these logged folders.
@@ -80,7 +80,7 @@ None
 ### Propose But Verify
 *Valid For: Object*
 - graph_match_confirmation_threshold: Float - A value between 0 and 1 which indicates how much a new hypothesis must match a previous pattern to count as a successful match.
-- random_seed: Integer - A seed for the RandomChooser which will make the random decisions between possible meanings
+- random_seed: Integer (Optional: 0) - A seed for the RandomChooser which will make the random decisions between possible meanings
 
 ### Cross-Situational
 *Valid For: Object*
@@ -92,7 +92,7 @@ None
 - graph_match_confirmation_threshold: Float - A value between 0 and 1 which indicates how much a new hypothesis must match a previous pattern to count as a successful match.
 - lexicon_entry_threshold: Float - A value between 0 and 1 which indicates what probability a concept should be allowed into the 'known' lexicon
 - smoothing_parameter: Float - A value between 0 and 1 which is generally small which smooths the probabilities over time.
-- random_seed: Integer - A seed for the RandomChooser which is used in this learner
+- random_seed: Integer (Optional: 0) - A seed for the RandomChooser which is used in this learner
 
 ## Specific Experiment Details
 Any experiment specific parameters that are built into the program are explained below.
