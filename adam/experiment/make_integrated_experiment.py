@@ -21,6 +21,9 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
 
     baseline_parameters = params.namespace("integrated_learners_experiment")
 
+    # This code is commented out but may be used in the near future to add language ablation
+    # Capabilities to this curriculum.
+
     # get the minimum and maximum accuracy of the language with the situation
     # min_language_accuracy = params.floating_point("min_language_accuracy", default=0.1)
     # max_language_accuracy = params.floating_point("max_language_accuracy", default=0.5)
