@@ -163,6 +163,6 @@ def learner_template_factory() -> TemplateObjectVariable:
 def shuffle_curriculum(
     curriculum: List[Phase1InstanceGroup], *, rng: Random
 ) -> Sequence[Phase1InstanceGroup]:
-    mod_curriculum = flatten(curriculum)
+    mod_curriculum = list(flatten(curriculum))
     rng.shuffle(mod_curriculum)
     return mod_curriculum
