@@ -1,4 +1,3 @@
-from adam.experiment.curriculum_repository import _build_curriculum_path
 from adam.learner import LanguageMode
 
 from pegasus_wrapper import (
@@ -57,24 +56,6 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
                 relations=include_relations,
                 attributes=include_attributes,
             ),
-            _build_curriculum_path(
-                curriculum_repository_path,
-                baseline_parameters.unify(
-                    {
-                        "train_curriculum": Parameters.from_mapping(CURRICULUM_PARAMS)
-                        .unify(
-                            {
-                                "add_noise": add_noise,
-                                "shuffled": shuffle,
-                                "include_attributes": include_attributes,
-                                "include_relations": include_relations,
-                            }
-                        )
-                        .as_mapping()
-                    }
-                ).unify(FIXED_PARAMETERS),
-                language_mode,
-            ),
             run_python_on_parameters(
                 Locator(
                     CURRICULUM_NAME_FORMAT.format(
@@ -119,7 +100,6 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
     # jobs to build experiment
     for (
         curriculum_str,
-        _curriculum_path,
         curriculum_dep,
         curr_params,
     ) in curriculum_dependencies:
