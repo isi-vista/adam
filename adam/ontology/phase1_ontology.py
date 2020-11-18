@@ -299,6 +299,7 @@ subtype(INANIMATE_OBJECT, THING)
 SUBSTANCE = OntologyNode("substance", inheritable_properties=[IS_SUBSTANCE])
 subtype(SUBSTANCE, INANIMATE_OBJECT)
 
+
 IS_GROUND = OntologyNode("is-ground")
 subtype(IS_GROUND, RECOGNIZED_PARTICULAR_PROPERTY)
 GROUND = OntologyNode(
@@ -310,6 +311,9 @@ GROUND = OntologyNode(
     ],
 )
 subtype(GROUND, INANIMATE_OBJECT)
+
+FOOD = OntologyNode("food", inheritable_properties=[EDIBLE])
+subtype(FOOD, INANIMATE_OBJECT)
 
 TABLE = OntologyNode(
     "table",
@@ -345,9 +349,9 @@ BALL = OntologyNode(
 )
 subtype(BALL, INANIMATE_OBJECT)
 WATERMELON = OntologyNode(
-    "watermelon", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, EDIBLE, ROLLABLE, GREEN]
+    "watermelon", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, GREEN]
 )
-subtype(WATERMELON, INANIMATE_OBJECT)
+subtype(WATERMELON, FOOD)
 PAPER = OntologyNode(
     "paper",
     [
@@ -469,10 +473,12 @@ DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT, LIGHT_BROWN, DARK_BROWN])
 subtype(DOOR, INANIMATE_OBJECT)
 HAT = OntologyNode("hat", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, BLACK])
 subtype(HAT, INANIMATE_OBJECT)
+
+
 COOKIE = OntologyNode(
-    "cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, EDIBLE, LIGHT_BROWN]
+    "cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, LIGHT_BROWN]
 )
-subtype(COOKIE, INANIMATE_OBJECT)
+subtype(COOKIE, FOOD)
 
 PERSON = OntologyNode(
     "person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP, IS_HUMAN]

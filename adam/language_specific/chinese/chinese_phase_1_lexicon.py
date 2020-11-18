@@ -82,6 +82,7 @@ from adam.ontology.phase1_ontology import (
     BED,
     NONHUMAN_ANIMAL,
     PERSON,
+    FOOD,
 )
 
 ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])
@@ -94,6 +95,7 @@ TOSS = LexiconEntry("reng1", VERB)
 GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
     ontology=GAILA_PHASE_1_ONTOLOGY,
     ontology_node_to_word=(
+        (FOOD, LexiconEntry("shr2 wu4", NOUN, counting_classifier="jung3")),
         (PERSON, LexiconEntry("ren2", NOUN)),
         (GROUND, LexiconEntry("di4 myan4", NOUN, counting_classifier="jang1")),
         (NONHUMAN_ANIMAL, LexiconEntry("dung4 wu4", NOUN, counting_classifier="jr1")),

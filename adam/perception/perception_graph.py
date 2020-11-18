@@ -647,6 +647,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         *,
         debug_callback: Optional[DebugCallableType] = None,
         match_mode: MatchMode,
+        allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
     ) -> "PatternMatching":
         """
         Creates an object representing an attempt to match this pattern
@@ -666,6 +667,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             graph_to_match_against=graph_to_match_against,
             debug_callback=debug_callback,
             match_mode=match_mode,
+            allowed_matches=allowed_matches,
         )
 
     @staticmethod

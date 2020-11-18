@@ -50,7 +50,11 @@ from adam.language.language_utils import (
     integrated_experiment_language_generator,
 )
 from adam.language_specific.english import DETERMINERS
-from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
+from adam.learner.attributes import (
+    SubsetAttributeLearner,
+    SubsetAttributeLearnerNew,
+    PursuitAttributeLearnerNew,
+)
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
@@ -286,6 +290,7 @@ def learner_factory_from_params(
             "pursuit-gaze",
             "integrated-object-only",
             "integrated-learner-params",
+            "integrated-pursuit-attribute-only",
         ],
     )
 
@@ -520,6 +525,21 @@ def learner_factory_from_params(
             if params.boolean("include_generics_learner", default=True)
             else None,
             plural_learner=plural_learner,
+    elif learner_type == "integrated-pursuit-attribute-only":
+        return lambda: IntegratedTemplateLearner(
+            object_learner=ObjectRecognizerAsTemplateLearner(
+                object_recognizer=object_recognizer, language_mode=language_mode
+            ),
+            attribute_learner=PursuitAttributeLearnerNew(
+                learning_factor=0.05,
+                graph_match_confirmation_threshold=0.7,
+                lexicon_entry_threshold=0.7,
+                rng=rng,
+                smoothing_parameter=0.002,
+                rank_gaze_higher=False,
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+                language_mode=language_mode,
+            ),
         )
     else:
         raise RuntimeError("can't happen")

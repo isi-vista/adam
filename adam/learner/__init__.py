@@ -3,11 +3,15 @@ Interfaces for language learning code.
 """
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Generic, Mapping, Optional, Callable
+from typing import Dict, Generic, Mapping, Optional, Callable, Any
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import immutabledict
+from immutablecollections import (
+    immutabledict,
+    ImmutableSetMultiDict,
+    immutablesetmultidict,
+)
 from more_itertools import first
 from networkx import isolates
 
@@ -157,11 +161,15 @@ def get_largest_matching_pattern(
     trim_after_match: Optional[
         Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
     ] = None,
+    allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
 ) -> Optional[PerceptionGraphPattern]:
     """ Helper function to return the largest matching `PerceptionGraphPattern`
     for learner from a perception pattern and graph pair."""
     matching = pattern.matcher(
-        graph, debug_callback=debug_callback, match_mode=match_mode
+        graph,
+        debug_callback=debug_callback,
+        match_mode=match_mode,
+        allowed_matches=allowed_matches,
     )
     return matching.relax_pattern_until_it_matches(
         graph_logger=graph_logger,

@@ -322,14 +322,15 @@ class IntegratedTemplateLearner(
             # https://github.com/isi-vista/adam/issues/498
             # The "is lower" check is a hack to block adding a determiner to proper names.
             # Ground is a specific thing so we special case this to be assigned
-            if object_node.concept == GROUND_OBJECT_CONCEPT:
-                return tuple(chain(("the",), cur_string))
-            elif (
+            if (
                 object_node.concept.debug_string not in MASS_NOUNS
                 and object_node.concept.debug_string.islower()
                 and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
             ):
-                return tuple(chain(("a",), cur_string))
+                if object_node.concept == GROUND_OBJECT_CONCEPT:
+                    return tuple(chain(("the",), cur_string))
+                else:
+                    return tuple(chain(("a",), cur_string))
             else:
                 return cur_string
         else:
@@ -388,7 +389,8 @@ class IntegratedTemplateLearner(
                                 yield self._add_determiners(
                                     object_node,
                                     attribute_template.instantiate(
-                                        template_variable_to_filler={SLOT1: cur_string}
+                                        template_variable_to_filler={SLOT1: cur_string},
+                                        attribute_template=True,
                                     ).as_token_sequence(),
                                 )
 
