@@ -219,6 +219,7 @@ FIXED_PARAMETERS = {
     },
     "test_observer": {"accuracy_to_txt": True},
     "action_learner": {"learner_type": "none"},
+    "plural_learner": {"learner_type": "none"},
     "include_functional_learner": False,
     "include_generics_learner": False,
 }

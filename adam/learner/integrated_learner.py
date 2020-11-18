@@ -82,22 +82,18 @@ class IntegratedTemplateLearner(
     attribute_learner: Optional[TemplateLearner] = attrib(
         validator=optional(instance_of(TemplateLearner)), default=None
     )
-
     relation_learner: Optional[TemplateLearner] = attrib(
         validator=optional(instance_of(TemplateLearner)), default=None
     )
-
     action_learner: Optional[TemplateLearner] = attrib(
         validator=optional(instance_of(TemplateLearner)), default=None
     )
     functional_learner: Optional[FunctionalLearner] = attrib(
         validator=optional(instance_of(FunctionalLearner)), default=None
     )
-
     plural_learner: Optional[TemplateLearner] = attrib(
         validator=optional(instance_of(TemplateLearner)), default=None
     )
-
     generics_learner: Optional[SimpleGenericsLearner] = attrib(
         validator=optional(instance_of(SimpleGenericsLearner)), default=None
     )

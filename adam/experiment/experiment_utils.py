@@ -9,6 +9,7 @@ from adam.learner.objects import (
     PursuitObjectLearnerNew,
     ObjectRecognizerAsTemplateLearner,
 )
+from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.relations import SubsetRelationLearnerNew
 from adam.learner.template_learner import TemplateLearner
 from adam.learner.verbs import SubsetVerbLearnerNew
@@ -295,6 +296,29 @@ def build_action_learner_factory(
         return None
     else:
         raise RuntimeError("Action learner type invalid ")
+
+
+def build_plural_learner_factory(
+    params: Parameters, beam_size: int, language_mode: LanguageMode
+) -> Optional[TemplateLearner]:
+    learner_type = params.string(
+        "learner_type", valid_options=["subset", "none"], default="subset"
+    )
+    ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
+        params.string(
+            "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
+        )
+    ]
+
+    if learner_type == "subset":
+        return SubsetPluralLearnerNew(
+            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+        )
+    elif learner_type == "none":
+        # We don't want to include this learner type.
+        return None
+    else:
+        raise RuntimeError("Plural learner type invalid ")
 
 
 # Curriculum Construction

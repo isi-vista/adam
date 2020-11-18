@@ -52,6 +52,17 @@ This section of parameters is specific to using the Pegasus workflow management 
 See [Pegasus Wrapper Overview][https://github.com/isi-vista/vista-pegasus-wrapper/blob/master/docs/api_overview.rst] for more details on how to use this section
 
 ## Learner Parameters
+### How To Define an Integrated Learner
+The integrated learner can be initialized many different ways in an experiment. The best way is to use `learner_type: "integrated-learner-params"` because this functionality extends an ability to fine tune all parameters and learner types. To use this learner type the namespaces `object_learner`, `attribute_learner`, `plural_learner`, `relation_learner`, and `action_learner` all follow the same layout below:
+- learner_type: str (Optional: "subset") - Indicates which learner model will be loaded. Normally the valid options are: "subset", "pursuit", and "none"
+- ontology: str (Optional: "phase2") - Indicates which ontology should be loaded with the learner
+
+Any additional parameters for a learner type as described below should also be placed directly in the namespace. This configuration allows for detailed configuration of individual components.
+
+Finally we have two types of of learners which are special implementations which don't directly follow the subset or pursuit models. These are functional objects learner and a generics model. To add these learners into the integrated model configure the following parameters:
+- include_functional_learner: Boolean (Optional: True) - Include the functional learner model
+- include_generics_learner: Boolean (Optional: True) - Include the functional learner model
+
 ### Subset
 None
 

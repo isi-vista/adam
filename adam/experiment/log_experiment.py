@@ -41,6 +41,7 @@ from adam.experiment.experiment_utils import (
     build_attribute_learner_factory,
     build_relation_learner_factory,
     build_action_learner_factory,
+    build_plural_learner_factory,
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
@@ -504,6 +505,9 @@ def learner_factory_from_params(
         action_learner = build_action_learner_factory(
             params.namespace_or_empty("action_learner"), beam_size, language_mode
         )
+        plural_learner = build_plural_learner_factory(
+            params.namespace_or_empty("plural_learner"), beam_size, language_mode
+        )
         return lambda: IntegratedTemplateLearner(
             object_learner=object_learner,
             attribute_learner=attribute_learner,
@@ -515,6 +519,7 @@ def learner_factory_from_params(
             generics_learner=SimpleGenericsLearner()
             if params.boolean("include_generics_learner", default=True)
             else None,
+            plural_learner=plural_learner,
         )
     else:
         raise RuntimeError("can't happen")
