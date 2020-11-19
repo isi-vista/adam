@@ -79,7 +79,7 @@ None
 
 ### Propose But Verify
 *Valid For: Object*
-- graph_match_confirmation_threshold: Float - A value between 0 and 1 which indicates how much a new hypothesis must match a previous pattern to count as a successful match.
+- graph_match_confirmation_threshold: Float (Optional: 0.8) - A value between 0 and 1 which indicates how much a new hypothesis must match a previous pattern to count as a successful match.
 - random_seed: Integer (Optional: 0) - A seed for the RandomChooser which will make the random decisions between possible meanings
 
 ### Cross-Situational
