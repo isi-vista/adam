@@ -19,6 +19,7 @@ from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
     build_gaila_m13_curriculum,
     build_m13_shuffled_curriculum,
+    integrated_pursuit_learner_experiment_curriculum,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
@@ -36,10 +37,18 @@ from adam.experiment.experiment_utils import (
     build_actions_and_generics_curriculum,
     build_object_learner_experiment_curriculum_train,
     observer_states_by_most_recent,
+    build_object_learner_factory,
+    build_attribute_learner_factory,
+    build_relation_learner_factory,
+    build_action_learner_factory,
+    build_plural_learner_factory,
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
-from adam.language.language_utils import phase2_language_generator
+from adam.language.language_utils import (
+    phase2_language_generator,
+    integrated_experiment_language_generator,
+)
 from adam.language_specific.english import DETERMINERS
 from adam.learner.attributes import (
     SubsetAttributeLearner,
@@ -280,6 +289,7 @@ def learner_factory_from_params(
             "integrated-learner-recognizer",
             "pursuit-gaze",
             "integrated-object-only",
+            "integrated-learner-params",
             "integrated-pursuit-attribute-only",
         ],
     )
@@ -487,6 +497,35 @@ def learner_factory_from_params(
         else:
             raise RuntimeError(f"Invalid Object Learner Type Selected: {learner_type}")
         return lambda: IntegratedTemplateLearner(object_learner=object_learner_factory())
+    elif learner_type == "integrated-learner-params":
+        object_learner = build_object_learner_factory(
+            params.namespace_or_empty("object_learner"), beam_size, language_mode
+        )
+        attribute_learner = build_attribute_learner_factory(
+            params.namespace_or_empty("attribute_learner"), beam_size, language_mode
+        )
+        relation_learner = build_relation_learner_factory(
+            params.namespace_or_empty("relation_learner"), beam_size, language_mode
+        )
+        action_learner = build_action_learner_factory(
+            params.namespace_or_empty("action_learner"), beam_size, language_mode
+        )
+        plural_learner = build_plural_learner_factory(
+            params.namespace_or_empty("plural_learner"), beam_size, language_mode
+        )
+        return lambda: IntegratedTemplateLearner(
+            object_learner=object_learner,
+            attribute_learner=attribute_learner,
+            relation_learner=relation_learner,
+            action_learner=action_learner,
+            functional_learner=FunctionalLearner(language_mode=language_mode)
+            if params.boolean("include_functional_learner", default=True)
+            else None,
+            generics_learner=SimpleGenericsLearner()
+            if params.boolean("include_generics_learner", default=True)
+            else None,
+            plural_learner=plural_learner,
+        )
     elif learner_type == "integrated-pursuit-attribute-only":
         return lambda: IntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
@@ -550,10 +589,18 @@ def curriculum_from_params(
             build_object_learner_experiment_curriculum_train,
             build_each_object_by_itself_curriculum_test,
         ),
+        "m18-integrated-learners-experiment": (
+            integrated_pursuit_learner_experiment_curriculum,
+            None,
+        ),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
-    language_generator = phase2_language_generator(language_mode)
+    language_generator = (
+        integrated_experiment_language_generator(language_mode)
+        if curriculum_name == "m18-integrated-learners-experiment"
+        else phase2_language_generator(language_mode)
+    )
 
     if params.has_namespace("pursuit-curriculum-params"):
         pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")
@@ -600,7 +647,10 @@ def curriculum_from_params(
             if test_instance_groups
             else [],
         )
-    elif curriculum_name == "m15-object-noise-experiments":
+    elif curriculum_name in (
+        "m15-object-noise-experiments",
+        "m18-integrated-learners-experiment",
+    ):
         return (
             training_instance_groups(
                 num_samples,

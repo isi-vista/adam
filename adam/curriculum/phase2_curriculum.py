@@ -608,10 +608,12 @@ def integrated_pursuit_learner_experiment_curriculum(
         if node not in [ZUP, SPAD, DAYGIN, MAWG, TOMBUR, GLIM]
     ]
 
+    # We use a max of 1 here to account for when noise values are not used as otherwise
+    # We'd be multiplying by 0 and cause div by 0 errors
     samples_to_template_den = (
         len(target_objects)
-        * len(noise_objects_sets)
-        * (max_noise_relations - min_noise_relations)
+        * max(len(noise_objects_sets), 1)
+        * max((max_noise_relations - min_noise_relations), 1)
     )
 
     # Sub-Curriculums
@@ -630,13 +632,20 @@ def integrated_pursuit_learner_experiment_curriculum(
                 syntax_hints=[IGNORE_COLORS],
             )
 
-        templates = [
-            single_object_described_template(
-                target_object, background_objects=background_objects
-            )
-            for target_object in target_objects
-            for background_objects in noise_objects_sets
-        ]
+        templates = (
+            [
+                single_object_described_template(
+                    target_object, background_objects=background_objects
+                )
+                for target_object in target_objects
+                for background_objects in noise_objects_sets
+            ]
+            if add_noise
+            else [
+                single_object_described_template(target_object)
+                for target_object in target_objects
+            ]
+        )
 
         return phase2_instances(
             "Single Object",
@@ -676,18 +685,22 @@ def integrated_pursuit_learner_experiment_curriculum(
                 else immutableset(),
             )
 
-        templates = [
-            object_with_color(
-                target_object,
-                background_objects=background_objects,
-                background_relations=background_relations_builder(
-                    background_objects, num_relations, target=target_object
-                ),
-            )
-            for target_object in target_color_objects
-            for background_objects in noise_objects_sets
-            for num_relations in range(min_noise_relations, max_noise_relations)
-        ]
+        templates = (
+            [
+                object_with_color(
+                    target_object,
+                    background_objects=background_objects,
+                    background_relations=background_relations_builder(
+                        background_objects, num_relations, target=target_object
+                    ),
+                )
+                for target_object in target_color_objects
+                for background_objects in noise_objects_sets
+                for num_relations in range(min_noise_relations, max_noise_relations)
+            ]
+            if add_noise
+            else [object_with_color(target_object) for target_object in target_objects]
+        )
         return phase2_instances(
             "Single Attribute",
             flatten(
@@ -725,22 +738,30 @@ def integrated_pursuit_learner_experiment_curriculum(
                 CAN_HAVE_THINGS_RESTING_ON_THEM,
             ],
         )
-        templates = [
-            _on_template(
-                target_1,
-                target_with_object_on,
-                background_objects,
-                is_training=True,
-                background_relations=background_relations_builder(
+        templates = (
+            [
+                _on_template(
+                    target_1,
+                    target_with_object_on,
                     background_objects,
-                    num_relations,
-                    target=target_1,
-                    target_2=target_with_object_on,
-                ),
-            )
-            for background_objects in noise_objects_sets
-            for num_relations in range(min_noise_relations, max_noise_relations)
-        ]
+                    is_training=True,
+                    background_relations=background_relations_builder(
+                        background_objects,
+                        num_relations,
+                        target=target_1,
+                        target_2=target_with_object_on,
+                    ),
+                )
+                for background_objects in noise_objects_sets
+                for num_relations in range(min_noise_relations, max_noise_relations)
+            ]
+            if add_noise
+            else [
+                _on_template(
+                    target_1, target_with_object_on, immutableset(), is_training=True
+                )
+            ]
+        )
         templates.extend(
             [
                 _beside_template(
@@ -759,6 +780,17 @@ def integrated_pursuit_learner_experiment_curriculum(
                 for is_right in BOOL_SET
                 for background_objects in noise_objects_sets
                 for num_relations in range(min_noise_relations, max_noise_relations)
+            ]
+            if add_noise
+            else [
+                _beside_template(
+                    target_1,
+                    target_2,
+                    immutableset(),
+                    is_right=is_right,
+                    is_training=True,
+                )
+                for is_right in BOOL_SET
             ]
         )
         templates.extend(
@@ -780,6 +812,13 @@ def integrated_pursuit_learner_experiment_curriculum(
                 for background_objects in noise_objects_sets
                 for num_relations in range(min_noise_relations, max_noise_relations)
             ]
+            if add_noise
+            else [
+                _behind_template(
+                    target_1, target_2, immutableset(), is_near=is_near, is_training=True
+                )
+                for is_near in BOOL_SET
+            ]
         )
         templates.extend(
             [
@@ -799,6 +838,13 @@ def integrated_pursuit_learner_experiment_curriculum(
                 for is_near in BOOL_SET
                 for background_objects in noise_objects_sets
                 for num_relations in range(min_noise_relations, max_noise_relations)
+            ]
+            if add_noise
+            else [
+                _in_front_template(
+                    target_1, target_2, immutableset(), is_near=is_near, is_training=True
+                )
+                for is_near in BOOL_SET
             ]
         )
 
@@ -822,11 +868,14 @@ def integrated_pursuit_learner_experiment_curriculum(
             perception_generator=INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
         )
 
-    ordered_curriculum = [
-        single_object_described_curriculum(num_samples),
-        single_attribute_described_curriculum(num_samples),
-        prepositional_relation_described_curriculum(num_samples),
-    ]
+    ordered_curriculum = [single_object_described_curriculum(num_samples)]
+    if params.boolean("include_attributes", default=True):
+        ordered_curriculum.append(single_attribute_described_curriculum(num_samples))
+    if params.boolean("include_relations", default=True):
+        ordered_curriculum.append(
+            prepositional_relation_described_curriculum(num_samples)
+        )
+
     return (
         ordered_curriculum
         if not params.boolean("random_order", default=False)
