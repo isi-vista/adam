@@ -1,34 +1,36 @@
 _includes:
    - "../../root.params"
 
-experiment: 'object_language_ablation'
+experiment: "integrated_experiment_pegasus"
 experiment_group_dir: '%adam_experiment_root%/%experiment%'
+curriculum_repository_path: "%adam_experiment_root%/curriculum/"
+
+# Consistent Params
+num_pursuit_learners_active: 8
 
 # Configuration Params - Prelim
-min_num_objects: 3
-max_num_objects : 5
-min_language_accuracy: 0.4
-max_language_accuracy: 0.6
-num_language_accuracy_increment: 3
+include_attributes: False
+include_relations: False
+object_learner_type: "pursuit"
+attribute_learner_type: "none"
+relation_learner_type: "none"
 
 # Configuration Params - Desired
-#min_num_objects: 1
-#max_num_objects : 7
-#min_language_accuracy: 0.3
-#max_language_accuracy: 0.7
-#num_language_accuracy_increment: 5
+#include_attributes: False
+#include_relations: False
+#object_learner_type: "pursuit"
+#attribute_learner_type: "pursuit"
+#relation_learner_type: "pursuit"
 
-# Baseline experiment params
-object_language_ablation:
-   num_samples: 400
+integrated_learners_experiment:
+   num_samples: 1000
    sort_learner_descriptions_by_length: true
    num_pretty_descriptions: 5
 
-   log_hypothesis_every_n_steps: 100
-   debug_learner_pickling: false
+   log_hypothesis_every_n_steps: 50
 
 # Workflow Params
-workflow_name: 'object_language_ablation_pegasus'
+workflow_name: "integrated_experiment_pegasus"
 workflow_directory: '%adam_experiment_root%/%experiment%'
 site: 'saga'
 namespace: 'saga'

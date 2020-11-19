@@ -1,4 +1,22 @@
 import logging
+from adam.language_specific.english import DETERMINERS
+from adam.learner import LanguageMode
+from adam.learner.attributes import SubsetAttributeLearnerNew
+from adam.learner.object_recognizer import ObjectRecognizer
+from adam.learner.objects import (
+    SubsetObjectLearnerNew,
+    ProposeButVerifyObjectLearner,
+    PursuitObjectLearnerNew,
+    ObjectRecognizerAsTemplateLearner,
+)
+from adam.learner.plurals import SubsetPluralLearnerNew
+from adam.learner.relations import SubsetRelationLearnerNew
+from adam.learner.template_learner import TemplateLearner
+from adam.learner.verbs import SubsetVerbLearnerNew
+from adam.ontology.integrated_learner_experiement_ontology import (
+    INTEGRATED_EXPERIMENT_ONTOLOGY,
+    INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS,
+)
 
 from pathlib import Path
 
@@ -55,7 +73,11 @@ from vistautils.parameters import Parameters
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
     GazePerceivedNoisily,
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+    GAILA_PHASE_2_PERCEPTION_GENERATOR,
+    INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
 )
+from immutablecollections import immutabledict
 
 
 # Experiment Utils
@@ -120,6 +142,183 @@ def restore_html_state(path: Path, num_instance: int) -> None:
 
     # Replace it with our new one
     path.write_text("".join(lines_to_write_back))
+
+
+ONTOLOGY_STR_TO_ONTOLOGY = immutabledict(  # type: ignore
+    [
+        (
+            "phase1",
+            (
+                GAILA_PHASE_1_ONTOLOGY,
+                PHASE_1_CURRICULUM_OBJECTS,
+                GAILA_PHASE_1_PERCEPTION_GENERATOR,
+            ),
+        ),
+        (
+            "phase2",
+            (
+                GAILA_PHASE_2_ONTOLOGY,
+                PHASE_1_CURRICULUM_OBJECTS,
+                GAILA_PHASE_2_PERCEPTION_GENERATOR,
+            ),
+        ),
+        (
+            "integrated_experiment",
+            (
+                INTEGRATED_EXPERIMENT_ONTOLOGY,
+                INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS,
+                INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
+            ),
+        ),
+    ]
+)
+
+
+def build_object_learner_factory(
+    params: Parameters, beam_size: int, language_mode: LanguageMode
+) -> TemplateLearner:
+    learner_type = params.string(
+        "learner_type",
+        valid_options=["subset", "pbv", "pursuit", "recognizer"],
+        default="subset",
+    )
+    ontology, objects, perception_gen = ONTOLOGY_STR_TO_ONTOLOGY[
+        params.string(
+            "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
+        )
+    ]
+
+    if learner_type == "subset":
+        return SubsetObjectLearnerNew(
+            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+        )
+    elif learner_type == "pbv":
+        return ProposeButVerifyObjectLearner.from_params(params)
+    elif learner_type == "pursuit":
+        rng = random.Random()
+        rng.seed(params.integer("random_seed", default=0))
+        return PursuitObjectLearnerNew(
+            learning_factor=params.floating_point("learning_factor"),
+            graph_match_confirmation_threshold=params.floating_point(
+                "graph_match_confirmation_threshold"
+            ),
+            lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
+            rng=rng,
+            smoothing_parameter=params.floating_point("smoothing_parameter"),
+            ontology=ontology,
+            language_mode=language_mode,
+        )
+    elif learner_type == "recognizer":
+        object_recognizer = ObjectRecognizer.for_ontology_types(
+            objects,
+            determiners=DETERMINERS,
+            ontology=ontology,
+            language_mode=language_mode,
+            perception_generator=perception_gen,
+        )
+        return ObjectRecognizerAsTemplateLearner(
+            object_recognizer=object_recognizer, language_mode=language_mode
+        )
+    else:
+        raise RuntimeError("Object learner type invalid")
+
+
+def build_attribute_learner_factory(
+    params: Parameters, beam_size: int, language_mode: LanguageMode
+) -> Optional[TemplateLearner]:
+    learner_type = params.string(
+        "learner_type", valid_options=["subset", "pursuit", "none"], default="subset"
+    )
+    ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
+        params.string(
+            "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
+        )
+    ]
+
+    if learner_type == "subset":
+        return SubsetAttributeLearnerNew(
+            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+        )
+    elif learner_type == "pursuit":
+        raise NotImplementedError("Pursuit Attribute Learner not yet implemented.")
+    elif learner_type == "none":
+        # We don't want to include this learner type.
+        return None
+    else:
+        raise RuntimeError("Attribute learner type invalid.")
+
+
+def build_relation_learner_factory(
+    params: Parameters, beam_size: int, language_mode: LanguageMode
+) -> Optional[TemplateLearner]:
+    learner_type = params.string(
+        "learner_type", valid_options=["subset", "pursuit", "none"], default="subset"
+    )
+    ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
+        params.string(
+            "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
+        )
+    ]
+
+    if learner_type == "subset":
+        return SubsetRelationLearnerNew(
+            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+        )
+    elif learner_type == "pursuit":
+        raise NotImplementedError(
+            "Pursuit relations learner not updated to new style yet"
+        )
+    elif learner_type == "none":
+        # We don't want to include this learner type.
+        return None
+    else:
+        raise RuntimeError("Relation learner type invalid ")
+
+
+def build_action_learner_factory(
+    params: Parameters, beam_size: int, language_mode: LanguageMode
+) -> Optional[TemplateLearner]:
+    learner_type = params.string(
+        "learner_type", valid_options=["subset", "none"], default="subset"
+    )
+    ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
+        params.string(
+            "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
+        )
+    ]
+
+    if learner_type == "subset":
+        return SubsetVerbLearnerNew(
+            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+        )
+    elif learner_type == "none":
+        # We don't want to include this learner type.
+        return None
+    else:
+        raise RuntimeError("Action learner type invalid ")
+
+
+def build_plural_learner_factory(
+    params: Parameters, beam_size: int, language_mode: LanguageMode
+) -> Optional[TemplateLearner]:
+    learner_type = params.string(
+        "learner_type", valid_options=["subset", "none"], default="subset"
+    )
+    ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
+        params.string(
+            "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
+        )
+    ]
+
+    if learner_type == "subset":
+        return SubsetPluralLearnerNew(
+            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+        )
+    elif learner_type == "none":
+        # We don't want to include this learner type.
+        return None
+    else:
+        raise RuntimeError("Plural learner type invalid ")
 
 
 # Curriculum Construction

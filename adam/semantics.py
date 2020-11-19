@@ -114,7 +114,7 @@ class ObjectSemanticNode(SemanticNode):
     #         check_arg(template.num_slots == 0)
 
 
-@attrs(frozen=True, eq=False)
+@attrs(frozen=True)
 class AttributeSemanticNode(SemanticNode):
     concept: AttributeConcept = attrib(validator=instance_of(AttributeConcept))
     slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"] = attrib(
@@ -129,7 +129,7 @@ class AttributeSemanticNode(SemanticNode):
     #         check_arg(template.num_slots == 1)
 
 
-@attrs(frozen=True, eq=False)
+@attrs(frozen=True)
 class RelationSemanticNode(SemanticNode):
     concept: RelationConcept = attrib(validator=instance_of(RelationConcept))
     slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"] = attrib(
@@ -144,7 +144,7 @@ class RelationSemanticNode(SemanticNode):
     #         check_arg(template.num_slots == 2)
 
 
-@attrs(frozen=True, eq=False)
+@attrs(frozen=True)
 class ActionSemanticNode(SemanticNode):
     concept: ActionConcept = attrib(validator=instance_of(ActionConcept))
     slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"] = attrib(

@@ -3,7 +3,6 @@ from abc import ABC
 from itertools import chain
 from pathlib import Path
 from random import Random
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, Tuple, Dict
 
 from attr import attrib, attrs, evolve
 from attr.validators import instance_of, optional
@@ -17,6 +16,20 @@ from immutablecollections import (
 from vistautils.parameters import Parameters
 
 from adam.language import LinguisticDescription
+from typing import (
+    AbstractSet,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    Tuple,
+    Dict,
+    Mapping,
+)
+
+from more_itertools import first
+
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
@@ -83,6 +96,7 @@ from adam.semantics import (
     SemanticNode,
     ObjectSemanticNode,
     FunctionalObjectConcept,
+    SyntaxSemanticsVariable,
 )
 from adam.utils import networkx_utils
 from adam.utils.networkx_utils import subgraph
@@ -539,6 +553,24 @@ class SubsetObjectLearnerNew(
             ),
         )
 
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        # In the case of the object learner,
+        # A template only has to match once; we don't care about finding additional matches.
+        match = first(
+            super()._match_template(
+                concept=concept, pattern=pattern, perception_graph=perception_graph
+            ),
+            None,
+        )
+        if match is not None:
+            yield match
+
 
 @attrs(slots=True)
 class ProposeButVerifyObjectLearner(
@@ -590,6 +622,24 @@ class ProposeButVerifyObjectLearner(
 
     def _new_concept(self, debug_string: str) -> Concept:
         return ObjectConcept(debug_string)
+
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        # In the case of the object learner,
+        # A template only has to match once; we don't care about finding additional matches.
+        match = first(
+            super()._match_template(
+                concept=concept, pattern=pattern, perception_graph=perception_graph
+            ),
+            None,
+        )
+        if match is not None:
+            yield match
 
 
 @attrs(frozen=True, kw_only=True)
@@ -780,9 +830,29 @@ class PursuitObjectLearnerNew(
             return False
         return True
 
+    @attrs(frozen=True)
+    class ObjectHypothesisPartialMatch(AbstractPursuitLearnerNew.PartialMatch):
+        partial_match_hypothesis: Optional[PerceptionGraphTemplate] = attrib(
+            validator=optional(instance_of(PerceptionGraphTemplate))
+        )
+        num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
+        num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
+
+        def matched_exactly(self) -> bool:
+            return self.num_nodes_matched == self.num_nodes_in_pattern
+
+        def match_score(self) -> float:
+            return self.num_nodes_matched / self.num_nodes_in_pattern
+
     def _find_partial_match(
-        self, hypothesis: PerceptionGraphTemplate, graph: PerceptionGraph
-    ) -> "ObjectPursuitLearner.ObjectHypothesisPartialMatch":
+        self,
+        hypothesis: PerceptionGraphTemplate,
+        graph: PerceptionGraph,
+        *,
+        required_alignments: Mapping[
+            SyntaxSemanticsVariable, ObjectSemanticNode
+        ],  # pylint:disable=unused-argument
+    ) -> "PursuitObjectLearnerNew.ObjectHypothesisPartialMatch":
         pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
@@ -801,7 +871,7 @@ class PursuitObjectLearnerNew(
             else 0
         )
 
-        return ObjectPursuitLearner.ObjectHypothesisPartialMatch(
+        return PursuitObjectLearnerNew.ObjectHypothesisPartialMatch(
             PerceptionGraphTemplate(graph_pattern=hypothesis_pattern_common_subgraph)
             if hypothesis_pattern_common_subgraph
             else None,
@@ -834,3 +904,21 @@ class PursuitObjectLearnerNew(
                 hypothesis.render_to_file(
                     concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
                 )
+
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        # In the case of the object learner,
+        # A template only has to match once; we don't care about finding additional matches.
+        match = first(
+            super()._match_template(
+                concept=concept, pattern=pattern, perception_graph=perception_graph
+            ),
+            None,
+        )
+        if match is not None:
+            yield match

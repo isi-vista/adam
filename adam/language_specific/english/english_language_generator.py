@@ -1,6 +1,10 @@
 import collections
 from itertools import chain
 from typing import Iterable, List, Mapping, MutableMapping, Optional, Tuple, Union, cast
+
+from adam.language_specific.english.english_integrated_experiment_lexicon import (
+    INTEGRATED_EXPERIMENT_ENGLISH_LEXICON,
+)
 from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -1272,6 +1276,9 @@ GAILA_PHASE_1_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
 )
 GAILA_PHASE_2_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_2_ENGLISH_LEXICON
+)
+INTEGRATED_EXPERIMENT_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
+    ontology_lexicon=INTEGRATED_EXPERIMENT_ENGLISH_LEXICON
 )
 
 # these are "hints" situations can pass to the language generator

@@ -395,7 +395,7 @@ class AbstractTemplateSubsetLearnerNew(
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
-    ) -> Optional[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         """
         Try to match our model of the semantics to the perception graph
         """
@@ -409,6 +409,4 @@ class AbstractTemplateSubsetLearnerNew(
             semantic_node_for_match = pattern_match_to_semantic_node(
                 concept=concept, pattern=pattern, match=match
             )
-            # A template only has to match once; we don't care about finding additional matches.
-            return match, semantic_node_for_match
-        return None
+            yield match, semantic_node_for_match

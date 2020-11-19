@@ -41,6 +41,8 @@ class SurfaceTemplate:
     def instantiate(
         self,
         template_variable_to_filler: Mapping[SyntaxSemanticsVariable, Tuple[str, ...]],
+        *,
+        attribute_template: bool = False,
     ) -> TokenSequenceLinguisticDescription:
 
         """
@@ -52,7 +54,9 @@ class SurfaceTemplate:
             if isinstance(element, SyntaxSemanticsVariable):
                 filler_words = template_variable_to_filler[element]
                 # Ground is a specific thing so we special case this to be assigned
-                if filler_words[0] == "ground":
+                # However, we don't want to generate language like "the red the ground,"
+                # so we don't use this special case for attribute templates.
+                if filler_words[0] == "ground" and not attribute_template:
                     output_tokens.append("the")
                 # English-specific hack to deal with us not understanding determiners:
                 # https://github.com/isi-vista/adam/issues/498

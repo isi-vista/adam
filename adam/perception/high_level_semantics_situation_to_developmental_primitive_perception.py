@@ -33,6 +33,9 @@ from adam.ontology import (
 )
 from adam.ontology.action_description import ActionDescription, ActionDescriptionVariable
 from adam.ontology.during import DuringAction
+from adam.ontology.integrated_learner_experiement_ontology import (
+    INTEGRATED_EXPERIMENT_ONTOLOGY,
+)
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     ABOUT_THE_SAME_SIZE_AS_LEARNER,
@@ -565,7 +568,7 @@ class _PerceptionGeneration:
             # If it is a liquid not inside a container, add two-dimensional property
             if (
                 LIQUID
-                in GAILA_PHASE_2_ONTOLOGY.properties_for_node(
+                in self._generator.ontology.properties_for_node(
                     ontology_node
                     # TODO: Handle non-explicit liquid objects (subobjects, etc.)
                 )
@@ -576,7 +579,7 @@ class _PerceptionGeneration:
                     and r.relation_type == IN_REGION
                     and isinstance(r.second_slot, Region)
                     and HOLLOW
-                    in GAILA_PHASE_2_ONTOLOGY.properties_for_node(
+                    in self._generator.ontology.properties_for_node(
                         r.second_slot.reference_object.ontology_node
                     )
                     and r.second_slot.distance == INTERIOR
@@ -1526,6 +1529,9 @@ GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalP
 )
 GAILA_PHASE_2_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     GAILA_PHASE_2_ONTOLOGY
+)
+INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+    INTEGRATED_EXPERIMENT_ONTOLOGY
 )
 
 GAILA_M6_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(

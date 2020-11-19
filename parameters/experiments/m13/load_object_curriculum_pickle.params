@@ -1,0 +1,5 @@
+_includes:
+  - "../../root.params"
+  - objects.params
+
+load_from_curriculum_repository: "%adam_experiment_root%/curriculum_repository"

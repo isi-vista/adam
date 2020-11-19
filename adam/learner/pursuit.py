@@ -49,7 +49,12 @@ from adam.perception.perception_graph import (
     GraphLogger,
     PerceptionGraph,
 )
-from adam.semantics import Concept, SemanticNode
+from adam.semantics import (
+    Concept,
+    SemanticNode,
+    SyntaxSemanticsVariable,
+    ObjectSemanticNode,
+)
 
 
 @attrs
@@ -831,6 +836,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         partial_match = self._find_partial_match(
             leading_hypothesis_pattern,
             language_perception_semantic_alignment.perception_semantic_alignment.perception_graph,
+            required_alignments=bound_surface_template.slot_to_semantic_node,
         )
 
         # b.i) If the hypothesis is confirmed, we reinforce it.
@@ -926,6 +932,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     non_leading_hypothesis_partial_match = self._find_partial_match(
                         hypothesis,
                         language_perception_semantic_alignment.perception_semantic_alignment.perception_graph,
+                        required_alignments=bound_surface_template.slot_to_semantic_node,
                     )
                     if (
                         non_leading_hypothesis_partial_match.match_score()
@@ -963,25 +970,26 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                         )
                         logging.info("Found existing matching hypothesis for new meaning")
                     else:
-                        hypothesis_object_to_reward = hypothesis_to_reward
+                        hypothesis_object_to_reward = hypothesis_to_reward_without_gaze
 
-                hypothesis_object_to_reward_without_gaze = self.remove_gaze_from_hypothesis(
-                    hypothesis_object_to_reward
-                )
                 if (
-                    hypothesis_object_to_reward_without_gaze
-                    not in hypothesis_objects_boosted_on_this_update
+                    # hypothesis_object_to_reward
+                    # not in hypothesis_objects_boosted_on_this_update
+                    not self._find_identical_hypothesis(
+                        hypothesis_object_to_reward,
+                        candidates=hypothesis_objects_boosted_on_this_update,
+                    )
                 ):
 
                     cur_score_for_new_hypothesis = hypotheses_for_item.get(
-                        hypothesis_object_to_reward_without_gaze, 0.0
+                        hypothesis_object_to_reward, 0.0
                     )
-                    hypotheses_for_item[hypothesis_object_to_reward_without_gaze] = (
+                    hypotheses_for_item[hypothesis_object_to_reward] = (
                         cur_score_for_new_hypothesis
                         + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
                     )
                     hypothesis_objects_boosted_on_this_update.add(
-                        hypothesis_object_to_reward_without_gaze
+                        hypothesis_object_to_reward
                     )
 
         return hypothesis_is_confirmed
@@ -1148,8 +1156,12 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
 
     @abstractmethod
     def _find_partial_match(
-        self, hypothesis: PerceptionGraphTemplate, graph: PerceptionGraph
-    ) -> "AbstractPursuitLearner.PartialMatch":
+        self,
+        hypothesis: PerceptionGraphTemplate,
+        graph: PerceptionGraph,
+        *,
+        required_alignments: Mapping[SyntaxSemanticsVariable, ObjectSemanticNode],
+    ) -> "AbstractPursuitLearnerNew.PartialMatch":
         """
         Compute the degree to which a meaning matches a perception.
         The resulting score should be between 0.0 (no match) and 1.0 (a perfect match)
@@ -1211,7 +1223,12 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             concept,
             graph_patterns_to_scores,
         ) in self._concept_to_hypotheses_and_scores.items():
-            for (graph_pattern, score) in graph_patterns_to_scores.items():
+            # Sort hypotheses in order of decreasing score
+            # so that we will try to match our best hypothesis before any others,
+            # then our second best, etc.
+            for (graph_pattern, score) in sorted(
+                graph_patterns_to_scores.items(), reverse=True, key=lambda item: item[1]
+            ):
                 yield (concept, graph_pattern, score)
 
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
@@ -1223,7 +1240,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
-    ) -> Optional[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         """
         Try to match our model of the semantics to the perception graph
         """
@@ -1237,6 +1254,4 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
             semantic_node_for_match = pattern_match_to_semantic_node(
                 concept=concept, pattern=pattern, match=match
             )
-            # A template only has to match once; we don't care about finding additional matches.
-            return match, semantic_node_for_match
-        return None
+            yield match, semantic_node_for_match
