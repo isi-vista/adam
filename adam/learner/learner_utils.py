@@ -85,8 +85,12 @@ def get_classifier_for_string(input_string: str) -> Optional[str]:
         return "yi1_shan4"
     elif input_string in ["mau4 dz"]:
         return "yi1_ding3"
-    elif input_string in ["chyu1 chi2 bing3"]:
+    elif input_string in ["chyu1 chi2 bing3", "niu2 rou1"]:
         return "yi1_kwai4"
+    elif input_string in ["niu2"]:
+        return "yi1_tiao2"
+    elif input_string in ["ji1"]:
+        return "yi1_zhi1"
     # eliminate mass and proper nouns and use the default classifier if another one hasn't already been used
     elif input_string not in [
         "ba4 ba4",

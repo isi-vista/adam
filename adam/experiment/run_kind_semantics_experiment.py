@@ -68,7 +68,6 @@ def run_experiment(learner, curricula, experiment_id):
             linguistic_description,
             perceptual_representation,
         ) in curriculum.instances():
-            # print(' '.join(linguistic_description.as_token_sequence()))
             # Get the object matches first - prepositison learner can't learn without already recognized objects
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
@@ -129,7 +128,6 @@ def run_experiment(learner, curricula, experiment_id):
         graph_name="semantics",
         output_file=Path(f"./renders/{experiment_id}/semantics.png"),
     )
-    # nx.write_gpickle(learner.semantics_graph, f"{experiment_id}_graph.gpickle")
 
 
 if __name__ == "__main__":

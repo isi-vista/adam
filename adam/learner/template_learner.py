@@ -456,11 +456,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         new_nodes: List[SemanticNode] = []
 
         for (matched_object_node, pattern_match) in matched_objects:
-            # perception_graph_after_matching = replace_match_with_object_graph_node(
-            #     matched_object_node=cast(ObjectSemanticNode, matched_object_node),
-            #     current_perception=perception_graph_after_matching,
-            #     pattern_match=pattern_match
-            # )
             root: ObjectPerception = _get_root_object_perception(
                 pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
                 immutableset(

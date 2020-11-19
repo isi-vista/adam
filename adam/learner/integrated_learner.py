@@ -182,9 +182,10 @@ class IntegratedTemplateLearner(
                     # Check definiteness after recognizing objects
                     if sub_learner == self.object_learner:
                         self.learn_definiteness_markers(current_learner_state)
+
+                # We don't want entire experiments to break because of a minor exceptions; so we catch and log them.
                 except Exception as e:  # pylint:disable=broad-except
                     logging.exception(e)
-                    # pass
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
@@ -202,7 +203,7 @@ class IntegratedTemplateLearner(
             descs = self._linguistic_descriptions_from_semantics(
                 current_learner_state.perception_semantic_alignment
             )
-            # If the statemesnt isn't a recognized sentence, run learner
+            # If the statement isn't a recognized sentence, run learner
             if not learning_example.linguistic_description.as_token_sequence() in [
                 desc.as_token_sequence() for desc in descs
             ]:
@@ -635,12 +636,9 @@ class IntegratedTemplateLearner(
                         obj_con, other_con, slot=slot, weight=1.0
                     )
                     # if the object is a wug - a new object heard through generics
-                    if not any(
-                        [
-                            obj_con.debug_string == c.debug_string
-                            for c in self.object_learner.concepts_to_patterns().keys()
-                        ]
-                    ) and isinstance(other_con, KindConcept):
+                    if obj_con not in self.object_learner.concepts_to_patterns() and isinstance(
+                        other_con, KindConcept
+                    ):
                         # Create a representation of the kind using association of its neighbors
                         kind_neighbor_associations: DefaultDict[
                             Tuple[Concept, str], float

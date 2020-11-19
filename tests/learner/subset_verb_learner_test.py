@@ -103,7 +103,7 @@ def run_verb_test(learner, situation_template, language_generator):
             *[
                 sampled(
                     situation_template,
-                    max_to_sample=10,
+                    max_to_sample=15,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     block_multiple_of_the_same_type=True,

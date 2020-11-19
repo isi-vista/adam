@@ -27,7 +27,7 @@ from adam.perception.perception_graph import (
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 
 
-@attrs(slots=True, eq=False)
+@attrs(frozen=True, slots=True, eq=False)
 class PerceptionGraphTemplate:
     graph_pattern: PerceptionGraphPattern = attrib(
         validator=instance_of(PerceptionGraphPattern), kw_only=True

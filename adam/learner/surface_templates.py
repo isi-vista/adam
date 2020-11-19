@@ -87,8 +87,12 @@ class SurfaceTemplate:
                         output_tokens.append("yi1_shan4")
                     elif filler_words[0] in ["mau4 dz"]:
                         output_tokens.append("yi1_ding3")
-                    elif filler_words[0] in ["chyu1 chi2 bing3"]:
+                    elif filler_words[0] in ["chyu1 chi2 bing3", "niu2 rou1"]:
                         output_tokens.append("yi1_kwai4")
+                    elif filler_words[0] in ["niu2"]:
+                        output_tokens.append("yi1_tiao2")
+                    elif filler_words[0] in ["ji1"]:
+                        output_tokens.append("yi1_zhi1")
                     # eliminate mass and proper nouns and use the default classifier if another one hasn't already been used
                     elif filler_words[0] not in [
                         "ba4 ba4",

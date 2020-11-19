@@ -103,6 +103,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                                 {SLOT1: object_node},
                             )
                         )
+                # Catches errors in to_surface_template() - we skip this case to prevent the learning from breaking.
                 except RuntimeError:
                     continue
 

@@ -268,23 +268,6 @@ class SubsetVerbLearnerNew(
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
     ) -> Optional[PerceptionGraphTemplate]:
-        # previous_pattern_hypothesis.render_to_file("prev", 'first')
-        # current_pattern_hypothesis.render_to_file("curr", 'second')
-        # intersection = previous_pattern_hypothesis.intersection(
-        #     current_pattern_hypothesis,
-        #     ontology=self._ontology,
-        #     match_mode=MatchMode.NON_OBJECT,
-        #     allowed_matches=immutablesetmultidict(
-        #         [
-        #             (node2, node1)
-        #             for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
-        #             for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
-        #             if previous_slot == new_slot
-        #         ]
-        #     ),
-        # )
-        # intersection.render_to_file("int", 'intersection')
-        # raise RuntimeError
         return previous_pattern_hypothesis.intersection(
             current_pattern_hypothesis,
             ontology=self._ontology,

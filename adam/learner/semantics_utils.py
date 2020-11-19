@@ -88,11 +88,6 @@ def generate_heatmap(nodes_to_embeddings: Dict[Concept, Any], filename: str):
     df = pd.DataFrame(data=similarity_matrix, index=names, columns=names)
     plt.rcParams["figure.figsize"] = (20.0, 20.0)
     plt.rcParams["font.family"] = "serif"
-    # sb.heatmap(df)
-    # sb.clustermap(df)
     sb.clustermap(df, row_cluster=True, col_cluster=True)
-    # cm.ax_row_dendrogram.set_visible(False)
-    # cm.ax_col_dendrogram.set_visible(False)
-    # plt.show()
     plt.savefig(f"plots/{filename}.png")
     plt.close()

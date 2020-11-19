@@ -775,7 +775,6 @@ def _add_relationships_linked_to_root_object_perception(
         output_graph.add_edge(matched_object_node, linked_property_node, label=edge_label)
 
 
-# better name?
 @attrs(frozen=True)
 class PerceptionGraphWithReplacedObjectResult:
     perception_graph_after_replacement: PerceptionGraph = attrib(

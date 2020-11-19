@@ -15,6 +15,8 @@ DETERMINERS = immutableset(
         "yi1_shan4",
         "yi1_ding3",
         "yi1_kwai4",
+        "yi1_tiao2",
+        "yi1_zhi1",
     ]
 )
 """
