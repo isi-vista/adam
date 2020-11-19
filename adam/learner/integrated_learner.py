@@ -169,19 +169,14 @@ class IntegratedTemplateLearner(
                 # because the static learners do not know how to deal with the temporal
                 # perception graph edge wrappers.
                 # See https://github.com/isi-vista/adam/issues/792 .
-                try:
-                    if not learning_example.perception.is_dynamic():
-                        sub_learner.learn_from(current_learner_state, offset=offset)
-                    current_learner_state = sub_learner.enrich_during_learning(
-                        current_learner_state
-                    )
-                    # Check definiteness after recognizing objects
-                    if sub_learner == self.object_learner:
-                        self.learn_definiteness_markers(current_learner_state)
-
-                # We don't want entire experiments to break because of a minor exceptions; so we catch and log them.
-                except Exception as e:  # pylint:disable=broad-except
-                    logging.exception(e)
+                if not learning_example.perception.is_dynamic():
+                    sub_learner.learn_from(current_learner_state, offset=offset)
+                current_learner_state = sub_learner.enrich_during_learning(
+                    current_learner_state
+                )
+                # Check definiteness after recognizing objects
+                if sub_learner == self.object_learner:
+                    self.learn_definiteness_markers(current_learner_state)
 
         if learning_example.perception.is_dynamic() and self.action_learner:
             self.action_learner.learn_from(current_learner_state)
