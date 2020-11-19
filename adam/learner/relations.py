@@ -319,10 +319,6 @@ class PursuitRelationLearnerNew(
             )
 
 
-class ImmutableSet(object):
-    pass
-
-
 def _extract_candidate_relations(
     whole_scene_perception_graph: PerceptionGraph,
     relation_object_1: ObjectSemanticNode,
@@ -349,10 +345,16 @@ def _extract_candidate_relations(
         for node in hypothesis_spine_nodes:
             if node not in {relation_object_1, relation_object_2}:
                 for successor in perception_digraph.successors(node):
-                    if not isinstance(successor, ObjectPerception):
+                    if not (
+                        isinstance(successor, ObjectPerception)
+                        or isinstance(successor, ObjectSemanticNode)
+                    ):
                         hypothesis_nodes_mutable.append(successor)
                 for predecessor in perception_digraph.predecessors(node):
-                    if not isinstance(predecessor, ObjectPerception):
+                    if not (
+                        isinstance(predecessor, ObjectPerception)
+                        or isinstance(predecessor, ObjectSemanticNode)
+                    ):
                         hypothesis_nodes_mutable.append(predecessor)
 
         hypothesis_nodes_mutable.extend(hypothesis_spine_nodes)
