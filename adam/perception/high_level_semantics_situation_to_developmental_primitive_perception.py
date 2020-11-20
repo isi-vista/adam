@@ -586,6 +586,8 @@ class _PerceptionGeneration:
                     for r in self._situation.always_relations
                 )
             ):
+                # This case is removed as a quick fix for learning. Described further here:
+                # https://github.com/isi-vista/adam/issues/999
                 # properties_to_perceive.append(TWO_DIMENSIONAL)
                 pass
 
