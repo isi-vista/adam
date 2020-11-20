@@ -43,14 +43,14 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     An Abstract Implementation of the Cross Situation Learning Model
 
     This learner aims to learn via storing all possible meanings and narrowing down to one meaning
-    by caclulating association scores and probability based off those association scores for each
+    by calculating association scores and probability based off those association scores for each
     utterance situation pair. It does so be associating all words to certain meanings. For new words
     meanings that are not associated strongly to another word already are associated evenly. For
     words encountered before, words are associated more strongly to meanings encountered with that
-    word before and less strongly to newer meanings. Lastly, very familar word meaning pairs are
+    word before and less strongly to newer meanings. Lastly, very familiar word meaning pairs are
     associated together only, these would be words generally considered lexicalized. Once
-    associations are made a probability for each word meaning pair being correct is caclulated.
-    Finally if the proibability is high enough the word is lexicalized. More information can be
+    associations are made a probability for each word meaning pair being correct is calculated.
+    Finally if the probability is high enough the word is lexicalized. More information can be
     found here: https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x
     """
 
