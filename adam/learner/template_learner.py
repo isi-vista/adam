@@ -1,11 +1,14 @@
 import logging
-
-from attr.validators import instance_of
 from abc import ABC, abstractmethod
 
 from typing import AbstractSet, Iterable, List, Mapping, Sequence, Tuple, Union, cast, Set
 
+import networkx
+from attr import attrib, attrs, evolve
+from attr.validators import instance_of
+from immutablecollections import immutabledict, immutableset
 from more_itertools import one
+from vistautils.preconditions import check_state
 
 from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
 from adam.learner import ComposableLearner, LearningExample, TopLevelLanguageLearner
@@ -17,8 +20,8 @@ from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import pattern_match_to_description
 from adam.learner.object_recognizer import (
     PerceptionGraphFromObjectRecognizer,
-    replace_match_root_with_object_semantic_node,
     _get_root_object_perception,
+    replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
@@ -30,7 +33,11 @@ from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
-from adam.perception.perception_graph import PerceptionGraph, PerceptionGraphPatternMatch
+from adam.perception.perception_graph import (
+    PerceptionGraph,
+    PerceptionGraphPatternMatch,
+    ENTIRE_SCENE,
+)
 from adam.semantics import (
     Concept,
     ObjectConcept,
@@ -38,9 +45,6 @@ from adam.semantics import (
     SemanticNode,
     FunctionalObjectConcept,
 )
-from attr import attrib, attrs, evolve
-from immutablecollections import immutabledict, immutableset
-from vistautils.preconditions import check_state
 
 
 @attrs
@@ -383,7 +387,10 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         ) -> None:
             matches_with_nodes = self._match_template(
                 concept=concept,
-                pattern=pattern,
+                pattern=pattern.copy_with_temporal_scopes(ENTIRE_SCENE)
+                if preprocessed_perception_graph.dynamic
+                and not pattern.graph_pattern.dynamic
+                else pattern,
                 perception_graph=preprocessed_perception_graph,
             )
             # The template may have zero, one, or many matches, so we loop over the matches found
@@ -409,6 +416,15 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 == graph_pattern.graph_pattern.dynamic
             ):
                 match_template(concept=concept, pattern=graph_pattern, score=score)
+            elif (
+                preprocessed_perception_graph.dynamic
+                and not graph_pattern.graph_pattern.dynamic
+            ):
+                match_template(
+                    concept=concept,
+                    pattern=graph_pattern.copy_with_temporal_scopes(ENTIRE_SCENE),
+                    score=score,
+                )
             else:
                 logging.debug(
                     f"Unable to try and match {concept} to {preprocessed_perception_graph} "
@@ -427,11 +443,12 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         # Replace any objects found
         def by_pattern_complexity(pair):
             _, pattern_match = pair
-            return len(pattern_match.matched_pattern)
+            return pattern_match.matched_pattern.pattern_complexity()
 
         matched_objects.sort(key=by_pattern_complexity, reverse=True)
         already_replaced: Set[ObjectPerception] = set()
         new_nodes: List[SemanticNode] = []
+
         for (matched_object_node, pattern_match) in matched_objects:
             root: ObjectPerception = _get_root_object_perception(
                 pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
@@ -441,22 +458,44 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 ),
             )
             if root not in already_replaced:
-                perception_graph_after_matching = replace_match_root_with_object_semantic_node(
-                    object_semantic_node=cast(ObjectSemanticNode, matched_object_node),
-                    current_perception=perception_graph_after_matching,
-                    pattern_match=pattern_match,
-                )
-                already_replaced.add(root)
-                new_nodes.append(matched_object_node)
+                try:
+                    replacement_result = replace_match_with_object_graph_node(
+                        matched_object_node=cast(ObjectSemanticNode, matched_object_node),
+                        current_perception=perception_graph_after_matching,
+                        pattern_match=pattern_match,
+                    )
+                    perception_graph_after_matching = (
+                        replacement_result.perception_graph_after_replacement
+                    )
+                    already_replaced.update(  # type: ignore
+                        replacement_result.removed_nodes
+                    )
+                    new_nodes.append(matched_object_node)
+                except networkx.exception.NetworkXError:
+                    logging.info(
+                        f"Matched pattern for {matched_object_node} "
+                        f"contains nodes that are already replaced"
+                    )
             else:
                 logging.info(
                     f"Matched pattern for {matched_object_node} "
                     f"but root object {root} already replaced."
                 )
-        if matched_objects:
+        # If objects, only include the replaced graph nodes in the enrichment
+        if new_nodes and isinstance(new_nodes[0], ObjectSemanticNode):
             immutable_new_nodes = immutableset(new_nodes)
         else:
             immutable_new_nodes = immutableset(node for (node, _) in match_to_score)
+
+        # Keep recursively enriching so we can capture plurals. Do it only if we matched objects in the scene.
+        if new_nodes and isinstance(new_nodes[0], ObjectSemanticNode):
+            rec = self._enrich_common(
+                perception_semantic_alignment.copy_with_updated_graph_and_added_nodes(
+                    new_graph=perception_graph_after_matching,
+                    new_nodes=immutable_new_nodes,
+                )
+            )
+            return rec[0], set(immutable_new_nodes).union(rec[1])
 
         (
             perception_graph_after_post_processing,

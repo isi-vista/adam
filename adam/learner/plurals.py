@@ -82,7 +82,7 @@ class SubsetPluralLearnerNew(
             for s in language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
         ]
         counts = collections.Counter(concepts)
-        return max(counts.values()) > 1
+        return max(counts.values()) > 1 if counts.values() else False
 
     def _preprocess_scene(
         self, perception_semantic_alignment: PerceptionSemanticAlignment

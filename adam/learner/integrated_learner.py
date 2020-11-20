@@ -3,7 +3,18 @@ import itertools
 import logging
 from itertools import chain, combinations
 from pathlib import Path
-from typing import Iterator, Mapping, Optional, Tuple, List, Dict, Union, Counter, Set
+from typing import (
+    Iterator,
+    Mapping,
+    Optional,
+    Tuple,
+    List,
+    Dict,
+    Union,
+    Counter,
+    Set,
+    DefaultDict,
+)
 
 import graphviz
 from attr import attrib, attrs
@@ -53,6 +64,7 @@ from adam.semantics import (
     ObjectConcept,
     AttributeSemanticNode,
     Concept,
+    KindConcept,
 )
 
 
@@ -104,12 +116,12 @@ class IntegratedTemplateLearner(
     _sub_learners: List[TemplateLearner] = attrib(init=False)
 
     potential_definiteness_markers: Counter[str] = attrib(
-        init=False, default=collections.Counter()
+        init=False, factory=collections.Counter
     )
 
-    semantics_graph: DiGraph = attrib(init=False, default=DiGraph())
+    semantics_graph: DiGraph = attrib(init=False, factory=DiGraph)
     concepts_to_patterns: Dict[Concept, PerceptionGraphPattern] = attrib(
-        init=False, default=dict()
+        init=False, factory=dict
     )
 
     def observe(
@@ -616,6 +628,44 @@ class IntegratedTemplateLearner(
                     self.semantics_graph.add_edge(
                         obj_con, other_con, slot=slot, weight=1.0
                     )
+                    # if the object is a wug - a new object heard through generics
+                    if obj_con not in self.object_learner.concepts_to_patterns() and isinstance(
+                        other_con, KindConcept
+                    ):
+                        # Create a representation of the kind using association of its neighbors
+                        kind_neighbor_associations: DefaultDict[
+                            Tuple[Concept, str], float
+                        ] = collections.defaultdict(float)
+                        for member_of_kind in self.semantics_graph.predecessors(
+                            other_con
+                        ):
+                            if member_of_kind == obj_con:
+                                continue
+                            # We want this node to share the properties other members of that kind
+                            for n in self.semantics_graph.neighbors(member_of_kind):
+                                if isinstance(n, KindConcept):
+                                    continue
+                                data = self.semantics_graph.get_edge_data(
+                                    member_of_kind, n
+                                )
+                                kind_neighbor_slot = data["slot"]
+                                kind_neighbor_strength = data["weight"]
+                                kind_neighbor_associations[
+                                    (n, kind_neighbor_slot)
+                                ] += kind_neighbor_strength
+                        if not kind_neighbor_associations.values():
+                            continue
+                        coefficient = 1.0 / max(kind_neighbor_associations.values())
+                        for (
+                            (associated_concept, associated_slot),
+                            strength,
+                        ) in kind_neighbor_associations.items():
+                            self.semantics_graph.add_edge(
+                                obj_con,
+                                associated_concept,
+                                slot=associated_slot,
+                                weight=coefficient * strength,
+                            )
 
         for sub_learner in self._sub_learners:
             if isinstance(sub_learner, FunctionalLearner):

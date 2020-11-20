@@ -17,21 +17,13 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
 from adam.learner import LearningExample
 
 from adam.learner.verbs import SubsetVerbLearnerNew
-from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
+from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.situation.templates.phase1_templates import sampled
 from tests.learner import object_recognizer_factory
-
-
-def subset_attribute_leaner_factory(language_mode: LanguageMode):
-    return SubsetAttributeLearner(
-        object_recognizer=object_recognizer_factory(language_mode),
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        language_mode=language_mode,
-    )
 
 
 def integrated_learner_factory(language_mode: LanguageMode):
@@ -102,9 +94,7 @@ def run_imprecise_test(learner, situation_template, language_generator):
         assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
 
 
-@pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_tall(learner, language):
     run_imprecise_test(
@@ -114,9 +104,7 @@ def test_tall(learner, language):
     )
 
 
-@pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_short(learner, language):
     run_imprecise_test(
@@ -126,9 +114,7 @@ def test_short(learner, language):
     )
 
 
-@pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_small(learner, language):
     run_imprecise_test(
@@ -138,9 +124,7 @@ def test_small(learner, language):
     )
 
 
-@pytest.mark.parametrize(
-    "learner", [subset_attribute_leaner_factory, integrated_learner_factory]
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
 def test_big(learner, language):
     run_imprecise_test(

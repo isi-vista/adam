@@ -74,6 +74,9 @@ from adam.ontology.phase1_ontology import (
     NONHUMAN_ANIMAL,
     PERSON,
     FOOD,
+    COW,
+    BEEF,
+    CHICKEN,
 )
 
 I = LexiconEntry(  # noqa: E741
@@ -127,6 +130,9 @@ GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
         (HEAD, LexiconEntry("head", NOUN, plural_form="heads")),
         (PAPER, LexiconEntry("paper", NOUN, plural_form="papers")),
         (BEAR, LexiconEntry("bear", NOUN, plural_form="bears")),
+        (COW, LexiconEntry("cow", NOUN, plural_form="cows")),
+        (BEEF, LexiconEntry("beef", NOUN, plural_form="beefs")),
+        (CHICKEN, LexiconEntry("chicken", NOUN, plural_form="chickens")),
         (BED, LexiconEntry("bed", NOUN, plural_form="beds")),
         (MILK, LexiconEntry("milk", NOUN, [MASS_NOUN])),
         (HAND, LexiconEntry("hand", NOUN, plural_form="hands")),

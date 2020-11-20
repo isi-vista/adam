@@ -3,6 +3,19 @@ from abc import ABC
 from itertools import chain
 from pathlib import Path
 from random import Random
+
+from attr import attrib, attrs, evolve
+from attr.validators import instance_of, optional
+from immutablecollections import (
+    ImmutableSet,
+    ImmutableSetMultiDict,
+    immutabledict,
+    immutableset,
+    immutablesetmultidict,
+)
+from vistautils.parameters import Parameters
+
+from adam.language import LinguisticDescription
 from typing import (
     AbstractSet,
     Iterable,
@@ -20,7 +33,6 @@ from more_itertools import first
 from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
-from adam.language import LinguisticDescription
 from adam.language_specific.english import DETERMINERS
 from adam.learner import (
     LearningExample,
@@ -40,7 +52,6 @@ from adam.learner.object_recognizer import (
     ObjectRecognizer,
     PerceptionGraphFromObjectRecognizer,
     extract_candidate_objects,
-    replace_match_root_with_object_semantic_node,
     replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -88,18 +99,7 @@ from adam.semantics import (
     SyntaxSemanticsVariable,
 )
 from adam.utils import networkx_utils
-from attr import attrib, attrs, evolve
-from attr.validators import instance_of, optional
-from immutablecollections import (
-    ImmutableSet,
-    ImmutableSetMultiDict,
-    immutabledict,
-    immutableset,
-    immutablesetmultidict,
-)
-
 from adam.utils.networkx_utils import subgraph
-from vistautils.parameters import Parameters
 
 
 class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
@@ -171,8 +171,10 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             fake_object_semantic_node = ObjectSemanticNode(
                 concept=FunctionalObjectConcept("unknown_object")
             )
-            perception_graph_after_processing = replace_match_root_with_object_semantic_node(
-                object_semantic_node=fake_object_semantic_node,
+            # perception_graph_after_processing = replace_match_root_with_object_semantic_node(
+            #     object_semantic_node=fake_object_semantic_node,
+            perception_graph_after_processing = replace_match_with_object_graph_node(
+                matched_object_node=fake_object_semantic_node,
                 current_perception=perception_graph_after_processing,
                 pattern_match=PerceptionGraphPatternMatch(
                     matched_pattern=fake_pattern_graph.perception_graph_pattern,
@@ -180,7 +182,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
                     matched_sub_graph=fake_perception_graph,
                     pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
                 ),
-            )
+            ).perception_graph_after_replacement
             new_nodes.append(fake_object_semantic_node)
 
         return (
@@ -523,8 +525,8 @@ class SubsetObjectLearnerNew(
         hypothesis: PerceptionGraphTemplate,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
     ) -> bool:
-        if len(hypothesis.graph_pattern) < 2:
-            # A one node graph is to small to meaningfully describe an object
+        if len(hypothesis.graph_pattern) < 3:
+            # A two node graph is to small to meaningfully describe an object
             return False
         if all(isinstance(node, ObjectPerception) for node in hypothesis.graph_pattern):
             # A hypothesis which consists of just sub-object structure
@@ -682,7 +684,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
                     matched_sub_graph=candiate_object_graph,
                     pattern_node_to_matched_graph_node=fake_pattern_graph.perception_graph_node_to_pattern_node,
                 ),
-            )
+            ).perception_graph_after_replacement
             new_nodes.append(fake_object_semantic_node)
 
         return (
@@ -744,7 +746,13 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         raise RuntimeError(f"Invalid concept {concept}")
 
     def log_hypotheses(self, log_output_path: Path) -> None:
-        pass
+        for concept, hypothesis in self.concepts_to_patterns().items():
+            hypothesis.render_to_file(
+                graph_name="perception",
+                output_file=Path(
+                    log_output_path / f"{str(type(self))}-{concept.debug_string}"
+                ),
+            )
 
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
         return {
@@ -813,8 +821,8 @@ class PursuitObjectLearnerNew(
         hypothesis: PerceptionGraphTemplate,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
     ) -> bool:
-        if len(hypothesis.graph_pattern) < 2:
-            # A one node graph is to small to meaningfully describe an object
+        if len(hypothesis.graph_pattern) < 3:
+            # A two node graph is to small to meaningfully describe an object
             return False
         if all(isinstance(node, ObjectPerception) for node in hypothesis.graph_pattern):
             # A hypothesis which consists of just sub-object structure

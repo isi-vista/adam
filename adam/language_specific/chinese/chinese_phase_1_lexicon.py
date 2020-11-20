@@ -83,6 +83,9 @@ from adam.ontology.phase1_ontology import (
     NONHUMAN_ANIMAL,
     PERSON,
     FOOD,
+    COW,
+    BEEF,
+    CHICKEN,
 )
 
 ME = LexiconEntry("wo3", NOUN, intrinsic_morphosyntactic_properties=[FIRST_PERSON])
@@ -127,6 +130,9 @@ GAILA_PHASE_1_CHINESE_LEXICON = OntologyLexicon(
         (CAT, LexiconEntry("mau1", NOUN, counting_classifier="jr1")),
         (BIRD, LexiconEntry("nyau3", NOUN, counting_classifier="jr1")),
         (BEAR, LexiconEntry("syung2", NOUN, counting_classifier="jr1")),
+        (COW, LexiconEntry("niu2", NOUN, counting_classifier="tiao2")),
+        (BEEF, LexiconEntry("niu2 rou1", NOUN, counting_classifier="kwai4")),
+        (CHICKEN, LexiconEntry("ji1", NOUN, counting_classifier="zhi1")),
         (GO, LexiconEntry("chyu4", VERB)),
         (COME, LexiconEntry("lai2", VERB)),
         (TAKE, LexiconEntry("na2", VERB)),

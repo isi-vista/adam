@@ -13,7 +13,6 @@ from typing import (
     Optional,
     Callable,
     Sequence,
-    Any,
 )
 
 from attr import attrib, attrs
@@ -23,8 +22,6 @@ from networkx import (
     number_weakly_connected_components,
     DiGraph,
     weakly_connected_components,
-    Graph,
-    to_numpy_matrix,
 )
 from vistautils.span import Span
 
@@ -88,8 +85,12 @@ def get_classifier_for_string(input_string: str) -> Optional[str]:
         return "yi1_shan4"
     elif input_string in ["mau4 dz"]:
         return "yi1_ding3"
-    elif input_string in ["chyu1 chi2 bing3"]:
+    elif input_string in ["chyu1 chi2 bing3", "niu2 rou1"]:
         return "yi1_kwai4"
+    elif input_string in ["niu2"]:
+        return "yi1_tiao2"
+    elif input_string in ["ji1"]:
+        return "yi1_zhi1"
     # eliminate mass and proper nouns and use the default classifier if another one hasn't already been used
     elif input_string not in [
         "ba4 ba4",
@@ -766,7 +767,3 @@ def get_slot_from_semantic_node(
         if object_node.concept == object_concept:
             return slot_var.name
     return slot
-
-
-def semantics_as_weighted_adjacency_matrix(semantics_graph: Graph) -> Any:
-    return to_numpy_matrix(semantics_graph)

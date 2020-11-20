@@ -182,12 +182,15 @@ def _make_each_object_without_colour_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     single_object_template = Phase1SituationTemplate(
         "single-object",
         salient_object_variables=[
             object_variable(
-                "object", banned_properties=[LIQUID, IS_SPEAKER, IS_ADDRESSEE]
+                "object",
+                banned_properties=[LIQUID, IS_SPEAKER, IS_ADDRESSEE],
+                banned_ontology_types=banned_ontology_types,
             )
         ],
         syntax_hints=[IGNORE_COLORS],
@@ -245,6 +248,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     color = color_variable("color")
     single_object_template = Phase1SituationTemplate(
@@ -254,6 +258,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                 "object",
                 added_properties=[color],
                 banned_properties=[LIQUID, IS_SPEAKER, IS_ADDRESSEE],
+                banned_ontology_types=banned_ontology_types,
             )
         ],
         syntax_hints=[IGNORE_COLORS],
@@ -261,7 +266,11 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
     single_liquid_template = Phase1SituationTemplate(
         "single-liquids",
         salient_object_variables=[
-            object_variable("liquid", required_properties=[LIQUID])
+            object_variable(
+                "liquid",
+                required_properties=[LIQUID],
+                banned_ontology_types=banned_ontology_types,
+            )
         ],
         syntax_hints=[IGNORE_COLORS],
     )
@@ -315,6 +324,21 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                     )
                     for object in [MOM, DAD, BABY]
                 ),
+                flatten(
+                    sampled(
+                        Phase1SituationTemplate(
+                            "only-object",
+                            salient_object_variables=[
+                                standard_object("addressee", object)
+                            ],
+                        ),
+                        ontology=GAILA_PHASE_1_ONTOLOGY,
+                        chooser=PHASE1_CHOOSER_FACTORY(),
+                        max_to_sample=5,
+                        block_multiple_of_the_same_type=True,
+                    )
+                    for object in [MOM, DAD, BABY]
+                ),
             ]
         ),
         language_generator=language_generator,
@@ -337,9 +361,12 @@ def _make_objects_with_colors_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     color = color_variable("color")
-    object_with_color = standard_object("object", added_properties=[color])
+    object_with_color = standard_object(
+        "object", added_properties=[color], banned_ontology_types=banned_ontology_types
+    )
 
     return phase1_instances(
         "objects with colors",
@@ -404,11 +431,14 @@ def _make_plural_objects_curriculum(  # pylint: disable=unused-argument
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     def build_object_multiples_situations(
         ontology: Ontology, *, samples_per_object: int = 3, chooser: RandomChooser
     ) -> Iterable[HighLevelSemanticsSituation]:
         for object_type in PHASE_1_CURRICULUM_OBJECTS:
+            if object_type in banned_ontology_types:
+                continue
             is_liquid = ontology.has_all_properties(object_type, [LIQUID])
             # don't want multiples of named people
             if not is_recognized_particular(ontology, object_type) and not is_liquid:
@@ -446,6 +476,7 @@ def _make_kind_predicates_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     """Creates situations and descriptions such as `dogs are animals` with
     a perception of a dog"""
@@ -464,20 +495,23 @@ def _make_kind_predicates_curriculum(
     }
     # english mapping of objects to their kinds
     english_kind_dictionary = {
-        "bear": ["animal", "s"],
-        "dog": ["animal", "s"],
-        "cat": ["animal", "s"],
-        "bird": ["animal", "s"],
-        "Mom": ["people"],
-        "Dad": ["people"],
-        "baby": ["people"],
-        "watermelon": ["food"],
-        "cookie": ["food"],
+        "bear": [["animal", "s"]],
+        "dog": [["animal", "s"]],
+        "cat": [["animal", "s"]],
+        "bird": [["animal", "s"]],
+        "Mom": [["people"]],
+        "Dad": [["people"]],
+        "baby": [["people"]],
+        "watermelon": [["food"]],
+        "cookie": [["food"]],
+        "cow": [["animal", "s"]],
+        "beef": [["food"]],
+        "chicken": [["animal", "s"], ["food"]],
     }
     # we keep track of the subjects so we only generate one predicate for each subject
     all_subjects: List[str] = []
     for (instance, description, perception) in _make_each_object_by_itself_curriculum(
-        num_samples, noise_objects, language_generator
+        num_samples, noise_objects, language_generator, banned_ontology_types
     ).instances():
         linguistic_tokens = description.as_token_sequence()
         if language_generator in [
@@ -507,21 +541,17 @@ def _make_kind_predicates_curriculum(
                 linguistic_tokens[-1] not in all_subjects
                 and linguistic_tokens[-1] in english_kind_dictionary
             ):
-                all_subjects.append(linguistic_tokens[-1])
-                all_instances.append(
-                    (
-                        instance,
-                        TokenSequenceLinguisticDescription(
-                            (
-                                linguistic_tokens[-1],
-                                "s",
-                                "are",
-                                *english_kind_dictionary[linguistic_tokens[-1]],
-                            )
-                        ),
-                        perception,
+                for kind in english_kind_dictionary[linguistic_tokens[-1]]:
+                    all_subjects.append(linguistic_tokens[-1])
+                    all_instances.append(
+                        (
+                            instance,
+                            TokenSequenceLinguisticDescription(
+                                (linguistic_tokens[-1], "s", "are", *kind)
+                            ),
+                            perception,
+                        )
                     )
-                )
     return ExplicitWithSituationInstanceGroup("kind predicates", all_instances)
 
 
@@ -531,6 +561,7 @@ def _make_colour_predicates_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     """Creates situations and descriptions such as `cookies are brown' with a single
     cookie that is brown"""
@@ -556,7 +587,7 @@ def _make_colour_predicates_curriculum(
         description,
         perception,
     ) in _make_each_object_without_colour_curriculum(
-        num_samples, noise_objects, language_generator
+        num_samples, noise_objects, language_generator, banned_ontology_types
     ).instances():
         linguistic_tokens = description.as_token_sequence()
         if language_generator in [
@@ -611,25 +642,41 @@ def _make_generic_statements_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     # Hard-coded examples: we create dynamic instances and replace the linguistic description
     # The way we do this is explained here: https://github.com/isi-vista/adam/issues/771
     all_instances = []
     verbs_to_instances = {
         "eat": _make_eat_curriculum(
-            num_samples, noise_objects, language_generator
+            num_samples,
+            noise_objects,
+            language_generator,
+            banned_ontology_types=banned_ontology_types,
         ).instances(),  # E.g babies eat
         "drink": _make_drink_curriculum(
-            num_samples, noise_objects, language_generator
+            num_samples,
+            noise_objects,
+            language_generator,
+            banned_ontology_types=banned_ontology_types,
         ).instances(),
         "sit": _make_sit_curriculum(
-            num_samples, noise_objects, language_generator
+            num_samples,
+            noise_objects,
+            language_generator,
+            banned_ontology_types=banned_ontology_types,
         ).instances(),
         "jump": _make_jump_curriculum(
-            num_samples, noise_objects, language_generator
+            num_samples,
+            noise_objects,
+            language_generator,
+            banned_ontology_types=banned_ontology_types,
         ).instances(),
         "fly": _make_fly_curriculum(
-            num_samples, noise_objects, language_generator
+            num_samples,
+            noise_objects,
+            language_generator,
+            banned_ontology_types=banned_ontology_types,
         ).instances(),
     }
     # hack for chinese generics
@@ -1332,17 +1379,22 @@ def bare_fly(
 
 
 def make_fly_templates(
-    background: Iterable[TemplateObjectVariable]
+    background: Iterable[TemplateObjectVariable],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Iterable[Phase1SituationTemplate]:
-    bird = standard_object("bird_0", BIRD)
+    bird = standard_object("bird_0", BIRD, banned_ontology_types=banned_ontology_types)
     object_0 = standard_object(
-        "object_0", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+        "object_0",
+        THING,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        banned_ontology_types=banned_ontology_types,
     )
     object_with_space_under = standard_object(
         "object_with_space_under",
         THING,
         required_properties=[HAS_SPACE_UNDER],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        banned_ontology_types=banned_ontology_types,
     )
     syntax_hints_options = ([], [USE_ADVERBIAL_PATH_MODIFIER])  # type: ignore
 
@@ -1365,6 +1417,7 @@ def _make_fly_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     return phase1_instances(
         "flying",
@@ -1385,7 +1438,10 @@ def _make_fly_curriculum(
                         chooser=PHASE1_CHOOSER_FACTORY(),
                     )
                     for template in make_fly_templates(
-                        background=make_noise_objects(noise_objects)
+                        background=make_noise_objects(
+                            noise_objects, banned_ontology_types=banned_ontology_types
+                        ),
+                        banned_ontology_types=banned_ontology_types,
                     )
                 ]
             )
@@ -1802,6 +1858,7 @@ def _make_jump_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
 
     jumper = standard_object(
@@ -1809,9 +1866,12 @@ def _make_jump_curriculum(
         THING,
         required_properties=[CAN_JUMP],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        banned_ontology_types=banned_ontology_types,
     )
     jumped_over = standard_object(
-        "jumped_over", banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+        "jumped_over",
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        banned_ontology_types=banned_ontology_types,
     )
 
     background = make_noise_objects(noise_objects)
@@ -1973,6 +2033,7 @@ def make_drink_template(
                 auxiliary_variable_bindings=[(DRINK_CONTAINER_AUX, container)],
             )
         ],
+        asserted_always_relations=[inside(liquid, container)],
     )
 
 
@@ -2005,15 +2066,24 @@ def _make_drink_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     object_0 = standard_object(
         "object_0",
         required_properties=[HOLLOW, PERSON_CAN_HAVE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        banned_ontology_types=banned_ontology_types,
     )
-    liquid_0 = object_variable("liquid_0", required_properties=[LIQUID])
+    liquid_0 = object_variable(
+        "liquid_0",
+        required_properties=[LIQUID],
+        banned_ontology_types=banned_ontology_types,
+    )
     person_0 = standard_object(
-        "person_0", PERSON, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
+        "person_0",
+        PERSON,
+        banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        banned_ontology_types=banned_ontology_types,
     )
     return phase1_instances(
         "drinking",
@@ -2070,16 +2140,22 @@ def _make_eat_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     # TODO: "eat it up"
     # https://github.com/isi-vista/adam/issues/267
 
-    object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
+    object_to_eat = standard_object(
+        "object_0",
+        required_properties=[EDIBLE],
+        banned_ontology_types=banned_ontology_types,
+    )
     eater = standard_object(
         "eater_0",
         THING,
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        banned_ontology_types=banned_ontology_types,
     )
     background = make_noise_objects(noise_objects)
 
@@ -2170,12 +2246,16 @@ def make_sit_transitive(
     )
 
 
-def make_sit_templates(noise_objects: Optional[int]) -> Iterable[Phase1SituationTemplate]:
+def make_sit_templates(
+    noise_objects: Optional[int],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
+) -> Iterable[Phase1SituationTemplate]:
     sitter = standard_object(
         "sitter_0",
         THING,
         required_properties=[ANIMATE],
         banned_properties=[IS_SPEAKER, IS_ADDRESSEE],
+        banned_ontology_types=banned_ontology_types,
     )
 
     sit_surface = standard_object(
@@ -2183,9 +2263,13 @@ def make_sit_templates(noise_objects: Optional[int]) -> Iterable[Phase1Situation
         THING,
         required_properties=[CAN_HAVE_THINGS_RESTING_ON_THEM],
         banned_properties=[GROUND],
+        banned_ontology_types=banned_ontology_types,
     )
     seat = standard_object(
-        "sitting-surface", INANIMATE_OBJECT, required_properties=[CAN_BE_SAT_ON_BY_PEOPLE]
+        "sitting-surface",
+        INANIMATE_OBJECT,
+        required_properties=[CAN_BE_SAT_ON_BY_PEOPLE],
+        banned_ontology_types=banned_ontology_types,
     )
 
     # we need two groups of templates because in general something can sit on
@@ -2215,6 +2299,7 @@ def _make_sit_curriculum(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
     return phase1_instances(
         "sitting",
@@ -2233,7 +2318,9 @@ def _make_sit_curriculum(
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
-                for situation_templates in make_sit_templates(noise_objects)
+                for situation_templates in make_sit_templates(
+                    noise_objects, banned_ontology_types=banned_ontology_types
+                )
             ]
         ),
         language_generator=language_generator,

@@ -454,7 +454,7 @@ MILK = OntologyNode(
 )
 subtype(MILK, SUBSTANCE)
 HAND = OntologyNode(
-    "hand", [CAN_MANIPULATE_OBJECTS, CAN_FILL_TEMPLATE_SLOT, IS_BODY_PART]
+    "hand", [CAN_FILL_TEMPLATE_SLOT, CAN_MANIPULATE_OBJECTS, IS_BODY_PART]
 )
 subtype(HAND, THING)
 TRUCK = OntologyNode(
@@ -565,6 +565,17 @@ BIRD = OntologyNode(
     ],
 )
 subtype(BIRD, NONHUMAN_ANIMAL)
+CHICKEN = OntologyNode(
+    "chicken", [CAN_FILL_TEMPLATE_SLOT, EDIBLE, DARK_BROWN, LIGHT_BROWN]
+)
+subtype(CHICKEN, NONHUMAN_ANIMAL)
+BEEF = OntologyNode("beef", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, DARK_BROWN])
+subtype(BEEF, FOOD)
+COW = OntologyNode(
+    "cow",
+    [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, CAN_JUMP, WHITE, BLACK],
+)
+subtype(COW, NONHUMAN_ANIMAL)
 
 PHASE_1_CURRICULUM_OBJECTS = immutableset(
     [
@@ -595,6 +606,9 @@ PHASE_1_CURRICULUM_OBJECTS = immutableset(
         TABLE,
         TRUCK,
         WATER,
+        CHICKEN,
+        BEEF,
+        COW,
     ]
 )
 
@@ -641,6 +655,8 @@ _BODY = OntologyNode("body")
 subtype(_BODY, _BODY_PART)
 _DOG_HEAD = OntologyNode("dog-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_DOG_HEAD, _BODY_PART)
+_COW_HEAD = OntologyNode("cow-head", [CAN_MANIPULATE_OBJECTS])
+subtype(_COW_HEAD, _BODY_PART)
 _CAT_HEAD = OntologyNode("cat-head", [CAN_MANIPULATE_OBJECTS])
 subtype(_CAT_HEAD, _BODY_PART)
 _BEAR_HEAD = OntologyNode("bear-head", [CAN_MANIPULATE_OBJECTS])
@@ -1207,6 +1223,26 @@ def _make_dog_head_schema() -> ObjectStructuralSchema:
     )
 
 
+def _make_cow_head_schema() -> ObjectStructuralSchema:
+    torso_to_nose = directed("cow-head-torso-to-nose")
+    bottom_to_top = directed("cow-head-bottom-to-top")
+    left_to_right = symmetric("cow-head-left-to-right")
+    return ObjectStructuralSchema(
+        _COW_HEAD,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=LARGE_TO_SMALL,
+            axes=Axes(
+                primary_axis=torso_to_nose,
+                orienting_axes=[bottom_to_top, left_to_right],
+                axis_relations=[
+                    bigger_than(torso_to_nose, [bottom_to_top, left_to_right])
+                ],
+            ),
+        ),
+    )
+
+
 def _make_bird_head_schema() -> ObjectStructuralSchema:
     torso_to_top = directed("bird-head-torso-to-top")
     bottom_to_top = directed("bird-head-back-to-front")
@@ -1458,6 +1494,27 @@ def _make_paper_schema() -> ObjectStructuralSchema:
     )
 
 
+def _make_beef_schema() -> ObjectStructuralSchema:
+    bottom_to_top = straight_up("bottom-to-top")
+    side_to_side = directed("side-to-side")
+    front_to_back = directed("front-to-back")
+
+    return ObjectStructuralSchema(
+        ontology_node=BEEF,
+        geon=Geon(
+            cross_section=OVALISH,
+            cross_section_size=CONSTANT,
+            axes=Axes(
+                primary_axis=bottom_to_top,
+                orienting_axes=[side_to_side, front_to_back],
+                axis_relations=[
+                    bigger_than([front_to_back, side_to_side], bottom_to_top)
+                ],
+            ),
+        ),
+    )
+
+
 def _make_tail_schema() -> ObjectStructuralSchema:
     edge_to_tip = directed("edge-to-tip")
     diameter_0 = symmetric("diameter_0")
@@ -1624,6 +1681,7 @@ _DOOR_SCHEMA = _make_door_schema()
 _BALL_SCHEMA = _make_ball_schema()
 _WATERMELON_SCHEMA = _make_watermelon_schema()
 _PAPER_SCHEMA = _make_paper_schema()
+_BEEF_SCHEMA = _make_beef_schema()
 _BOX_SCHEMA = _make_box_schema()
 _HAT_SCHEMA = _make_hat_schema()
 _COOKIE_SCHEMA = _make_cookie_schema()
@@ -1633,6 +1691,7 @@ _HAND_SCHEMA = _make_hand_schema()
 _HEAD_SCHEMA = _make_head_schema()
 _TORSO_SCHEMA = _make_torso_schema()
 _DOG_HEAD_SCHEMA = _make_dog_head_schema()
+_COW_HEAD_SCHEMA = _make_cow_head_schema()
 _CAT_HEAD_SCHEMA = _make_cat_head_schema()
 _BEAR_HEAD_SCHEMA = _make_bear_head_schema()
 _BIRD_HEAD_SCHEMA = _make_bird_head_schema()
@@ -1986,6 +2045,51 @@ _DOG_SCHEMA = ObjectStructuralSchema(
     axes=_DOG_SCHEMA_TORSO.schema.axes.copy(),
 )
 
+
+# schemata describing the sub-object structural nature of a cow
+_COW_SCHEMA_LEG_1 = SubObject(_ANIMAL_LEG_SCHEMA)
+_COW_SCHEMA_LEG_2 = SubObject(_ANIMAL_LEG_SCHEMA)
+_COW_SCHEMA_LEG_3 = SubObject(_ANIMAL_LEG_SCHEMA)
+_COW_SCHEMA_LEG_4 = SubObject(_ANIMAL_LEG_SCHEMA)
+_COW_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_COW_SCHEMA_HEAD = SubObject(_COW_HEAD_SCHEMA)
+_COW_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
+
+_COW_LEGS = [_COW_SCHEMA_LEG_1, _COW_SCHEMA_LEG_2, _COW_SCHEMA_LEG_3, _COW_SCHEMA_LEG_4]
+
+_COW_APPENDAGES = [
+    _COW_SCHEMA_LEG_1,
+    _COW_SCHEMA_LEG_2,
+    _COW_SCHEMA_LEG_3,
+    _COW_SCHEMA_LEG_4,
+    _COW_SCHEMA_HEAD,
+    _COW_SCHEMA_TAIL,
+]
+
+_COW_SCHEMA = ObjectStructuralSchema(
+    COW,
+    sub_objects=[
+        _COW_SCHEMA_HEAD,
+        _COW_SCHEMA_TORSO,
+        _COW_SCHEMA_TAIL,
+        _COW_SCHEMA_LEG_1,
+        _COW_SCHEMA_LEG_2,
+        _COW_SCHEMA_LEG_3,
+        _COW_SCHEMA_LEG_4,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_COW_SCHEMA_TORSO, _COW_APPENDAGES),
+            above(_COW_SCHEMA_HEAD, _COW_SCHEMA_TORSO),
+            above(_COW_SCHEMA_TORSO, _COW_LEGS),
+            much_bigger_than(_COW_SCHEMA_TORSO, _COW_SCHEMA_TAIL),
+            much_bigger_than(_COW_SCHEMA_TORSO, _COW_LEGS),
+            bigger_than(_COW_SCHEMA_TORSO, _COW_SCHEMA_HEAD),
+        ]
+    ),
+    axes=_COW_SCHEMA_TORSO.schema.axes.copy(),
+)
+
 # schemata describing the sub-object structural nature of a bird
 _BIRD_SCHEMA_HEAD = SubObject(_BIRD_HEAD_SCHEMA)
 _BIRD_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
@@ -2022,6 +2126,44 @@ _BIRD_SCHEMA = ObjectStructuralSchema(
         ]
     ),
     axes=_BIRD_SCHEMA_TORSO.schema.axes.copy(),
+)
+
+# schemata describing the sub-object structural nature of a chicken
+_CHICKEN_SCHEMA_HEAD = SubObject(_BIRD_HEAD_SCHEMA)
+_CHICKEN_SCHEMA_TORSO = SubObject(_TORSO_SCHEMA)
+_CHICKEN_SCHEMA_LEFT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
+_CHICKEN_SCHEMA_RIGHT_LEG = SubObject(_ANIMAL_LEG_SCHEMA)
+_CHICKEN_SCHEMA_TAIL = SubObject(_TAIL_SCHEMA)
+_CHICKEN_SCHEMA_LEFT_WING = SubObject(_WING_SCHEMA)
+_CHICKEN_SCHEMA_RIGHT_WING = SubObject(_WING_SCHEMA)
+_CHICKEN_LEGS = [_CHICKEN_SCHEMA_LEFT_LEG, _CHICKEN_SCHEMA_RIGHT_LEG]
+_CHICKEN_WINGS = [_CHICKEN_SCHEMA_LEFT_WING, _CHICKEN_SCHEMA_RIGHT_WING]
+_CHICKEN_APPENDAGES = flatten(
+    [_CHICKEN_LEGS, _CHICKEN_WINGS, [_CHICKEN_SCHEMA_HEAD, _CHICKEN_SCHEMA_TAIL]]
+)
+
+_CHICKEN_SCHEMA = ObjectStructuralSchema(
+    CHICKEN,
+    sub_objects=[
+        _CHICKEN_SCHEMA_HEAD,
+        _CHICKEN_SCHEMA_TORSO,
+        _CHICKEN_SCHEMA_LEFT_LEG,
+        _CHICKEN_SCHEMA_RIGHT_LEG,
+        _CHICKEN_SCHEMA_LEFT_WING,
+        _CHICKEN_SCHEMA_RIGHT_WING,
+        _CHICKEN_SCHEMA_TAIL,
+    ],
+    sub_object_relations=flatten_relations(
+        [
+            contacts(_CHICKEN_SCHEMA_TORSO, _CHICKEN_APPENDAGES),
+            above(_CHICKEN_SCHEMA_HEAD, _CHICKEN_SCHEMA_TORSO),
+            above(_CHICKEN_SCHEMA_TORSO, _CHICKEN_LEGS),
+            much_bigger_than(_CHICKEN_SCHEMA_TORSO, _CHICKEN_SCHEMA_HEAD),
+            much_bigger_than(_CHICKEN_SCHEMA_TORSO, _CHICKEN_LEGS),
+            bigger_than(_CHICKEN_SCHEMA_TORSO, _CHICKEN_WINGS),
+        ]
+    ),
+    axes=_CHICKEN_SCHEMA_TORSO.schema.axes.copy(),
 )
 
 # schemata describing the sub-object structural nature of a house
@@ -3060,15 +3202,18 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (CAR, TRUCK),
     (_TRAILER, _FLATBED),
     (_TRUCK_CAB,),
+    (COW,),
     (BED, _MATTRESS),
     (TABLE, DOOR, BEAR),
     (_TABLETOP,),
     (MOM, DAD, PERSON),
     (DOG, BOX, CHAIR, _TIRE),
+    (CHICKEN,),
     (BABY,),
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
     (CAT, _ARM, _ANIMAL_LEG, _INANIMATE_LEG),
+    (BEEF,),
     (WATERMELON, PAPER, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
     (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
     (_TAIL, _WING),
@@ -3081,6 +3226,9 @@ GAILA_PHASE_1_ONTOLOGY = Ontology(
         (BED, _BED_SCHEMA),
         (BALL, _BALL_SCHEMA),
         (PAPER, _PAPER_SCHEMA),
+        (BEEF, _BEEF_SCHEMA),
+        (CHICKEN, _CHICKEN_SCHEMA),
+        (COW, _COW_SCHEMA),
         (WATERMELON, _WATERMELON_SCHEMA),
         (BEAR, _BEAR_SCHEMA),
         (CHAIR, _CHAIR_SCHEMA),

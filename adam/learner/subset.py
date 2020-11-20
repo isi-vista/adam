@@ -234,8 +234,17 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
                 for hypothesis in updated_hypotheses_maybe_null
                 if hypothesis and should_keep_hypothesis(hypothesis=hypothesis)
             ]
+
+            # Remove repeating hypothesis by using a complexity heuristic for equality - helps scenes with plurals
+            updated_hypotheses = list(
+                {
+                    hypothesis.graph_pattern.pattern_complexity(): hypothesis
+                    for hypothesis in updated_hypotheses
+                }.values()
+            )
             # Sort hypotheses by decreasing order of size
             updated_hypotheses.sort(key=lambda x: len(x.graph_pattern), reverse=True)
+
             # Confine our search by beam size
             if len(updated_hypotheses) > self._beam_size:
                 updated_hypotheses = updated_hypotheses[: self._beam_size]
@@ -254,6 +263,16 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
                 )
                 self._known_bad_patterns.add(bound_surface_template.surface_template)
         else:
+            # Skip if a template is already recognized in perception (prevents learning "two" in two "ball" s)
+            # This doesn't cause an issue for verbs bc slot1_sits and slot1_sits_on_slot2 differ
+            if any(
+                cand.surface_template in self.surface_template_to_concept
+                for cand in self._candidate_templates(
+                    language_perception_semantic_alignment
+                )
+            ):
+                return
+
             # If it's a new template, learn a new hypothesis/pattern, generated as a pattern
             # graph from the perception graph.
             concept = self._new_concept(

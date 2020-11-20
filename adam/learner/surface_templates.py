@@ -5,6 +5,7 @@ from typing import List, Mapping, Optional, Tuple, Union
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
+from adam.language_specific.english import DETERMINERS
 from adam.learner.language_mode import LanguageMode
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
@@ -90,8 +91,12 @@ class SurfaceTemplate:
                         output_tokens.append("yi1_shan4")
                     elif filler_words[0] in ["mau4 dz"]:
                         output_tokens.append("yi1_ding3")
-                    elif filler_words[0] in ["chyu1 chi2 bing3"]:
+                    elif filler_words[0] in ["chyu1 chi2 bing3", "niu2 rou1"]:
                         output_tokens.append("yi1_kwai4")
+                    elif filler_words[0] in ["niu2"]:
+                        output_tokens.append("yi1_tiao2")
+                    elif filler_words[0] in ["ji1"]:
+                        output_tokens.append("yi1_zhi1")
                     # eliminate mass and proper nouns and use the default classifier if another one hasn't already been used
                     elif filler_words[0] not in [
                         "ba4 ba4",
@@ -148,15 +153,38 @@ class SurfaceTemplate:
         tokens_to_match = []
         for element in self.elements:
             if isinstance(element, str):
-                tokens_to_match.append(element)
+                # Hack to handle determiners.
+                #
+                # This may not handle Chinese properly; see
+                # https://github.com/isi-vista/adam/issues/993
+                try:
+                    index = token_sequence_to_match_against.index(element)
+                    if (
+                        index - 1 >= 0
+                        and token_sequence_to_match_against[index - 1] in DETERMINERS
+                    ):
+                        tokens_to_match.append(token_sequence_to_match_against[index - 1])
+                except ValueError:
+                    pass
+                finally:
+                    tokens_to_match.append(element)
             else:
                 slot_filler_span = slots_to_filler_spans.get(element)
                 if slot_filler_span:
                     # endpoints are exclusive
+                    start = slot_filler_span.start
+                    # Hack to handle determiners
+                    #
+                    # This may not handle Chinese properly; see
+                    # https://github.com/isi-vista/adam/issues/993
+                    if (
+                        slot_filler_span.start - 1 >= 0
+                        and token_sequence_to_match_against[slot_filler_span.start - 1]
+                        in DETERMINERS
+                    ):
+                        start -= 1
                     tokens_to_match.extend(
-                        token_sequence_to_match_against[
-                            slot_filler_span.start : slot_filler_span.end
-                        ]
+                        token_sequence_to_match_against[start : slot_filler_span.end]
                     )
                 # If template contains an element not found in the mapping of slots to spans, we can return empty here.
                 # We don't want to do this now because of generics.

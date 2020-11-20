@@ -804,6 +804,9 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             perception_graph=PerceptionGraph(perception_graph_as_digraph)
         ).perception_graph_pattern
 
+    def pattern_complexity(self) -> int:
+        return len(self._graph) + len(self._graph.edges)
+
     def __len__(self) -> int:
         return len(self._graph)
 

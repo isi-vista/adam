@@ -70,45 +70,49 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             span_for_object,
         ) in language_concept_alignment.node_to_language_span.items():
             if isinstance(object_node, ObjectSemanticNode):
-                # Any words immediately before them or after them are candidate attributes.
-                # See https://github.com/isi-vista/adam/issues/791 .
-                preceding_token_index = span_for_object.start - 1
-                if (
-                    preceding_token_index >= 0
-                    and not language_concept_alignment.token_index_is_aligned(
-                        preceding_token_index
-                    )
-                ):
-                    ret.append(
-                        SurfaceTemplateBoundToSemanticNodes(
-                            language_concept_alignment.to_surface_template(
-                                {object_node: SLOT1},
-                                restrict_to_span=Span(
-                                    preceding_token_index, span_for_object.end
-                                ),
-                                language_mode=self._language_mode,
-                            ),
-                            {SLOT1: object_node},
+                try:
+                    # Any words immediately before them or after them are candidate attributes.
+                    # See https://github.com/isi-vista/adam/issues/791 .
+                    preceding_token_index = span_for_object.start - 1
+                    if (
+                        preceding_token_index >= 0
+                        and not language_concept_alignment.token_index_is_aligned(
+                            preceding_token_index
                         )
-                    )
-                following_token_index = span_for_object.end + 1
-                if following_token_index < len(
-                    language_concept_alignment.language.as_token_sequence()
-                ) and not language_concept_alignment.token_index_is_aligned(
-                    following_token_index
-                ):
-                    ret.append(
-                        SurfaceTemplateBoundToSemanticNodes(
-                            language_concept_alignment.to_surface_template(
-                                {object_node: SLOT1},
-                                restrict_to_span=Span(
-                                    span_for_object.start, following_token_index
+                    ):
+                        ret.append(
+                            SurfaceTemplateBoundToSemanticNodes(
+                                language_concept_alignment.to_surface_template(
+                                    {object_node: SLOT1},
+                                    restrict_to_span=Span(
+                                        preceding_token_index, span_for_object.end
+                                    ),
+                                    language_mode=self._language_mode,
                                 ),
-                                language_mode=self._language_mode,
-                            ),
-                            {SLOT1: object_node},
+                                {SLOT1: object_node},
+                            )
                         )
-                    )
+                    following_token_index = span_for_object.end + 1
+                    if following_token_index < len(
+                        language_concept_alignment.language.as_token_sequence()
+                    ) and not language_concept_alignment.token_index_is_aligned(
+                        following_token_index
+                    ):
+                        ret.append(
+                            SurfaceTemplateBoundToSemanticNodes(
+                                language_concept_alignment.to_surface_template(
+                                    {object_node: SLOT1},
+                                    restrict_to_span=Span(
+                                        span_for_object.start, following_token_index
+                                    ),
+                                    language_mode=self._language_mode,
+                                ),
+                                {SLOT1: object_node},
+                            )
+                        )
+                # Catches errors in to_surface_template() - we skip this case to prevent the learning from breaking.
+                except RuntimeError:
+                    continue
 
         return immutableset(
             bound_surface_template
