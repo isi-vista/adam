@@ -187,7 +187,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         meaning_to_probability: Dict[PerceptionGraph, float] = dict()
 
         for meaning in meanings:
-            if self._find_similiar_hypothesis(meaning, meanings, meaning_to_pattern) == (
+            if self._find_similar_hypothesis(meaning, meanings, meaning_to_pattern) == (
                 None,
                 None,
             ):
@@ -208,7 +208,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
 
         return immutabledict(meaning_to_probability)
 
-    def _find_similiar_hypothesis(
+    def _find_similar_hypothesis(
         self,
         new_meaning: PerceptionGraph,
         candidates: Iterable[PerceptionGraph],
