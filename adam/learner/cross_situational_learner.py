@@ -177,7 +177,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         meaning_to_pattern: Mapping[PerceptionGraph, PerceptionGraphTemplate],
     ) -> ImmutableDict[PerceptionGraph, float]:
         """
-        Update all Concept meaning probabilities for given word as defined by the papenr below
+        Update all Concept meaning probabilities for given word as defined by the paper below
         p(m|c) = assoc(m, c) + lambda / sum(for c' in C)(assoc(c', w)) + (beta * lambda)
         where w and m are given concept and meanings, lambda is a smoothing factor, M is all
         meanings encountered, beta is the expected number of meaning types.
