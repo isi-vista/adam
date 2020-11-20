@@ -33,6 +33,7 @@ from adam.perception.perception_graph import (
     GraphLogger,
     PerceptionGraphPatternMatch,
     PerceptionGraph,
+    PerceptionGraphPattern,
 )
 
 
@@ -259,6 +260,16 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             return immutableset([self._concept_to_surface_template[concept]])
         else:
             return immutableset()
+
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        def argmax(hypotheses):
+            # TODO is this key correct? what IS our "best hypothesis"?
+            return max(hypotheses, key=lambda hypothesis: (hypothesis.probability, hypothesis.association_score))
+        return {
+            concept: argmax(hypotheses).pattern_template.graph_pattern
+            for concept, hypotheses in self._concept_to_hypotheses.items()
+        }
+
 
     @abstractmethod
     def _new_concept(self, debug_string: str) -> Concept:
