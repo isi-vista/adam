@@ -893,7 +893,7 @@ def integrated_pursuit_learner_experiment_curriculum(
 
     return (
         ordered_curriculum
-        if not params.boolean("random_order", default=False)
+        if not params.boolean("shuffled", default=False)
         else shuffle_curriculum(ordered_curriculum, rng=rng)
     )
 
