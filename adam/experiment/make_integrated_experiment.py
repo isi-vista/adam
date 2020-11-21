@@ -20,6 +20,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
     initialize_vista_pegasus_wrapper(params)
 
     baseline_parameters = params.namespace("integrated_learners_experiment")
+    pursuit_resource_request_params = params.namespace("pursuit_resource_request")
 
     # This code is commented out but may be used in the near future to add language ablation
     # Capabilities to this curriculum.
@@ -98,13 +99,19 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
     # jobs to build experiment
     for (curriculum_str, curriculum_dep, curr_params) in curriculum_dependencies:
         object_learner_type = params.string(
-            "object_learner_type", valid_options=LEARNER_TO_PARAMS.keys()
+            "object_learner.learner_type",
+            valid_options=["pursuit", "subset", "pbv"],
+            default="pursuit",
         )
         attribute_learner_type = params.string(
-            "attribute_learner_type", valid_options=LEARNER_TO_PARAMS.keys()
+            "attribute_learner.learner__type",
+            valid_options=["none", "pursuit", "subset"],
+            default="pursuit",
         )
         relation_learner_type = params.string(
-            "relation_learner_type", valid_options=LEARNER_TO_PARAMS.keys()
+            "relation_learner.learner_type",
+            valid_options=["none", "pursuit", "subset"],
+            default="pursuit",
         )
         experiment_name_string = EXPERIMENT_NAME_FORMAT.format(
             curriculum_name=curriculum_str.replace("-", "+"),
@@ -124,9 +131,6 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
                 "learner_logging_path": directory_for(experiment_name),
                 "log_learner_state": True,
                 "resume_from_latest_logged_state": True,
-                "object_learner": LEARNER_TO_PARAMS[object_learner_type],
-                "attribute_learner": LEARNER_TO_PARAMS[attribute_learner_type],
-                "relation_learner": LEARNER_TO_PARAMS[relation_learner_type],
                 "load_from_curriculum_repository": curriculum_repository_path,
                 "train_curriculum": curr_params,
             }
@@ -138,7 +142,7 @@ def integrated_experiment_entry_point(params: Parameters) -> None:
             experiment_params,
             depends_on=[curriculum_dep],
             resource_request=SlurmResourceRequest.from_parameters(
-                PURSUIT_RESOURCE_REQUEST
+                pursuit_resource_request_params
             )
             if "pursuit"
             in [object_learner_type, attribute_learner_type, relation_learner_type]
@@ -158,20 +162,6 @@ CURRICULUM_NAME_FORMAT = (
     "noise@{noise}-shuffled@{shuffled}-attributes@{attributes}-relations@{relations}"
 )
 
-LEARNER_TO_PARAMS = {
-    "subset": {"learner_type": "subset", "ontology": "integrated_experiment"},
-    "pursuit": {
-        "learner_type": "pursuit",
-        "ontology": "integrated_experiment",
-        "random_seed": 0,
-        "learning_factor": 0.02,
-        "graph_match_confirmation_threshold": 0.9,
-        "lexicon_entry_threshold": 0.7,
-        "smoothing_parameter": 0.001,
-    },
-    "none": {"learner_type": "none"},
-}
-
 CURRICULUM_PARAMS = {
     "block_multiple_of_same_type": True,
     "include_targets_in_noise": False,
@@ -186,26 +176,11 @@ CURRICULUM_PARAMS = {
 FIXED_PARAMETERS = {
     "curriculum": "m18-integrated-learners-experiment",
     "learner": "integrated-learner-params",
-    "post_observer": {
-        "include_acc_observer": False,
-        "include_pr_observer": True,
-        "log_pr": True,
-    },
-    "test_observer": {"accuracy_to_txt": True},
     "action_learner": {"learner_type": "none"},
     "plural_learner": {"learner_type": "none"},
     "include_functional_learner": False,
     "include_generics_learner": False,
 }
-
-PURSUIT_RESOURCE_REQUEST = Parameters.from_mapping(
-    {
-        "exclude_list": f"saga01,saga02,saga03,saga04,saga05,saga06,saga07,saga08,saga10,saga11,saga12,saga13,"
-        f"saga14,saga15,saga16,saga17,saga18,saga19,saga20,saga21,saga22,saga23,saga24,saga25,saga26,"
-        f"gaia01,gaia02",
-        "partition": "ephemeral",
-    }
-)
 
 
 if __name__ == "__main__":

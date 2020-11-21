@@ -105,6 +105,7 @@ IGNORED_PARAMETERS: ImmutableSet[str] = immutableset(
         "action_learner.graph_match_confirmation_threshold",
         "action_learner.lexicon_entry_threshold",
         "action_learner.smoothing_parameter",
+        "plural_learner.learner_type",
         "include_functional_learner",
         "include_generics_learner",
     ]

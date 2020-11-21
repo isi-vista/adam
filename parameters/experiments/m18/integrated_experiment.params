@@ -5,29 +5,53 @@ experiment: "integrated_experiment_pegasus"
 experiment_group_dir: '%adam_experiment_root%/%experiment%'
 curriculum_repository_path: "%adam_experiment_root%/curriculum/"
 
-# Consistent Params
+# Workflow Limitations Params
 num_pursuit_learners_active: 8
+pursuit_resource_request:
+    exclude_list: "saga01,saga02,saga03,saga04,saga05,saga06,saga07,saga08,saga10,saga11,saga12,saga13,saga14,saga15,saga16,saga17,saga18,saga19,saga20,saga21,saga22,saga23,saga24,saga25,saga26,gaia01,gaia02"
+    partition: ephemeral
 
-# Configuration Params - Prelim
-include_attributes: False
-include_relations: False
-object_learner_type: "pursuit"
-attribute_learner_type: "none"
-relation_learner_type: "none"
-
-# Configuration Params - Desired
-#include_attributes: False
-#include_relations: False
-#object_learner_type: "pursuit"
-#attribute_learner_type: "pursuit"
-#relation_learner_type: "pursuit"
-
+# Baseline Experiment Params
 integrated_learners_experiment:
-   num_samples: 1000
-   sort_learner_descriptions_by_length: true
-   num_pretty_descriptions: 5
+    num_samples: 400
+    sort_learner_descriptions_by_length: true
+    num_pretty_descriptions: 5
 
-   log_hypothesis_every_n_steps: 50
+    log_hypothesis_every_n_steps: 50
+
+    # Learner Params
+    object_learner:
+        learner_type: "pursuit"
+        ontology: "integrated_experiment"
+        random_seed: 0
+        learning_factor: 0.02
+        graph_match_confirmation_threshold: 0.9
+        lexicon_entry_threshold: 0.7
+        smoothing_parameter: 0.001
+    attribute_learner:
+        learner_type: "pursuit"
+        ontology: "integrated_experiment"
+        random_seed: 0
+        learning_factor: 0.02
+        graph_match_confirmation_threshold: 0.9
+        lexicon_entry_threshold: 0.7
+        smoothing_parameter: 0.001
+    relation_learner:
+        learner_type: "pursuit"
+        ontology: "integrated_experiment"
+        random_seed: 0
+        learning_factor: 0.02
+        graph_match_confirmation_threshold: 0.9
+        lexicon_entry_threshold: 0.7
+        smoothing_parameter: 0.001
+    # Observer Params
+    post_observer:
+        include_acc_observer: False
+        include_pr_observer: True
+        log_pr: True
+    test_observer:
+        accuracy_to_txt: True
+
 
 # Workflow Params
 workflow_name: "integrated_experiment_pegasus"

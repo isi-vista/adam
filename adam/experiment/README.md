@@ -97,6 +97,10 @@ None
 - smoothing_parameter: Float - A value between 0 and 1 which is generally small which smooths the probabilities over time.
 - random_seed: Integer (Optional: 0) - A seed for the RandomChooser which is used in this learner
 
+### Object Recognizer
+*Valid For: Object*
+While not strictly a 'learner', this option builds in the knowledge of objects to the integrated learner removing any doubt around the learner's ability to recognize objects.
+
 ## Specific Experiment Details
 Any experiment specific parameters that are built into the program are explained below.
 
