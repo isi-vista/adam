@@ -5,7 +5,7 @@ import math
 
 
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
-from adam.curriculum import AblatedLanguageSituationsInstanceGroup
+from adam.curriculum import AblatedLanguageSituationsInstanceGroup, ExplicitWithSituationInstanceGroup
 from adam.curriculum.m6_curriculum import M6_CURRICULUM_ALL_OBJECTS
 from adam.ontology.phase1_spatial_relations import Direction, PROXIMAL, DISTAL
 
@@ -891,11 +891,22 @@ def integrated_pursuit_learner_experiment_curriculum(
             prepositional_relation_described_curriculum(num_samples)
         )
 
-    return (
-        ordered_curriculum
-        if not params.boolean("shuffled", default=False)
-        else shuffle_curriculum(ordered_curriculum, rng=rng)
-    )
+    # Convert the 'from situation instances' into explicit instances this allows for
+    # 1) Less computation time on the learner experiment to generate the perception graphs
+    # 2) Allows us to shuffle the output order which we otherwise can't do
+
+    explicit_instances = [
+        instance for sit in ordered_curriculum for instance in sit.instances()
+    ]
+
+    return [
+        ExplicitWithSituationInstanceGroup(
+            name="m18-integrated-learners-experiment",
+            instances=tuple(shuffle_curriculum(explicit_instances, rng=rng))
+            if params.boolean("shuffled", default=False)
+            else tuple(explicit_instances),
+        )
+    ]
 
 
 def build_gaila_phase_2_curriculum(

@@ -52,7 +52,7 @@ Currently the accessible observers by these parameters are HTML Observers which 
 
 ### Optional: Pegasus Workflow Params
 This section of parameters is specific to using the Pegasus workflow management tool in combination with the ISI Saga cluster.
-See [Pegasus Wrapper Overview][https://github.com/isi-vista/vista-pegasus-wrapper/blob/master/docs/api_overview.rst] for more details on how to use this section
+See [Pegasus Wrapper Overview](https://github.com/isi-vista/vista-pegasus-wrapper/blob/master/docs/api_overview.rst] for more details on how to use this section)
 
 ## Learner Parameters
 ### How To Define an Integrated Learner

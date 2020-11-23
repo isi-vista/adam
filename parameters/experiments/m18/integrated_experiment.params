@@ -63,7 +63,7 @@ backend: slurm
 partition: ephemeral
 num_cpus: 1
 num_gpus: 0
-memory: '4G'  # not sure how much is needed
+memory: '12G'  # not sure how much is needed
 job_time_in_minutes: 720  # We request 12 hours as this is the maximum allotment for Ephemeral
                           # By requesting this much we can easily just restart the pegasus workflow
                           # And continue from the last checkpointed time. This is very useful for

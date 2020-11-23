@@ -363,6 +363,17 @@ class GraphMatching:
                                 self.graph.edges[predecessor, graph_node]["label"]
                                 == PART_OF
                             ):
+                                # Since this is an apparently complete match,
+                                # it must necessarily be a maximal (deepest) match,
+                                # since no match can be bigger than one
+                                # that matches up every pattern node to some graph node.
+                                #
+                                # Thus we set the failing pattern node
+                                # to the one that matched to this graph node.
+                                if not self.failing_pattern_node_for_deepest_match:
+                                    self.failing_pattern_node_for_deepest_match = self.graph_node_to_pattern_node[
+                                        graph_node
+                                    ]
                                 logging.info(
                                     "Blocking match against a non-sub-object portion of another "
                                     "object"

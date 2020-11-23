@@ -1,7 +1,6 @@
 from random import Random
 
-from more_itertools import flatten
-from typing import Iterable, Union, Optional, Sequence, List
+from typing import Iterable, Union, Optional, Sequence, List, Tuple
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from immutablecollections import immutableset
 from adam.language.language_generator import LanguageGenerator
@@ -35,6 +34,9 @@ from adam.situation.templates.phase1_templates import (
     TemplatePropertyVariable,
     TemplateObjectVariable,
 )
+from adam.language import LinguisticDescriptionT
+from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.situation import SituationT
 
 GROUND_OBJECT_TEMPLATE = object_variable("ground", GROUND)
 PHASE1_CHOOSER_FACTORY = lambda: RandomChooser.for_seed(0)  # noqa: E731
@@ -168,8 +170,14 @@ def learner_template_factory() -> TemplateObjectVariable:
 
 
 def shuffle_curriculum(
-    curriculum: List[Phase1InstanceGroup], *, rng: Random
-) -> Sequence[Phase1InstanceGroup]:
-    mod_curriculum = list(flatten(curriculum))
+    curriculum: List[
+        Tuple[SituationT, LinguisticDescriptionT, PerceptualRepresentation[PerceptionT]]
+    ],
+    *,
+    rng: Random,
+) -> Sequence[
+    Tuple[SituationT, LinguisticDescriptionT, PerceptualRepresentation[PerceptionT]]
+]:
+    mod_curriculum = list(curriculum)
     rng.shuffle(mod_curriculum)
     return mod_curriculum
