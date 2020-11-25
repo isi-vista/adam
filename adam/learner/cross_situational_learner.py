@@ -5,6 +5,7 @@ from typing import Optional, Dict, AbstractSet, Iterable, Tuple, Set, Mapping
 
 from attr import attrs, attrib, Factory
 from attr.validators import instance_of, optional, in_
+from more_itertools import first
 
 from adam.learner import (
     SurfaceTemplate,
@@ -35,6 +36,9 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
 )
+
+
+_DUMMY_CONCEPT = Concept(debug_str="_cross_situational_dummy")
 
 
 @attrs
@@ -111,8 +115,28 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         For example, "try to learn the meaning of 'red' given the language 'red car'
         and an alignment of 'car' to particular perceptions in the perception graph.
         """
-        # Generate all possible meanings from the Graph
+        # Figure out what "words" (concepts) appear in the utterance.
+        concepts_present_in_utterance = []
+        for other_bound_surface_template in self._candidate_templates(
+                language_perception_semantic_alignment
+        ):
+            # We have seen this template before and already have a concept for it
+            # So we attempt to verify our already picked concept
+            if other_bound_surface_template.surface_template in self._surface_template_to_concept:
+                # We don't directly associate surface templates with perceptions.
+                # Instead we mediate the relationship with "concept" objects.
+                # These don't matter now, but the split might be helpful in the future
+                # when we might have multiple ways of expressing the same idea.
+                concept = self._surface_template_to_concept[
+                    other_bound_surface_template.surface_template
+                ]
+            else:
+                concept = self._new_concept(
+                    debug_string=bound_surface_template.surface_template.to_short_string()
+                )
+            concepts_present_in_utterance.append(concept)
 
+        # Generate all possible meanings from the Graph
         meanings_from_perception = self._hypotheses_from_perception(
             language_perception_semantic_alignment, bound_surface_template
         )
@@ -120,9 +144,11 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             (meaning, PerceptionGraphTemplate.from_graph(meaning, immutabledict()))
             for meaning in meanings_from_perception
         )
+        concepts_to_remove: Set[Concept] = set()
         meanings_to_remove: Set[PerceptionGraphTemplate] = set()
 
         def check_and_remove_meaning(
+            concept: Concept,
             hypothesis: "AbstractCrossSituationalLearner.Hypothesis",
             *,
             ontology: Ontology,
@@ -137,18 +163,13 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                     if match.matching_subgraph.check_isomorphism(
                         meanings_to_pattern_template[meaning].graph_pattern
                     ):
+                        concepts_to_remove.add(concept)
                         meanings_to_remove.add(meaning)
 
         for (concept, hypotheses) in self._concept_to_hypotheses.items():
             for hypothesis in hypotheses:
                 if hypothesis.probability > self._lexicon_entry_threshold:
-                    check_and_remove_meaning(hypothesis, ontology=self._ontology)
-
-        meanings_after_preprocessing = immutableset(
-            meaning
-            for meaning in meanings_from_perception
-            if meaning not in meanings_to_remove
-        )
+                    check_and_remove_meaning(concept, hypothesis, ontology=self._ontology)
 
         # We have seen this template before and already have a concept for it
         # So we attempt to verify our already picked concept
@@ -165,32 +186,141 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 debug_string=bound_surface_template.surface_template.to_short_string()
             )
 
-        meaning_to_probability = self._get_probabilities(
-            concept, meanings_after_preprocessing, meanings_to_pattern_template
+        concepts_after_preprocessing = immutableset(
+            [
+                concept for concept in concepts_present_in_utterance
+                if concept not in concepts_to_remove
+                # TODO Does it make sense to include a dummy concept/"word"? The paper has one so I
+                #  am including it for now.
+            ] + [_DUMMY_CONCEPT]
         )
+        meanings_after_preprocessing = immutableset(
+            meaning
+            for meaning in meanings_from_perception
+            if meaning not in meanings_to_remove
+        )
+
+        # Step 0. Update priors for any meanings as-yet unobserved.
+
+        # Step 1. Compute alignment probabilities (pp. 1029)
+        # We have an identified "word" (concept) from U(t)
+        # and a collection of relevant (that is, non-lexicalized) meanings from the scene S(t).
+        # We now want to calculate the alignment probabilities,
+        # which will be used to update this concept's association scores, assoc(w|m, U(t), S(t)),
+        # and meaning probabilities, p(m|w).
+        alignment_probabilities = self._get_alignment_probabilities(
+            concepts_after_preprocessing,
+            meanings_after_preprocessing,
+            meanings_to_pattern_template,
+        )
+
+        # We have an identified "word" (concept) from U(t)
+        # and a collection of (relevant) meanings from the scene S(t).
+        # We now want to update p(.|w), which means calculating the probabilities.
+        new_hypotheses = self._update_meaning_probabilities(
+            concept, meanings_after_preprocessing, meanings_to_pattern_template, alignment_probabilities
+        )
+
+        # TODO Update/create a hypothesis using the new
 
         raise NotImplementedError()
 
-    def _get_probabilities(
+    def _get_alignment_probabilities(
+            self,
+            concepts: Iterable[Concept],
+            meanings: ImmutableSet[PerceptionGraph],
+            meaning_to_pattern: Mapping[PerceptionGraph, PerceptionGraphTemplate],
+    ) -> ImmutableDict[PerceptionGraph, ImmutableDict[Concept, float]]:
+        """
+        Compute the concept-(concrete meaning) alignment probabilities for a given word
+        as defined by the paper below:
+
+        a(m|c, U(t), S(t)) = (p^(t-1)(m|c)) / sum(for c' in (U^(t) union {d}))
+
+        where c and m are given concept and meanings, lambda is a smoothing factor, M is all
+        meanings encountered, beta is an upper bound on the expected number of meaning types.
+        https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (3)
+        """
+        def meaning_probability(meaning: PerceptionGraph, concept: Concept) -> float:
+            """
+            Return the meaning probability p^(t-1)(m|c).
+            """
+            # If we've already observed this concept before,
+            if concept in self._concept_to_hypotheses:
+                preexisting_hypothesis = first(
+                    (hypothesis.pattern_template for hypothesis in iter(self._concept_to_hypotheses[concept])
+                     # if
+                     ),
+                    None
+                )
+                # And if we've already observed this meaning before,
+                # return the prior probability.
+                if preexisting_hypothesis is not None:
+                    return preexisting_hypothesis.probability
+                # Otherwise, if we have observed this concept before
+                # but not in the same scene as this meaning,
+                # it is assigned zero probability.
+                # TODO correct?
+                else:
+                    return 0.0
+            # If we haven't observed this concept before,
+            # its prior probability is evenly split among all the observed meanings in this perception.
+            else:
+                return 1.0 / len(meanings)
+
+        meaning_to_concept_to_alignment_probability: Dict[PerceptionGraph, ImmutableDict[Concept, float]] = dict()
+        for meaning in iter(meanings):
+            # We want to calculate the alignment probabilities for each concept against this meaning.
+            # First, we compute the unnormalized meaning probabilities.
+            concept_to_meaning_probability: Mapping[Concept, float] = immutabledict({
+                concept: meaning_probability(meaning, concept) for concept in concepts
+            })
+            total_probability_mass: float = sum(concept_to_meaning_probability.values())
+
+            meaning_to_concept_to_alignment_probability[meaning] = immutabledict({
+                concept: meaning_probability_ / total_probability_mass
+                for concept, meaning_probability_ in concept_to_meaning_probability.items()
+            })
+
+        return immutabledict(meaning_to_concept_to_alignment_probability)
+
+    def _update_meaning_probabilities(
         self,
         concept: Concept,
         meanings: Iterable[PerceptionGraph],
         meaning_to_pattern: Mapping[PerceptionGraph, PerceptionGraphTemplate],
+        alignment_probabilities: Mapping[Concept, Mapping[PerceptionGraph, float]],
     ) -> ImmutableDict[PerceptionGraph, float]:
         """
-        Update all Concept meaning probabilities for given word as defined by the paper below
-        p(m|c) = assoc(m, c) + lambda / sum(for c' in C)(assoc(c', w)) + (beta * lambda)
-        where w and m are given concept and meanings, lambda is a smoothing factor, M is all
-        meanings encountered, beta is the expected number of meaning types.
+        Update all concept-(abstract meaning) probabilities for a given word
+        as defined by the paper below:
+
+        p(m|c) = (assoc(m, c) + lambda) / (sum(for m' in M)(assoc(c, m)) + (beta * lambda))
+
+        where c and m are given concept and meanings, lambda is a smoothing factor, M is all
+        meanings encountered, beta is an upper bound on the expected number of meaning types.
         https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (3)
         """
-        meaning_to_probability: Dict[PerceptionGraph, float] = dict()
+        old_hypotheses = self._concept_to_hypotheses.get(concept, immutableset())
 
+        # We want to calculate
         for meaning in meanings:
-            if self._find_similar_hypothesis(meaning, meanings, meaning_to_pattern) == (
-                None,
-                None,
+            # First, check if we've observed this meaning before.
+            ratio_similar_hypothesis_pair = self._find_similar_hypothesis(meaning, meanings, meaning_to_pattern)
+
+            # If we *have* observed this meaning before,
+            # we need to update the existing hypothesis for it.
+            if (
+                ratio_similar_hypothesis_pair is not None
+                and ratio_similar_hypothesis_pair[0].match_ratio > self._graph_match_confirmation_threshold
             ):
+                ratio, similar_hypothesis = ratio_similar_hypothesis_pair
+
+
+
+            # If we *haven't* observed this meaning before,
+            # we need to create a new hypothesis for it.
+            else:
                 new_hypothesis = AbstractCrossSituationalLearner.Hypothesis(
                     pattern_template=meaning_to_pattern[meaning]
                 )
@@ -215,7 +345,8 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         meaning_to_pattern: Mapping[PerceptionGraph, PerceptionGraphTemplate],
     ) -> Tuple[Optional[PartialMatchRatio], Optional[PerceptionGraphTemplate]]:
         """
-        Finds the entry in candidates most similar to new_meaning and returns it with the ratio.
+        Finds the entry in candidates most similar to new_meaning and returns it
+        together with the match ratio.
         """
         candidates_iter = iter(candidates)
         match = None
