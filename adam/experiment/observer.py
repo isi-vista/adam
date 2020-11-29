@@ -647,6 +647,7 @@ class HTMLLoggerPreObserver(  # pragma: no cover
     )
     # fmt: on
 
+
     def observe(  # pylint: disable=unused-argument
         self,
         situation: Optional[SituationT],
