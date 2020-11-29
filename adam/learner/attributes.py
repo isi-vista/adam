@@ -122,6 +122,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 (e in DETERMINERS or isinstance(e, SyntaxSemanticsVariable))
                 for e in bound_surface_template.surface_template.elements
             )
+            #separate set for English and all determiners
         )
 
     def _enrich_post_process(
@@ -272,6 +273,7 @@ class SubsetAttributeLearnerNew(
         hypothesis: PerceptionGraphTemplate,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
     ) -> bool:
+        #TODO: update this for classifier experiments 
         if len(hypothesis.graph_pattern) < 2:
             # We need at least two nodes - a wildcard and a property -
             # for meaningful attribute semantics.
