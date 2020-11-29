@@ -290,7 +290,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
                 language_perception_semantic_alignment.perception_semantic_alignment
             ),
         )
-
         for thing_whose_meaning_to_learn in self._candidate_templates(
             language_perception_semantic_alignment
         ):

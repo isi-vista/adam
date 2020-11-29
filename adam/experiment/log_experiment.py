@@ -49,7 +49,7 @@ from adam.language.language_utils import (
     phase2_language_generator,
     integrated_experiment_language_generator,
 )
-from adam.language_specific.english import DETERMINERS
+from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
 from adam.learner.attributes import (
     SubsetAttributeLearner,
     SubsetAttributeLearnerNew,
@@ -314,7 +314,7 @@ def learner_factory_from_params(
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
         objects,
-        determiners=DETERMINERS,
+        determiners=ENGLISH_BLOCK_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
         perception_generator=perception_generator,
@@ -521,19 +521,19 @@ def learner_factory_from_params(
             raise RuntimeError(f"Invalid Object Learner Type Selected: {learner_type}")
         return lambda: IntegratedTemplateLearner(object_learner=object_learner_factory())
     elif learner_type == "integrated-learner-params":
-        object_learner = build_object_learner_factory(
+        object_learner = build_object_learner_factory(  # type:ignore
             params.namespace_or_empty("object_learner"), beam_size, language_mode
         )
-        attribute_learner = build_attribute_learner_factory(
+        attribute_learner = build_attribute_learner_factory(  # type:ignore
             params.namespace_or_empty("attribute_learner"), beam_size, language_mode
         )
-        relation_learner = build_relation_learner_factory(
+        relation_learner = build_relation_learner_factory(  # type:ignore
             params.namespace_or_empty("relation_learner"), beam_size, language_mode
         )
-        action_learner = build_action_learner_factory(
+        action_learner = build_action_learner_factory(  # type:ignore
             params.namespace_or_empty("action_learner"), beam_size, language_mode
         )
-        plural_learner = build_plural_learner_factory(
+        plural_learner = build_plural_learner_factory(  # type:ignore
             params.namespace_or_empty("plural_learner"), beam_size, language_mode
         )
         return lambda: IntegratedTemplateLearner(

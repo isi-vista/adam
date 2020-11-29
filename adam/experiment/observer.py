@@ -634,7 +634,6 @@ class HTMLLoggerPreObserver(  # pragma: no cover
         init=True, validator=instance_of(LearningProgressHtmlLogger), kw_only=True
     )
 
-
     # fmt: off
     candidate_accuracy_observer: Optional[CandidateAccuracyObserver] = attrib(  # type: ignore
         kw_only=True,
@@ -646,7 +645,6 @@ class HTMLLoggerPreObserver(  # pragma: no cover
         validator=optional(instance_of(PrecisionRecallObserver)),
     )
     # fmt: on
-
 
     def observe(  # pylint: disable=unused-argument
         self,
