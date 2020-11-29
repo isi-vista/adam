@@ -49,7 +49,7 @@ from adam.language.language_utils import (
     phase2_language_generator,
     integrated_experiment_language_generator,
 )
-from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
+from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.attributes import (
     SubsetAttributeLearner,
     SubsetAttributeLearnerNew,
@@ -314,7 +314,7 @@ def learner_factory_from_params(
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
         objects,
-        determiners=ENGLISH_BLOCK_DETERMINERS,
+        determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
         perception_generator=perception_generator,

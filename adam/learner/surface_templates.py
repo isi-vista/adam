@@ -5,7 +5,7 @@ from typing import List, Mapping, Optional, Tuple, Union
 from more_itertools import quantify
 
 from adam.language import TokenSequenceLinguisticDescription
-from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
+from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.language_mode import LanguageMode
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
@@ -162,7 +162,7 @@ class SurfaceTemplate:
                     if (
                         index - 1 >= 0
                         and token_sequence_to_match_against[index - 1]
-                        in ENGLISH_BLOCK_DETERMINERS
+                        in ENGLISH_DETERMINERS
                     ):
                         tokens_to_match.append(token_sequence_to_match_against[index - 1])
                 except ValueError:
@@ -181,7 +181,7 @@ class SurfaceTemplate:
                     if (
                         slot_filler_span.start - 1 >= 0
                         and token_sequence_to_match_against[slot_filler_span.start - 1]
-                        in ENGLISH_BLOCK_DETERMINERS
+                        in ENGLISH_DETERMINERS
                     ):
                         start -= 1
                     tokens_to_match.extend(

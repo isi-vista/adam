@@ -69,7 +69,6 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             object_node,
             span_for_object,
         ) in language_concept_alignment.node_to_language_span.items():
-            print("OBJECT NODE", object_node, span_for_object)
             if isinstance(object_node, ObjectSemanticNode):
                 try:
                     # Any words immediately before them or after them are candidate attributes.
@@ -81,6 +80,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                             preceding_token_index
                         )
                     ):
+
                         ret.append(
                             SurfaceTemplateBoundToSemanticNodes(
                                 language_concept_alignment.to_surface_template(
@@ -114,6 +114,8 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 # Catches errors in to_surface_template() - we skip this case to prevent the learning from breaking.
                 except RuntimeError:
                     continue
+        # for bound_surface_template in ret:
+        #     print("TEMPLATE", covers_entire_utterance(bound_surface_template, language_concept_alignment, ignore_determiners=True))
         return immutableset(
             bound_surface_template
             for bound_surface_template in ret

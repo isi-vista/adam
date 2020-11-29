@@ -274,6 +274,7 @@ def covers_entire_utterance(
                     [
                         x
                         for x in aligned_strings_for_slot
+                        # TODO: edit this based on how we handle classifier learning
                         if x not in ["a", "the"] and x[:3] != "yi1"
                     ]
                 )
