@@ -114,8 +114,6 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 # Catches errors in to_surface_template() - we skip this case to prevent the learning from breaking.
                 except RuntimeError:
                     continue
-        # for bound_surface_template in ret:
-        #     print("TEMPLATE", covers_entire_utterance(bound_surface_template, language_concept_alignment, ignore_determiners=True))
         return immutableset(
             bound_surface_template
             for bound_surface_template in ret
