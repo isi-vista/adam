@@ -570,11 +570,7 @@ def _make_chinese_classifier_single_object_curriculum(
         num_samples, noise_objects, language_generator
     ).instances():
         linguistic_tokens = description.as_token_sequence()
-        # TODO: I currently explicitly exclude hands because they take the same classifier as animals but don't have the animate attribute
-        if (
-            linguistic_tokens[0] in classifiers_of_interest
-            and linguistic_tokens[1] != "shou3"
-        ):
+        if linguistic_tokens[0] in classifiers_of_interest:
             all_instances.append((instance, description, perception))
     return ExplicitWithSituationInstanceGroup("single object classifiers", all_instances)
 
