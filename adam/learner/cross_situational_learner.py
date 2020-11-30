@@ -254,6 +254,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (3)
         """
 
+        # TODO This doesn't seem to use the meaning at all, which seems wrong.
         def meaning_probability(meaning: PerceptionGraph, concept: Concept) -> float:
             """
             Return the meaning probability p^(t-1)(m|c).
