@@ -27,10 +27,10 @@ from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import (
     PursuitObjectLearnerNew,
     SubsetObjectLearnerNew,
-    ProposeButVerifyObjectLearner,
+    ProposeButVerifyObjectLearner, CrossSituationalObjectLearner,
 )
 from adam.learner.objects import SubsetObjectLearner
-from adam.ontology import OntologyNode
+from adam.ontology import OntologyNode, THING
 from adam.ontology.phase1_ontology import (
     BALL,
     BOX,
@@ -81,6 +81,19 @@ def integrated_learner_pv_factory(langage_mode: LanguageMode):
     return IntegratedTemplateLearner(
         object_learner=ProposeButVerifyObjectLearner(
             rng=rng, language_mode=langage_mode, ontology=GAILA_PHASE_1_ONTOLOGY
+        )
+    )
+
+
+def integrated_learner_cs_factory(langage_mode: LanguageMode):
+    return IntegratedTemplateLearner(
+        object_learner=CrossSituationalObjectLearner(
+            smoothing_parameter=0.001,
+            # The expected number of meanings is the number of subtypes of THING.
+            # This should probably be set as a default value for the cross-situational object learner if possible...
+            expected_number_of_meanings=len(GAILA_PHASE_1_ONTOLOGY.nodes_with_properties(THING)),
+            language_mode=langage_mode,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
         )
     )
 
@@ -170,6 +183,7 @@ def run_subset_learner_for_object(
         ),
         integrated_learner_factory,
         integrated_learner_pv_factory,
+        integrated_learner_cs_factory,
     ],
 )
 def test_subset_learner(language_mode, learner):
