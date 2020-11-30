@@ -274,12 +274,14 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         meaning_to_concept_to_alignment_probability: Dict[PerceptionGraph, ImmutableDict[Concept, float]] = dict()
         for meaning in iter(meanings):
             # We want to calculate the alignment probabilities for each concept against this meaning.
-            # First, we compute the unnormalized meaning probabilities.
+            # First, we compute the prior meaning probabilities p(m|c),
+            # the probability that the concept c means m for each meaning m observed in the scene.
             concept_to_meaning_probability: Mapping[Concept, float] = immutabledict({
                 concept: meaning_probability(meaning, concept) for concept in concepts
             })
             total_probability_mass: float = sum(concept_to_meaning_probability.values())
 
+            # We use these to calculate the alignment probabilities a(c|m, U(t), S(t)).
             meaning_to_concept_to_alignment_probability[meaning] = immutabledict({
                 concept: meaning_probability_ / total_probability_mass
                 for concept, meaning_probability_ in concept_to_meaning_probability.items()
