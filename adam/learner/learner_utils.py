@@ -295,7 +295,6 @@ def covers_entire_utterance(
     )
     # This assumes the slots and the non-slot elements are non-overlapping,
     # which is true for how we construct them.
-    print("COVERED, SIZED", num_covered_tokens, sized_tokens)
     return num_covered_tokens == sized_tokens
 
 
