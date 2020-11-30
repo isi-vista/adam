@@ -232,8 +232,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             self,
             concepts: Iterable[Concept],
             meanings: ImmutableSet[PerceptionGraph],
-            meaning_to_pattern: Mapping[PerceptionGraph, PerceptionGraphTemplate],
-    ) -> ImmutableDict[PerceptionGraph, ImmutableDict[Concept, float]]:
+    ) -> ImmutableDict[Concept, ImmutableDict[PerceptionGraph, float]]:
         """
         Compute the concept-(concrete meaning) alignment probabilities for a given word
         as defined by the paper below:
@@ -287,7 +286,15 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 for concept, meaning_probability_ in concept_to_meaning_probability.items()
             })
 
-        return immutabledict(meaning_to_concept_to_alignment_probability)
+        # Restructure meaning_to_concept_to_alignment_probability
+        # to get a map concept_to_meaning_to_alignment_probability.
+        return immutabledict([
+            (concept, immutabledict([
+                (meaning, alignment_probability)
+            ]))
+            for meaning, concept_to_alignment_probability in meaning_to_concept_to_alignment_probability.items()
+            for concept, alignment_probability in concept_to_alignment_probability.items()
+        ])
 
     def _update_meaning_probabilities(
         self,
