@@ -127,6 +127,9 @@ SELF_MOVING = OntologyNode("self-moving", [BINARY])
 subtype(SELF_MOVING, PERCEIVABLE_PROPERTY)
 ANIMATE = OntologyNode("animate", [BINARY])
 subtype(ANIMATE, PERCEIVABLE_PROPERTY)
+# TODO: this is a hack for learning jang1, we may want to actually translate the geons later
+FLAT = OntologyNode("flat", [BINARY])
+subtype(FLAT, PERCEIVABLE_PROPERTY)
 INANIMATE = OntologyNode("inanimate", [BINARY])
 subtype(INANIMATE, PERCEIVABLE_PROPERTY)
 SENTIENT = OntologyNode("sentient", [BINARY])
@@ -308,6 +311,7 @@ GROUND = OntologyNode(
         IS_GROUND,
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         CAN_BE_SAT_ON_BY_PEOPLE,
+        FLAT,
     ],
 )
 subtype(GROUND, INANIMATE_OBJECT)
@@ -318,6 +322,7 @@ subtype(FOOD, INANIMATE_OBJECT)
 TABLE = OntologyNode(
     "table",
     [
+        FLAT,
         CAN_FILL_TEMPLATE_SLOT,
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         HAS_SPACE_UNDER,
@@ -331,6 +336,7 @@ subtype(TABLE, INANIMATE_OBJECT)
 BED = OntologyNode(
     "bed",
     [
+        FLAT,
         CAN_FILL_TEMPLATE_SLOT,
         CAN_HAVE_THINGS_RESTING_ON_THEM,
         HAS_SPACE_UNDER,
@@ -355,6 +361,7 @@ subtype(WATERMELON, FOOD)
 PAPER = OntologyNode(
     "paper",
     [
+        FLAT,
         CAN_FILL_TEMPLATE_SLOT,
         PERSON_CAN_HAVE,
         CAN_HAVE_THINGS_RESTING_ON_THEM,
