@@ -152,7 +152,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             for meaning in meanings_from_perception
         )
         concepts_to_remove: Set[Concept] = set()
-        meanings_to_remove: Set[PerceptionGraphTemplate] = set()
+        pattern_templates_to_remove: Set[PerceptionGraphTemplate] = set()
 
         def check_and_remove_meaning(
             hypothesis: "AbstractCrossSituationalLearner.Hypothesis",
@@ -170,7 +170,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                         meanings_to_pattern_template[meaning].graph_pattern
                     ):
                         concepts_to_remove.add(concept)
-                        meanings_to_remove.add(meaning)
+                        pattern_templates_to_remove.add(meanings_to_pattern_template[meaning])
 
         for (concept, hypotheses) in self._concept_to_hypotheses.items():
             for hypothesis in hypotheses:
@@ -205,7 +205,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         meanings_after_preprocessing = immutableset(
             meaning
             for meaning in meanings_from_perception
-            if meaning not in meanings_to_remove
+            if meaning not in pattern_templates_to_remove
         )
 
         # Step 0. Update priors for any meanings as-yet unobserved.
