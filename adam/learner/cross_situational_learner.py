@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
+from collections import defaultdict
+from itertools import chain
 
 from immutablecollections import ImmutableSet, immutableset, ImmutableDict, immutabledict
-from typing import Optional, Dict, AbstractSet, Iterable, Tuple, Set, Mapping
+from typing import Optional, Dict, AbstractSet, Iterable, Tuple, Set, Mapping, List
 
-from attr import attrs, attrib, Factory
+from attr import attrs, attrib, Factory, evolve
 from attr.validators import instance_of, optional, in_
 from more_itertools import first
 
@@ -62,7 +64,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         )
         association_score: float = attrib(validator=instance_of(float), default=0)
         probability: float = attrib(validator=in_(Range.open(0, 1)), default=0)
-        observation_count: int = attrib(init=False, default=1)
+        observation_count: int = attrib(default=1)
 
     _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
     _observation_num = attrib(init=False, default=0)
@@ -217,22 +219,24 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         # which will be used to update this concept's association scores, assoc(w|m, U(t), S(t)),
         # and meaning probabilities, p(m|w).
         alignment_probabilities = self._get_alignment_probabilities(
-            concepts_after_preprocessing,
-            meanings_after_preprocessing,
-            meanings_to_pattern_template,
+            concepts_after_preprocessing, meanings_after_preprocessing
         )
 
         # We have an identified "word" (concept) from U(t)
         # and a collection of (relevant) meanings from the scene S(t).
         # We now want to update p(.|w), which means calculating the probabilities.
-        new_hypotheses = self._update_meaning_probabilities(
+        new_hypotheses = self._updated_meaning_probabilities(
             concept,
             meanings_after_preprocessing,
             meanings_to_pattern_template,
             alignment_probabilities,
         )
 
-        # TODO Update/create a hypothesis using the new
+        # TODO Update hypotheses this new map
+        #     But wait, how does that work?! We do an independent learning step for each candidate template which would
+        #     incorrectly use each previous step's updates rather than all of the updates happening "at once." That
+        #     doens't make sense! I need to figure this out.
+        # TODO Lexicalization?
 
         raise NotImplementedError()
 
@@ -309,13 +313,15 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             ]
         )
 
-    def _update_meaning_probabilities(
+    def _updated_meaning_probabilities(
         self,
         concept: Concept,
         meanings: Iterable[PerceptionGraph],
         meaning_to_pattern: Mapping[PerceptionGraph, PerceptionGraphTemplate],
         alignment_probabilities: Mapping[Concept, Mapping[PerceptionGraph, float]],
-    ) -> ImmutableDict[PerceptionGraph, float]:
+    ) -> ImmutableDict[
+        Concept, ImmutableSet["AbstractCrossSituationalLearner.Hypothesis"]
+    ]:
         """
         Update all concept-(abstract meaning) probabilities for a given word
         as defined by the paper below:
@@ -328,62 +334,98 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         """
         old_hypotheses = self._concept_to_hypotheses.get(concept, immutableset())
 
-        # We want to calculate
+        # First we calculate the new association scores for each observed meaning.
+        # If a meaning was not observed this instance, we don't change its association score at all.
+        updated_hypotheses: Dict[
+            Concept, List["AbstractCrossSituationalLearner.Hypothesis"]
+        ] = defaultdict(list)
         for meaning in meanings:
             # First, check if we've observed this meaning before.
-            ratio_similar_hypothesis_pair = self._find_similar_hypothesis(meaning, meanings, meaning_to_pattern)
-
-            # If we *have* observed this meaning before,
-            # we need to update the existing hypothesis for it.
-            if (
-                ratio_similar_hypothesis_pair is not None
-                and ratio_similar_hypothesis_pair[0].match_ratio > self._graph_match_confirmation_threshold
-            ):
+            ratio_similar_hypothesis_pair = self._find_similar_hypothesis(
+                meaning, old_hypotheses[concept]
+            )
+            if ratio_similar_hypothesis_pair is not None:
                 ratio, similar_hypothesis = ratio_similar_hypothesis_pair
 
-
+                # If we *have* observed this meaning before,
+                # we need to update the existing hypothesis for it.
+                if ratio.match_ratio > self._graph_match_confirmation_threshold:
+                    new_association_score = (
+                        similar_hypothesis.association_score
+                        + alignment_probabilities[concept][meaning]
+                    )
+                    new_observation_count = similar_hypothesis.observation_count + 1
+                    new_hypothesis = AbstractCrossSituationalLearner.Hypothesis(
+                        pattern_template=similar_hypothesis.pattern_template,
+                        association_score=new_association_score,
+                        observation_count=new_observation_count,
+                    )
+                    updated_hypotheses[concept].append(new_hypothesis)
+                    continue
 
             # If we *haven't* observed this meaning before,
             # we need to create a new hypothesis for it.
-            else:
-                new_hypothesis = AbstractCrossSituationalLearner.Hypothesis(
-                    pattern_template=meaning_to_pattern[meaning]
-                )
-                normalizing_factor = (
-                    self._expected_number_of_meanings * self._smoothing_parameter
-                )
+            new_hypothesis = AbstractCrossSituationalLearner.Hypothesis(
+                pattern_template=meaning_to_pattern[meaning],
+                association_score=0.0,
+                observation_count=1,
+            )
+            updated_hypotheses[concept].append(new_hypothesis)
 
-                # for other_meaning in
+        # Now we calculate the updated meaning probabilities p(m|w).
+        total_association_score = sum(
+            hypothesis.association_score for hypothesis in updated_hypotheses[concept]
+        )
+        smoothing_term = self._expected_number_of_meanings * self._smoothing_parameter
+        new_hypotheses: Dict[
+            Concept, ImmutableSet["AbstractCrossSituationalLearner.Hypothesis"]
+        ] = dict(
+            old_hypotheses
+        )  # includes all current hypotheses, not only the ones that were updated
+        new_hypotheses[concept] = immutableset(
+            chain(
+                old_hypotheses,
+                [
+                    evolve(
+                        hypothesis,
+                        probability=(
+                            hypothesis.association_score + self._smoothing_parameter
+                        )
+                        / (total_association_score + smoothing_term),
+                    )
+                    for hypothesis in updated_hypotheses[concept]
+                ],
+            )
+        )
 
-                new_hypothesis.probability = (
-                    self._smoothing_parameter / normalizing_factor
-                )
-
-        raise NotImplementedError()
-
-        return immutabledict(meaning_to_probability)
+        return immutabledict(new_hypotheses)
 
     def _find_similar_hypothesis(
         self,
         new_meaning: PerceptionGraph,
-        candidates: Iterable[PerceptionGraph],
-        meaning_to_pattern: Mapping[PerceptionGraph, PerceptionGraphTemplate],
-    ) -> Tuple[Optional[PartialMatchRatio], Optional[PerceptionGraphTemplate]]:
+        candidates: Iterable["AbstractCrossSituationalLearner.Hypothesis"],
+    ) -> Optional[Tuple[PartialMatchRatio, "AbstractCrossSituationalLearner.Hypothesis"]]:
         """
-        Finds the entry in candidates most similar to new_meaning and returns it
+        Finds the hypothesis in candidates most similar to new_meaning and returns it
         together with the match ratio.
+
+        Returns None if no candidate can be found that is sufficiently similar to new_meaning. A candidate is
+        sufficiently similar if and only if its match ratio with new_meaning is at least
+        _graph_match_confirmation_threshold.
         """
         candidates_iter = iter(candidates)
         match = None
         while match is None:
             try:
-                old_meaning = next(candidates_iter)
+                existing_hypothesis = next(candidates_iter)
             except StopIteration:
-                return None, None
+                return None
 
             try:
                 match = compute_match_ratio(
-                    meaning_to_pattern[old_meaning], new_meaning, ontology=self._ontology
+                    existing_hypothesis.pattern_template,
+                    new_meaning,
+                    ontology=self._ontology,
                 )
             except RuntimeError:
                 # Occurs when no matches of the pattern are found in the graph. This seems to
@@ -393,7 +435,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         for candidate in candidates:
             try:
                 new_match = compute_match_ratio(
-                    meaning_to_pattern[candidate], new_meaning, ontology=self._ontology
+                    candidate.pattern_template, new_meaning, ontology=self._ontology
                 )
             except RuntimeError:
                 # Occurs when no matches of the pattern are found in the graph. This seems to
@@ -401,15 +443,15 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 new_match = None
             if new_match and new_match.match_ratio > match.match_ratio:
                 match = new_match
-                old_meaning = candidate
+                existing_hypothesis = candidate
         if (
             match.match_ratio >= self._graph_match_confirmation_threshold
             and match.matching_subgraph
-            and old_meaning
+            and existing_hypothesis
         ):
-            return match, meaning_to_pattern[old_meaning]
+            return match, existing_hypothesis
         else:
-            return None, None
+            return None
 
     def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
         if concept in self._concept_to_surface_template:
@@ -420,12 +462,18 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
         def argmax(hypotheses):
             # TODO is this key correct? what IS our "best hypothesis"?
-            return max(hypotheses, key=lambda hypothesis: (hypothesis.probability, hypothesis.association_score))
+            return max(
+                hypotheses,
+                key=lambda hypothesis: (
+                    hypothesis.probability,
+                    hypothesis.association_score,
+                ),
+            )
+
         return {
             concept: argmax(hypotheses).pattern_template.graph_pattern
             for concept, hypotheses in self._concept_to_hypotheses.items()
         }
-
 
     @abstractmethod
     def _new_concept(self, debug_string: str) -> Concept:
