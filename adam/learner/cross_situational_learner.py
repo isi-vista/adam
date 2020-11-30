@@ -38,9 +38,6 @@ from adam.perception.perception_graph import (
 )
 
 
-_DUMMY_CONCEPT = Concept(debug_str="_cross_situational_dummy")
-
-
 @attrs
 class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     """
@@ -96,11 +93,18 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
     _minimum_observation_amount: int = attrib(default=5, kw_only=True)
 
+    # Dummy concept
+    _dummy_concept: Concept = attrib(init=False)
+
     # Debug Values
     _debug_callback: Optional[DebugCallableType] = attrib(default=None)
     _graph_logger: Optional[GraphLogger] = attrib(
         validator=optional(instance_of(GraphLogger)), default=None
     )
+
+    @_dummy_concept.default
+    def _init_dummy_concept(self):
+        return self._new_concept("_cross_situational_dummy_concept")
 
     def _learning_step(
         self,
@@ -192,7 +196,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 if concept not in concepts_to_remove
                 # TODO Does it make sense to include a dummy concept/"word"? The paper has one so I
                 #  am including it for now.
-            ] + [_DUMMY_CONCEPT]
+            ] + [self._dummy_concept]
         )
         meanings_after_preprocessing = immutableset(
             meaning
