@@ -122,11 +122,14 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         # Figure out what "words" (concepts) appear in the utterance.
         concepts_present_in_utterance = []
         for other_bound_surface_template in self._candidate_templates(
-                language_perception_semantic_alignment
+            language_perception_semantic_alignment
         ):
             # We have seen this template before and already have a concept for it
             # So we attempt to verify our already picked concept
-            if other_bound_surface_template.surface_template in self._surface_template_to_concept:
+            if (
+                other_bound_surface_template.surface_template
+                in self._surface_template_to_concept
+            ):
                 # We don't directly associate surface templates with perceptions.
                 # Instead we mediate the relationship with "concept" objects.
                 # These don't matter now, but the split might be helpful in the future
@@ -191,11 +194,13 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
 
         concepts_after_preprocessing = immutableset(
             [
-                concept for concept in concepts_present_in_utterance
+                concept
+                for concept in concepts_present_in_utterance
                 if concept not in concepts_to_remove
                 # TODO Does it make sense to include a dummy concept/"word"? The paper has one so I
                 #  am including it for now.
-            ] + [self._dummy_concept]
+            ]
+            + [self._dummy_concept]
         )
         meanings_after_preprocessing = immutableset(
             meaning
@@ -221,7 +226,10 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         # and a collection of (relevant) meanings from the scene S(t).
         # We now want to update p(.|w), which means calculating the probabilities.
         new_hypotheses = self._update_meaning_probabilities(
-            concept, meanings_after_preprocessing, meanings_to_pattern_template, alignment_probabilities
+            concept,
+            meanings_after_preprocessing,
+            meanings_to_pattern_template,
+            alignment_probabilities,
         )
 
         # TODO Update/create a hypothesis using the new
@@ -229,9 +237,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         raise NotImplementedError()
 
     def _get_alignment_probabilities(
-            self,
-            concepts: Iterable[Concept],
-            meanings: ImmutableSet[PerceptionGraph],
+        self, concepts: Iterable[Concept], meanings: ImmutableSet[PerceptionGraph]
     ) -> ImmutableDict[Concept, ImmutableDict[PerceptionGraph, float]]:
         """
         Compute the concept-(concrete meaning) alignment probabilities for a given word
@@ -243,6 +249,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         meanings encountered, beta is an upper bound on the expected number of meaning types.
         https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (3)
         """
+
         def meaning_probability(meaning: PerceptionGraph, concept: Concept) -> float:
             """
             Return the meaning probability p^(t-1)(m|c).
@@ -250,10 +257,12 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             # If we've already observed this concept before,
             if concept in self._concept_to_hypotheses:
                 preexisting_hypothesis = first(
-                    (hypothesis.pattern_template for hypothesis in iter(self._concept_to_hypotheses[concept])
-                     # if
-                     ),
-                    None
+                    (
+                        hypothesis.pattern_template
+                        for hypothesis in iter(self._concept_to_hypotheses[concept])
+                        # if
+                    ),
+                    None,
                 )
                 # And if we've already observed this meaning before,
                 # return the prior probability.
@@ -270,31 +279,35 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             else:
                 return 1.0 / len(meanings)
 
-        meaning_to_concept_to_alignment_probability: Dict[PerceptionGraph, ImmutableDict[Concept, float]] = dict()
+        meaning_to_concept_to_alignment_probability: Dict[
+            PerceptionGraph, ImmutableDict[Concept, float]
+        ] = dict()
         for meaning in iter(meanings):
             # We want to calculate the alignment probabilities for each concept against this meaning.
             # First, we compute the prior meaning probabilities p(m|c),
             # the probability that the concept c means m for each meaning m observed in the scene.
-            concept_to_meaning_probability: Mapping[Concept, float] = immutabledict({
-                concept: meaning_probability(meaning, concept) for concept in concepts
-            })
+            concept_to_meaning_probability: Mapping[Concept, float] = immutabledict(
+                {concept: meaning_probability(meaning, concept) for concept in concepts}
+            )
             total_probability_mass: float = sum(concept_to_meaning_probability.values())
 
             # We use these to calculate the alignment probabilities a(c|m, U(t), S(t)).
-            meaning_to_concept_to_alignment_probability[meaning] = immutabledict({
-                concept: meaning_probability_ / total_probability_mass
-                for concept, meaning_probability_ in concept_to_meaning_probability.items()
-            })
+            meaning_to_concept_to_alignment_probability[meaning] = immutabledict(
+                {
+                    concept: meaning_probability_ / total_probability_mass
+                    for concept, meaning_probability_ in concept_to_meaning_probability.items()
+                }
+            )
 
         # Restructure meaning_to_concept_to_alignment_probability
         # to get a map concept_to_meaning_to_alignment_probability.
-        return immutabledict([
-            (concept, immutabledict([
-                (meaning, alignment_probability)
-            ]))
-            for meaning, concept_to_alignment_probability in meaning_to_concept_to_alignment_probability.items()
-            for concept, alignment_probability in concept_to_alignment_probability.items()
-        ])
+        return immutabledict(
+            [
+                (concept, immutabledict([(meaning, alignment_probability)]))
+                for meaning, concept_to_alignment_probability in meaning_to_concept_to_alignment_probability.items()
+                for concept, alignment_probability in concept_to_alignment_probability.items()
+            ]
+        )
 
     def _update_meaning_probabilities(
         self,
