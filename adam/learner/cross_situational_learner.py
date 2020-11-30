@@ -152,7 +152,6 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         meanings_to_remove: Set[PerceptionGraphTemplate] = set()
 
         def check_and_remove_meaning(
-            concept: Concept,
             hypothesis: "AbstractCrossSituationalLearner.Hypothesis",
             *,
             ontology: Ontology,
@@ -173,7 +172,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         for (concept, hypotheses) in self._concept_to_hypotheses.items():
             for hypothesis in hypotheses:
                 if hypothesis.probability > self._lexicon_entry_threshold:
-                    check_and_remove_meaning(concept, hypothesis, ontology=self._ontology)
+                    check_and_remove_meaning(hypothesis, ontology=self._ontology)
 
         # We have seen this template before and already have a concept for it
         # So we attempt to verify our already picked concept
