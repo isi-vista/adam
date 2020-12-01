@@ -90,7 +90,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     _expected_number_of_meanings: float = attrib(
         validator=in_(Range.greater_than(0.0)), kw_only=True
     )
-    _graph_match_confirmation_threshold: float = attrib(default=0.9, kw_only=True)
+    _graph_match_confirmation_threshold: float = attrib(default=0.8, kw_only=True)
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
     _minimum_observation_amount: int = attrib(default=5, kw_only=True)
 
