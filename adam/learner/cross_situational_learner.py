@@ -146,17 +146,23 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             concepts_present_in_utterance.append(concept)
 
         # Generate all possible meanings from the Graph
-        meanings_from_perception = self._hypotheses_from_perception(
-            language_perception_semantic_alignment, bound_surface_template
+        meanings_from_perception = immutableset(
+            self._hypotheses_from_perception(
+                language_perception_semantic_alignment, bound_surface_template
+            )
         )
         meanings_to_pattern_template = immutabledict(
             (meaning, PerceptionGraphTemplate.from_graph(meaning, immutabledict()))
             for meaning in meanings_from_perception
         )
+
+        # We check for meanings that are described by lexicalized concepts
+        # and don't try to learn those lexicalized concepts further.
+        # jac: Not mentioned in the part of the paper I read. New?
         concepts_to_remove: Set[Concept] = set()
-        pattern_templates_to_remove: Set[PerceptionGraphTemplate] = set()
 
         def check_and_remove_meaning(
+            other_concept: Concept,
             hypothesis: "AbstractCrossSituationalLearner.Hypothesis",
             *,
             ontology: Ontology,
@@ -171,13 +177,12 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                     if match.matching_subgraph.check_isomorphism(
                         meanings_to_pattern_template[meaning].graph_pattern
                     ):
-                        concepts_to_remove.add(concept)
-                        pattern_templates_to_remove.add(meanings_to_pattern_template[meaning])
+                        concepts_to_remove.add(other_concept)
 
-        for (concept, hypotheses) in self._concept_to_hypotheses.items():
+        for (other_concept, hypotheses) in self._concept_to_hypotheses.items():
             for hypothesis in hypotheses:
                 if hypothesis.probability > self._lexicon_entry_threshold:
-                    check_and_remove_meaning(hypothesis, ontology=self._ontology)
+                    check_and_remove_meaning(other_concept, hypothesis, ontology=self._ontology)
 
         # We have seen this template before and already have a concept for it
         # So we attempt to verify our already picked concept
@@ -204,30 +209,25 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             ]
             + [self._dummy_concept]
         )
-        meanings_after_preprocessing = immutableset(
-            meaning
-            for meaning in meanings_from_perception
-            if meaning not in pattern_templates_to_remove
-        )
 
         # Step 0. Update priors for any meanings as-yet unobserved.
 
         # Step 1. Compute alignment probabilities (pp. 1029)
         # We have an identified "word" (concept) from U(t)
-        # and a collection of relevant (that is, non-lexicalized) meanings from the scene S(t).
+        # and a collection of meanings from the scene S(t).
         # We now want to calculate the alignment probabilities,
         # which will be used to update this concept's association scores, assoc(w|m, U(t), S(t)),
         # and meaning probabilities, p(m|w).
         alignment_probabilities = self._get_alignment_probabilities(
-            concepts_after_preprocessing, meanings_after_preprocessing
+            concepts_after_preprocessing, meanings_from_perception
         )
 
         # We have an identified "word" (concept) from U(t)
-        # and a collection of (relevant) meanings from the scene S(t).
+        # and a collection of meanings from the scene S(t).
         # We now want to update p(.|w), which means calculating the probabilities.
         new_hypotheses = self._updated_meaning_probabilities(
             concept,
-            meanings_after_preprocessing,
+            meanings_from_perception,
             meanings_to_pattern_template,
             alignment_probabilities,
         )
