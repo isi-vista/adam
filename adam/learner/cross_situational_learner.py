@@ -73,7 +73,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     _concept_to_surface_template: Dict[Concept, SurfaceTemplate] = attrib(
         init=False, default=Factory(dict)
     )
-    _concept_to_hypotheses: Dict[
+    _concept_to_hypotheses: ImmutableDict[
         Concept, ImmutableSet["AbstractCrossSituationalLearner.Hypothesis"]
     ] = attrib(init=False, default=Factory(dict))
 
@@ -94,6 +94,8 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
     _minimum_observation_amount: int = attrib(default=5, kw_only=True)
 
+    _updated_hypotheses: Dict[Concept, ImmutableSet[Hypothesis]] = attrib(init=False, factory=dict)
+
     # Corresponds to the dummy word from the paper
     _dummy_concept: Concept = attrib(init=False)
 
@@ -106,6 +108,14 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     @_dummy_concept.default
     def _init_dummy_concept(self):
         return self._new_concept("_cross_situational_dummy_concept")
+
+    def _pre_learning_step(
+            self,
+            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+    ) -> None:
+        # We only need to make a shallow copy of our old hypotheses
+        # because the values of self._concept_to_hypotheses are immutable.
+        self._updated_hypotheses = self._concept_to_hypotheses.copy()
 
     def _learning_step(
         self,
@@ -126,18 +136,14 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             language_perception_semantic_alignment
         ):
             # We have seen this template before and already have a concept for it
-            # So we attempt to verify our already picked concept
             if (
                 other_bound_surface_template.surface_template
                 in self._surface_template_to_concept
             ):
-                # We don't directly associate surface templates with perceptions.
-                # Instead we mediate the relationship with "concept" objects.
-                # These don't matter now, but the split might be helpful in the future
-                # when we might have multiple ways of expressing the same idea.
                 concept = self._surface_template_to_concept[
                     other_bound_surface_template.surface_template
                 ]
+            # Otherwise, make a new concept for it
             else:
                 concept = self._new_concept(
                     debug_string=bound_surface_template.surface_template.to_short_string()
@@ -231,13 +237,20 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             alignment_probabilities,
         )
 
-        # TODO Update hypotheses this new map
-        #     But wait, how does that work?! We do an independent learning step for each candidate template which would
-        #     incorrectly use each previous step's updates rather than all of the updates happening "at once." That
-        #     doens't make sense! I need to figure this out.
-        # TODO Lexicalization?
+        # Finally, update our hypotheses for this concept
+        self._updated_hypotheses[concept] = new_hypotheses
 
-        raise NotImplementedError()
+    def _post_learning_step(
+            self,
+            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+    ) -> None:
+        # Finish updating hypotheses
+        # We have to do this as a separate step
+        # so that we can update our hypotheses for each concept
+        # independently of the hypotheses for the other concepts,
+        # as in the algorithm described by the paper.
+        self._concept_to_hypotheses = immutabledict(self._updated_hypotheses)
+        self._updated_hypotheses.clear()
 
     def _get_alignment_probabilities(
         self, concepts: Iterable[Concept], meanings: ImmutableSet[PerceptionGraph]
@@ -314,9 +327,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         meanings: Iterable[PerceptionGraph],
         meaning_to_pattern: Mapping[PerceptionGraph, PerceptionGraphTemplate],
         alignment_probabilities: Mapping[Concept, Mapping[PerceptionGraph, float]],
-    ) -> ImmutableDict[
-        Concept, ImmutableSet["AbstractCrossSituationalLearner.Hypothesis"]
-    ]:
+    ) -> ImmutableSet["AbstractCrossSituationalLearner.Hypothesis"]:
         """
         Update all concept-(abstract meaning) probabilities for a given word
         as defined by the paper below:
@@ -336,7 +347,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         for meaning in meanings:
             # First, check if we've observed this meaning before.
             ratio_similar_hypothesis_pair = self._find_similar_hypothesis(
-                meaning, old_hypotheses[concept]
+                meaning, old_hypotheses
             )
             if ratio_similar_hypothesis_pair is not None:
                 ratio, similar_hypothesis = ratio_similar_hypothesis_pair
@@ -374,14 +385,11 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             hypothesis.association_score for hypothesis in hypothesis_updates
         )
         smoothing_term = self._expected_number_of_meanings * self._smoothing_parameter
-        new_hypotheses: Dict[
-            Concept, ImmutableSet["AbstractCrossSituationalLearner.Hypothesis"]
-        ] = dict(
-            old_hypotheses
-        )  # includes all current hypotheses, not only the ones that were updated
-        new_hypotheses[concept] = immutableset(
+        return immutableset(
             chain(
+                # Include old hypotheses that weren't updated
                 [old_hypothesis for old_hypothesis in old_hypotheses if old_hypothesis not in updated_hypotheses],
+                # Include new and updated hypotheses
                 [
                     evolve(
                         hypothesis,
@@ -394,8 +402,6 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 ],
             )
         )
-
-        return immutabledict(new_hypotheses)
 
     def _find_similar_hypothesis(
         self,

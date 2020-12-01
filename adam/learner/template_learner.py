@@ -291,10 +291,14 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             ),
         )
 
+        self._pre_learning_step(preprocessed_input)
+
         for thing_whose_meaning_to_learn in self._candidate_templates(
             language_perception_semantic_alignment
         ):
             self._learning_step(preprocessed_input, thing_whose_meaning_to_learn)
+
+        self._post_learning_step(preprocessed_input)
 
     def enrich_during_learning(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -512,6 +516,16 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
             nodes_after_post_processing,
         )
 
+    def _pre_learning_step(
+            self,
+            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+    ) -> None:
+        """
+        Perform any necessary steps before the learning logic.
+        """
+        # Do nothing by default. Most learners should not need to implement this.
+        pass
+
     @abstractmethod
     def _learning_step(
         self,
@@ -521,6 +535,16 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         """
         Perform the actual learning logic.
         """
+
+    def _post_learning_step(
+            self,
+            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+    ) -> None:
+        """
+        Perform any necessary steps after the learning logic.
+        """
+        # Do nothing by default. Most learners should not need to implement this.
+        pass
 
     @abstractmethod
     def _can_learn_from(
