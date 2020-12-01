@@ -331,9 +331,8 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
 
         # First we calculate the new association scores for each observed meaning.
         # If a meaning was not observed this instance, we don't change its association score at all.
-        updated_hypotheses: Dict[
-            Concept, List["AbstractCrossSituationalLearner.Hypothesis"]
-        ] = defaultdict(list)
+        updated_hypotheses: Set["AbstractCrossSituationalLearner.Hypothesis"] = set()
+        hypothesis_updates: List["AbstractCrossSituationalLearner.Hypothesis"] = []
         for meaning in meanings:
             # First, check if we've observed this meaning before.
             ratio_similar_hypothesis_pair = self._find_similar_hypothesis(
@@ -345,6 +344,9 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 # If we *have* observed this meaning before,
                 # we need to update the existing hypothesis for it.
                 if ratio.match_ratio > self._graph_match_confirmation_threshold:
+                    # Mark the old hypothesis as updated
+                    # so we don't include both the old and new hypothesis in our output.
+                    updated_hypotheses.add(similar_hypothesis)
                     new_association_score = (
                         similar_hypothesis.association_score
                         + alignment_probabilities[concept][meaning]
@@ -355,7 +357,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                         association_score=new_association_score,
                         observation_count=new_observation_count,
                     )
-                    updated_hypotheses[concept].append(new_hypothesis)
+                    hypothesis_updates.append(new_hypothesis)
                     continue
 
             # If we *haven't* observed this meaning before,
@@ -365,11 +367,11 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 association_score=0.0,
                 observation_count=1,
             )
-            updated_hypotheses[concept].append(new_hypothesis)
+            hypothesis_updates.append(new_hypothesis)
 
         # Now we calculate the updated meaning probabilities p(m|w).
         total_association_score = sum(
-            hypothesis.association_score for hypothesis in updated_hypotheses[concept]
+            hypothesis.association_score for hypothesis in hypothesis_updates
         )
         smoothing_term = self._expected_number_of_meanings * self._smoothing_parameter
         new_hypotheses: Dict[
@@ -379,7 +381,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         )  # includes all current hypotheses, not only the ones that were updated
         new_hypotheses[concept] = immutableset(
             chain(
-                old_hypotheses,
+                [old_hypothesis for old_hypothesis in old_hypotheses if old_hypothesis not in updated_hypotheses],
                 [
                     evolve(
                         hypothesis,
@@ -388,7 +390,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                         )
                         / (total_association_score + smoothing_term),
                     )
-                    for hypothesis in updated_hypotheses[concept]
+                    for hypothesis in hypothesis_updates
                 ],
             )
         )
