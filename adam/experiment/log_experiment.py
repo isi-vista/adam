@@ -288,7 +288,6 @@ def learner_factory_from_params(
             "integrated-learner",
             "integrated-learner-recognizer-without-generics",
             "integrated-learner-recognizer",
-            "integrated-learner-no-functional",
             "pursuit-gaze",
             "integrated-object-only",
             "integrated-learner-params",
@@ -297,13 +296,6 @@ def learner_factory_from_params(
     )
 
     beam_size = params.positive_integer("beam_size", default=10)
-
-    # if language_mode == LanguageMode.CHINESE and learner_type not in [
-    #    "integrated-learner",
-    #    "integrated-learner-recognizer",
-    # ]:
-    #    raise RuntimeError("Only able to test Chinese with integrated learner.")
-
     rng = random.Random()
     rng.seed(0)
     perception_generator = GAILA_PHASE_1_PERCEPTION_GENERATOR
@@ -398,27 +390,6 @@ def learner_factory_from_params(
                 language_mode=language_mode,
             ),
             functional_learner=FunctionalLearner(language_mode=language_mode),
-        )
-    elif learner_type == "integrated-learner-no-functional":
-        return lambda: IntegratedTemplateLearner(
-            object_learner=ObjectRecognizerAsTemplateLearner(
-                object_recognizer=object_recognizer, language_mode=language_mode
-            ),
-            attribute_learner=SubsetAttributeLearnerNew(
-                ontology=GAILA_PHASE_2_ONTOLOGY,
-                beam_size=beam_size,
-                language_mode=language_mode,
-            ),
-            relation_learner=SubsetRelationLearnerNew(
-                ontology=GAILA_PHASE_2_ONTOLOGY,
-                beam_size=beam_size,
-                language_mode=language_mode,
-            ),
-            action_learner=SubsetVerbLearnerNew(
-                ontology=GAILA_PHASE_2_ONTOLOGY,
-                beam_size=beam_size,
-                language_mode=language_mode,
-            ),
         )
     elif learner_type == "integrated-learner-recognizer":
         return lambda: IntegratedTemplateLearner(

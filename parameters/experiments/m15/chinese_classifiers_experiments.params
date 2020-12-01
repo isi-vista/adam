@@ -6,4 +6,4 @@ hypothesis_log_dir: "%experiment_group_dir%/hypotheses"
 include_image_links: true
 experiment: 'chinese-classifier-experiment'
 curriculum: 'chinese-classifiers'
-learner: 'integrated-learner-no-functional'
+learner: 'integrated-learner'
