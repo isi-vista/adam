@@ -345,6 +345,9 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         updated_hypotheses: Set["AbstractCrossSituationalLearner.Hypothesis"] = set()
         hypothesis_updates: List["AbstractCrossSituationalLearner.Hypothesis"] = []
         for meaning in meanings:
+            # We use a placeholder probability to keep the hypothesis constructor happy.
+            # We are going to fix up this probability later.
+            placeholder_probability = 0.5
             # First, check if we've observed this meaning before.
             ratio_similar_hypothesis_pair = self._find_similar_hypothesis(
                 meaning, old_hypotheses
@@ -366,6 +369,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                     new_hypothesis = AbstractCrossSituationalLearner.Hypothesis(
                         pattern_template=similar_hypothesis.pattern_template,
                         association_score=new_association_score,
+                        probability=placeholder_probability,
                         observation_count=new_observation_count,
                     )
                     hypothesis_updates.append(new_hypothesis)
@@ -376,6 +380,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             new_hypothesis = AbstractCrossSituationalLearner.Hypothesis(
                 pattern_template=meaning_to_pattern[meaning],
                 association_score=0.0,
+                probability=placeholder_probability,
                 observation_count=1,
             )
             hypothesis_updates.append(new_hypothesis)
