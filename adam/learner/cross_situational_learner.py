@@ -94,6 +94,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
     _minimum_observation_amount: int = attrib(default=5, kw_only=True)
 
+    _concepts_in_utterance: ImmutableSet[Concept] = attrib(init=False, default=ImmutableSet)
     _updated_hypotheses: Dict[Concept, ImmutableSet[Hypothesis]] = attrib(init=False, factory=dict)
 
     # Corresponds to the dummy word from the paper
@@ -113,6 +114,28 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             self,
             language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
     ) -> None:
+        # Figure out what "words" (concepts) appear in the utterance.
+        concepts_in_utterance = []
+        for other_bound_surface_template in self._candidate_templates(
+                language_perception_semantic_alignment
+        ):
+            # We have seen this template before and already have a concept for it
+            if (
+                    other_bound_surface_template.surface_template
+                    in self._surface_template_to_concept
+            ):
+                concept = self._surface_template_to_concept[
+                    other_bound_surface_template.surface_template
+                ]
+            # Otherwise, make a new concept for it
+            else:
+                concept = self._new_concept(
+                    debug_string=other_bound_surface_template.surface_template.to_short_string()
+
+                )
+            concepts_in_utterance.append(concept)
+        self._concepts_in_utterance = immutableset(concepts_in_utterance)
+
         # We only need to make a shallow copy of our old hypotheses
         # because the values of self._concept_to_hypotheses are immutable.
         self._updated_hypotheses = dict(self._concept_to_hypotheses)
@@ -130,27 +153,6 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         For example, "try to learn the meaning of 'red' given the language 'red car'
         and an alignment of 'car' to particular perceptions in the perception graph.
         """
-        # Figure out what "words" (concepts) appear in the utterance.
-        concepts_present_in_utterance = []
-        for other_bound_surface_template in self._candidate_templates(
-            language_perception_semantic_alignment
-        ):
-            # We have seen this template before and already have a concept for it
-            if (
-                other_bound_surface_template.surface_template
-                in self._surface_template_to_concept
-            ):
-                concept = self._surface_template_to_concept[
-                    other_bound_surface_template.surface_template
-                ]
-            # Otherwise, make a new concept for it
-            else:
-                concept = self._new_concept(
-                    debug_string=other_bound_surface_template.surface_template.to_short_string()
-
-                )
-            concepts_present_in_utterance.append(concept)
-
         # Generate all possible meanings from the Graph
         meanings_from_perception = immutableset(
             self._hypotheses_from_perception(
@@ -214,7 +216,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         concepts_after_preprocessing = immutableset(
             [
                 concept
-                for concept in concepts_present_in_utterance
+                for concept in self._concepts_in_utterance
                 if concept not in concepts_to_remove
                 # TODO Does it make sense to include a dummy concept/"word"? The paper has one so I
                 #  am including it for now.
