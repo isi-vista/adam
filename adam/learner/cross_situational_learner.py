@@ -254,29 +254,24 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x (3)
         """
 
-        # TODO This doesn't seem to use the meaning at all, which seems wrong.
         def meaning_probability(meaning: PerceptionGraph, concept: Concept) -> float:
             """
             Return the meaning probability p^(t-1)(m|c).
             """
             # If we've already observed this concept before,
             if concept in self._concept_to_hypotheses:
-                preexisting_hypothesis = first(
-                    (
-                        hypothesis.pattern_template
-                        for hypothesis in iter(self._concept_to_hypotheses[concept])
-                        # if
-                    ),
-                    None,
-                )
                 # And if we've already observed this meaning before,
-                # return the prior probability.
-                if preexisting_hypothesis is not None:
+                maybe_ratio_with_preexisting_hypothesis = self._find_similar_hypotheses(
+                    meaning, self._concept_to_hypotheses[concept]
+                )
+                if maybe_ratio_with_preexisting_hypothesis:
+                    # return the prior probability.
+                    _, preexisting_hypothesis = maybe_ratio_with_preexisting_hypothesis
                     return preexisting_hypothesis.probability
                 # Otherwise, if we have observed this concept before
-                # but not in the same scene as this meaning,
+                # but not paired with a perception like this meaning,
                 # it is assigned zero probability.
-                # TODO correct?
+                # Is this correct?
                 else:
                     return 0.0
             # If we haven't observed this concept before,
