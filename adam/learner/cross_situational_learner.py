@@ -94,7 +94,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
     _minimum_observation_amount: int = attrib(default=5, kw_only=True)
 
-    # Dummy concept
+    # Corresponds to the dummy word from the paper
     _dummy_concept: Concept = attrib(init=False)
 
     # Debug Values
