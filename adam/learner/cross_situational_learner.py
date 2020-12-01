@@ -115,7 +115,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     ) -> None:
         # We only need to make a shallow copy of our old hypotheses
         # because the values of self._concept_to_hypotheses are immutable.
-        self._updated_hypotheses = self._concept_to_hypotheses.copy()
+        self._updated_hypotheses = dict(self._concept_to_hypotheses)
 
     def _learning_step(
         self,
@@ -146,7 +146,8 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             # Otherwise, make a new concept for it
             else:
                 concept = self._new_concept(
-                    debug_string=bound_surface_template.surface_template.to_short_string()
+                    debug_string=other_bound_surface_template.surface_template.to_short_string()
+
                 )
             concepts_present_in_utterance.append(concept)
 
@@ -203,6 +204,12 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             concept = self._new_concept(
                 debug_string=bound_surface_template.surface_template.to_short_string()
             )
+        self._surface_template_to_concept[
+            bound_surface_template.surface_template
+        ] = concept
+        self._concept_to_surface_template[
+            concept
+        ] = bound_surface_template.surface_template
 
         concepts_after_preprocessing = immutableset(
             [
@@ -273,7 +280,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             # If we've already observed this concept before,
             if concept in self._concept_to_hypotheses:
                 # And if we've already observed this meaning before,
-                maybe_ratio_with_preexisting_hypothesis = self._find_similar_hypotheses(
+                maybe_ratio_with_preexisting_hypothesis = self._find_similar_hypothesis(
                     meaning, self._concept_to_hypotheses[concept]
                 )
                 if maybe_ratio_with_preexisting_hypothesis:
