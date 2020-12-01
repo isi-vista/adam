@@ -94,8 +94,12 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     _lexicon_entry_threshold: float = attrib(default=0.8, kw_only=True)
     _minimum_observation_amount: int = attrib(default=5, kw_only=True)
 
-    _concepts_in_utterance: ImmutableSet[Concept] = attrib(init=False, default=ImmutableSet)
-    _updated_hypotheses: Dict[Concept, ImmutableSet[Hypothesis]] = attrib(init=False, factory=dict)
+    _concepts_in_utterance: ImmutableSet[Concept] = attrib(
+        init=False, default=ImmutableSet
+    )
+    _updated_hypotheses: Dict[Concept, ImmutableSet[Hypothesis]] = attrib(
+        init=False, factory=dict
+    )
 
     # Corresponds to the dummy word from the paper
     _dummy_concept: Concept = attrib(init=False)
@@ -111,18 +115,17 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         return self._new_concept("_cross_situational_dummy_concept")
 
     def _pre_learning_step(
-            self,
-            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> None:
         # Figure out what "words" (concepts) appear in the utterance.
         concepts_in_utterance = []
         for other_bound_surface_template in self._candidate_templates(
-                language_perception_semantic_alignment
+            language_perception_semantic_alignment
         ):
             # We have seen this template before and already have a concept for it
             if (
-                    other_bound_surface_template.surface_template
-                    in self._surface_template_to_concept
+                other_bound_surface_template.surface_template
+                in self._surface_template_to_concept
             ):
                 concept = self._surface_template_to_concept[
                     other_bound_surface_template.surface_template
@@ -131,7 +134,6 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             else:
                 concept = self._new_concept(
                     debug_string=other_bound_surface_template.surface_template.to_short_string()
-
                 )
             concepts_in_utterance.append(concept)
         self._concepts_in_utterance = immutableset(concepts_in_utterance)
@@ -190,7 +192,9 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         for (other_concept, hypotheses) in self._concept_to_hypotheses.items():
             for hypothesis in hypotheses:
                 if hypothesis.probability > self._lexicon_entry_threshold:
-                    check_and_remove_meaning(other_concept, hypothesis, ontology=self._ontology)
+                    check_and_remove_meaning(
+                        other_concept, hypothesis, ontology=self._ontology
+                    )
 
         # We have seen this template before and already have a concept for it
         # So we attempt to verify our already picked concept
@@ -250,8 +254,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         self._updated_hypotheses[concept] = new_hypotheses
 
     def _post_learning_step(
-            self,
-            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> None:
         # Finish updating hypotheses
         # We have to do this as a separate step
@@ -402,7 +405,11 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         return immutableset(
             chain(
                 # Include old hypotheses that weren't updated
-                [old_hypothesis for old_hypothesis in old_hypotheses if old_hypothesis not in updated_hypotheses],
+                [
+                    old_hypothesis
+                    for old_hypothesis in old_hypotheses
+                    if old_hypothesis not in updated_hypotheses
+                ],
                 # Include new and updated hypotheses
                 [
                     evolve(

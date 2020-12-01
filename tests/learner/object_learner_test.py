@@ -27,7 +27,8 @@ from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import (
     PursuitObjectLearnerNew,
     SubsetObjectLearnerNew,
-    ProposeButVerifyObjectLearner, CrossSituationalObjectLearner,
+    ProposeButVerifyObjectLearner,
+    CrossSituationalObjectLearner,
 )
 from adam.learner.objects import SubsetObjectLearner
 from adam.ontology import OntologyNode, THING
@@ -91,7 +92,9 @@ def integrated_learner_cs_factory(langage_mode: LanguageMode):
             smoothing_parameter=0.001,
             # The expected number of meanings is the number of subtypes of THING.
             # This should probably be set as a default value for the cross-situational object learner if possible...
-            expected_number_of_meanings=len(GAILA_PHASE_1_ONTOLOGY.nodes_with_properties(THING)),
+            expected_number_of_meanings=len(
+                GAILA_PHASE_1_ONTOLOGY.nodes_with_properties(THING)
+            ),
             language_mode=langage_mode,
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )

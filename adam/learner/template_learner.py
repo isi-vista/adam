@@ -517,8 +517,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         )
 
     def _pre_learning_step(
-            self,
-            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> None:
         """
         Perform any necessary steps before the learning logic.
@@ -537,8 +536,7 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         """
 
     def _post_learning_step(
-            self,
-            language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> None:
         """
         Perform any necessary steps after the learning logic.
