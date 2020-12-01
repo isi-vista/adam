@@ -7,7 +7,6 @@ from typing import Optional, Dict, AbstractSet, Iterable, Tuple, Set, Mapping, L
 
 from attr import attrs, attrib, Factory, evolve
 from attr.validators import instance_of, optional, in_
-from more_itertools import first
 
 from adam.learner import (
     SurfaceTemplate,
