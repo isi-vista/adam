@@ -161,7 +161,9 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 language_perception_semantic_alignment, bound_surface_template
             )
         )
-        meanings_to_pattern_template = immutabledict(
+        meanings_to_pattern_template: Mapping[
+            PerceptionGraph, PerceptionGraphTemplate
+        ] = immutabledict(
             (meaning, PerceptionGraphTemplate.from_graph(meaning, immutabledict()))
             for meaning in meanings_from_perception
         )
