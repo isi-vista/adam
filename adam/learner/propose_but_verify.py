@@ -213,15 +213,18 @@ class AbstractProposeButVerifyLearner(AbstractTemplateLearnerNew, ABC):
                 match_mode=MatchMode.NON_OBJECT,
                 debug_callback=self._debug_callback,
             )
+            found_match = False
             for match in matcher.matches(use_lookahead_pruning=True):
+                found_match = True
                 semantic_node_for_match = pattern_match_to_semantic_node(
                     concept=concept, pattern=pattern, match=match
                 )
                 yield match, semantic_node_for_match
             # We raise an error if we find a partial match but don't manage to match it to the scene
-            raise RuntimeError(
-                f"Partial Match found for {concept} below match ratio however pattern "
-                f"subgraph was unable to match to perception graph.\n"
-                f"Partial Match: {partial_match}\n"
-                f"Perception Graph: {perception_graph}"
-            )
+            if not found_match:
+                raise RuntimeError(
+                    f"Partial Match found for {concept} below match ratio however pattern "
+                    f"subgraph was unable to match to perception graph.\n"
+                    f"Partial Match: {partial_match}\n"
+                    f"Perception Graph: {perception_graph}"
+                )

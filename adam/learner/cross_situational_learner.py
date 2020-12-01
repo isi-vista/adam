@@ -549,22 +549,24 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             # if there is a match, which is above our minimum match ratio
             # Use that pattern to try and find a match in the scene
             # There should be one
-            # TODO: This currently means we match to the graph multiple times. Ho
+            # TODO: This currently means we match to the graph multiple times. Reduce this?
             matcher = partial_match.matching_subgraph.matcher(
                 perception_graph,
                 match_mode=MatchMode.NON_OBJECT,
                 debug_callback=self._debug_callback,
             )
+            found_match = False
             for match in matcher.matches(use_lookahead_pruning=True):
+                found_match = True
                 semantic_node_for_match = pattern_match_to_semantic_node(
                     concept=concept, pattern=pattern, match=match
                 )
-                # A template only has to match once; we don't care about finding additional matches.
                 yield match, semantic_node_for_match
             # We raise an error if we find a partial match but don't manage to match it to the scene
-            raise RuntimeError(
-                f"Partial Match found for {concept} below match ratio however pattern "
-                f"subgraph was unable to match to perception graph.\n"
-                f"Partial Match: {partial_match}\n"
-                f"Perception Graph: {perception_graph}"
-            )
+            if not found_match:
+                raise RuntimeError(
+                    f"Partial Match found for {concept} below match ratio however pattern "
+                    f"subgraph was unable to match to perception graph.\n"
+                    f"Partial Match: {partial_match}\n"
+                    f"Perception Graph: {perception_graph}"
+                )
