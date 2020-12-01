@@ -692,7 +692,7 @@ class CrossSituationalObjectLearner(
         )
         for (concept, hypotheses) in self._concept_to_hypotheses.items():
             for (i, hypothesis) in enumerate(hypotheses):
-                hypothesis.render_to_file(
+                hypothesis.pattern_template.render_to_file(
                     concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
                 )
 
