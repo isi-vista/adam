@@ -56,7 +56,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
     found here: https://onlinelibrary.wiley.com/doi/full/10.1111/j.1551-6709.2010.01104.x
     """
 
-    @attrs(slots=True, eq=False)
+    @attrs(slots=True, eq=False, frozen=True)
     class Hypothesis:
         pattern_template: PerceptionGraphTemplate = attrib(
             validator=instance_of(PerceptionGraphTemplate)
