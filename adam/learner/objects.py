@@ -675,6 +675,24 @@ class CrossSituationalObjectLearner(
     def _new_concept(self, debug_string: str) -> Concept:
         return ObjectConcept(debug_string)
 
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        # In the case of the object learner,
+        # A template only has to match once; we don't care about finding additional matches.
+        match_with_semantic_node = first(
+            super()._match_template(
+                concept=concept, pattern=pattern, perception_graph=perception_graph
+            ),
+            None,
+        )
+        if match_with_semantic_node is not None:
+            yield match_with_semantic_node
+
     def _hypotheses_from_perception(
         self,
         learning_state: LanguagePerceptionSemanticAlignment,
