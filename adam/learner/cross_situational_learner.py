@@ -135,6 +135,12 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 concept = self._new_concept(
                     debug_string=other_bound_surface_template.surface_template.to_short_string()
                 )
+            self._surface_template_to_concept[
+                other_bound_surface_template.surface_template
+            ] = concept
+            self._concept_to_surface_template[
+                concept
+            ] = other_bound_surface_template.surface_template
             concepts_in_utterance.append(concept)
         self._concepts_in_utterance = immutableset(concepts_in_utterance)
 
@@ -393,7 +399,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
             # we need to create a new hypothesis for it.
             new_hypothesis = AbstractCrossSituationalLearner.Hypothesis(
                 pattern_template=meaning_to_pattern[meaning],
-                association_score=0.0,
+                association_score=alignment_probabilities[concept][meaning],
                 probability=placeholder_probability,
                 observation_count=1,
             )
