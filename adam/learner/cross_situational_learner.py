@@ -422,6 +422,8 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
                 [
                     evolve(
                         hypothesis,
+                        # Replace the placeholder meaning probability with the true meaning probability,
+                        # calculated using the association scores and smoothing term.
                         probability=(
                             hypothesis.association_score + self._smoothing_parameter
                         )
