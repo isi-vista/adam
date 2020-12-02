@@ -9,7 +9,7 @@ from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.language_mode import LanguageMode
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 from attr import attrib, attrs
-from attr.validators import deep_iterable, instance_of
+from attr.validators import deep_iterable, instance_of, deep_mapping
 from immutablecollections import ImmutableDict, ImmutableSet, immutableset
 from immutablecollections.converter_utils import (
     _to_immutabledict,
@@ -237,7 +237,12 @@ class SurfaceTemplateBoundToSemanticNodes:
     surface_template: SurfaceTemplate = attrib(validator=instance_of(SurfaceTemplate))
     slot_to_semantic_node: ImmutableDict[
         SyntaxSemanticsVariable, ObjectSemanticNode
-    ] = attrib(converter=_to_immutabledict)
+    ] = attrib(
+        converter=_to_immutabledict,
+        validator=deep_mapping(
+            instance_of(SyntaxSemanticsVariable), instance_of(ObjectSemanticNode)
+        ),
+    )
 
 
 SLOT1 = SyntaxSemanticsVariable("slot1")

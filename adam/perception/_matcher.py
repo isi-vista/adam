@@ -266,12 +266,14 @@ class GraphMatching:
                     f"Requested to begin matching from an alignment which aligns "
                     f"semantically infeasible nodes: "
                     f"{pattern_node} to {aligned_graph_node}"
+                    f" when matching pattern against pattern = {self.matching_pattern_against_pattern}"
                 )
             if not self.syntactic_feasibility(aligned_graph_node, pattern_node):
                 raise RuntimeError(
                     f"Requested to begin matching from an alignment which aligns "
                     f"syntactically infeasible nodes: "
                     f"{pattern_node} to {aligned_graph_node}"
+                    f" when matching pattern against pattern = {self.matching_pattern_against_pattern}"
                 )
             self.state.__class__(self, aligned_graph_node, pattern_node)
 

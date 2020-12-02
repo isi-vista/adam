@@ -336,6 +336,7 @@ def candidate_templates(
 
     # Any recognized object is a potential verb argument.
     # This method does not properly handle arguments which themselves have complex structure.
+    # Arguments are restricted to ONLY be ObjectSemanticNodes
     # See https://github.com/isi-vista/adam/issues/785
 
     # We currently do not handle verb arguments
@@ -431,9 +432,15 @@ def candidate_templates(
             if token == AlignmentSlots.Argument:
                 slot_semantic_variable = STANDARD_SLOT_VARIABLES[aligned_node_index]
                 template_elements.append(slot_semantic_variable)
-                slot_to_semantic_node.append(
-                    (slot_semantic_variable, aligned_nodes[aligned_node_index].node)
-                )
+                aligned_node = aligned_nodes[aligned_node_index].node
+                if not isinstance(aligned_node, ObjectSemanticNode):
+                    logging.debug(
+                        f"Attempted to make template where an Argument is not an ObjectSemanticNode."
+                        f"Invalid node: {aligned_node}"
+                    )
+                    # Log this failure and then ignore this attempt
+                    continue
+                slot_to_semantic_node.append((slot_semantic_variable, aligned_node))
                 aligned_node_index += 1
                 previous_node_was_string = False
             else:
