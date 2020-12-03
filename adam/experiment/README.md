@@ -105,7 +105,7 @@ TODO: https://github.com/isi-vista/adam/issues/982
 
 ### Object Language Ablation
 - object_learner_type: String - Defines which specific learning algorithm to implement for Objects
-    - Valid options: "subset", "pbv", "pursuit"
+    - Valid options: "subset", "pbv", "cross-situational", "pursuit"
 - learner_params: Namespace - Defines a set of parameters to configure the different learner types
 - train_curriculum: Namespace - Defines a set of parameters to configure the training curriculum for this experiment
     - accurate_language_percentage: Float - A value between 0 and 1 which is the chance of the accurate language being associated with a situation
