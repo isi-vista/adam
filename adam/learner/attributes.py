@@ -8,7 +8,7 @@ from typing import AbstractSet, Union, Optional, Tuple, Iterable, Sequence, Mapp
 
 # from more_itertools import powerset
 from adam.language import LinguisticDescription
-from adam.language_specific.english import DETERMINERS
+from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import LearningExample, get_largest_matching_pattern
 from adam.learner.language_mode import LanguageMode
 from adam.learner.alignments import (
@@ -80,6 +80,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                             preceding_token_index
                         )
                     ):
+
                         ret.append(
                             SurfaceTemplateBoundToSemanticNodes(
                                 language_concept_alignment.to_surface_template(
@@ -113,7 +114,6 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
                 # Catches errors in to_surface_template() - we skip this case to prevent the learning from breaking.
                 except RuntimeError:
                     continue
-
         return immutableset(
             bound_surface_template
             for bound_surface_template in ret
@@ -130,7 +130,7 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             # later learning of attributes since the learner may consider both the attribute and the object to be objects initially,
             # leading it to try to match two objects with a template that only has one slot
             and not all(
-                (e in DETERMINERS or isinstance(e, SyntaxSemanticsVariable))
+                (e in ENGLISH_DETERMINERS or isinstance(e, SyntaxSemanticsVariable))
                 for e in bound_surface_template.surface_template.elements
             )
         )
@@ -283,6 +283,7 @@ class SubsetAttributeLearnerNew(
         hypothesis: PerceptionGraphTemplate,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,  # pylint:disable=unused-argument
     ) -> bool:
+        # TODO: update this for classifier experiments
         if len(hypothesis.graph_pattern) < 2:
             # We need at least two nodes - a wildcard and a property -
             # for meaningful attribute semantics.

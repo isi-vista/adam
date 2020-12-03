@@ -555,6 +555,26 @@ def _make_kind_predicates_curriculum(
     return ExplicitWithSituationInstanceGroup("kind predicates", all_instances)
 
 
+def _make_chinese_classifier_single_object_curriculum(
+    num_samples: Optional[int],
+    noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Phase1InstanceGroup:
+    """Creates situations and descriptions such as yi1_jr1 shou3 (one CLF hand)"""
+    all_instances = []
+    classifiers_of_interest = ["yi1_jang1", "yi1_jr1", "yi1_ge4"]
+    # accumulate all instances of this object with the desired classifiers
+    for (instance, description, perception) in _make_each_object_by_itself_curriculum(
+        num_samples, noise_objects, language_generator
+    ).instances():
+        linguistic_tokens = description.as_token_sequence()
+        if linguistic_tokens[0] in classifiers_of_interest:
+            all_instances.append((instance, description, perception))
+    return ExplicitWithSituationInstanceGroup("single object classifiers", all_instances)
+
+
 def _make_colour_predicates_curriculum(
     num_samples: Optional[int],
     noise_objects: Optional[int],
@@ -3577,6 +3597,21 @@ def build_gaila_phase1_attribute_curriculum(
         _make_my_your_object_curriculum(
             num_samples, num_noise_objects, language_generator
         ),
+    ]
+
+
+def build_classifier_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+) -> Sequence[Phase1InstanceGroup]:
+    """One particular instantiation of the Chinese classifier learning curriculum"""
+    return [
+        _make_chinese_classifier_single_object_curriculum(
+            num_samples, num_noise_objects, language_generator
+        )
     ]
 
 

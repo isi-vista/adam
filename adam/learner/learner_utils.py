@@ -14,6 +14,7 @@ from typing import (
     Callable,
     Sequence,
 )
+from adam.language_specific.english import DETERMINERS
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
@@ -260,7 +261,9 @@ def covers_entire_utterance(
     num_covered_tokens = 0
     for element in bound_surface_template.surface_template.elements:
         if isinstance(element, str):
-            num_covered_tokens += 1
+            # this is a hack for the classifier learning experiment (the classifier will be ignored with sized so we must ignore it here too)
+            if element[:3] != "yi1":
+                num_covered_tokens += 1
         else:
             slot_for_element = language_concept_alignment.node_to_language_span[
                 bound_surface_template.slot_to_semantic_node[element]
@@ -271,11 +274,7 @@ def covers_entire_utterance(
             # we need to check here that the determiners aren't getting aligned; otherwise it can mess up our count
             if ignore_determiners:
                 num_covered_tokens += len(
-                    [
-                        x
-                        for x in aligned_strings_for_slot
-                        if x not in ["a", "the"] and x[:3] != "yi1"
-                    ]
+                    [x for x in aligned_strings_for_slot if x not in DETERMINERS]
                 )
             else:
                 num_covered_tokens += len(aligned_strings_for_slot)
@@ -290,7 +289,7 @@ def covers_entire_utterance(
             [
                 token
                 for token in language_concept_alignment.language.as_token_sequence()
-                if token not in ["a", "the"] and token[:3] != "yi1"
+                if token not in DETERMINERS
             ]
         )
     )
