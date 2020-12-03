@@ -49,7 +49,7 @@ from adam.language.language_utils import (
     phase2_language_generator,
     integrated_experiment_language_generator,
 )
-from adam.language_specific.english import DETERMINERS
+from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner.attributes import (
     SubsetAttributeLearner,
     SubsetAttributeLearnerNew,
@@ -73,6 +73,7 @@ from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_object_curriculum,
     build_gaila_phase1_attribute_curriculum,
+    build_classifier_curriculum,
     build_gaila_phase1_relation_curriculum,
     build_gaila_phase1_verb_curriculum,
     build_gaila_phase_1_curriculum,
@@ -295,13 +296,6 @@ def learner_factory_from_params(
     )
 
     beam_size = params.positive_integer("beam_size", default=10)
-
-    # if language_mode == LanguageMode.CHINESE and learner_type not in [
-    #    "integrated-learner",
-    #    "integrated-learner-recognizer",
-    # ]:
-    #    raise RuntimeError("Only able to test Chinese with integrated learner.")
-
     rng = random.Random()
     rng.seed(0)
     perception_generator = GAILA_PHASE_1_PERCEPTION_GENERATOR
@@ -312,7 +306,7 @@ def learner_factory_from_params(
     # Eval hack! This is specific to the Phase 1 ontology
     object_recognizer = ObjectRecognizer.for_ontology_types(
         objects,
-        determiners=DETERMINERS,
+        determiners=ENGLISH_DETERMINERS,
         ontology=GAILA_PHASE_1_ONTOLOGY,
         language_mode=language_mode,
         perception_generator=perception_generator,
@@ -420,7 +414,7 @@ def learner_factory_from_params(
             functional_learner=FunctionalLearner(language_mode=language_mode),
             generics_learner=SimpleGenericsLearner(),
         )
-    elif learner_type == "integrated-learner-recognizer-without-generics":
+    elif learner_type == "ic":
         return lambda: IntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=object_recognizer, language_mode=language_mode
@@ -498,19 +492,19 @@ def learner_factory_from_params(
             raise RuntimeError(f"Invalid Object Learner Type Selected: {learner_type}")
         return lambda: IntegratedTemplateLearner(object_learner=object_learner_factory())
     elif learner_type == "integrated-learner-params":
-        object_learner = build_object_learner_factory(
+        object_learner = build_object_learner_factory(  # type:ignore
             params.namespace_or_empty("object_learner"), beam_size, language_mode
         )
-        attribute_learner = build_attribute_learner_factory(
+        attribute_learner = build_attribute_learner_factory(  # type:ignore
             params.namespace_or_empty("attribute_learner"), beam_size, language_mode
         )
-        relation_learner = build_relation_learner_factory(
+        relation_learner = build_relation_learner_factory(  # type:ignore
             params.namespace_or_empty("relation_learner"), beam_size, language_mode
         )
-        action_learner = build_action_learner_factory(
+        action_learner = build_action_learner_factory(  # type:ignore
             params.namespace_or_empty("action_learner"), beam_size, language_mode
         )
-        plural_learner = build_plural_learner_factory(
+        plural_learner = build_plural_learner_factory(  # type:ignore
             params.namespace_or_empty("plural_learner"), beam_size, language_mode
         )
         return lambda: IntegratedTemplateLearner(
@@ -564,6 +558,7 @@ def curriculum_from_params(
         "m6-preposition": (build_m6_prepositions_curriculum, None),
         "m9-objects": (build_gaila_phase1_object_curriculum, None),
         "m9-attributes": (build_gaila_phase1_attribute_curriculum, None),
+        "chinese-classifiers": (build_classifier_curriculum, None),
         "m9-relations": (build_gaila_phase1_relation_curriculum, None),
         "m9-events": (build_gaila_phase1_verb_curriculum, None),
         "m9-debug": (build_debug_curriculum_train, build_debug_curriculum_test),

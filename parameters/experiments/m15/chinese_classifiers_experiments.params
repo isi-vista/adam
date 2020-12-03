@@ -1,0 +1,9 @@
+_includes:
+   - "../../root.params"
+
+experiment_group_dir: '%adam_experiment_root%/chinese_classifiers/'
+hypothesis_log_dir: "%experiment_group_dir%/hypotheses"
+include_image_links: true
+experiment: 'chinese-classifier-experiment'
+curriculum: 'chinese-classifiers'
+learner: 'integrated-learner'

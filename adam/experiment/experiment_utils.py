@@ -1,5 +1,5 @@
 import logging
-from adam.language_specific.english import DETERMINERS
+from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import LanguageMode
 from adam.learner.attributes import SubsetAttributeLearnerNew
 from adam.learner.object_recognizer import ObjectRecognizer
@@ -211,7 +211,7 @@ def build_object_learner_factory(
     elif learner_type == "recognizer":
         object_recognizer = ObjectRecognizer.for_ontology_types(
             objects,
-            determiners=DETERMINERS,
+            determiners=ENGLISH_DETERMINERS,
             ontology=ontology,
             language_mode=language_mode,
             perception_generator=perception_gen,

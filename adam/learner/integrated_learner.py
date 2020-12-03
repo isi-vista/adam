@@ -308,7 +308,8 @@ class IntegratedTemplateLearner(
                     return cur_string
             # get the classifier and add it to the language
             classifier = get_classifier_for_string(cur_string[-1])
-            if classifier:
+            # if the classifier was already hypothesized by the relation learner
+            if classifier and cur_string[0][:4] != "yi1_":
                 return tuple(chain((classifier,), cur_string))
             else:
                 return cur_string

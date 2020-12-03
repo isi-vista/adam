@@ -1,6 +1,7 @@
 from adam.curriculum.phase1_curriculum import (
     Phase1InstanceGroup,
     _make_kind_predicates_curriculum,
+    _make_chinese_classifier_single_object_curriculum,
     _make_colour_predicates_curriculum,
     _make_behind_in_front_curriculum,
     _make_come_curriculum,
@@ -62,6 +63,14 @@ def curriculum_test(curriculum: Phase1InstanceGroup) -> None:
 def test_each_object_by_itself_curriculum(language_generator):
     curriculum_test(
         _make_each_object_by_itself_curriculum(None, None, language_generator)
+    )
+
+
+def test_chinese_classifier_curriulum():
+    curriculum_test(
+        _make_chinese_classifier_single_object_curriculum(
+            None, None, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+        )
     )
 
 
