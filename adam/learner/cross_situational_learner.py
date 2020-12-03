@@ -545,7 +545,9 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         return (
             (concept, hypothesis.pattern_template, hypothesis.probability)
             for (concept, hypotheses) in self._concept_to_hypotheses.items()
-            for hypothesis in hypotheses
+            for hypothesis in sorted(
+                hypotheses, key=lambda hypothesis: hypothesis.probability
+            )
             if hypothesis.observation_count < self._minimum_observation_amount
             or hypothesis.probability < self._lexicon_entry_threshold
         )
