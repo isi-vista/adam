@@ -43,10 +43,12 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
+from adam.learner.cross_situational_learner import AbstractCrossSituationalLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import (
     assert_static_situation,
     candidate_object_hypotheses,
+    get_objects_from_perception,
 )
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
@@ -640,6 +642,77 @@ class ProposeButVerifyObjectLearner(
         )
         if match is not None:
             yield match
+
+
+@attrs(slots=True)
+class CrossSituationalObjectLearner(
+    AbstractCrossSituationalLearner, AbstractObjectTemplateLearnerNew
+):
+    """
+    An implementation of `LanguageLearner` for Cross Situational learning based approach for single object detection.
+    """
+
+    @staticmethod
+    def from_params(
+        params: Parameters, *, graph_logger: Optional[GraphLogger] = None
+    ) -> "CrossSituationalObjectLearner":
+        return CrossSituationalObjectLearner(
+            graph_match_confirmation_threshold=params.floating_point(
+                "graph_match_confirmation_threshold"
+            ),
+            lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
+            smoothing_parameter=params.floating_point("smoothing_parameter"),
+            expected_number_of_meanings=params.floating_point(
+                "expected_number_of_meanings"
+            ),
+            graph_logger=graph_logger,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            language_mode=params.enum(
+                "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+            ),
+        )
+
+    def _new_concept(self, debug_string: str) -> Concept:
+        return ObjectConcept(debug_string)
+
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        # In the case of the object learner,
+        # A template only has to match once; we don't care about finding additional matches.
+        match_with_semantic_node = first(
+            super()._match_template(
+                concept=concept, pattern=pattern, perception_graph=perception_graph
+            ),
+            None,
+        )
+        if match_with_semantic_node is not None:
+            yield match_with_semantic_node
+
+    def _hypotheses_from_perception(
+        self,
+        learning_state: LanguagePerceptionSemanticAlignment,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+    ) -> Iterable[PerceptionGraph]:
+        return get_objects_from_perception(
+            learning_state.perception_semantic_alignment.perception_graph
+        )
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        logging.info(
+            "Logging %s hypotheses to %s",
+            len(self._concept_to_hypotheses),
+            log_output_path,
+        )
+        for (concept, hypotheses) in self._concept_to_hypotheses.items():
+            for (i, hypothesis) in enumerate(hypotheses):
+                hypothesis.pattern_template.render_to_file(
+                    concept.debug_string, log_output_path / f"{concept.debug_string}.{i}"
+                )
 
 
 @attrs(frozen=True, kw_only=True)

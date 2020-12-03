@@ -84,7 +84,10 @@ None
 
 ### Cross-Situational
 *Valid For: Object*
-< Not Yet Implemented >
+- graph_match_confirmation_threshold: Float (Optional: 0.8) - A value between 0 and 1 which indicates how much a new hypothesis must match a previous pattern to count as a successful match.
+- lexicon_entry_threshold: Float - A float between 0 and 1 controlling when the learner will consider a word's meaning "known" and enter that word into its lexicon
+- smoothing_parameter: Float - A small positive number added to each hypothesis score when updating hypotheses. This should be at most 0.1 and possibly much less.
+- expected_number_of_meanings: Float - A positive number giving an upper bound for the number of possible abstract meanings (cat, dog, etc. rather than a cat in a scene). For the phase 1 ontology this should be set to at least 67.
 
 ### Pursuit
 *Valid For: Object, Attribute, Relation*
@@ -102,7 +105,7 @@ TODO: https://github.com/isi-vista/adam/issues/982
 
 ### Object Language Ablation
 - object_learner_type: String - Defines which specific learning algorithm to implement for Objects
-    - Valid options: "subset", "pbv", "pursuit"
+    - Valid options: "subset", "pbv", "cross-situational", "pursuit"
 - learner_params: Namespace - Defines a set of parameters to configure the different learner types
 - train_curriculum: Namespace - Defines a set of parameters to configure the training curriculum for this experiment
     - accurate_language_percentage: Float - A value between 0 and 1 which is the chance of the accurate language being associated with a situation

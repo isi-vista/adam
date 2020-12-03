@@ -8,6 +8,7 @@ from adam.learner.objects import (
     ProposeButVerifyObjectLearner,
     PursuitObjectLearnerNew,
     ObjectRecognizerAsTemplateLearner,
+    CrossSituationalObjectLearner,
 )
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.relations import SubsetRelationLearnerNew
@@ -179,7 +180,7 @@ def build_object_learner_factory(
 ) -> TemplateLearner:
     learner_type = params.string(
         "learner_type",
-        valid_options=["subset", "pbv", "pursuit", "recognizer"],
+        valid_options=["subset", "pbv", "cross-situational", "pursuit", "recognizer"],
         default="subset",
     )
     ontology, objects, perception_gen = ONTOLOGY_STR_TO_ONTOLOGY[
@@ -194,6 +195,8 @@ def build_object_learner_factory(
         )
     elif learner_type == "pbv":
         return ProposeButVerifyObjectLearner.from_params(params)
+    elif learner_type == "cross-situational":
+        return CrossSituationalObjectLearner.from_params(params)
     elif learner_type == "pursuit":
         rng = random.Random()
         rng.seed(params.integer("random_seed", default=0))
