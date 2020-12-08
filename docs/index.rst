@@ -7,6 +7,7 @@ ADAM: Abduction to Demonstrate an Articulate Machine
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   using_adam
 
 
 .. autosummary::
