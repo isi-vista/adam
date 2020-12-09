@@ -16,7 +16,7 @@ from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import random
 
 from itertools import chain
-from typing import Sequence, Optional, Iterable, Any, Tuple
+from typing import Sequence, Optional, Iterable, Any
 
 from more_itertools import flatten, only
 
@@ -637,23 +637,28 @@ def integrated_pursuit_learner_experiment_curriculum(
             target: TemplateObjectVariable,
             *,
             background_objects: Iterable[TemplateObjectVariable] = immutableset(),
-            relations: Iterable[Tuple[Relation[Any], ...]] = immutableset(),
+            background_relations: Iterable[Relation[Any]] = immutableset(),
         ) -> Phase1SituationTemplate:
             return Phase1SituationTemplate(
                 name=f"single-object-{target.handle}",
                 salient_object_variables=[target],
                 background_object_variables=background_objects,
-                asserted_always_relations=relations,
+                asserted_always_relations=background_relations,
                 syntax_hints=[IGNORE_COLORS],
             )
 
         templates = (
             [
                 single_object_described_template(
-                    target_object, background_objects=background_objects
+                    target_object,
+                    background_objects=background_objects,
+                    background_relations=background_relations_builder(
+                        background_objects, num_relations, target=target_object
+                    ),
                 )
                 for target_object in target_objects
                 for background_objects in noise_objects_sets
+                for num_relations in range(min_noise_relations, max_noise_relations)
             ]
             if add_noise
             else [
