@@ -1,0 +1,34 @@
+_includes:
+   - "../root.params"
+
+# Meta parameters: Where to store the experiment results, and what results to collect
+experiment: "YOUR_EXPERIMENT_NAME"
+experiment_group_dir: '%adam_experiment_root%/%experiment%'
+
+# Some potentially useful (but optional) parameters
+# that control *how much* and *what kind of* output the experiment will produce
+hypothesis_log_dir: "%experiment_group_dir%/hypotheses"
+include_image_links: true
+
+sort_learner_descriptions_by_length: True
+num_pretty_descriptions: 5
+
+# The curriculum to use in the experiment
+curriculum: "YOUR_CURRICULUM"
+
+# The language to use in the experiment
+language_mode: ENGLISH
+
+# The learner setup to use in the experiment
+# As a default, we include learners for every role, using subset where available
+learner: "integrated-learner-params"
+object_learner:
+   learner_type: "subset"
+attibute_learner:
+   learner_type: "subset"
+relation_learner:
+   learner_type: "subset"
+action_learner:
+   learner_type: "subset"
+include_functional: True
+include_generics: True
