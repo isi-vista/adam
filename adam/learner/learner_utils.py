@@ -395,6 +395,7 @@ def candidate_templates(
                     node,
                     span,
                 ) in language_concept_alignment.node_to_language_span.items()
+                if isinstance(node, ObjectSemanticNode)
             )
             num_arguments_to_alignments_sets[num_arguments] = immutableset(
                 ordered_semantic_nodes
@@ -439,7 +440,7 @@ def candidate_templates(
                         f"Invalid node: {aligned_node}"
                     )
                     # Log this failure and then ignore this attempt
-                    continue
+                    yield None
                 slot_to_semantic_node.append((slot_semantic_variable, aligned_node))
                 aligned_node_index += 1
                 previous_node_was_string = False
@@ -602,12 +603,20 @@ def candidate_templates(
             ):
                 if surface_template_bound_to_semantic_nodes:
                     ret.append(surface_template_bound_to_semantic_nodes)
+
+    def contains_str(bst: SurfaceTemplateBoundToSemanticNodes) -> bool:
+        for element in bst.surface_template.elements:
+            if isinstance(element, str):
+                return True
+        return False
+
     return immutableset(
         bound_surface_template
         for bound_surface_template in ret
         # For now, we require templates to account for the entire utterance.
         # See https://github.com/isi-vista/adam/issues/789
         if covers_entire_utterance(bound_surface_template, language_concept_alignment)
+        and contains_str(bound_surface_template)
     )
 
 
