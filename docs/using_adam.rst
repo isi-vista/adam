@@ -156,7 +156,12 @@ Adding a new curriculum
 
 Defining a new curriculum for ADAM means defining functions to generate the curriculum and registering them in the code.
 
-A curriculum function has the following type signature:
+A registered curriculum consists of a training curriculum and a testing curriculum. The learner learns from the training
+curriculum first. Afterwards, if a testing curriculum is specified, the learner is asked to describe the examples in the
+testing curriculum without learning any of their linguistic descriptions.
+
+The training curriculum and testing curriculum are specified using *curriculum functions*. A curriculum function has the
+following type signature:
 
 .. code-block:: python
 
@@ -170,39 +175,113 @@ A curriculum function has the following type signature:
    ) -> Sequence[Phase1InstanceGroup]:
        ...
 
-The curriculum function creates a sequence of example situations paired with their perceptual representations (what the
-learner "sees") and linguistic descriptions (what the learner "hears"). To do this, they typically make use of ADAM's
-*situation templates*, which provide a compact way of describing similar situations, like "a round object on a table,"
-or "Mom eating a cookie (with some random unrelated objects in the scene)."
+The curriculum function creates a sequence of example situations paired with their *perceptual representations* (what
+the learner "sees") and *linguistic descriptions* (what the learner "hears"). To do this, they typically make use of
+ADAM's *situation templates*, which provide a compact way of describing similar situations, like "a round object on a
+table," or "Mom eating a cookie (with some random unrelated objects in the scene)."
 
-To use situation templates, we first define some template object variables. To do this we typically use the helpers
+To use situation templates, we first define some *template object variables*. To do this we typically use the helpers
 `standard_object` and `make_noise_objects`. `standard_object` variables can represent both abstract things, like "a
 round object," and more concrete things, like "a table" or "Mom." `make_noise_objects`, on the other hand, yields a
 sequence of variables representing random unrelated objects (as in the second situation template example above).
 
 Once we have our variables, we can define a situation template that uses them. To do this, we create a
-`Phase1SituationTemplate` object which names the objects in the scene, the relevant relations between them, any actions
-in the scene, and optionally some syntax hints the language generator can make use of.
+`Phase1SituationTemplate` object which names the relevant objects in the scene (together with any background objects),
+the relevant relations between them, any actions in the scene, and optionally some syntax hints the language generator
+can make use of (which can, for example, tell it not to include a color in its description).
 
-Finally, once we have a template, we can use it to create a sequence of instance groups. First, we convert the template
-into some specific situations, then we create instances from these situations that the learner can use.
+Finally, once we have a template, we can use it to create a sequence of *instance groups*. First, we convert the
+template into some specific *situations*, then we create *instances* from these situations that the learner can use.
 To create specific situations, we typically use `sampled` with the specified number of samples, though one can also use
 `all_possible` to generate (as the name suggests) all possible (representable) situations that the template describes.
-To create instances, we use the helper function `phase1_instances`.
+To create instances, we use the helper function `phase1_instances`. The result looks something like this:
 
-For more complex curricula, we may define and use more than one situation template.
+.. code-block:: python
 
-.. TODO explain how to use more than one situation template. example: phase1_curriculum.py:199.
+   def build_my_curriculum(
+       num_samples: Optional[int],
+       num_noise_objects: Optional[int],
+       language_generator: LanguageGenerator[
+           HighLevelSemanticsSituation,
+           LinearizedDependencyTree,
+       ],
+   ) -> Sequence[Phase1InstanceGroup]:
+       ball = standard_object("ball", BALL)
+       template = Phase1SituationTemplate(
+           "a-ball",
+           salient_object_variables=[ball],
+           background_object_variables=make_noise_objects(num_noise_objects),
+           syntax_hints=[IGNORE_COLOR],
+       )
+       return phase1_instances(
+           "a ball with some random things in the background"
+           sampled(
+               template,
+               max_to_sample=num_samples,
+               chooser=PHASE1_CHOOSER_FACTORY(),
+               block_multiple_of_the_same_type=True,
+           ) if num_samples else all_possible(
+                single_object_template,
+                chooser=PHASE1_CHOOSER_FACTORY(),
+                ontology=GAILA_PHASE_1_ONTOLOGY,
+           )),
+           language_generator=language_generator,
+       )
 
-.. Here's what I think the general outline is:
-   1. Define a curriculum function for training and (optionally) testing; these functions work as follows
-       1. Take num_samples: Optional[int], num_noise_objects: Optional[int],
-          language_generator: LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]
-          and returns a Sequence[Phase1InstanceGroup].
-       2. Create any necessary template variables
-       3. Use those variables to create a Phase1SituationTemplate
-       4. Return phase1_instances("$curriculum_name", chain(*[sampled(template1, ...), sampled(template2, ...), ..., sampled(templatek, ...)]), language_generator=language_generator)
-   2. Add a curriculum entry to str_to_train_test_curriculum in curriculum_from_params() in log_experiment.py
+This is the bare minimum needed to define a curriculum function.
+
+Finally, to register our curriculum, we must modify `adam/experiment/log_experiment.py`. The function
+`curriculum_from_params` defines a mapping `str_to_train_test_curriculum`. Add a new entry to this mapping as follows:
+
+.. code-block:: python
+
+   str_to_train_test_curriculum: Mapping[
+       str, Tuple[CURRICULUM_BUILDER, Optional[CURRICULUM_BUILDER]]
+   ] = {
+       ...
+       "my_curriculum": (my_train_curriculum, my_test_curriculum),
+   }
+
+The string used as a key defines a name for this curriculum. You will use this name when you run your experiment.
+(For more information on running your experiment, see `Running your experiment`_.
+
+Note that `my_test_curriculum` can be `None` if you have no test curriculum.
+
+You can then run your curriculum
+
+Defining more complex curricula
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For more complex curricula, we may wish to define and use more than one situation template. This works exactly the same
+as using a single curriculum with one difference: You must convert each template into situations separately and combine
+the results. This is done as follows:
+
+.. code-block:: python
+
+   from itertools import chain
+
+   ...
+
+   def build_my_curriculum(
+       ...
+   ) -> Sequence[Phase1InstanceGroup]:
+       ...
+       template1 = ...
+       template2 = ...
+       return phase1_instances(
+           "two templates"
+           chain(  # use chain to combine the situations generated from each template
+               sampled(
+                   template1,
+                   ...
+               ) ...,
+               sampled(
+                   template2,
+                   ...
+               ) ...,
+           )
+           language_generator=language_generator,
+       )
 
 Running your experiment
 -----------------------
@@ -211,26 +290,35 @@ Once we have defined a curriculum for an experiment, it is relatively easy to de
 curriculum. We simply write a parameters file (a YAML file with some enhancements) describing the experiment to be run
 and feed this to our experiment runner script.
 
-.. TODO see: template
+The experiment parameters must specify, at minimum,
 
-Experiment parameters files live in `parameters/experiment` and subdirectories thereof. This is for organization and is
-not strictly necessary.
+1. the experiment name and directory,
+2. a curriculum to use for the experiment, and
+3. a learner (together with any of the learner's required parameters).
+
+A template parameters file is available under `parameters/experiment/experiment_template.params`.
+To start your experiment, simply copy the template and replace the experiment and curriculum names.
+
+Note that before running any experiments, it is important to make sure that you defined a `root.params` file as
+described in the README. This file defines user-specific parameters (such as the location of ADAM) that are then used in
+defining the experiments.
+
+Running the experiment is straightforward. Once both `root.params` and the experiment parameters have been set up,
+the experiment can be run from the ADAM repository root using
+
+.. code-block:: terminal
+   $ python adam/experiment/log_experiment.py path/to/your/experiment.params
+
+Further notes
+~~~~~~~~~~~~~
+
+By convention, experiment parameters files live in `parameters/experiment` and subdirectories thereof.
+This is for organization and is not strictly necessary.
 
 .. Refer to Jacob's excellent documentation. Accept no substitutes.
 
-For a more complete description of the all the options one can configure, consult `adam/experiment/README.md`.
-
-Note that before running any experiments, it is important to make sure that you defined a `root.params` file as
-described in the README.
-
-.. TODO walk through this root.params step in the example?
-
-.. Here's what I think the general outline is.
-   0. Make sure you have set up a root.params file as described in the README.
-   1. Define a parameters file for the experiment under parameters/experiment,
-      say parameters/experiment/mine/snake_toy.params.
-   2. Run $ python adam/experiment/log_experiment.py parameters/experiment/mine/snake_toy.params.
-   I think that this actually shows we probably want to include a template experiment parameters file.
+A full description of the experiment parameters that can be specified is out of the scope for this document.
+For a much more complete description of all such options, consult `adam/experiment/README.md`.
 
 ******************
 Example experiment
