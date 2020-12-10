@@ -6,7 +6,8 @@ Our experiments can be influenced by a number of parameters. This guide is inten
 As described below, our experiments have a parameter `resume_from_latest_logged_state` which, if true, does attempt to restart an experiment from the latest logged state. However, currently the experiment may restore the observers and the learners to different states IF the 'latest state' doesn't match between these logged folders.
 
 ### Curriculum Pre-Generation
-- curriculum_repository_path: Path - A directory to store pre-generated curriculum in to save on recreating the curriculum each time an experiment runs
+- curriculum_repository_path: Path (Optional) - A directory where pre-generated curriculum have been stored, used to save on recreating the curriculum each time an experiment runs.
+    - Note that to use this parameter, the curriculum in use must be pre-generated using the script `adam.experiment.generate_curriculum`. All curriculum-related parameters must be the same when pre-generating the curriculum.
 
 ## Generic Parameter Control
 These parameters are independent of any specific experiment.
