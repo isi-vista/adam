@@ -27,6 +27,14 @@ document.
 High-level overview
 *******************
 
+.. Note: Throughout this I have advised users to modify phase1_ontology when they want to add things.
+   Is this misleading? Is there a better way to extend ADAM?
+   Does it make sense to discuss caveats of this in this document?
+   Do I need to discuss adding new ontologies?
+
+.. TODO should these code examples include imports? I included one for the standard library since it's not part of ADAM
+   itself.
+
 Adding a new object
 -------------------
 
