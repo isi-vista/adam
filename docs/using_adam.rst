@@ -7,9 +7,12 @@ Using ADAM
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   running_experiments
 
 .. autosummary::
    :toctree: _autosummary
+
+.. TODO Rewrite this introduction
 
 The following is a guide on how to use ADAM to run your own experiments. We discuss how to extend the existing framework
 with new objects, properties, relations, actions, and curricula. We first give a high-level overview of how to do each
@@ -324,42 +327,6 @@ the results. This is done as follows:
            language_generator=language_generator,
        )
 
-Running your experiment
------------------------
-
-Once we have defined a curriculum for an experiment, it is relatively easy to define an experiment using that
-curriculum. We simply write a parameters file (a YAML file with some enhancements) describing the experiment to be run
-and feed this to our experiment runner script.
-
-The experiment parameters must specify, at minimum,
-
-1. the experiment name and directory,
-2. a curriculum to use for the experiment, and
-3. a learner (together with any of the learner's required parameters).
-
-A template parameters file is available under `parameters/experiment/experiment_template.params`.
-To start your experiment, simply copy the template and replace the experiment and curriculum names.
-
-Note that before running any experiments, it is important to make sure that you defined a `root.params` file as
-described in the README. This file defines user-specific parameters (such as the location of ADAM) that are then used in
-defining the experiments.
-
-Running the experiment is straightforward. Once both `root.params` and the experiment parameters have been set up,
-the experiment can be run from the ADAM repository root using
-
-.. code-block:: terminal
-   $ python adam/experiment/log_experiment.py path/to/your/experiment.params
-
-Further notes
-~~~~~~~~~~~~~
-
-By convention, experiment parameters files live in `parameters/experiment` and subdirectories thereof.
-This is for organization and is not strictly necessary.
-
-.. Refer to Jacob's excellent documentation. Accept no substitutes.
-
-A full description of the experiment parameters that can be specified is out of the scope for this document.
-For a much more complete description of all such options, consult `adam/experiment/README.md`.
 
 ******************
 Example experiment
