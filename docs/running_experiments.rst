@@ -39,7 +39,8 @@ To do this, you'll need to write *parameters files* that describe your experimen
 These parameters files tell ADAM, at a minimum,
 
 1. the experiment name,
-2. the curriculum to use for the experiment,
+2. the curriculum to use for the experiment (which define the examples the learner sees during learning and the examples
+   it is judged on during testing),
 3. the learner (together with any of the learner's required parameters), and
 2. a directory where it can save the results.
 
