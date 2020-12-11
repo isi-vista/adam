@@ -2,8 +2,9 @@
 Adding a new curriculum
 #######################
 
-ADAM has a large number of curricula, but they can't cover everything.
-It's likely you'll want to define custom curricula for your experiments, whatever they are.
+There are a lot of possible curricula you could train a learner on,
+so ADAM probably doesn't define the specific curriculum you want.
+Thus, it's likely you'll want to define custom curricula for your experiments, whatever they are.
 Adding curricula is relatively simple but takes some getting used to.
 We will first walk through a simple example curriculum.
 We'll then discuss how to create more complicated curricula.
