@@ -10,6 +10,9 @@ Using ADAM
    running_experiments
    adding_a_curriculum
    adding_an_object
+   adding_a_property
+   adding_a_relation
+   adding_an_action
 
 .. autosummary::
    :toctree: _autosummary
@@ -40,48 +43,6 @@ High-level overview
 .. TODO should these code examples include imports? I included one for the standard library since it's not part of ADAM
    itself.
 
-
-Adding a new property
----------------------
-
-TODO
-
-.. Here's what I think the general outline is.
-   Note that this only covers non-color properties. Color properties are their own section.
-   1. In phase1_ontology:
-       1. Add a new ontology type subtyping PERCEIVABLE_PROPERTY.
-   2. Add a lexicon entry to $LANGUAGE_phase1_lexicon for each langauge you want to use in your experiment
-
-Adding a new color
-~~~~~~~~~~~~~~~~~~
-
-TODO
-
-.. Here's what I think the general outline is.
-   Adding a color is much like adding a property with a few differences.
-   1. In phase1_ontology:
-       1. Add a new ontology type subtyping COLOR, with the added property CAN_FILL_TEMPLATE_SLOT.
-       2. Add an entry to COLORS_TO_RGBS mapping your color to the appropriate hex value or values.
-   2. Add a lexicon entry to $LANGUAGE_phase1_lexicon for each langauge you want to use in your experiment
-
-Adding a new relation
----------------------
-
-TODO
-
-.. This one's complicated. It seems nontrivial to address this generally
-
-Adding a new action
--------------------
-
-TODO
-
-.. Here's what I think the general outline is:
-   1. In phase1_ontology:
-       1. Add a new ontology type subtyping ACTION.
-           1. If it involves a transfer of possession, mark it as such.
-       2. Create an action description for each variation of the action.
-   2. Add a lexicon entry to $LANGUAGE_phase1_lexicon for each langauge you want to use in your experiment
 
 ******************
 Example experiment
