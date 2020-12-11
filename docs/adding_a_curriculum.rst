@@ -36,6 +36,7 @@ and linguistic descriptions.
 Our curriculum functions are going to look like this:
 
 .. code-block:: python
+
    def build_toy_ball_train_curriculum(
        num_samples: Optional[int],
        num_noise_objects: Optional[int],
@@ -73,10 +74,10 @@ Object variables
 To use situation templates, we first define some *template object variables*.
 These represent objects in the situation.
 These variables can be concrete ("a ball" or even "a blue ball") or abstract ("an inanimate object").
-To do this we'll use the helpers `standard_object` and `make_noise_objects`.
-`standard_object` creates a single variable.
+To do this we'll use the helpers :code:`standard_object` and :code:`make_noise_objects`.
+:code:`standard_object` creates a single variable.
 You'll be using it a lot.
-`make_noise_objects` on the other hand gives a sequence of variables
+:code:`make_noise_objects` on the other hand gives a sequence of variables
 representing random objects.
 These noise objects are useful for testing a learner's ability to learn
 when there are objects in the scene unrelated to what's being described.
@@ -84,6 +85,7 @@ when there are objects in the scene unrelated to what's being described.
 Our training curriculum is going to define variables like this:
 
 .. code-block:: python
+
    def build_toy_ball_train_curriculum(
        num_samples: Optional[int],
        num_noise_objects: Optional[int],
@@ -98,6 +100,7 @@ Note that we explicitly exclude red balls from this so that we can test the lear
 Our testing curriculum will then **require** a red ball:
 
 .. code-block:: python
+
    def build_toy_ball_test_curriculum(
        num_samples: Optional[int],
        num_noise_objects: Optional[int],
@@ -109,7 +112,7 @@ Our testing curriculum will then **require** a red ball:
        ball = standard_object("ball", BALL, required_properties=[RED])
 
 Now that we have our variables, we can define a situation template that uses them.
-To do this, we're going to create a `Phase1SituationTemplate` object
+To do this, we're going to create a :code:`Phase1SituationTemplate` object
 that describes the kind of examples we want to generate.
 We'll include a ball in the scene
 together with some background objects that aren't balls.
@@ -120,6 +123,7 @@ since that's not what we want our learner to learn.
 The result looks like this:
 
 .. code-block:: python
+
    def build_toy_ball_train_curriculum(
        num_samples: Optional[int],
        num_noise_objects: Optional[int],
@@ -139,6 +143,7 @@ The result looks like this:
 The testing curriculum template looks similar:
 
 .. code-block:: python
+
    def build_toy_ball_test_curriculum(
        num_samples: Optional[int],
        num_noise_objects: Optional[int],
@@ -164,14 +169,15 @@ situations
 together with perceptual representations
 and linguistic descriptions
 that the learner can use.
-To create specific situations, we're going to use the helper functions `sampled` and `all_possible`.
-`sampled` will let us randomly generate sample situations from the template.
-Meanwhile, `all_possible` lets us create (as the name suggests)
+To create specific situations, we're going to use the helper functions :code:`sampled` and :code:`all_possible`.
+:code:`sampled` will let us randomly generate sample situations from the template.
+Meanwhile, :code:`all_possible` lets us create (as the name suggests)
 all possible situations that the template describes.
 
 The resulting functions will look something like this:
 
 .. code-block:: python
+
    def build_toy_ball_train_curriculum(
        num_samples: Optional[int],
        num_noise_objects: Optional[int],
@@ -235,11 +241,12 @@ The resulting functions will look something like this:
 And that's it! We've defined our curriculum functions.
 
 Finally, we need to register our curriculum.
-To do that, we're going to modify `adam/experiment/log_experiment.py`.
-The function `curriculum_from_params` defines a mapping `str_to_train_test_curriculum`.
+To do that, we're going to modify :code:`adam/experiment/log_experiment.py`.
+The function :code:`curriculum_from_params` defines a mapping :code:`str_to_train_test_curriculum`.
 Add a new entry to this mapping as follows:
 
 .. code-block:: python
+
    str_to_train_test_curriculum: Mapping[
        str, Tuple[CURRICULUM_BUILDER, Optional[CURRICULUM_BUILDER]]
    ] = {
@@ -247,13 +254,13 @@ Add a new entry to this mapping as follows:
        "my-ball-curriculum": (build_toy_ball_train_curriculum, build_toy_ball_test_curriculum),
    }
 
-The key here, `"my-ball-curriculum"`, defines the name for this curriculum.
+The key here, :code:`"my-ball-curriculum"`, defines the name for this curriculum.
 This is the name you'll use when you run your experiment.
 
-(Note that `my_test_curriculum` can be `None` if you don't want to use a test curriculum.)
+(Note that :code:`my_test_curriculum` can be :code:`None` if you don't want to use a test curriculum.)
 
 You can then run your curriculum by using it as the curriculum for an experiment.
-If you haven't read it already, you can read :ref:`Running experiments`,
+If you haven't read it already, you can read :ref:`running-experiments`,
 which covers how to define and run experiments.
 
 Defining more complex curricula
@@ -339,9 +346,9 @@ Further notes
 In this tutorial we focused on simple curricula with examples involving only objects.
 However, ADAM supports more complex situations and examples.
 For more information, please refer to the API documentation
-for `adam.curriculum.curriculum_utils`,
-`adam.situation.templates.phase1_templates`,
-and `adam.ontology.phase1_ontology`.
+for :code:`adam.curriculum.curriculum_utils`,
+:code:`adam.situation.templates.phase1_templates`,
+and :code:`adam.ontology.phase1_ontology`.
 
 **********
 Conclusion

@@ -1,3 +1,5 @@
+.. _running-experiments:
+
 ###################
 Running experiments
 ###################
@@ -10,21 +12,22 @@ then a concrete example.
 Running an existing experiment
 ******************************
 
-We're going to run a simple experiment. First, make sure you've defined a `root.params` file as described in the README.
+We're going to run a simple experiment. First, make sure you've defined a :code:`root.params` file as described in the README.
 (We'll wait here for you to do that.)
 
 Next, from the repository root, do:
 
 .. code-block:: shell
+
    python adam/experiment/log_experiment.py parameters/experiment/m9/objects.params
 
-The experiment should run, creating a directory `%adam_experiment_root%/m9` holding the results of the experiment
-(where `%adam_experiment_root%` is whatever you set the variable to in your `root.params`).
+The experiment should run, creating a directory :code:`%adam_experiment_root%/m9` holding the results of the experiment
+(where :code:`%adam_experiment_root%` is whatever you set the variable to in your :code:`root.params`).
 
-(Note that whenever we use percentage signs around a variable name, like `%experiment%`, that means "replace
-`%experiment%` with the value of the variable `experiment` in context."
+(Note that whenever we use percentage signs around a variable name, like :code:`%experiment%`, that means "replace
+:code:`%experiment%` with the value of the variable :code:`experiment` in context."
 When processing a parameters file, ADAM looks up the values of these variables
-in the other parameters files listed under `_includes`.
+in the other parameters files listed under :code:`_includes`.
 If it can't find it there, it will try looking at your environment variables.)
 
 Congratulations; you've run your first experiment.
@@ -42,20 +45,21 @@ These parameters files tell ADAM, at a minimum,
 2. the curriculum to use for the experiment (which define the examples the learner sees during learning and the examples
    it is judged on during testing),
 3. the learner (together with any of the learner's required parameters), and
-2. a directory where it can save the results.
+4. a directory where it can save the results.
 
-Experiments are generally run using `adam.experiment.log_experiment`, passing the parameter file as an argument. This
+Experiments are generally run using :code:`adam.experiment.log_experiment`, passing the parameter file as an argument. This
 works like we saw above.
 
-To get you started, we've included a template parameters file, `parameters/experiment/experiment_template.params`.
+To get you started, we've included a template parameters file, :code:`parameters/experiment/experiment_template.params`.
 To start defining your experiment, simply copy the template and replace the experiment and curriculum names.
 
 The experiment we just ran is fine, but it's using an old version of the learner code.
 What if we want to use the new version?
 Let's define an experiment that runs a similar experiment, but using the new-style learners.
-We're going to create a parameters file `parameters/experiment/m9_objects_with_new_learner.params` that looks like this:
+We're going to create a parameters file :code:`parameters/experiment/m9_objects_with_new_learner.params` that looks like this:
 
 .. code-block:: yaml
+
    _includes:
       - "../root.params"
 
@@ -94,9 +98,10 @@ We're going to create a parameters file `parameters/experiment/m9_objects_with_n
 We can then run this like the first experiment:
 
 .. code-block:: shell
+
    python adam/experiment/log_experiment.py parameters/experiment/m9_objects_with_new_learner.params
 
-This should produce similar (but not quite the same!) results, again in a directory under your `adam_experiment_root`.
+This should produce similar (but not quite the same!) results, again in a directory under your :code:`adam_experiment_root`.
 
 Now you're ready to define your own experiments. Depending on what experiments you want to run, you may need to extend
 ADAM before you can run them. However, this core process -- defining experiments using parameters files, then running
@@ -105,10 +110,10 @@ a script that uses those parameters -- will stay the same.
 Further notes
 -------------
 
-By convention, experiment parameters files live in `parameters/experiment` and its subdirectories,
+By convention, experiment parameters files live in :code:`parameters/experiment` and its subdirectories,
 but you can put them anywhere you want.
 
 .. Refer to Jacob's excellent documentation. Accept no substitutes.
 
-`log_experiment.py` supports many parameters; for a full description of what's available, see
-`adam/experiment/README.md`.
+:code:`log_experiment.py` supports many parameters; for a full description of what's available, see
+:code:`adam/experiment/README.md`.

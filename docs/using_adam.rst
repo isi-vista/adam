@@ -7,6 +7,7 @@ Using ADAM
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
    running_experiments
    adding_a_curriculum
    adding_an_object

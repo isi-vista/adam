@@ -16,8 +16,9 @@ Second, you must tell ADAM how to describe the object in whatever languages you 
 Defining the object
 *******************
 
-Defining an ontology type is simple. In phase1_ontology, you will define a subtype of `PERSON`, `NONHUMAN_ANIMAL`, or
-`INANIMATE_OBJECT` as follows:
+Defining an ontology type is simple.
+In phase1_ontology, you will define a subtype of :code:`PERSON`, :code:`NONHUMAN_ANIMAL`, or
+:code:`INANIMATE_OBJECT` as follows:
 
 .. code-block:: python
 
@@ -77,7 +78,7 @@ Finally, we must define its size relative to the existing object kinds:
    )
 
 It is important to be careful with how you define the object's schema. You may accidentally define an object that is
-very similar to an existing object, which may confuse the learners. This happened, for example, when `watermelon` was
+very similar to an existing object, which may confuse the learners. This happened, for example, when :code:`watermelon` was
 added to the ontology: The learner could not distinguish watermelons from balls. If you are not specifically testing
 the learners' ability to distinguish similar things, make sure your new object has a schema that is sufficiently
 distinct from other similar objects.
@@ -90,8 +91,8 @@ Once we have defined the object for ADAM, you must tell ADAM how to describe it.
 
 To do this, you'll need to edit the *lexicon* for the language you're using.
 By default, ADAM supports English and Chinese. The corresponding lexicons
-are defined in `adam.language_specific.english.english_phase_lexicon`
-and `adam.language_specific.chinese.chinese_phase1_lexicon`, respectively.
+are defined in :code:`adam.language_specific.english.english_phase_lexicon`
+and :code:`adam.language_specific.chinese.chinese_phase1_lexicon`, respectively.
 These define mappings from ontology nodes (as defined in the previous section)
 and *lexicon entries*, which tell ADAM how to describe the corresponding thing.
 A lexicon entry for a general object looks like this:
@@ -107,7 +108,7 @@ For objects representing specific, named people or things, an entry looks like t
     LexiconEntry("Mom", PROPER_NOUN)
 
 To add your object and its lexicon entry to one of these lexicons, you'll need to change the corresponding lexicon.
-In each file there will be a variable named `GAILA_PHASE_1_$LANGUAGE_LEXICON`.
+In each file there will be a variable named :code:`GAILA_PHASE_1_$LANGUAGE_LEXICON`.
 It's this variable you'll need to edit. Add a lexicon entry to the lexicon as follows:
 
 .. code-block:: python
