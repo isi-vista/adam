@@ -2,56 +2,100 @@
 Adding a new object
 ###################
 
-You may find that ADAM doesn't have the objects that you need to run your experiments.
-Fortunately, adding a new kind of object to ADAM is relatively straightforward.
+ADAM provides a variety of objects to use in your curricula.
+However, you may find that ADAM doesn't have the right objects for your experiments.
+Fortunately, adding a new kind of object to ADAM is straightforward (if potentially time-consuming).
 There are only two main steps.
 First, you must define the object: Its properties, physical structure, and relative size.
 Second, you must tell ADAM how to describe the object in whatever languages you use for your experiment.
 
-.. TODO: Rewrite "Adding an object" to match new structure
-.. TODO: Rewrite "Adding an object" to be more casual
-.. TODO: Rewrite "Adding an object" to walk through an example
+In this tutorial, we're going to add a toy block to show off the process.
 
 *******************
 Defining the object
 *******************
 
-Defining an ontology type is simple.
-In phase1_ontology, you will define a subtype of :code:`PERSON`, :code:`NONHUMAN_ANIMAL`, or
-:code:`INANIMATE_OBJECT` as follows:
+The process of defining an object in ADAM is simple.
+First, you need to define an *ontology type* for the object,
+which describes the kind of thing that this object is.
+Second, you need to define a *schema* for the object,
+which describes its physical structure in detail.
+Finally, you must define its size relative to the other objects in the curriculum.
+
+Creating an ontology type
+-------------------------
+
+ADAM uses ontology types as a convenience for users to make creating curricula easier. It means that you can specify,
+for example, that you want a scene that shows liquid in a cup, or an animal eating a cookie, rather than having to
+specify explicit types. Note that the learner does not observe or interact with these ontology types at all.
+
+First, we'll define the ontology type of a toy block in :code:`adam.ontology.phase1_ontology`.
+To do this, we're going to use :code:`subtype` to define a subtype of :code:`INANIMATE_OBJECT`:
 
 .. code-block:: python
 
-   MY_OBJECT = OntologyNode(
-       "my-object",
-       [CAN_FILL_TEMPLATE_SLOT, SOME_PROPERTY, ANOTHER_PROPERTY, ...],
+   TOY_BLOCK = OntologyNode(
+       "toy-block",
+       [
+           CAN_FILL_TEMPLATE_SLOT,
+           CAN_HAVE_THINGS_RESTING_ON_THEM,
+           PERSON_CAN_HAVE,
+       ],
    )
-   subtype(MY_OBJECT, SUPERTYPE)
+   subtype(TOY_BLOCK, INANIMATE_OBJECT)
 
-You then define a schema for the object:
+(Note that ADAM also has :code:`PERSON` and :code:`NONHUMAN_ANIMAL` types if you want to add objects of those kinds.)
+
+Second, we need to define our schema for toy blocks.
+(This is typically done inside a function for organization purposes,
+but that's not strictly necessary.)
+An object schema requires, at minimum, an ontology node and a *geon*.
+The geon describes the shape of the object: Its cross-sections and its *axes*.
+A ball, for example, has circular cross sections that start small, get big, and end small again.
+
+We define these using cross-sections (defined in :code:`adam.geon`) and axes (from :code:`adam.axes`).
+The axes represent the object's three relative dimensions.
+(One of these is always called the *primary axis* -- typically but not always the longest.
+However, this distinction is mostly meaningless.)
+These axis can also be related to each other.
+Our toy block is going to be a thin rectangular one, so we'll include those relations when we define our block.
+
+To define our toy block's geon,
+we're going to use the :code:`RECTANGULAR` cross-section (from :code:`adam.geon`)
+and the helper functions :code:`symmetric` and :code:`symmetric_vertical` from :code:`adam.axes`
+to create our axes.
+These axis helper functions take a name for the axis and return a new axis of the appropriate kind.
+(Note that :code:`adam.axes` supports other kinds of axis, such as :code:`straight_up`,
+and includes other helper functions for such axes.)
+
+Our schema then looks like this:
 
 .. code-block:: python
 
-   def _make_my_object_schema() -> ObjectStructuralSchema:
-       generating_axis = symmetric_vertical("my-object-generating")
-       orienting_axis_0 = symmetric("my-object-orienting-0")
-       orienting_axis_1 = symmetric("my-object-orienting-1")
+   def _make_toy_block_schema() -> ObjectStructuralSchema:
+       front_to_back = symmetric("front-to-back")  # the "long" axis
+       top_to_bottom = symmetric_vertical("top-to-bottom")
+       side_to_side = symmetric("side-to-side")
 
        return ObjectStructuralSchema(
-           ontology_node=MY_OBJECT,
+           ontology_node=TOY_BLOCK,
            geon=Geon(
-               cross_section=CIRCULAR,
+               cross_section=RECTANGULAR,
                cross_section_size=CONSTANT,
                axes=Axes(
-                   primary_axis=generating_axis,
-                   orienting_axes=[orienting_axis_0, orienting_axis_1],
+                   primary_axis=front_to_back,
+                   orienting_axes=[top_to_bottom, side_to_side],
+                   axis_relations=[
+                       much_bigger_than(front_to_back, side_to_side),
+                       bigger_than(side_to_side, top_to_bottom),
+                   ],
                ),
            ),
        )
 
-   _MY_OBJECT_SCHEMA = _make_my_object_schema()
+   _TOY_BLOCK_SCHEMA = _make_toy_block_schema()
 
-This schema must then be added to the list of structural schemata:
+Once we have our schema, we also have to add it to the list of structural schemata:
 
 .. code-block:: python
 
@@ -60,7 +104,9 @@ This schema must then be added to the list of structural schemata:
        _ontology_graph,
        structural_schemata=[
            ...
-           (MY_OBJECT, _MY_OBJECT_SCHEMA)
+           (BOOK, _BOOK_SCHEMA),
+           (TOY_BLOCK, _TOY_BLOCK_SCHEMA)
+           (HOUSE, _HOUSE_SCHEMA),
            ...
        ]
        ...
@@ -71,37 +117,50 @@ Finally, we must define its size relative to the existing object kinds:
 
    GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
        ...
-       (WATERMELON, PAPER, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
-       (MY_OBJECT,),
-       (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK),
+       (BALL, BIRD, BOOK, COOKIE, CUP, HAT, JUICE, WATER, MILK, TOY_BLOCK),
        ...
    )
 
-It is important to be careful with how you define the object's schema. You may accidentally define an object that is
-very similar to an existing object, which may confuse the learners. This happened, for example, when :code:`watermelon` was
-added to the ontology: The learner could not distinguish watermelons from balls. If you are not specifically testing
-the learners' ability to distinguish similar things, make sure your new object has a schema that is sufficiently
-distinct from other similar objects.
+Be aware that depending on how you define the object's schema learners may get confused.
+You may accidentally define an object that is very similar to an existing object,
+which may confuse the learners.
+This happened, for example, when we added a watermelon object.
+The learner could not distinguish watermelons from balls.
+If you are not specifically testing the learners' ability to distinguish similar things,
+make sure your new object has a schema that is sufficiently distinct from other similar objects.
 
 ***************************************
 Telling ADAM how to describe the object
 ***************************************
 
-Once we have defined the object for ADAM, you must tell ADAM how to describe it.
+Once you have defined your object for ADAM, you must tell ADAM how to describe it.
 
 To do this, you'll need to edit the *lexicon* for the language you're using.
 By default, ADAM supports English and Chinese. The corresponding lexicons
-are defined in :code:`adam.language_specific.english.english_phase_lexicon`
+are defined in :code:`adam.language_specific.english.english_phase1_lexicon`
 and :code:`adam.language_specific.chinese.chinese_phase1_lexicon`, respectively.
 These define mappings from ontology nodes (as defined in the previous section)
 and *lexicon entries*, which tell ADAM how to describe the corresponding thing.
-A lexicon entry for a general object looks like this:
+
+The English lexicon entry for our toy block will look like this:
 
 .. code-block:: python
 
-    LexiconEntry("cow", NOUN, plural_form="cows")
+    LexiconEntry("toy block", NOUN, plural_form="toy blocks")
 
-For objects representing specific, named people or things, an entry looks like this:
+We'll add it to the lexicon, :code:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :code:`BOOK` and :code:`HOUSE`:
+
+.. code-block:: python
+
+        (BOOK, LexiconEntry("book", NOUN, plural_form="books")),
+        (TOY_BLOCK, LexiconEntry("toy block", NOUN, plural_form="toy blocks")),
+        (HOUSE, LexiconEntry("house", NOUN, plural_form="houses")),
+
+Note that lexicon entries are allowed to use more than one word,
+though I wouldn't recommend using more than two.
+
+Note also that ADAM supports lexicon entries for objects representing specific, named people or things.
+For such objects we use the PROPER_NOUN tag and don't need to provide a plural:
 
 .. code-block:: python
 
@@ -122,3 +181,17 @@ It's this variable you'll need to edit. Add a lexicon entry to the lexicon as fo
            (GO, LexiconEntry("go", VERB, verb_form_sg3_prs="goes")),
        ),
    )
+
+Now ADAM should support our toy block object!
+
+**********
+Conclusion
+**********
+
+In this tutorial you saw how to define a simple object.
+The process remains roughly the same for objects with more complicated structure,
+though some of the steps need to be repeated.
+For such complex objects you must also define *subobjects* for their parts (like a human's arms).
+For examples of how this is done, see :code:`_TABLE_SCHEME` and :code:`_DOG_SCHEMA`.
+Whatever object you want to add,
+I hope this has made the process of doing so clearer.
