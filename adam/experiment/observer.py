@@ -345,9 +345,9 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         log_accuracy = params.boolean("accuracy_to_txt", default=False)
         log_accuracy_path = params.string(
             "accuracy_logging_path",
-            default=f"{experiment_group_dir}/accuracy_post_out.txt"
+            default=f"{experiment_group_dir}/accuracy_pre_out.txt"
             if experiment_group_dir
-            else "accuracy_post_out.txt",
+            else "accuracy_pre_out.txt",
         )
         track_precision_recall = params.boolean("include_pr_observer", default=False)
         log_precision_recall = params.boolean("log_pr", default=False)
@@ -685,6 +685,7 @@ class HTMLLoggerPreObserver(  # pragma: no cover
             self.candidate_accuracy_observer.report()
         if self.precision_recall_observer:
             self.precision_recall_observer.report()
+
 
 
 @attrs(slots=True)

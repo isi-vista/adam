@@ -5,7 +5,8 @@ _includes:
 experiment: 'pursuit-ablating-gaze'
 curriculum: pursuit
 learner: pursuit-gaze
-post_observer:
+pre_observer:
+    include_acc_observer: True
     accuracy_to_txt : True
 
 pursuit:
