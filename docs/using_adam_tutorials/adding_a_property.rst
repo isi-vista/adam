@@ -114,7 +114,7 @@ We'll add our entry to :code:`GAILA_PHASE_1_ENGLISH_LEXICON` after :code:`DARK_B
        ontology_node_to_word=(
            ...
            (DARK_BROWN, LexiconEntry("dark brown", ADJECTIVE)),
-           (CYAN, LexiconEntry("cyan", ADJECTIVE))
+           (CYAN, LexiconEntry("cyan", ADJECTIVE)),
        ),
    )
 
