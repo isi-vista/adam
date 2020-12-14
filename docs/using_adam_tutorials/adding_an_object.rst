@@ -140,7 +140,7 @@ Telling ADAM how to describe the object
 
 Once you have defined your object for ADAM, you must tell ADAM how to describe it.
 
-To do this, you'll need to edit the *lexicon* for the language you're using.
+To do this, you'll need to edit the *lexicon* for each language you're using.
 By default, ADAM supports English and Chinese. The corresponding lexicons
 are defined in :code:`adam.language_specific.english.english_phase1_lexicon`
 and :code:`adam.language_specific.chinese.chinese_phase1_lexicon`, respectively.
