@@ -157,9 +157,16 @@ We'll add it to the lexicon, :code:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :cod
 
 .. code-block:: python
 
-        (BOOK, LexiconEntry("book", NOUN, plural_form="books")),
-        (TOY_BLOCK, LexiconEntry("toy block", NOUN, plural_form="toy blocks")),
-        (HOUSE, LexiconEntry("house", NOUN, plural_form="houses")),
+   GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
+       ontology=GAILA_PHASE_1_ONTOLOGY,
+       ontology_node_to_word=(
+           ...
+           (BOOK, LexiconEntry("book", NOUN, plural_form="books")),
+           (TOY_BLOCK, LexiconEntry("toy block", NOUN, plural_form="toy blocks")),
+           (HOUSE, LexiconEntry("house", NOUN, plural_form="houses")),
+           ...
+       ),
+   )
 
 Note that lexicon entries are allowed to use more than one word,
 though I wouldn't recommend using more than two.
