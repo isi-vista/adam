@@ -30,7 +30,13 @@ for example, that you want a scene that shows liquid in a cup, or an animal eati
 specify explicit types. Note that the learner does not observe or interact with these ontology types at all.
 
 First, we'll define the ontology type of a toy block in :code:`adam.ontology.phase1_ontology`.
-To do this, we're going to use :code:`subtype` to define a subtype of :code:`INANIMATE_OBJECT`:
+To do this, we're going to use :code:`subtype` to define a subtype of :code:`INANIMATE_OBJECT`.
+We want to give it some properties.
+First, we're going to say it can fill a slot in a template,
+which means that our learners can learn the object.
+Second, we're going to say that it's something a person can have.
+
+The ontology type definition then looks like this:
 
 .. code-block:: python
 
@@ -38,7 +44,6 @@ To do this, we're going to use :code:`subtype` to define a subtype of :code:`INA
        "toy-block",
        [
            CAN_FILL_TEMPLATE_SLOT,
-           CAN_HAVE_THINGS_RESTING_ON_THEM,
            PERSON_CAN_HAVE,
        ],
    )
