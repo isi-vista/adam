@@ -8,12 +8,12 @@ Using ADAM
    :maxdepth: 2
    :caption: Contents:
 
-   running_experiments
-   adding_a_curriculum
-   adding_an_object
-   adding_a_property
-   adding_a_relation
-   adding_an_action
+   using_adam_tutorials/running_experiments
+   using_adam_tutorials/adding_a_curriculum
+   using_adam_tutorials/adding_an_object
+   using_adam_tutorials/adding_a_property
+   using_adam_tutorials/adding_a_relation
+   using_adam_tutorials/adding_an_action
 
 .. autosummary::
    :toctree: _autosummary
