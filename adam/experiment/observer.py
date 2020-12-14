@@ -687,7 +687,6 @@ class HTMLLoggerPreObserver(  # pragma: no cover
             self.precision_recall_observer.report()
 
 
-
 @attrs(slots=True)
 class HTMLLoggerPostObserver(  # pragma: no cover
     DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
