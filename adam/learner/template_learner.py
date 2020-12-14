@@ -522,8 +522,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         """
         Perform any necessary steps before the learning logic.
         """
-        # Do nothing by default. Most learners should not need to implement this.
-        pass
 
     @abstractmethod
     def _learning_step(
@@ -541,8 +539,6 @@ class AbstractTemplateLearnerNew(TemplateLearner, ABC):
         """
         Perform any necessary steps after the learning logic.
         """
-        # Do nothing by default. Most learners should not need to implement this.
-        pass
 
     @abstractmethod
     def _can_learn_from(

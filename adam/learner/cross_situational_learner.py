@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from itertools import chain
 
 from immutablecollections import ImmutableSet, immutableset, ImmutableDict, immutabledict
