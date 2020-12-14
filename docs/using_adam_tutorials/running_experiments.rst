@@ -19,7 +19,7 @@ Next, from the repository root, do:
 
 .. code-block:: shell
 
-   python adam/experiment/log_experiment.py parameters/experiment/m9/objects.params
+   python adam/experiment/log_experiment.py parameters/experiment/m9/attributes.params
 
 The experiment should run, creating a directory :code:`%adam_experiment_root%/m9` holding the results of the experiment
 (where :code:`%adam_experiment_root%` is whatever you set the variable to in your :code:`root.params`).
@@ -56,7 +56,7 @@ To start defining your experiment, simply copy the template and replace the expe
 The experiment we just ran is fine, but it's using an old version of the learner code.
 What if we want to use the new version?
 Let's define an experiment that runs a similar experiment, but using the new-style learners.
-We're going to create a parameters file :code:`parameters/experiment/m9_objects_with_new_learner.params` that looks like this:
+We're going to create a parameters file :code:`parameters/experiment/m9_attributes_with_new_learner.params` that looks like this:
 
 .. code-block:: yaml
 
@@ -64,7 +64,7 @@ We're going to create a parameters file :code:`parameters/experiment/m9_objects_
       - "../root.params"
 
    # Meta parameters: Where to store the experiment results, and what results to collect
-   experiment: "m9-objects-with-new-learner"
+   experiment: "m9-attributes-with-new-learner"
    experiment_group_dir: '%adam_experiment_root%/%experiment%'
 
    # Some potentially useful (but optional) parameters
@@ -76,7 +76,7 @@ We're going to create a parameters file :code:`parameters/experiment/m9_objects_
    num_pretty_descriptions: 5
 
    # The curriculum to use in the experiment
-   curriculum: "m9-objects"
+   curriculum: "m9-attributes"
 
    # The language to use in the experiment
    language_mode: ENGLISH
@@ -85,9 +85,9 @@ We're going to create a parameters file :code:`parameters/experiment/m9_objects_
    # As a default, we include learners for every role, using subset where available
    learner: "integrated-learner-params"
    object_learner:
-      learner_type: "subset"
+      learner_type: "recognizer"
    attibute_learner:
-      learner_type: "none"
+      learner_type: "subset"
    relation_learner:
       learner_type: "none"
    action_learner:
@@ -99,7 +99,7 @@ We can then run this like the first experiment:
 
 .. code-block:: shell
 
-   python adam/experiment/log_experiment.py parameters/experiment/m9_objects_with_new_learner.params
+   python adam/experiment/log_experiment.py parameters/experiment/m9_attributes_with_new_learner.params
 
 This should produce similar (but not quite the same!) results, again in a directory under your :code:`adam_experiment_root`.
 
