@@ -12,7 +12,7 @@ then a concrete example.
 Running an existing experiment
 ******************************
 
-We're going to run a simple experiment. First, make sure you've defined a :code:`root.params` file as described in the README.
+We're going to run a simple experiment. First, make sure you've defined a :file:`root.params` file as described in the README.
 (We'll wait here for you to do that.)
 
 Next, from the repository root, do:
@@ -21,8 +21,8 @@ Next, from the repository root, do:
 
    python adam/experiment/log_experiment.py parameters/experiment/m9/attributes.params
 
-The experiment should run, creating a directory :code:`%adam_experiment_root%/m9` holding the results of the experiment
-(where :code:`%adam_experiment_root%` is whatever you set the variable to in your :code:`root.params`).
+The experiment should run, creating a directory :file:`%adam_experiment_root%/m9` holding the results of the experiment
+(where :code:`%adam_experiment_root%` is whatever you set the variable to in your :file:`root.params`).
 
 .. note::
 
@@ -52,13 +52,13 @@ These parameters files tell ADAM, at a minimum,
 Experiments are generally run using :code:`adam.experiment.log_experiment`, passing the parameter file as an argument. This
 works like we saw above.
 
-To get you started, we've included a template parameters file, :code:`parameters/experiment/experiment_template.params`.
+To get you started, we've included a template parameters file, :file:`parameters/experiment/experiment_template.params`.
 To start defining your experiment, simply copy the template and replace the experiment and curriculum names.
 
 The experiment we just ran is fine, but it's using an old version of the learner code.
 What if we want to use the new version?
 Let's define an experiment that runs a similar experiment, but using the new-style learners.
-We're going to create a parameters file :code:`parameters/experiment/m9_attributes_with_new_learner.params` that looks like this:
+We're going to create a parameters file :file:`parameters/experiment/m9_attributes_with_new_learner.params` that looks like this:
 
 .. code-block:: yaml
 
@@ -112,11 +112,11 @@ a script that uses those parameters -- will stay the same.
 Further notes
 -------------
 
-By convention, experiment parameters files live in :code:`parameters/experiment` and its subdirectories,
+By convention, experiment parameters files live in :file:`parameters/experiment` and its subdirectories,
 but you can put them anywhere you want.
 
 ..
   Refer to Jacob's excellent documentation. Accept no substitutes.
 
-:code:`log_experiment.py` supports many parameters; for a full description of what's available, see
-:code:`adam/experiment/README.md`.
+:file:`log_experiment.py` supports many parameters; for a full description of what's available, see
+:file:`adam/experiment/README.md`.
