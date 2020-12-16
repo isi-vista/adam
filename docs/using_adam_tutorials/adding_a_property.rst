@@ -61,8 +61,8 @@ We'll add it to the lexicon, :code:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :cod
    )
 
 Finally, because we want balls to be made of rubber,
-we'll open up `adam.ontology.phase1_ontology`
-and add the `RUBBER` property to `BALL`:
+we'll open up :code:`adam.ontology.phase1_ontology`
+and add the :code:`RUBBER` property to :code:`BALL`:
 
 .. code-block:: python
 
