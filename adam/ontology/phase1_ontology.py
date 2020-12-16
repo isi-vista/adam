@@ -151,7 +151,7 @@ RECOGNIZED_PARTICULAR_PROPERTY = OntologyNode("recognized-particular", [BINARY])
 """
 Indicates that a property in the ontology indicates the identity of an object
 as a known particular object (rather than a class)
-which is assumed to be known to the `LanguageLearner`. 
+which is assumed to be known to the `TopLevelLanguageLearner`. 
 The prototypical cases here are *Mom* and *Dad*.
 """
 

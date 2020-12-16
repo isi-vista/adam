@@ -86,7 +86,7 @@ class IntegratedTemplateLearner(
     ]
 ):
     """
-    A `LanguageLearner` which uses template-based syntax to learn objects, attributes, relations,
+    A `TopLevelLanguageLearner` which uses template-based syntax to learn objects, attributes, relations,
     and actions all at once.
     """
 

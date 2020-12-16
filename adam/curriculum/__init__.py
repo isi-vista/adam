@@ -1,5 +1,5 @@
 r"""
-Code to specify what is shown to `LanguageLearner`\ s and in what order.
+Code to specify what is shown to `TopLevelLanguageLearner`\ s and in what order.
 """
 from abc import ABC, abstractmethod
 
@@ -24,7 +24,7 @@ class InstanceGroup(ABC, Generic[SituationT, LinguisticDescriptionT, PerceptionT
     r"""
     An `InstanceGroup` can provide triples of (optional)
     `Situation`\ s, `LinguisticDescription`\ s, and `PerceptualRepresentation`\ s
-    for use in training or testing `LanguageLearner`\ s
+    for use in training or testing `TopLevelLanguageLearner`\ s
     with the `Experiment` class.
     """
 
@@ -45,7 +45,7 @@ class InstanceGroup(ABC, Generic[SituationT, LinguisticDescriptionT, PerceptionT
         ]
     ]:
         """
-        The instances in the order they should be shown to the `LanguageLearner`.
+        The instances in the order they should be shown to the `TopLevelLanguageLearner`.
         """
 
 

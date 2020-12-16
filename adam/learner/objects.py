@@ -453,7 +453,7 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
 @attrs(slots=True)
 class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateLearner):
     """
-    An implementation of `LanguageLearner` for subset learning based approach for single object detection.
+    An implementation of `TopLevelLanguageLearner` for subset learning based approach for single object detection.
     """
 
     def _hypothesis_from_perception(
@@ -492,7 +492,7 @@ class SubsetObjectLearnerNew(
     AbstractObjectTemplateLearnerNew, AbstractTemplateSubsetLearnerNew
 ):
     """
-    An implementation of `LanguageLearner` for subset learning based approach for single object detection.
+    An implementation of `TopLevelLanguageLearner` for subset learning based approach for single object detection.
     """
 
     def _new_concept(self, debug_string: str) -> ObjectConcept:
@@ -579,7 +579,7 @@ class ProposeButVerifyObjectLearner(
     AbstractObjectTemplateLearnerNew, AbstractProposeButVerifyLearner
 ):
     """
-    An implementation of `LanguageLearner` for Propose but Verify learning based approach for single object detection.
+    An implementation of `TopLevelLanguageLearner` for Propose but Verify learning based approach for single object detection.
     """
 
     @staticmethod
@@ -649,7 +649,7 @@ class CrossSituationalObjectLearner(
     AbstractCrossSituationalLearner, AbstractObjectTemplateLearnerNew
 ):
     """
-    An implementation of `LanguageLearner` for Cross Situational learning based approach for single object detection.
+    An implementation of `TopLevelLanguageLearner` for Cross Situational learning based approach for single object detection.
     """
 
     @staticmethod

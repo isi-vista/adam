@@ -1,5 +1,5 @@
 r"""
-Representations of the linguistic input and outputs of a `LanguageLearner`\ .
+Representations of the linguistic input and outputs of a `TopLevelLanguageLearner`\ .
 """
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple, TypeVar, Sequence, Sized
@@ -16,9 +16,9 @@ class LinguisticDescription(ABC, Sequence[str]):
     A linguistic description of a `Situation`\ .
 
     This, together with a `PerceptualRepresentation`\ , forms an observation that a
-    `LanguageLearner` learns from.
+    `TopLevelLanguageLearner` learns from.
 
-    A trained `LanguageLearner` can then generate new `LinguisticDescription`\ s given only a
+    A trained `TopLevelLanguageLearner` can then generate new `LinguisticDescription`\ s given only a
     `PerceptualRepresentation` of a `Situation`.
 
     Any `LinguisticDescription` must minimally be able to be treated as a sequence of token strings.

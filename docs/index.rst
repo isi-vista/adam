@@ -65,15 +65,15 @@ System Architecture
 A particular "run" of the ADAM system is described by an :code:`Experiment`.
 Every :code:`Experiment` needs to know
 
-- what :code:`LanguageLearner` to use,
-- what :code:`Situation`\ s to present to the :code:`LanguageLearner` to teach it,
-- what :code:`Situation`\ s to present to the :code:`LanguageLearner` to evaluate it,
+- what :code:`TopLevelLanguageLearner` to use,
+- what :code:`Situation`\ s to present to the :code:`TopLevelLanguageLearner` to teach it,
+- what :code:`Situation`\ s to present to the :code:`TopLevelLanguageLearner` to evaluate it,
 - what sort of analyses to perform on the result.
 
 There are a variety of ways to specify the situations for training and testing,
 but this is prototypically done by generating them procedurally
 using a :code:`SituationTemplateProcessor`.
-The way a :code:`Situation` is presented to the :code:`LanguageLearner` is controlled
+The way a :code:`Situation` is presented to the :code:`TopLevelLanguageLearner` is controlled
 by a :code:`LanguageGenerator` and a :code:`PerceptualRepresentationGenerator`.
 
 The analyses to perform on results are given by :code:`DescriptionObserver`\ s.

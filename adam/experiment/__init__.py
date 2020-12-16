@@ -66,13 +66,13 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     r"""
     A particular experimental configuration.
 
-    An experiment specifies what data is fed to the `LanguageLearner`, what `LanguageLearner` is
-    used and how it is configured, how the trained `LanguageLearner` is tested, and what
+    An experiment specifies what data is fed to the `TopLevelLanguageLearner`, what `TopLevelLanguageLearner` is
+    used and how it is configured, how the trained `TopLevelLanguageLearner` is tested, and what
     analysis is done on the results.
 
     At various stages in the experiment,
     `DescriptionObserver`\ s will be able to examine
-    the descriptions of situations produced by the `LanguageLearner`.
+    the descriptions of situations produced by the `TopLevelLanguageLearner`.
     Based on their observations, they can provide reports at the end of the experiment.
 
     Note that `Experiment` objects should not be reused because components
@@ -99,7 +99,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     learner_factory: Callable[
         [], TopLevelLanguageLearner[PerceptionT, LinguisticDescriptionT]
     ] = attrib(kw_only=True)
-    """ A no-argument function which will return the `LanguageLearner` which should be trained."""
+    """ A no-argument function which will return the `TopLevelLanguageLearner` which should be trained."""
     sequence_chooser: SequenceChooser = attrib(
         validator=instance_of(SequenceChooser), kw_only=True
     )
@@ -111,7 +111,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     )
     r"""
     These `DescriptionObserver`\ s are provided
-    with the description a `LanguageLearner` would give to a situation during training
+    with the description a `TopLevelLanguageLearner` would give to a situation during training
     before it is shown the correct description.
     """
     post_example_training_observers: "Tuple[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(  # type: ignore
@@ -127,7 +127,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     )
     """
     May optionally be provided
-    if at test time the `LanguageLearner` needs to be shown some observations before evaluation
+    if at test time the `TopLevelLanguageLearner` needs to be shown some observations before evaluation
     (for example, to introduce some new objects).
     """
     test_instance_groups: "Sequence[InstanceGroup[Any, LinguisticDescriptionT, PerceptionT]]" = attrib(
@@ -135,7 +135,7 @@ class Experiment(Generic[SituationT, LinguisticDescriptionT, PerceptionT]):
     )
     r"""
     The situations and perceptual representations
-    the trained `LanguageLearner` will be asked to describe for evaluation.
+    the trained `TopLevelLanguageLearner` will be asked to describe for evaluation.
     These are specified by `InstanceGroup`\ s, just like the training data.
     """
     test_observers: "Tuple[DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]]" = attrib(  # type: ignore

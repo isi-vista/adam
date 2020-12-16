@@ -90,7 +90,7 @@ class HypothesisLogger(GraphLogger):
 @attrs
 class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
     """
-    An implementation of `LanguageLearner` for pursuit learning as a base for different pursuit based
+    An implementation of `TopLevelLanguageLearner` for pursuit learning as a base for different pursuit based
     learners. Paper on Pursuit Learning Algorithm: https://www.ling.upenn.edu/~ycharles/papers/pursuit-final.pdf
     """
 
