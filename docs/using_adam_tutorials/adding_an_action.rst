@@ -30,28 +30,31 @@ Second, we create lexicon entries for the action for each language we want to us
 We'll cover describing the action first.
 
 Defining an ontology node for the action is simple.
-We want to define an ontology node for the carry action in :code:`adam.ontology.phase1_ontology`:
+We want to define an ontology node for the carry action in :any:`adam.ontology.phase1_ontology`:
 
 .. code-block:: python
 
    CARRY = OntologyNode("carry")
    subtype(CARRY, ACTION)
 
-(Note that if our action involved a transfer of possession,
-we would mark that as a property of the ontology node:
-:code:`CARRY = OntologyNode("carry", [TRANSFER_OF_POSSESSION])`.
-Since there is no second person involved in the carry action we want to use,
-we don't need to mark it like this.)
+.. note::
+
+   If our action involved a transfer of possession,
+   as in "Mom gave a ball to Dad,"
+   we would mark that as a property of the ontology node:
+   :code:`CARRY = OntologyNode("carry", [TRANSFER_OF_POSSESSION])`.
+   Since there is no second person involved in the carry action we want to use,
+   we don't need to mark it like this.)
 
 Next, we'll create an action description that tells ADAM how the action should be perceived.
-To do this, we'll need to use :code:`ActionDescriptionVariable`\ s
+To do this, we'll need to use :any:`ActionDescriptionVariable`\ s
 (which work similarly to `TemplateObjectVariable`\ s)
-and an :code:`ActionDescriptionFrame`
-inside an :code:`ActionDescription`.
+and an :any:`ActionDescriptionFrame`
+inside an :any:`ActionDescription`.
 
-An :code:`ActionDescriptionVariable` describes a participant in some action
+An :any:`ActionDescriptionVariable` describes a participant in some action
 and the property constraints (or lack thereof) on that participant.
-:code:`ActionDescriptionVariable`\ s are also used to define region and part-of constraints.
+:any:`ActionDescriptionVariable`\ s are also used to define region and part-of constraints.
 For example, we'd use these to set up the constraint that the carrying agent has a hand
 (or other manipulator; hereafter "hand"),
 and the relation that the "hand" is in contact with the object while the object is being carried.
@@ -74,8 +77,8 @@ We'll call these the agent, theme, manipulator, and goal:
        THING, properties=[CAN_MANIPULATE_OBJECTS], debug_handle="carry_manipulator"
    )
 
-Next, we'll define our :code:`ActionDescriptionFrame`.
-The :code:`ActionDescriptionFrame` collects together the participants in the action and their roles.
+Next, we'll define our :any:`ActionDescriptionFrame`.
+The :any:`ActionDescriptionFrame` collects together the participants in the action and their roles.
 Each participant has a *semantic* (or *thematic*) *role* in the action
 which describes *how* the participant takes part in the action.
 These roles are *agent*, *patient*, *theme*, and *goal*.
@@ -107,13 +110,13 @@ and the place they put it as the goal:
 
    ActionDescriptionFrame({AGENT: _CARRY_AGENT, THEME: _CARRY_THEME, GOAL: _CARRY_GOAL}),
 
-Our overall :code:`ActionDescription` will make use of both our frame and our variables.
-Our :code:`ActionDescriptionFrame` describes the linguistically relevant information,
-while we use the :code:`ActionDescriptionVariable`\ s as part of relations and spatial paths
+Our overall :any:`ActionDescription` will make use of both our frame and our variables.
+Our :any:`ActionDescriptionFrame` describes the linguistically relevant information,
+while we use the :any:`ActionDescriptionVariable`\ s as part of relations and spatial paths
 to describe the physical aspects of the action:
 What happens?
 How do objects move during the action?
-(We'll use :code:`SpatialPath`\ s to describe this.)
+(We'll use :any:`SpatialPath`\ s to describe this.)
 What relationships hold before, during and after the action?
 What relationships hold over the whole course of the action for it to even make sense?
 What properties do the participants have as a result of their role in the action?
@@ -191,11 +194,13 @@ Putting it all together, our action description is going to look like this:
        ],
    )
 
-Note that these relationships (or *relations*) work just like those in situation templates,
-and we can describe them the same way:
-Using the relation DSL functions (like "on", or "near")
-together with :code:`itertools.chain()`.
-In this case, though, we have few and simple enough relations that we can just describe them directly.
+.. note::
+
+   These relationships (or *relations*) work just like those in situation templates,
+   and we can describe them the same way:
+   Using the relation DSL functions (like "on", or "near")
+   together with :any:`itertools.chain`.
+   In this case, though, we have few and simple enough relations that we can just describe them directly.
 
 ..
   TODO Should I warn users to be careful about using the variables, not the roles when describing relations, etc.?
@@ -203,7 +208,7 @@ In this case, though, we have few and simple enough relations that we can just d
 
 That takes care of describing the action.
 Now, as the final step, we'll add carrying to our lexicon.
-We'll add a lexicon entry to :code:`GAILA_PHASE_1_ENGLISH_LEXICON` after :code:`FLY`:
+We'll add a lexicon entry to :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON` after :code:`FLY`:
 
 .. code-block:: python
 
