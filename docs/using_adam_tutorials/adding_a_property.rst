@@ -10,7 +10,7 @@ First, you must define an ontology type for the property.
 Second, you must tell ADAM how to describe the property in whatever languages you use for your experiment.
 
 In this tutorial, we're going to add a rubber property and a cyan color to show off the processes.
-We might use this rubber property, for example, on the existing :any:`BALL` object.
+We might use this rubber property, for example, on the existing :py:const:`BALL` object.
 
 ************************
 Adding a binary property
@@ -19,8 +19,8 @@ Adding a binary property
 ADAM uses ontology types as a tool for creating curricula.
 Note that the learner does not observe or interact with these ontology types at all.
 
-To define our rubber property's ontology type, we simply create an ontology node with the :any:`BINARY` property
-that subtypes :any:`PERCEIVABLE_PROPERTY`:
+To define our rubber property's ontology type, we simply create an ontology node with the :py:const:`BINARY` property
+that subtypes :py:const:`PERCEIVABLE_PROPERTY`:
 
 .. code-block:: python
 
@@ -30,8 +30,8 @@ that subtypes :any:`PERCEIVABLE_PROPERTY`:
 .. note::
 
    ADAM also supports properties that learners can't perceive.
-   For example, :any:`EDIBLE` is such a property.
-   Such properties simply subtype :any:`PROPERTY` directly.
+   For example, :py:const:`EDIBLE` is such a property.
+   Such properties simply subtype :py:const:`PROPERTY` directly.
 
 Next, we must tell ADAM how to describe the property.
 To do this, we'll need to edit the *lexicon* for the language(s) we're using.

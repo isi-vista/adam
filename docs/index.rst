@@ -124,6 +124,17 @@ adam.relation
 .. automodule:: adam.relation
 
 *******************************************
+Supporting Classes: Representing Space
+*******************************************
+adam.geon
+--------------
+.. automodule:: adam.geon
+
+adam.axes
+--------------
+.. automodule:: adam.axes
+
+*******************************************
 Supporting Classes: Object Structure
 *******************************************
 adam.ontology.structural_schema

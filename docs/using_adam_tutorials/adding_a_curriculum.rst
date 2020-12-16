@@ -242,8 +242,8 @@ The resulting functions will look something like this:
 And that's it! We've defined our curriculum functions.
 
 Finally, we need to register our curriculum.
-To do that, we're going to modify :any:`adam.experiment.log_experiment`.
-The function :any:`curriculum_from_params` defines a mapping :py:const:`str_to_train_test_curriculum`.
+To do that, we're going to modify :code:`adam.experiment.log_experiment`.
+The function :py:func:`curriculum_from_params` defines a mapping :py:const:`str_to_train_test_curriculum`.
 Add a new entry to this mapping as follows:
 
 .. code-block:: python
