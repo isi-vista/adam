@@ -91,12 +91,13 @@ see `"Summary of semantic roles and grammatical relations"`__ (Thomas Payne, 200
 
 __ semantic_roles_
 
-.. TODO I feel like I should explain semantic roles more/better,
-   because they seems to have weird technical meanings
-   and the language generators use them in various ways,
-   so they don't function as arbitrary symbols for a role.
-   Maybe it would help to link to a source about the meanings of the semantic roles?
-   Is this a useful description at all?
+..
+  TODO I feel like I should explain semantic roles more/better,
+  because they seems to have weird technical meanings
+  and the language generators use them in various ways,
+  so they don't function as arbitrary symbols for a role.
+  Maybe it would help to link to a source about the meanings of the semantic roles?
+  Is this a useful description at all?
 
 In our frame, we will mark the person doing the carrying as the agent,
 the thing they carry as the theme,
@@ -121,15 +122,17 @@ What properties do the participants have as a result of their role in the action
 
 Putting it all together, our action description is going to look like this:
 
-.. TODO What is the difference between TO and TOWARD as spatial path operators?
-   What is the distinction supposed to represent?
+..
+  TODO What is the difference between TO and TOWARD as spatial path operators?
+  What is the distinction supposed to represent?
 
-.. NOTE: Carry is ridiculously similar to *put*.
-   I copied *put* to start off my action description.
-   I barely had to change anything.
-   However, there is one change:
-   The agent moves toward the goal.
-   It might be similar to another existing verb as well.
+..
+  NOTE: Carry is ridiculously similar to *put*.
+  I copied *put* to start off my action description.
+  I barely had to change anything.
+  However, there is one change:
+  The agent moves toward the goal.
+  It might be similar to another existing verb as well.
 
 .. code-block:: python
 
@@ -195,8 +198,9 @@ Using the relation DSL functions (like "on", or "near")
 together with :code:`itertools.chain()`.
 In this case, though, we have few and simple enough relations that we can just describe them directly.
 
-.. TODO Should I warn users to be careful about using the variables, not the roles when describing relations, etc.?
-   Not sure if that's necessary but I can see how someone might get confused.
+..
+  TODO Should I warn users to be careful about using the variables, not the roles when describing relations, etc.?
+  Not sure if that's necessary but I can see how someone might get confused.
 
 That takes care of describing the action.
 Now, as the final step, we'll add carrying to our lexicon.
