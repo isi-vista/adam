@@ -94,14 +94,6 @@ see `"Summary of semantic roles and grammatical relations"`__ (Thomas Payne, 200
 
 __ semantic_roles_
 
-..
-  TODO I feel like I should explain semantic roles more/better,
-  because they seems to have weird technical meanings
-  and the language generators use them in various ways,
-  so they don't function as arbitrary symbols for a role.
-  Maybe it would help to link to a source about the meanings of the semantic roles?
-  Is this a useful description at all?
-
 In our frame, we will mark the person or animal doing the carrying as the agent,
 the thing they carry as the theme,
 and the place they put it as the goal:
@@ -123,18 +115,6 @@ What properties do the participants have as a result of their role in the action
 (These are used to mark, for example, the goal as stationary.)
 
 Putting it all together, our action description is going to look like this:
-
-..
-  TODO What is the difference between TO and TOWARD as spatial path operators?
-  What is the distinction supposed to represent?
-
-..
-  NOTE: Carry is ridiculously similar to *put*.
-  I copied *put* to start off my action description.
-  I barely had to change anything.
-  However, there is one change:
-  The agent moves toward the goal.
-  It might be similar to another existing verb as well.
 
 .. code-block:: python
 
