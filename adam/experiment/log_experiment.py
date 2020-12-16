@@ -653,7 +653,12 @@ def curriculum_from_params(
                 language_generator,
                 params=params.namespace_or_empty("train_curriculum"),
             ),
-            test_instance_groups(num_samples, num_noise_objects, language_generator)
+            test_instance_groups(
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                params=params.namespace_or_empty("test_curriculum"),
+            )
             if test_instance_groups
             else [],
         )

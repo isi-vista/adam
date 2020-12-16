@@ -1,6 +1,8 @@
 from random import Random
 
-from typing import Iterable, Union, Optional, Sequence, List, Tuple
+from typing import Iterable, Union, Optional, Sequence, List, Tuple, Any
+
+from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from immutablecollections import immutableset
 from adam.language.language_generator import LanguageGenerator
@@ -18,7 +20,12 @@ from adam.ontology.phase1_ontology import (
     THING,
     LIQUID,
     LEARNER,
+    on,
+    near,
+    strictly_under,
+    far,
 )
+from adam.ontology.phase1_spatial_relations import Direction, DISTAL, PROXIMAL
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -28,6 +35,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
 )
 from adam.random_utils import RandomChooser
+from adam.relation import flatten_relations, Relation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import (
     object_variable,
@@ -181,3 +189,86 @@ def shuffle_curriculum(
     mod_curriculum = list(curriculum)
     rng.shuffle(mod_curriculum)
     return mod_curriculum
+
+
+NOISE_RELATION_DSL_OPTIONS = immutableset(["on", "beside", "under", "in_front"])
+BOOL_SET = (True, False)
+
+
+def background_relations_builder(
+    background_objects: Iterable[TemplateObjectVariable],
+    num_relations: int,
+    *,
+    target: Optional[TemplateObjectVariable] = None,
+    target_2: Optional[TemplateObjectVariable] = None,
+    add_noise: bool = True,
+    include_targets_in_noise: bool = False,
+    chooser: RandomChooser = RandomChooser.for_seed(0),
+) -> Iterable[Relation[Any]]:
+    if add_noise:
+        potential_objects = list(background_objects)
+        if target and include_targets_in_noise:
+            potential_objects.append(target)
+        if target_2 and include_targets_in_noise:
+            potential_objects.append(target_2)
+
+        if len(potential_objects) < 2:
+            return immutableset()
+
+        relations = []
+        for _ in range(num_relations):
+            choice = chooser.choice(NOISE_RELATION_DSL_OPTIONS)
+            if choice == "on":
+                relations.append(
+                    on(
+                        chooser.choice(potential_objects),
+                        chooser.choice(potential_objects),
+                    )
+                )
+            elif choice == "beside":
+                obj_choice_2 = chooser.choice(potential_objects)
+                relations.append(
+                    near(
+                        chooser.choice(potential_objects),
+                        obj_choice_2,
+                        direction=Direction(
+                            positive=chooser.choice(BOOL_SET),
+                            relative_to_axis=HorizontalAxisOfObject(
+                                obj_choice_2, index=0
+                            ),
+                        ),
+                    )
+                )
+            elif choice == "under":
+                relations.append(
+                    strictly_under(
+                        chooser.choice(potential_objects),
+                        chooser.choice(potential_objects),
+                        dist=DISTAL if chooser.choice(BOOL_SET) else PROXIMAL,
+                    )
+                )
+            elif choice == "in_front":
+                obj_choice_2 = chooser.choice(potential_objects)
+                direction = Direction(
+                    positive=chooser.choice(BOOL_SET),
+                    relative_to_axis=FacingAddresseeAxis(obj_choice_2),
+                )
+                relations.append(
+                    near(
+                        chooser.choice(potential_objects),
+                        obj_choice_2,
+                        direction=direction,
+                    )
+                    if chooser.choice(BOOL_SET)
+                    else far(
+                        chooser.choice(potential_objects),
+                        obj_choice_2,
+                        direction=direction,
+                    )
+                )
+            else:
+                raise RuntimeError("Invalid relation type in background relations")
+
+        return flatten_relations(relations)
+    else:
+        return immutableset()
