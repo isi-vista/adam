@@ -24,11 +24,13 @@ Next, from the repository root, do:
 The experiment should run, creating a directory :code:`%adam_experiment_root%/m9` holding the results of the experiment
 (where :code:`%adam_experiment_root%` is whatever you set the variable to in your :code:`root.params`).
 
-(Note that whenever we use percentage signs around a variable name, like :code:`%experiment%`, that means "replace
-:code:`%experiment%` with the value of the variable :code:`experiment` in context."
-When processing a parameters file, ADAM looks up the values of these variables
-in the other parameters files listed under :code:`_includes`.
-If it can't find it there, it will try looking at your environment variables.)
+.. note::
+
+   Whenever we use percentage signs around a variable name, like :code:`%experiment%`, that means "replace
+   :code:`%experiment%` with the value of the variable :code:`experiment` in context."
+   When processing a parameters file, ADAM looks up the values of these variables
+   in the other parameters files listed under :code:`_includes`.
+   If it can't find it there, it will try looking it up in your environment variables.
 
 Congratulations; you've run your first experiment.
 
@@ -113,7 +115,8 @@ Further notes
 By convention, experiment parameters files live in :code:`parameters/experiment` and its subdirectories,
 but you can put them anywhere you want.
 
-.. Refer to Jacob's excellent documentation. Accept no substitutes.
+..
+  Refer to Jacob's excellent documentation. Accept no substitutes.
 
 :code:`log_experiment.py` supports many parameters; for a full description of what's available, see
 :code:`adam/experiment/README.md`.

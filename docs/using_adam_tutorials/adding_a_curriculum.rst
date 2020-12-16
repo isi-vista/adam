@@ -75,10 +75,10 @@ Object variables
 To use situation templates, we first define some *template object variables*.
 These represent objects in the situation.
 These variables can be concrete ("a ball" or even "a blue ball") or abstract ("an inanimate object").
-To do this we'll use the helpers :code:`standard_object` and :code:`make_noise_objects`.
-:code:`standard_object` creates a single variable.
+To do this we'll use the helpers :any:`standard_object` and :any:`make_noise_objects`.
+:any:`standard_object` creates a single variable.
 You'll be using it a lot.
-:code:`make_noise_objects` on the other hand gives a sequence of variables
+:any:`make_noise_objects` on the other hand gives a sequence of variables
 representing random objects.
 These noise objects are useful for testing a learner's ability to learn
 when there are objects in the scene unrelated to what's being described.
@@ -113,7 +113,7 @@ Our testing curriculum will then **require** a red ball:
        ball = standard_object("ball", BALL, required_properties=[RED])
 
 Now that we have our variables, we can define a situation template that uses them.
-To do this, we're going to create a :code:`Phase1SituationTemplate` object
+To do this, we're going to create a :any:`Phase1SituationTemplate` object
 that describes the kind of examples we want to generate.
 We'll include a ball in the scene
 together with some background objects that aren't balls.
@@ -170,9 +170,9 @@ situations
 together with perceptual representations
 and linguistic descriptions
 that the learner can use.
-To create specific situations, we're going to use the helper functions :code:`sampled` and :code:`all_possible`.
-:code:`sampled` will let us randomly generate sample situations from the template.
-Meanwhile, :code:`all_possible` lets us create (as the name suggests)
+To create specific situations, we're going to use the helper functions :any:`sampled` and :any:`all_possible`.
+:any:`sampled` will let us randomly generate sample situations from the template.
+Meanwhile, :any:`all_possible` lets us create (as the name suggests)
 all possible situations that the template describes.
 
 The resulting functions will look something like this:
@@ -242,8 +242,8 @@ The resulting functions will look something like this:
 And that's it! We've defined our curriculum functions.
 
 Finally, we need to register our curriculum.
-To do that, we're going to modify :code:`adam/experiment/log_experiment.py`.
-The function :code:`curriculum_from_params` defines a mapping :code:`str_to_train_test_curriculum`.
+To do that, we're going to modify :any:`adam.experiment.log_experiment`.
+The function :any:`curriculum_from_params` defines a mapping :py:const:`str_to_train_test_curriculum`.
 Add a new entry to this mapping as follows:
 
 .. code-block:: python
@@ -347,9 +347,9 @@ Further notes
 In this tutorial we focused on simple curricula with examples involving only objects.
 However, ADAM supports more complex situations and examples.
 For more information, please refer to the API documentation
-for :code:`adam.curriculum.curriculum_utils`,
-:code:`adam.situation.templates.phase1_templates`,
-and :code:`adam.ontology.phase1_ontology`.
+for :any:`adam.curriculum.curriculum_utils`,
+:any:`adam.situation.templates.phase1_templates`,
+and :any:`adam.ontology.phase1_ontology`.
 
 **********
 Conclusion

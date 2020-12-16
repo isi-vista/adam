@@ -29,8 +29,8 @@ ADAM uses ontology types as a convenience for users to make creating curricula e
 for example, that you want a scene that shows liquid in a cup, or an animal eating a cookie, rather than having to
 specify explicit types. Note that the learner does not observe or interact with these ontology types at all.
 
-First, we'll define the ontology type of a toy block in :code:`adam.ontology.phase1_ontology`.
-To do this, we're going to use :code:`subtype` to define a subtype of :code:`INANIMATE_OBJECT`.
+First, we'll define the ontology type of a toy block in :any:`adam.ontology.phase1_ontology`.
+To do this, we're going to use :any:`subtype` to define a subtype of :py:const:`INANIMATE_OBJECT`.
 We want to give it some properties.
 First, we're going to say it can fill a slot in a template,
 which means that our learners can learn the object.
@@ -49,7 +49,9 @@ The ontology type definition then looks like this:
    )
    subtype(TOY_BLOCK, INANIMATE_OBJECT)
 
-(Note that ADAM also has :code:`PERSON` and :code:`NONHUMAN_ANIMAL` types if you want to add objects of those kinds.)
+.. note::
+
+  ADAM also has :py:const:`PERSON` and :py:const:`NONHUMAN_ANIMAL` types if you want to add objects of those kinds.
 
 Second, we need to define our schema for toy blocks.
 (This is typically done inside a function for organization purposes,
@@ -58,7 +60,7 @@ An object schema requires, at minimum, an ontology node and a *geon*.
 The geon describes the shape of the object: Its cross-sections and its *axes*.
 A ball, for example, has circular cross sections that start small, get big, and end small again.
 
-We define these using cross-sections (defined in :code:`adam.geon`) and axes (from :code:`adam.axes`).
+We define these using cross-sections (defined in :any:`adam.geon`) and axes (from :any:`adam.axes`).
 The axes represent the object's three relative dimensions.
 (One of these is always called the *primary axis* -- typically but not always the longest.
 However, this distinction is mostly meaningless.)
@@ -66,11 +68,11 @@ These axis can also be related to each other.
 Our toy block is going to be a thin rectangular one, so we'll include those relations when we define our block.
 
 To define our toy block's geon,
-we're going to use the :code:`RECTANGULAR` cross-section (from :code:`adam.geon`)
-and the helper functions :code:`symmetric` and :code:`symmetric_vertical` from :code:`adam.axes`
+we're going to use the :py:const:`RECTANGULAR` cross-section (from :any:`adam.geon`)
+and the helper functions :any:`symmetric` and :any:`symmetric_vertical` from :any:`adam.axes`
 to create our axes.
 These axis helper functions take a name for the axis and return a new axis of the appropriate kind.
-(Note that :code:`adam.axes` supports other kinds of axis, such as :code:`straight_up`,
+(Note that :any:`adam.axes` supports other kinds of axis, such as :any:`straight_up`,
 and includes other helper functions for such axes.)
 
 Our schema then looks like this:
@@ -142,8 +144,8 @@ Once you have defined your object for ADAM, you must tell ADAM how to describe i
 
 To do this, you'll need to edit the *lexicon* for each language you're using.
 By default, ADAM supports English and Chinese. The corresponding lexicons
-are defined in :code:`adam.language_specific.english.english_phase1_lexicon`
-and :code:`adam.language_specific.chinese.chinese_phase1_lexicon`, respectively.
+are defined in :any:`adam.language_specific.english.english_phase1_lexicon`
+and :any:`adam.language_specific.chinese.chinese_phase1_lexicon`, respectively.
 These define mappings from ontology nodes (as defined in the previous section)
 and *lexicon entries*, which tell ADAM how to describe the corresponding thing.
 
@@ -153,7 +155,7 @@ The English lexicon entry for our toy block will look like this:
 
     LexiconEntry("toy block", NOUN, plural_form="toy blocks")
 
-We'll add it to the lexicon, :code:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :code:`BOOK` and :code:`HOUSE`:
+We'll add it to the lexicon, :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :code:`BOOK` and :code:`HOUSE`:
 
 .. code-block:: python
 
@@ -204,6 +206,6 @@ In this tutorial you saw how to define a simple object.
 The process remains roughly the same for objects with more complicated structure,
 though some of the steps need to be repeated.
 For such complex objects you must also define *subobjects* for their parts (like a human's arms).
-For examples of how this is done, see :code:`_TABLE_SCHEME` and :code:`_DOG_SCHEMA`.
+For examples of how this is done, see :py:const:`_TABLE_SCHEME` and :py:const:`_DOG_SCHEMA`.
 Whatever object you want to add,
 I hope this has made the process of doing so clearer.

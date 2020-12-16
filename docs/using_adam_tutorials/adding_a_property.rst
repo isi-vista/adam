@@ -10,7 +10,7 @@ First, you must define an ontology type for the property.
 Second, you must tell ADAM how to describe the property in whatever languages you use for your experiment.
 
 In this tutorial, we're going to add a rubber property and a cyan color to show off the processes.
-We might use this rubber property, for example, on the existing :code:`BALL` object.
+We might use this rubber property, for example, on the existing :any:`BALL` object.
 
 ************************
 Adding a binary property
@@ -19,23 +19,25 @@ Adding a binary property
 ADAM uses ontology types as a tool for creating curricula.
 Note that the learner does not observe or interact with these ontology types at all.
 
-To define our rubber property's ontology type, we simply create an ontology node with the :code:`BINARY` property
-that subtypes :code:`PERCEIVABLE_PROPERTY`:
+To define our rubber property's ontology type, we simply create an ontology node with the :any:`BINARY` property
+that subtypes :any:`PERCEIVABLE_PROPERTY`:
 
 .. code-block:: python
 
    RUBBER = OntologyNode("rubber", [BINARY])
    subtype(RUBBER, PERCEIVABLE_PROPERTY)
 
-(Note that ADAM also supports properties that learners can't perceive.
-For example, :code:`EDIBLE` is such a property.
-Such properties simply subtype :code:`PROPERTY` directly.)
+.. note::
+
+   ADAM also supports properties that learners can't perceive.
+   For example, :any:`EDIBLE` is such a property.
+   Such properties simply subtype :any:`PROPERTY` directly.
 
 Next, we must tell ADAM how to describe the property.
 To do this, we'll need to edit the *lexicon* for the language(s) we're using.
 By default, ADAM supports English and Chinese. The corresponding lexicons
-are defined in :code:`adam.language_specific.english.english_phase1_lexicon`
-and :code:`adam.language_specific.chinese.chinese_phase1_lexicon`, respectively.
+are defined in :any:`adam.language_specific.english.english_phase1_lexicon`
+and :any:`adam.language_specific.chinese.chinese_phase1_lexicon`, respectively.
 These define mappings from ontology nodes (as defined in the previous section)
 and *lexicon entries*, which tell ADAM how to describe the corresponding thing.
 
@@ -45,7 +47,7 @@ Our English lexicon entry for rubber will look like this:
 
     LexiconEntry("rubber", ADJECTIVE)
 
-We'll add it to the lexicon, :code:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :code:`FLY` and :code:`RED`:
+We'll add it to the lexicon, :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :code:`FLY` and :code:`RED`:
 
 .. code-block:: python
 
@@ -61,7 +63,7 @@ We'll add it to the lexicon, :code:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :cod
    )
 
 Finally, because we want balls to be made of rubber,
-we'll open up :code:`adam.ontology.phase1_ontology`
+we'll open up :any:`adam.ontology.phase1_ontology`
 and add the :code:`RUBBER` property to :code:`BALL`:
 
 .. code-block:: python
@@ -105,7 +107,7 @@ Next, we need to add an entry to COLORS_TO_RGBS:
    )
 
 Finally, we'll add a lexicon entry the same way we did for our rubber property.
-We'll add our entry to :code:`GAILA_PHASE_1_ENGLISH_LEXICON` after :code:`DARK_BROWN`:
+We'll add our entry to :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON` after :code:`DARK_BROWN`:
 
 .. code-block:: python
 

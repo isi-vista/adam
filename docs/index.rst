@@ -221,6 +221,10 @@ adam.curriculum
 ----------------------------------
 .. automodule:: adam.curriculum
 
+adam.curriculum.curriculum_utils
+----------------------------------
+.. automodule:: adam.curriculum.curriculum_utils
+
 
 *********************************************
 Supporting classes: Experiments
