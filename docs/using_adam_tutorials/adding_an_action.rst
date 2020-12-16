@@ -99,7 +99,7 @@ __ semantic_roles_
   Maybe it would help to link to a source about the meanings of the semantic roles?
   Is this a useful description at all?
 
-In our frame, we will mark the person doing the carrying as the agent,
+In our frame, we will mark the person or animal doing the carrying as the agent,
 the thing they carry as the theme,
 and the place they put it as the goal:
 
