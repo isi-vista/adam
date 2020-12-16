@@ -270,7 +270,7 @@ Defining more complex curricula
 Curricula with more than one template
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Suppose we now want to show our learner both a ball and a box. How do we do it?
+Suppose we now want to show our learner a ball, then a box. How do we do it?
 
 For more complex curricula, like this one,
 we need to define and use more than one situation template.
