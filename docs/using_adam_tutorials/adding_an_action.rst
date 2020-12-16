@@ -116,8 +116,7 @@ How do objects move during the action?
 (We'll use :code:`SpatialPath`\ s to describe this.)
 What relationships hold before, during and after the action?
 What relationships hold over the whole course of the action for it to even make sense?
-:comment:`is this a good explanation of enduring conditions?`
-What properties do the participants have as a result of their role in the action? :comment:`asserted_properties`
+What properties do the participants have as a result of their role in the action?
 (These are used to mark, for example, the goal as stationary.)
 
 Putting it all together, our action description is going to look like this:
