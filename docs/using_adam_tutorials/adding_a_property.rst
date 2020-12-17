@@ -120,7 +120,7 @@ We'll add our entry to :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON` after :code:`DA
        ),
    )
 
-That's it. You now have a cyan color.
+That's it. You now have a cyan color property you can use in your experiments.
 
 **********
 Conclusion
