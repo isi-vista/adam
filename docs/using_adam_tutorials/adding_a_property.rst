@@ -16,7 +16,9 @@ We might use this rubber property, for example, on the existing :py:const:`BALL`
 Adding a binary property
 ************************
 
-ADAM uses ontology types as a tool for creating curricula.
+First, we'll add our rubber property.
+To do this, we'll start by defining the ontology type.
+ADAM uses these ontology types as a tool for creating curricula.
 Note that the learner does not observe or interact with these ontology types at all.
 
 To define our rubber property's ontology type, we simply create an ontology node with the :py:const:`BINARY` property
@@ -80,6 +82,7 @@ That's it! Now we have a rubber property and we've applied it to balls.
 Adding a color
 **************
 
+Second, we'll add our cyan color property.
 Adding colors is nearly as easy as adding binary properties.
 There's only one additional step: Defining the color's RGB values.
 
