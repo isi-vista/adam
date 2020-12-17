@@ -39,7 +39,7 @@ By default, ADAM supports English and Chinese. The corresponding lexicons
 are defined in :any:`adam.language_specific.english.english_phase1_lexicon`
 and :any:`adam.language_specific.chinese.chinese_phase1_lexicon`, respectively.
 These define mappings from ontology nodes (as defined in the previous section)
-and *lexicon entries*, which tell ADAM how to describe the corresponding thing.
+to *lexicon entries*, which tell ADAM how to describe the corresponding thing.
 
 Our English lexicon entry for rubber will look like this:
 
