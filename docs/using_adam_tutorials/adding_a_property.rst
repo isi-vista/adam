@@ -4,7 +4,7 @@ Adding a new property
 
 ADAM provides some properties and colors to use in your curricula.
 However, you may need additional properties for your experiments.
-Adding new properties is straightfoward.
+Adding new properties is straightforward.
 There are only two main steps.
 First, you must define an ontology type for the property.
 Second, you must tell ADAM how to describe the property in whatever languages you use for your experiment.
