@@ -11,6 +11,7 @@ Using ADAM
 
    using_adam_tutorials/running_experiments
    using_adam_tutorials/adding_a_curriculum
+   using_adam_tutorials/advanced_curriculum
    using_adam_tutorials/adding_an_object
    using_adam_tutorials/adding_a_property
    using_adam_tutorials/adding_a_relation
