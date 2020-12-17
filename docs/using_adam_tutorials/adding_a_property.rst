@@ -80,7 +80,7 @@ That's it! Now we have a rubber property and we've applied it to balls.
 Adding a color
 **************
 
-Adding colors is nearly as easy as adding color properties.
+Adding colors is nearly as easy as adding binary properties.
 There's only one additional step: Defining the color's RGB values.
 
 We start off similarly with defining an ontology type, in this case for cyan:
