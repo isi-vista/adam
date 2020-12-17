@@ -205,7 +205,7 @@ class Phase1SituationTemplate(SituationTemplate):
         converter=_to_immutableset, kw_only=True
     )
     """
-    A set of `TemplateObjectVariables` s which are the focus of the speaker. 
+    A set of `TemplateObjectVariable`\ s which are the focus of the speaker. 
     Defaults to all semantic role fillers of situation actions.
     """
     before_action_relations: ImmutableSet[Relation[TemplateObjectVariable]] = attrib(

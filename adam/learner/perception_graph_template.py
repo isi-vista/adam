@@ -113,7 +113,7 @@ class PerceptionGraphTemplate:
         Gets the `PerceptionGraphTemplate` which contains all aspects of a pattern
         which are both in this template and *other_template*.
 
-        If this intersection is an empty graph or would not contain all `SurfaceTemplateVariables`\ s
+        If this intersection is an empty graph or would not contain all `SyntaxSemanticsVariable`\ s
         """
         if self.graph_pattern.dynamic != pattern.graph_pattern.dynamic:
             raise RuntimeError("Can only intersection patterns of the same dynamic-ness")
@@ -157,7 +157,7 @@ class PerceptionGraphTemplate:
                 )
 
             # If we get a successful intersection,
-            # we then need to make sure we have the correct SurfaceTemplateVariables.
+            # we then need to make sure we have the correct SyntaxSemanticsVariables.
 
             # It would be more intuitive to use self.template_variable_to_pattern_node,
             # but the pattern intersection code seems to prefer to return nodes
