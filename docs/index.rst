@@ -321,8 +321,9 @@ adam.language_specific.english.english_syntax
 ----------------------------------------------------------
 .. automodule:: adam.language_specific.english.english_syntax
 
+******************
 Indices and tables
-==================
+******************
 
 * :ref:`genindex`
 * :ref:`modindex`
