@@ -17,9 +17,9 @@ We're going to run a simple experiment. First, make sure you've defined a :file:
 
 Next, from the repository root, do:
 
-.. code-block:: shell
+.. code-block:: sh
 
-   python adam/experiment/log_experiment.py parameters/experiment/m9/attributes.params
+   $ python adam/experiment/log_experiment.py parameters/experiment/m9/attributes.params
 
 The experiment should run, creating a directory :file:`%adam_experiment_root%/m9` holding the results of the experiment
 (where :code:`%adam_experiment_root%` is whatever you set the variable to in your :file:`root.params`).
