@@ -206,6 +206,6 @@ In this tutorial you saw how to define a simple object.
 The process remains roughly the same for objects with more complicated structure,
 though some of the steps need to be repeated.
 For such complex objects you must also define *subobjects* for their parts (like a human's arms).
-For examples of how this is done, see :py:const:`_TABLE_SCHEME` and :py:const:`_DOG_SCHEMA`.
+For examples of how this is done, see :py:const:`_TABLE_SCHEMA` and :py:const:`_DOG_SCHEMA`.
 Whatever object you want to add,
 I hope this has made the process of doing so clearer.
