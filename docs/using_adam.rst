@@ -1,4 +1,5 @@
-.. adam tutorial for open-source users
+..
+   adam tutorial for open-source users
 
 ##########
 Using ADAM
@@ -18,28 +19,22 @@ Using ADAM
 .. autosummary::
    :toctree: _autosummary
 
-.. TODO Rewrite this introduction
+So you want to know how to use ADAM. Here's where to start.
+This page hosts a collection of tutorials on how to run experiments with ADAM,
+how to define experiments,
+and how to extend ADAM so it can run new kinds of experiments.
+We first discuss running existing experiments,
+then move on to defining new experiments and new curricula.
+We then cover how to extend ADAM with new objects, properties, relations, and actions.
 
-The following is a guide on how to use ADAM to run your own experiments. We discuss how to extend the existing framework
-with new objects, properties, relations, actions, and curricula. We first give a high-level overview of how to do each
-thing, then discuss a concrete example experiment which illustrates each kind of extension.
+Note that it is also possible to extend ADAM's existing learning algorithms to learn new kinds
+(for example, implementing the cross-situational learner for properties),
+to add new learning algorithms (like the existing subset, pursuit, etc. algorithms) to ADAM,
+or to extend ADAM by adding a new language.
+However, these are out of scope for the current document.
 
-.. is this how you write a comment?
-   note that TODO we actually have to include references to learners and languages as well
-
-It is also possible to extend ADAM's existing learning algorithms to learn new kinds (for example, implementing the
-cross-situational learner for properties), to add new learning algorithms (like the existing subset, pursuit, etc.
-algorithms) to ADAM, or to extend ADAM by adding a new language. However, these are out of scope for the current
-document.
-
-*******************
-High-level overview
-*******************
-
-.. Note: Throughout this I have advised users to modify phase1_ontology when they want to add things.
+..
+   Note: Throughout these documents I have advised users to modify phase1_ontology when they want to add things.
    Is this misleading? Is there a better way to extend ADAM?
    Does it make sense to discuss caveats of this in this document?
    Do I need to discuss adding new ontologies?
-
-.. TODO should these code examples include imports? I included one for the standard library since it's not part of ADAM
-   itself.
