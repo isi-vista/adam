@@ -182,7 +182,7 @@ For such objects we use the PROPER_NOUN tag and don't need to provide a plural:
 
 To add your object and its lexicon entry to one of these lexicons, you'll need to change the corresponding lexicon.
 In each file there will be a variable named :code:`GAILA_PHASE_1_$LANGUAGE_LEXICON`.
-It's this variable you'll need to edit. Add a lexicon entry to the lexicon as follows:
+It's this variable you'll need to edit. Add a lexicon entry to the English lexicon as follows:
 
 .. code-block:: python
 
