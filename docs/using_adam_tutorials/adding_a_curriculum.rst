@@ -175,6 +175,15 @@ To create specific situations, we're going to use the helper functions :any:`sam
 Meanwhile, :any:`all_possible` lets us create (as the name suggests)
 all possible situations that the template describes.
 
+.. warning::
+
+   Be careful with `all_possible`.
+   For complex templates, this helper function may create many more situations than you want.
+   The space of situations that can be generated from a template
+   grows very quickly in the number of variables.
+   Most of the time, you will want to run experiments using an explicit number of samples
+   (and using `sampled`) to avoid this.
+
 The resulting functions will look something like this:
 
 .. code-block:: python
