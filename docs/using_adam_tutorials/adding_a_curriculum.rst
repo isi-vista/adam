@@ -200,7 +200,7 @@ The resulting functions will look something like this:
        template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
-            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL])
+            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL]),
             syntax_hints=[IGNORE_COLORS],
        )
        return phase1_instances(
