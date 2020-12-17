@@ -90,7 +90,7 @@ We start off similarly with defining an ontology type, in this case for cyan:
    CYAN = OntologyNode("cyan", [CAN_FILL_TEMPLATE_SLOT])
    subtype(CYAN, COLOR)
 
-Next, we need to add an entry to COLORS_TO_RGBS:
+Next, we need to add an entry to :code:`COLORS_TO_RGBS`:
 
 .. code-block:: python
 
