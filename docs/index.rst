@@ -62,21 +62,21 @@ A few aspects of ADAM's approach worth noting are:
 *******************
 System Architecture
 *******************
-A particular "run" of the ADAM system is described by an :code:`Experiment`.
-Every :code:`Experiment` needs to know
+A particular "run" of the ADAM system is described by an `Experiment`.
+Every `Experiment` needs to know
 
-- what :code:`TopLevelLanguageLearner` to use,
-- what :code:`Situation`\ s to present to the :code:`TopLevelLanguageLearner` to teach it,
-- what :code:`Situation`\ s to present to the :code:`TopLevelLanguageLearner` to evaluate it,
+- what `TopLevelLanguageLearner` to use,
+- what `Situation`\ s to present to the `TopLevelLanguageLearner` to teach it,
+- what `Situation`\ s to present to the `TopLevelLanguageLearner` to evaluate it,
 - what sort of analyses to perform on the result.
 
 There are a variety of ways to specify the situations for training and testing,
 but this is prototypically done by generating them procedurally
-using a :code:`SituationTemplateProcessor`.
-The way a :code:`Situation` is presented to the :code:`TopLevelLanguageLearner` is controlled
-by a :code:`LanguageGenerator` and a :code:`PerceptualRepresentationGenerator`.
+using a `SituationTemplateProcessor`.
+The way a `Situation` is presented to the `TopLevelLanguageLearner` is controlled
+by a `LanguageGenerator` and a `PerceptualRepresentationGenerator`.
 
-The analyses to perform on results are given by :code:`DescriptionObserver`\ s.
+The analyses to perform on results are given by `DescriptionObserver`\ s.
 
 Currently the ADAM system has no entry points
 and is interacted with entirely by unit tests,
