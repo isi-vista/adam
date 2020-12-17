@@ -104,6 +104,10 @@ adam.learner
 -----------------------------
 .. automodule:: adam.learner
 
+adam.semantics
+-----------------------------
+.. automodule:: adam.semantics
+
 adam.situation.templates
 -----------------------------
 .. automodule:: adam.situation.templates
@@ -115,6 +119,17 @@ adam.situation.templates.phase1_templates
 adam.experiment
 -----------------------------
 .. automodule:: adam.experiment
+
+*******************************************
+Supporting Classes: Learner Internals
+*******************************************
+adam.learner.alignments
+-----------------------------
+.. automodule:: adam.learner.alignments
+
+adam.learner.surface_template
+-----------------------------
+.. automodule:: adam.learner.surface_templates
 
 *******************************************
 Supporting Classes: Representing Relations
@@ -133,6 +148,10 @@ adam.geon
 adam.axes
 --------------
 .. automodule:: adam.axes
+
+adam.axis
+--------------
+.. automodule:: adam.axis
 
 *******************************************
 Supporting Classes: Object Structure
@@ -219,6 +238,10 @@ adam.perception.developmental_primitive_perception
 adam.perception.high_level_semantics_situation_to_developmental_primitive_perception
 -------------------------------------------------------------------------------------
 ..automodule:: adam.perception.high_level_semantics_situation_to_developmental_primitive_perception
+
+adam.perception.perception_graph
+--------------------------------
+.. automodule:: adam.perception.perception_graph
 
 adam.perception.marr
 -----------------------------
