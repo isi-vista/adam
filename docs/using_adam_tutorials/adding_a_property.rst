@@ -129,5 +129,8 @@ That's it. You now have a cyan color property you can use in your experiments.
 Conclusion
 **********
 
-Defining properties, whether binary or color, is quite simple.
+We have now added both the properties we set out to define:
+a binary property (rubber) and a color (cyan).
+Though ADAM does not and cannot include all possible properties,
+you should now be able to add any missing ones you need.
 I hope this tutorial has made the process clear.
