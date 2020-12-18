@@ -26,6 +26,7 @@ from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
 from adam.experiment.experiment_utils import (
+    bilingual_each_object_by_itself_curriculum_train,
     build_each_object_by_itself_curriculum_train,
     build_each_object_by_itself_curriculum_test,
     build_debug_curriculum_train,
@@ -589,8 +590,21 @@ def curriculum_from_params(
             None,
         ),
     }
+    num_samples = params.optional_positive_integer("num_samples")
+    # We need to be able to accept 0 as the number of noise objects but optional_integer doesn't currently
+    # support specifying a range of acceptable values: https://github.com/isi-vista/vistautils/issues/142
+    num_noise_objects = params.optional_integer("num_noise_objects")
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
+    if language_mode == LanguageMode.BILINGUAL:
+        if curriculum_name == "each-object-by-itself":
+            return (
+                bilingual_each_object_by_itself_curriculum_train(
+                    num_samples, num_noise_objects
+                ),
+                [],
+            )
+            # raise NotImplementedError
     language_generator = (
         integrated_experiment_language_generator(language_mode)
         if curriculum_name == "m18-integrated-learners-experiment"
@@ -606,11 +620,6 @@ def curriculum_from_params(
     (training_instance_groups, test_instance_groups) = str_to_train_test_curriculum[
         curriculum_name
     ]
-
-    num_samples = params.optional_positive_integer("num_samples")
-    # We need to be able to accept 0 as the number of noise objects but optional_integer doesn't currently
-    # support specifying a range of acceptable values: https://github.com/isi-vista/vistautils/issues/142
-    num_noise_objects = params.optional_integer("num_noise_objects")
 
     if curriculum_name == "pursuit":
         return (

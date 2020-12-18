@@ -1,4 +1,5 @@
 import logging
+from more_itertools import flatten
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import LanguageMode
 from adam.learner.attributes import SubsetAttributeLearnerNew
@@ -9,6 +10,15 @@ from adam.learner.objects import (
     PursuitObjectLearnerNew,
     ObjectRecognizerAsTemplateLearner,
     CrossSituationalObjectLearner,
+)
+from adam.language_specific.chinese.chinese_language_generator import (
+    GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+    GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
+)
+from adam.language_specific.english.english_language_generator import (
+    GAILA_PHASE_1_LANGUAGE_GENERATOR,
+    GAILA_PHASE_2_LANGUAGE_GENERATOR,
+    INTEGRATED_EXPERIMENT_LANGUAGE_GENERATOR,
 )
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.relations import SubsetRelationLearnerNew
@@ -342,6 +352,18 @@ def build_each_object_by_itself_curriculum_train(
             10,
         )
     )
+
+
+def bilingual_each_object_by_itself_curriculum_train(
+    num_samples: Optional[int], num_noise_objects: Optional[int]
+) -> Sequence[Phase1InstanceGroup]:
+    chinese = build_each_object_by_itself_curriculum_test(
+        num_samples, num_noise_objects, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
+    )
+    english = build_each_object_by_itself_curriculum_test(
+        num_samples, num_noise_objects, GAILA_PHASE_1_LANGUAGE_GENERATOR
+    )
+    return flatten([chinese, english])
 
 
 def build_each_object_by_itself_curriculum_test(
