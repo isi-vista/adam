@@ -13,6 +13,7 @@ and [here is a video](https://youtu.be/xGsIKHKqKdw) of a talk giving an overview
 (aimed at an audience familiar with the GAILA program).
 
 Documentation can be found [here](https://adam-language-learner.readthedocs.io/en/latest/).
+The documentation includes tutorials on how to use ADAM (though it may not appear on Read the Docs).
 
 # Project Setup
 
