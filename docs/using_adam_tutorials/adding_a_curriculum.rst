@@ -203,20 +203,22 @@ The resulting functions will look something like this:
             background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL]),
             syntax_hints=[IGNORE_COLORS],
        )
-       return phase1_instances(
-           "balls with some random things in the background"
-           sampled(
-               template,
-               max_to_sample=num_samples,
-               chooser=PHASE1_CHOOSER_FACTORY(),
-               block_multiple_of_the_same_type=True,
-           ) if num_samples else all_possible(
-                template,
-                chooser=PHASE1_CHOOSER_FACTORY(),
-                ontology=GAILA_PHASE_1_ONTOLOGY,
-           )),
-           language_generator=language_generator,
-       )
+       return [
+           phase1_instances(
+               "balls with some random things in the background",
+               sampled(
+                   template,
+                   max_to_sample=num_samples,
+                   chooser=PHASE1_CHOOSER_FACTORY(),
+                   block_multiple_of_the_same_type=True,
+               ) if num_samples else all_possible(
+                    template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+               ),
+               language_generator=language_generator,
+           ),
+       ]
 
    def build_toy_ball_test_curriculum(
        num_samples: Optional[int],
@@ -233,20 +235,22 @@ The resulting functions will look something like this:
             background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL])
             syntax_hints=[IGNORE_COLORS],
        )
-       return phase1_instances(
-           "balls with some random things in the background"
-           sampled(
-               template,
-               max_to_sample=num_samples,
-               chooser=PHASE1_CHOOSER_FACTORY(),
-               block_multiple_of_the_same_type=True,
-           ) if num_samples else all_possible(
-                template,
-                chooser=PHASE1_CHOOSER_FACTORY(),
-                ontology=GAILA_PHASE_1_ONTOLOGY,
-           )),
-           language_generator=language_generator,
-       )
+       return [
+           phase1_instances(
+               "balls with some random things in the background",
+               sampled(
+                   template,
+                   max_to_sample=num_samples,
+                   chooser=PHASE1_CHOOSER_FACTORY(),
+                   block_multiple_of_the_same_type=True,
+               ) if num_samples else all_possible(
+                    template,
+                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
+               ),
+               language_generator=language_generator,
+           ),
+       ]
 
 And that's it! We've defined our curriculum functions.
 
@@ -323,9 +327,9 @@ This is done as follows:
             background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BOX])
             syntax_hints=[IGNORE_COLORS],
        )
-       return phase1_instances(
-           "some balls, then some boxes"
-           chain(  # use chain to combine the situations generated from each template
+       return [
+           phase1_instances(
+               "balls with some random things in the background",
                sampled(
                    ball_template,
                    max_to_sample=num_samples,
@@ -335,7 +339,11 @@ This is done as follows:
                     ball_template,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-               )),
+               ),
+               language_generator=language_generator,
+           ),
+           phase1_instances(
+               "boxes with some random things in the background",
                sampled(
                    box_template,
                    max_to_sample=num_samples,
@@ -345,10 +353,10 @@ This is done as follows:
                     box_template,
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-               )),
-           )
-           language_generator=language_generator,
-       )
+               ),
+               language_generator=language_generator,
+           ),
+       ]
 
 Further notes
 ~~~~~~~~~~~~~
