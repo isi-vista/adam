@@ -357,13 +357,16 @@ def build_each_object_by_itself_curriculum_train(
 def bilingual_each_object_by_itself_curriculum_train(
     num_samples: Optional[int], num_noise_objects: Optional[int]
 ) -> Sequence[Phase1InstanceGroup]:
-    chinese = build_each_object_by_itself_curriculum_test(
+    chinese = build_each_object_by_itself_curriculum_train(
         num_samples, num_noise_objects, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
     )
-    english = build_each_object_by_itself_curriculum_test(
+    english = build_each_object_by_itself_curriculum_train(
         num_samples, num_noise_objects, GAILA_PHASE_1_LANGUAGE_GENERATOR
     )
-    return flatten([chinese, english])
+    combined = list(chain(english, chinese))
+    random.seed(0)
+    random.shuffle(combined, random.random)
+    return combined
 
 
 def build_each_object_by_itself_curriculum_test(
