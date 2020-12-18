@@ -1,5 +1,4 @@
 import logging
-from more_itertools import flatten
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import LanguageMode
 from adam.learner.attributes import SubsetAttributeLearnerNew
@@ -16,7 +15,6 @@ from adam.language_specific.chinese.chinese_language_generator import (
 )
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
-    GAILA_PHASE_2_CHINESE_LANGUAGE_GENERATOR,
 )
 from adam.learner.plurals import SubsetPluralLearnerNew
 from adam.learner.relations import SubsetRelationLearnerNew
