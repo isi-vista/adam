@@ -14,8 +14,8 @@ Using ADAM
    using_adam_tutorials/advanced_curriculum
    using_adam_tutorials/adding_an_object
    using_adam_tutorials/adding_a_property
-   using_adam_tutorials/adding_a_relation
    using_adam_tutorials/adding_an_action
+   using_adam_tutorials/adding_a_relation
 
 .. autosummary::
    :toctree: _autosummary
