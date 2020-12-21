@@ -31,7 +31,7 @@ called :py:func:`_make_each_object_by_itself_curriculum`,
 and since curricula are built with functions,
 we can just call the curriculum builder to get some instance groups::
 
-    def build_toy_ball_train_curriculum(
+    def build_objects_on_tables_train_curriculum(
         num_samples: Optional[int],
         num_noise_objects: Optional[int],
         language_generator: LanguageGenerator[
@@ -72,7 +72,7 @@ which means we have to flatten our list of relations before using it,
 replacing any nested lists with their elements.
 The result looks like this::
 
-    def build_toy_ball_train_curriculum(
+    def build_objects_on_tables_train_curriculum(
         num_samples: Optional[int],
         num_noise_objects: Optional[int],
         language_generator: LanguageGenerator[
@@ -164,7 +164,7 @@ Finally, we'll collect our instance groups together in a list.
 
 The result will look like this::
 
-    def build_toy_ball_train_curriculum(
+    def build_objects_on_tables_train_curriculum(
         num_samples: Optional[int],
         num_noise_objects: Optional[int],
         language_generator: LanguageGenerator[
