@@ -24,11 +24,18 @@ language_mode: ENGLISH
 learner: "integrated-learner-params"
 object_learner:
    learner_type: "subset"
+   ontology: phase1
 attibute_learner:
    learner_type: "subset"
+   ontology: phase1
+plural_learner:
+   learner_type: "subset"
+   ontology: phase2
 relation_learner:
    learner_type: "subset"
+   ontology: phase1
 action_learner:
    learner_type: "subset"
+   ontology: phase1
 include_functional: True
 include_generics: True
