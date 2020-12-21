@@ -124,8 +124,6 @@ We'll change (1) first. We're going to add to the if branch that handles the "on
 
 Next, we'll modify (2). Again, we'll put our change around the "on" case::
 
-We'll change (1) first. We're going to add to the if branch that handles the "on" relationship::
-
     def _preposition_for_region_as_goal(self, region: SituationRegion) -> str:
         """
         When a `Region` appears as the filler of the semantic role `GOAL`,
