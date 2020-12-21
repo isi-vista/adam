@@ -102,52 +102,52 @@ In our case, we want them to return :code:`"on the side of"` when our new relati
 
 We'll change (1) first. We're going to add to the if branch that handles the "on" relationship::
 
-        def relation_to_prepositional_modifier(
-            self,
-            action: Optional[Action[OntologyNode, SituationObject]],
-            relation: Relation[SituationObject],
-        ) -> Optional[DependencyTreeToken]:
-            ...
-            elif region.direction:
-                direction_axis = region.direction.relative_to_concrete_axis(
-                    self.situation.axis_info
-                )
+    def relation_to_prepositional_modifier(
+        self,
+        action: Optional[Action[OntologyNode, SituationObject]],
+        relation: Relation[SituationObject],
+    ) -> Optional[DependencyTreeToken]:
+        ...
+        elif region.direction:
+            direction_axis = region.direction.relative_to_concrete_axis(
+                self.situation.axis_info
+            )
 
-                if region.distance == EXTERIOR_BUT_IN_CONTACT:
-                    # change: add "on the side of" sub-branch
-                    if isinstance(region.direction.relative_to_axis, HorizontalAxisOfObject):
-                        preposition = "on the side of"
-                    # was: if region.direction.positive:
-                    elif region.direction.positive:
-                        preposition = "on"
-            ...
+            if region.distance == EXTERIOR_BUT_IN_CONTACT:
+                # change: add "on the side of" sub-branch
+                if isinstance(region.direction.relative_to_axis, HorizontalAxisOfObject):
+                    preposition = "on the side of"
+                # was: if region.direction.positive:
+                elif region.direction.positive:
+                    preposition = "on"
+        ...
 
 Next, we'll modify (2). Again, we'll put our change around the "on" case::
 
 We'll change (1) first. We're going to add to the if branch that handles the "on" relationship::
 
-        def _preposition_for_region_as_goal(self, region: SituationRegion) -> str:
-            """
-            When a `Region` appears as the filler of the semantic role `GOAL`,
-            determine what preposition to use to express it in English.
-            """
-            if region.distance == INTERIOR:
-                return "in"
-            elif (
-                region.distance == EXTERIOR_BUT_IN_CONTACT
-                and region.direction
-                and region.direction.positive
-                # constrain the axis so it doesn't handle "on the side of"
-                and (region.direction == GRAVITATIONAL_UP
-                or region.direction == GRAVITATIONAL_AXIS_FUNCTION)
-            ):
-                return "on"
-            # add a branch for "on the side of"
-            elif (
-                region.distance == EXTERIOR_BUT_IN_CONTACT
-                and isinstance(region.direction, HorizontalAxisOfObject)
-            ):
-                return "on the side of"
+    def _preposition_for_region_as_goal(self, region: SituationRegion) -> str:
+        """
+        When a `Region` appears as the filler of the semantic role `GOAL`,
+        determine what preposition to use to express it in English.
+        """
+        if region.distance == INTERIOR:
+            return "in"
+        elif (
+            region.distance == EXTERIOR_BUT_IN_CONTACT
+            and region.direction
+            and region.direction.positive
+            # constrain the axis so it doesn't handle "on the side of"
+            and (region.direction == GRAVITATIONAL_UP
+            or region.direction == GRAVITATIONAL_AXIS_FUNCTION)
+        ):
+            return "on"
+        # add a branch for "on the side of"
+        elif (
+            region.distance == EXTERIOR_BUT_IN_CONTACT
+            and isinstance(region.direction, HorizontalAxisOfObject)
+        ):
+            return "on the side of"
 
 **********
 Conclusion
