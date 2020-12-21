@@ -163,7 +163,7 @@ The English lexicon entry for our toy block will look like this:
 .. note::
 
    ADAM also supports lexicon entries for objects representing specific, named people or things.
-   For such objects we use the PROPER_NOUN tag and don't need to provide a plural:
+   For such objects we use the :code:`PROPER_NOUN` tag and don't need to provide a plural:
 
    .. code-block:: python
 
