@@ -92,6 +92,8 @@ We're going to create a parameters file :file:`parameters/experiments/m9_attribu
    attibute_learner:
       learner_type: "subset"
       ontology: phase1
+   plurals_learner:
+      learner_type: "none"
    relation_learner:
       learner_type: "none"
    action_learner:
