@@ -196,7 +196,7 @@ The resulting functions will look something like this:
            LinearizedDependencyTree,
        ],
    ) -> Sequence[Phase1InstanceGroup]:
-       ball = standard_object("ball", BALL, banned_properties=[RED])
+       ball = standard_object("ball", BALL)
        template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
@@ -228,7 +228,7 @@ The resulting functions will look something like this:
            LinearizedDependencyTree,
        ],
    ) -> Sequence[Phase1InstanceGroup]:
-       ball = standard_object("ball", BALL, required_properties=[RED])
+       ball = standard_object("ball", BALL, added_properties=[RED])
        template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
