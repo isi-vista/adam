@@ -170,7 +170,13 @@ class IntegratedTemplateLearner(
                 # perception graph edge wrappers.
                 # See https://github.com/isi-vista/adam/issues/792 .
                 if not learning_example.perception.is_dynamic():
-                    sub_learner.learn_from(current_learner_state, offset=offset)
+                    try:
+                        sub_learner.learn_from(current_learner_state, offset=offset)
+                    except RuntimeError:
+                        logging.warning(
+                            f"Sub_learner ({sub_learner}) was unable to learn from instance number {self._observation_num}."
+                            f"Instance: {current_learner_state}."
+                        )
                 current_learner_state = sub_learner.enrich_during_learning(
                     current_learner_state
                 )
@@ -179,7 +185,12 @@ class IntegratedTemplateLearner(
                     self.learn_definiteness_markers(current_learner_state)
 
         if learning_example.perception.is_dynamic() and self.action_learner:
-            self.action_learner.learn_from(current_learner_state)
+            try:
+                self.action_learner.learn_from(current_learner_state)
+            except RuntimeError:
+                logging.warning(
+                    f"Action Learner ({self.action_learner}) was unable to learn from input. {current_learner_state}."
+                )
             current_learner_state = self.action_learner.enrich_during_learning(
                 current_learner_state
             )
