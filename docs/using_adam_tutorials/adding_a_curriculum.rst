@@ -210,6 +210,7 @@ The resulting functions will look something like this:
                    template,
                    max_to_sample=num_samples,
                    chooser=PHASE1_CHOOSER_FACTORY(),
+                   ontology=GAILA_PHASE_1_ONTOLOGY,
                    block_multiple_of_the_same_type=True,
                ) if num_samples else all_possible(
                    template,
@@ -242,6 +243,7 @@ The resulting functions will look something like this:
                    template,
                    max_to_sample=num_samples,
                    chooser=PHASE1_CHOOSER_FACTORY(),
+                   ontology=GAILA_PHASE_1_ONTOLOGY,
                    block_multiple_of_the_same_type=True,
                ) if num_samples else all_possible(
                    template,
@@ -324,6 +326,7 @@ This is done as follows:
                    ball_template,
                    max_to_sample=num_samples,
                    chooser=PHASE1_CHOOSER_FACTORY(),
+                   ontology=GAILA_PHASE_1_ONTOLOGY,
                    block_multiple_of_the_same_type=True,
                ) if num_samples else all_possible(
                    ball_template,
@@ -338,6 +341,7 @@ This is done as follows:
                    box_template,
                    max_to_sample=num_samples,
                    chooser=PHASE1_CHOOSER_FACTORY(),
+                   ontology=GAILA_PHASE_1_ONTOLOGY,
                    block_multiple_of_the_same_type=True,
                ) if num_samples else all_possible(
                    box_template,
