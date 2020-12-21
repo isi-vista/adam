@@ -32,7 +32,7 @@ from adam.ontology.integrated_learner_experiement_ontology import (
     GLIM,
 )
 from adam.random_utils import RandomChooser
-from adam.relation import Relation, flatten_relations
+from adam.relation import Relation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
@@ -105,10 +105,6 @@ from adam.ontology.phase1_ontology import (
     BLACK,
     INTEGRATED_EXPERIMENT_PROP,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
-    on,
-    near,
-    strictly_under,
-    far,
     PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.ontology.phase2_ontology import (
@@ -819,7 +815,20 @@ def integrated_pursuit_learner_experiment_curriculum(
     # As otherwise the lexicalization system might not lexicalize it
     # But if there's lots of variants for noise we don't want to have thousands of examples
     # As could happen combinatorially
-    min_samples_per_noise_object_relation_pair = max(6 / (max_noise_relations - min_noise_relations + min_noise_objects - max_noise_objects), 1) if add_noise else 6
+    min_samples_per_noise_object_relation_pair = (
+        max(
+            6
+            // (
+                max_noise_relations
+                - min_noise_relations
+                + min_noise_objects
+                - max_noise_objects
+            ),
+            1,
+        )
+        if add_noise
+        else 6
+    )
 
     if num_samples is None:
         num_samples = 50
@@ -947,6 +956,7 @@ def integrated_pursuit_learner_experiment_test(
     *,
     params: Parameters = Parameters.empty(),
 ) -> Sequence[Phase1InstanceGroup]:
+    # pylint: disable=unused-argument
 
     # Random Number Generator for Curriculum Use
     rng = random.Random()

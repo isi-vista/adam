@@ -362,9 +362,7 @@ def build_each_object_by_itself_curriculum_test(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
-    params: Parameters,
 ) -> Sequence[Phase1InstanceGroup]:
-    # pylint: disable=unused-argument
     return [
         _make_each_object_by_itself_curriculum(
             num_samples, num_noise_objects, language_generator

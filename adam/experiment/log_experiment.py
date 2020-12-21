@@ -22,6 +22,7 @@ from adam.curriculum.phase2_curriculum import (
     integrated_pursuit_learner_experiment_curriculum,
     build_object_learner_experiment_curriculum_train,
     build_pursuit_curriculum,
+    integrated_pursuit_learner_experiment_test,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
@@ -586,7 +587,7 @@ def curriculum_from_params(
         ),
         "m18-integrated-learners-experiment": (
             integrated_pursuit_learner_experiment_curriculum,
-            None,
+            integrated_pursuit_learner_experiment_test,
         ),
     }
 
