@@ -77,6 +77,8 @@ We're going to create a parameters file :file:`parameters/experiments/m9_attribu
    sort_learner_descriptions_by_length: True
    num_pretty_descriptions: 5
 
+   num_samples: 5
+
    # The curriculum to use in the experiment
    curriculum: "m9-attributes"
 
@@ -118,6 +120,8 @@ Further notes
 
 By convention, experiment parameters files live in :file:`parameters/experiments` and its subdirectories,
 but you can put them anywhere you want.
+However, note that you'll need to change the include path for :file:`root.params`
+depending on where you put your experiment parameters file.
 
 ..
   Refer to Jacob's excellent documentation. Accept no substitutes.
