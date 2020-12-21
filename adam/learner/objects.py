@@ -445,9 +445,29 @@ class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
         )
 
     def log_hypotheses(self, log_output_path: Path) -> None:
+        # TODO: I think here
+        temp = {}
+
         for (surface_template, hypothesis) in self._lexicon.items():
             template_string = surface_template.to_short_string()
             hypothesis.render_to_file(template_string, log_output_path / template_string)
+            temp_string = ""
+            i = 0
+            for line in open(log_output_path / template_string):
+                if i > 0:
+                    temp_string += line.strip()
+                else:
+                    i = 1
+            if temp_string not in temp:
+                temp[temp_string] = []
+            temp[temp_string].append(template_string)
+        with open("TESTING.txt", "a") as f:
+            f.write("\n")
+            for x in temp:
+                for item in temp[x]:
+                    f.write(f"{item} ")
+                f.write("\n")
+
 
 
 @attrs(slots=True)

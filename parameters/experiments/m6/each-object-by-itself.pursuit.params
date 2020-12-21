@@ -2,6 +2,8 @@ _includes:
    - "../../root.params"
    - "pursuit-nouns.m6.params"
    - "m6.params"
-
+pre_observer:
+    include_acc_observer: True
+    accuracy_to_txt : True
 experiment: 'object-recognition-solo'
 curriculum: each-object-by-itself
