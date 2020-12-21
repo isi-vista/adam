@@ -112,7 +112,7 @@ Once we have our schema, we also have to add it to the list of structural schema
        structural_schemata=[
            ...
            (BOOK, _BOOK_SCHEMA),
-           (TOY_BLOCK, _TOY_BLOCK_SCHEMA)
+           (TOY_BLOCK, _TOY_BLOCK_SCHEMA),
            (HOUSE, _HOUSE_SCHEMA),
            ...
        ]
