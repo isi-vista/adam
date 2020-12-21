@@ -88,8 +88,10 @@ We're going to create a parameters file :file:`parameters/experiments/m9_attribu
    learner: "integrated-learner-params"
    object_learner:
       learner_type: "recognizer"
+      ontology: phase1
    attibute_learner:
       learner_type: "subset"
+      ontology: phase1
    relation_learner:
       learner_type: "none"
    action_learner:
