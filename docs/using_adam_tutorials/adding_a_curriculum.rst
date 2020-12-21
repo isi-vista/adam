@@ -66,8 +66,6 @@ These provide a compact way of describing similar situations,
 like "a round object on a table,"
 or "Mom eating a cookie (with some random unrelated objects in the scene)."
 In our case, we want to describe "a ball."
-When training, we want a ball that's not red,
-and when testing, we want a ball that is.
 
 Object variables
 ~~~~~~~~~~~~~~~~
@@ -95,10 +93,9 @@ Our training curriculum is going to define variables like this:
            LinearizedDependencyTree,
        ],
    ) -> Sequence[Phase1InstanceGroup]:
-       ball = standard_object("ball", BALL, banned_properties=[RED])
+       ball = standard_object("ball", BALL)
 
-Note that we explicitly exclude red balls from this so that we can test the learner properly.
-Our testing curriculum will then **require** a red ball:
+Our testing curriculum will then be defined like this:
 
 .. code-block:: python
 
@@ -110,7 +107,7 @@ Our testing curriculum will then **require** a red ball:
            LinearizedDependencyTree,
        ],
    ) -> Sequence[Phase1InstanceGroup]:
-       ball = standard_object("ball", BALL, required_properties=[RED])
+       ball = standard_object("ball", BALL)
 
 Now that we have our variables, we can define a situation template that uses them.
 To do this, we're going to create a :any:`Phase1SituationTemplate` object
@@ -133,7 +130,7 @@ The result looks like this:
            LinearizedDependencyTree,
        ],
    ) -> Sequence[Phase1InstanceGroup]:
-       ball = standard_object("ball", BALL, required_properties=[RED])
+       ball = standard_object("ball", BALL)
        template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
@@ -153,7 +150,7 @@ The testing curriculum template looks similar:
            LinearizedDependencyTree,
        ],
    ) -> Sequence[Phase1InstanceGroup]:
-       ball = standard_object("ball", BALL, banned_properties=[RED])
+       ball = standard_object("ball", BALL)
        template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
@@ -229,7 +226,7 @@ The resulting functions will look something like this:
            LinearizedDependencyTree,
        ],
    ) -> Sequence[Phase1InstanceGroup]:
-       ball = standard_object("ball", BALL, added_properties=[RED])
+       ball = standard_object("ball", BALL)
        template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
