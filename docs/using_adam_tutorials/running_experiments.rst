@@ -105,7 +105,7 @@ We can then run this like the first experiment:
 
 .. code-block:: shell
 
-   python adam/experiment/log_experiment.py parameters/experiments/m9_attributes_with_new_learner.params
+   $ python adam/experiment/log_experiment.py parameters/experiments/m9_attributes_with_new_learner.params
 
 This should produce similar (but not quite the same!) results, again in a directory under your :code:`adam_experiment_root`.
 
