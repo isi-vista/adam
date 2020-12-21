@@ -219,6 +219,7 @@ The result will look like this::
                     object_on_table_template,
                     max_to_sample=num_samples,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
                     block_multiple_of_the_same_type=True,
                 ) if num_samples else all_possible(
                     object_on_table_template,
@@ -233,6 +234,7 @@ The result will look like this::
                     put_on_table_template,
                     max_to_sample=num_samples,
                     chooser=PHASE1_CHOOSER_FACTORY(),
+                    ontology=GAILA_PHASE_1_ONTOLOGY,
                     block_multiple_of_the_same_type=True,
                 ) if num_samples else all_possible(
                     put_on_table_template,
