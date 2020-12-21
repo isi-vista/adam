@@ -295,17 +295,7 @@ This is done as follows:
 
 .. code-block:: python
 
-   from itertools import chain
-
-   ...
-
    def build_ball_and_box_train_curriculum(
-       ...
-   ) -> Sequence[Phase1InstanceGroup]:
-       ...
-       template1 = ...
-       template2 = ...
-   def build_toy_ball_train_curriculum(
        num_samples: Optional[int],
        num_noise_objects: Optional[int],
        language_generator: LanguageGenerator[
