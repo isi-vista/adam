@@ -121,7 +121,7 @@ we only need to specify a *reference object*,
 a *direction* relative to that object
 and a *distance*.
 In our case the reference object will be the table,
-the direction will be "up" ("gravitational up," for simplicity),
+the direction will be "up,"
 and the distance will be "outside of the table, but touching it" (i.e. "exterior-but-in-contact").
 
 Our final template will look like this::
