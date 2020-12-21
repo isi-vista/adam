@@ -61,11 +61,11 @@ We're going to use just two:
 `on` is part of a family of relation DSL (domain-specific language) convenience functions;
 other functions in this family include, for example, `near`, `far`, `over`, `under`, and `contact`.
 These functions provide an easy way to specify relationships between objects.
-Note that these functions can be used not just with a pair (like :code:`on(object, table)`)
+Note that these functions can be used not just with a pair (like :code:`on(object_, table)`)
 but between many pairs of objects at once.
 For example, if we wanted to specify that both the relevant object
 and some other noise objects are on the table,
-we could write that relation compactly as :code:`on(chain([object], noise_objects), table)`.
+we could write that relation compactly as :code:`on(chain([object_], noise_objects), table)`.
 
 However, since `on` can be used this way, it has to return a *sequence of relations*,
 which means we have to flatten our list of relations before using it,
@@ -83,14 +83,14 @@ The result looks like this::
         each_object_instance_groups = _make_each_object_by_itself_curriculum(num_samples, num_noise_objects, language_generator)
 
         background = make_noise_objects(num_noise_objects)
-        object = standard_object("object", INANIMATE_OBJECT)
+        object_ = standard_object("object", INANIMATE_OBJECT)
         table = standard_object("table", TABLE)
         object_on_table_template = Phase1SituationTemplate(
            "an-object-on-a-table",
-            salient_object_variables=[object_on_table, table],
+            salient_object_variables=[object_, table],
             background_object_variables=background,
             asserted_always_relations=flatten_relations([
-                on(object, table)
+                on(object_, table)
             ]),
         )
 
@@ -129,14 +129,14 @@ Our final template will look like this::
     agent = standard_object("agent", THING, required_properties=[ANIMATE])
     put_on_table_template = Phase1SituationTemplate(
         f"person-or-animal-puts-object-on-table",
-        salient_object_variables=[agent, object, table],
+        salient_object_variables=[agent, object_, table],
         background_object_variables=background,
         actions=[
             Action(
                 PUT,
                 argument_roles_to_fillers=[
                     (AGENT, agent),
-                    (THEME, object),
+                    (THEME, object_),
                     (
                         GOAL,
                         Region(
@@ -175,28 +175,28 @@ The result will look like this::
         each_object_instance_groups = _make_each_object_by_itself_curriculum(num_samples, num_noise_objects, language_generator)
 
         background = make_noise_objects(num_noise_objects)
-        object = standard_object("object", INANIMATE_OBJECT)
+        object_ = standard_object("object", INANIMATE_OBJECT)
         table = standard_object("table", TABLE)
         object_on_table_template = Phase1SituationTemplate(
            "an-object-on-a-table",
-            salient_object_variables=[object_on_table, table],
+            salient_object_variables=[object_, table],
             background_object_variables=background,
             asserted_always_relations=flatten_relations([
-                on(object, table)
+                on(object_, table)
             ]),
         )
 
         agent = standard_object("agent", THING, required_properties=[ANIMATE])
         put_on_table_template = Phase1SituationTemplate(
             f"person-or-animal-puts-object-on-table",
-            salient_object_variables=[agent, object, table],
+            salient_object_variables=[agent, object_, table],
             background_object_variables=background,
             actions=[
                 Action(
                     PUT,
                     argument_roles_to_fillers=[
                         (AGENT, agent),
-                        (THEME, object),
+                        (THEME, object_),
                         (
                             GOAL,
                             Region(
@@ -208,7 +208,7 @@ The result will look like this::
                     ],
                 )
             ],
-            constraining_relations=[bigger_than(table, object)]
+            constraining_relations=[bigger_than(table, object_)]
         )
 
         return [
