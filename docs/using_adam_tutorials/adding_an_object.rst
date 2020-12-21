@@ -153,27 +153,12 @@ The English lexicon entry for our toy block will look like this:
 
 .. code-block:: python
 
-    LexiconEntry("toy block", NOUN, plural_form="toy blocks")
-
-We'll add it to the lexicon, :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :code:`BOOK` and :code:`HOUSE`:
-
-.. code-block:: python
-
-   GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
-       ontology=GAILA_PHASE_1_ONTOLOGY,
-       ontology_node_to_word=(
-           ...
-           (BOOK, LexiconEntry("book", NOUN, plural_form="books")),
-           (TOY_BLOCK, LexiconEntry("toy block", NOUN, plural_form="toy blocks")),
-           (HOUSE, LexiconEntry("house", NOUN, plural_form="houses")),
-           ...
-       ),
-   )
+    LexiconEntry("block", NOUN, plural_form="blocks")
 
 .. note::
 
    Lexicon entries are allowed to use more than one word.
-   However, note that ADAM will treat these descriptions as a single word.
+   However, ADAM will treat these descriptions as a single word (or token).
 
 .. note::
 
@@ -184,19 +169,18 @@ We'll add it to the lexicon, :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON`, between 
 
        LexiconEntry("Mom", PROPER_NOUN)
 
-To add your object and its lexicon entry to one of these lexicons, you'll need to change the corresponding lexicon.
-In each file there will be a variable named :code:`GAILA_PHASE_1_$LANGUAGE_LEXICON`.
-It's this variable you'll need to edit. Add a lexicon entry to the English lexicon as follows:
+We'll add it to the lexicon, :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON`, between :code:`BOOK` and :code:`HOUSE`:
 
 .. code-block:: python
 
    GAILA_PHASE_1_ENGLISH_LEXICON = OntologyLexicon(
        ontology=GAILA_PHASE_1_ONTOLOGY,
        ontology_node_to_word=(
-           (BIRD, LexiconEntry("bird", NOUN, plural_form="birds")),
-           # (ontology type, lexicon entry)
-           (MY_OBJECT, LexiconEntry("my-object", NOUN, plural_form="my-objects")),
-           (GO, LexiconEntry("go", VERB, verb_form_sg3_prs="goes")),
+           ...
+           (BOOK, LexiconEntry("book", NOUN, plural_form="books")),
+           (TOY_BLOCK, LexiconEntry("block", NOUN, plural_form="blocks")),
+           (HOUSE, LexiconEntry("house", NOUN, plural_form="houses")),
+           ...
        ),
    )
 
