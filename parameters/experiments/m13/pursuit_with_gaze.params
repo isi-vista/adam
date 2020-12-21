@@ -2,9 +2,13 @@ _includes:
    - "../../root.params"
    - "m13.params"
 
-experiment: 'pursuit-using-not-ablating-gaze'
+experiment: 'pursuit-ablating-gaze'
 curriculum: pursuit
 learner: pursuit-gaze
+pre_observer:
+    include_acc_observer: True
+    accuracy_to_txt : True
+
 pursuit:
    learning_factor: 0.05
    graph_match_confirmation_threshold: 0.7
@@ -12,7 +16,13 @@ pursuit:
    smoothing_parameter: .001
 
 pursuit-curriculum-params:
-   num_instances: 5
+   num_instances: 20
    num_noise_instances: 0
    num_objects_in_instance: 3
    add_gaze : True
+   prob_given : 1.0
+   prob_not_given : 0.0
+
+
+
+

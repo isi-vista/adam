@@ -10,6 +10,7 @@ from adam.learner.objects import (
     ObjectRecognizerAsTemplateLearner,
     CrossSituationalObjectLearner,
 )
+from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
 )
@@ -353,16 +354,28 @@ def build_each_object_by_itself_curriculum_train(
 def bilingual_each_object_by_itself_curriculum_train(
     num_samples: Optional[int], num_noise_objects: Optional[int]
 ) -> Sequence[Phase1InstanceGroup]:
-    chinese = build_each_object_by_itself_curriculum_train(
-        num_samples, num_noise_objects, GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR
-    )
-    english = build_each_object_by_itself_curriculum_train(
-        num_samples, num_noise_objects, GAILA_PHASE_1_LANGUAGE_GENERATOR
-    )
-    combined = list(chain(english, chinese))
+    """Create a shuffled curriculum with a bunch of English and Chinese in random order"""
+    instances = []
+    # add 10 instances worth of the chinese curriculum
+    for _ in range(10):
+        for instance in _make_each_object_by_itself_curriculum(
+            num_samples,
+            num_noise_objects,
+            language_generator=GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
+        ).instances():
+            instances.append(instance)
+    # add 10 instances worth of the english curriculum
+    for _ in range(10):
+        for instance in _make_each_object_by_itself_curriculum(
+            num_samples,
+            num_noise_objects,
+            language_generator=GAILA_PHASE_1_LANGUAGE_GENERATOR,
+        ).instances():
+            instances.append(instance)
+    # shuffle and return the results
     random.seed(0)
-    random.shuffle(combined, random.random)
-    return combined
+    random.shuffle(instances)
+    return [ExplicitWithSituationInstanceGroup("bilingual", instances)]
 
 
 def build_each_object_by_itself_curriculum_test(
