@@ -165,5 +165,5 @@ I hope this tutorial has made this process clear.
    Because this process involves code changes to the language generators,
    it is easy to break existing descriptions.
    Be careful when adding new relations,
-   and be sure to run the unit test cases (`make test`)
+   and be sure to run the unit test cases (:code:`make test`)
    to make nothing is clearly broken.
