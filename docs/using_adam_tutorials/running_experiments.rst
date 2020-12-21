@@ -19,7 +19,7 @@ Next, from the repository root, do:
 
 .. code-block:: sh
 
-   $ python adam/experiment/log_experiment.py parameters/experiment/m9/attributes.params
+   $ python adam/experiment/log_experiment.py parameters/experiments/m9/attributes.params
 
 The experiment should run, creating a directory :file:`%adam_experiment_root%/m9` holding the results of the experiment
 (where :code:`%adam_experiment_root%` is whatever you set the variable to in your :file:`root.params`).
@@ -52,13 +52,13 @@ These parameters files tell ADAM, at a minimum,
 Experiments are generally run using :code:`adam.experiment.log_experiment`, passing the parameter file as an argument. This
 works like we saw above.
 
-To get you started, we've included a template parameters file, :file:`parameters/experiment/experiment_template.params`.
+To get you started, we've included a template parameters file, :file:`parameters/experiments/experiment_template.params`.
 To start defining your experiment, simply copy the template and replace the experiment and curriculum names.
 
 The experiment we just ran is fine, but it's using an old version of the learner code.
 What if we want to use the new version?
 Let's define an experiment that runs a similar experiment, but using the new-style learners.
-We're going to create a parameters file :file:`parameters/experiment/m9_attributes_with_new_learner.params` that looks like this:
+We're going to create a parameters file :file:`parameters/experiments/m9_attributes_with_new_learner.params` that looks like this:
 
 .. code-block:: yaml
 
@@ -101,7 +101,7 @@ We can then run this like the first experiment:
 
 .. code-block:: shell
 
-   python adam/experiment/log_experiment.py parameters/experiment/m9_attributes_with_new_learner.params
+   python adam/experiment/log_experiment.py parameters/experiments/m9_attributes_with_new_learner.params
 
 This should produce similar (but not quite the same!) results, again in a directory under your :code:`adam_experiment_root`.
 
@@ -112,7 +112,7 @@ a script that uses those parameters -- will stay the same.
 Further notes
 -------------
 
-By convention, experiment parameters files live in :file:`parameters/experiment` and its subdirectories,
+By convention, experiment parameters files live in :file:`parameters/experiments` and its subdirectories,
 but you can put them anywhere you want.
 
 ..
