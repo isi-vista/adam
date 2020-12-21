@@ -170,15 +170,19 @@ We'll add it to the lexicon, :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON`, between 
        ),
    )
 
-Note that lexicon entries are allowed to use more than one word,
-though I wouldn't recommend using more than two.
+.. note::
 
-Note also that ADAM supports lexicon entries for objects representing specific, named people or things.
-For such objects we use the PROPER_NOUN tag and don't need to provide a plural:
+   Lexicon entries are allowed to use more than one word.
+   However, note that ADAM will treat these descriptions as a single word.
 
-.. code-block:: python
+.. note::
 
-    LexiconEntry("Mom", PROPER_NOUN)
+   ADAM also supports lexicon entries for objects representing specific, named people or things.
+   For such objects we use the PROPER_NOUN tag and don't need to provide a plural:
+
+   .. code-block:: python
+
+       LexiconEntry("Mom", PROPER_NOUN)
 
 To add your object and its lexicon entry to one of these lexicons, you'll need to change the corresponding lexicon.
 In each file there will be a variable named :code:`GAILA_PHASE_1_$LANGUAGE_LEXICON`.
