@@ -39,9 +39,13 @@ we can just call the curriculum builder to get some instance groups::
             LinearizedDependencyTree,
         ],
     ) -> Sequence[Phase1InstanceGroup]:
-        each_object_instance_groups = _make_each_object_by_itself_curriculum(num_samples, num_noise_objects, language_generator)
+        each_object_instance_groups = _make_each_object_by_itself_curriculum(None, None, language_generator)
 
         return each_object_instance_groups
+
+Note that we pass :code:`None` for the number of samples and number of noise objects
+to specify that we want a sample for every possible object
+and that we don't want any noise objects.
 
 Next, let's start defining our own curriculum on top of this.
 We'll define some object variables and we'll define a template for our first type of situation:
@@ -80,7 +84,7 @@ The result looks like this::
             LinearizedDependencyTree,
         ],
     ) -> Sequence[Phase1InstanceGroup]:
-        each_object_instance_groups = _make_each_object_by_itself_curriculum(num_samples, num_noise_objects, language_generator)
+        each_object_instance_groups = _make_each_object_by_itself_curriculum(None, None, language_generator)
 
         background = make_noise_objects(num_noise_objects)
         object_ = standard_object("object", INANIMATE_OBJECT)
@@ -172,7 +176,7 @@ The result will look like this::
             LinearizedDependencyTree,
         ],
     ) -> Sequence[Phase1InstanceGroup]:
-        each_object_instance_groups = _make_each_object_by_itself_curriculum(num_samples, num_noise_objects, language_generator)
+        each_object_instance_groups = _make_each_object_by_itself_curriculum(None, None, language_generator)
 
         background = make_noise_objects(num_noise_objects)
         object_ = standard_object("object", INANIMATE_OBJECT)
