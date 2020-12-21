@@ -341,14 +341,26 @@ def build_each_object_by_itself_curriculum_train(
 ) -> Sequence[Phase1InstanceGroup]:
     # We show the learned each item 6 times,
     # because pursuit won't lexicalize anything it hasn't seen five times.
-    return list(
-        repeat(
-            _make_each_object_by_itself_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
-            10,
-        )
-    )
+    # return list(
+    #     repeat(
+    #         _make_each_object_by_itself_curriculum(
+    #             num_samples, num_noise_objects, language_generator
+    #         ),
+    #         10,
+    #     )
+    # )
+    # this shuffles, compared to the original
+    instances = []
+    # add 10 instances worth of the chinese curriculum
+    for _ in range(10):
+        for instance in _make_each_object_by_itself_curriculum(
+            num_samples, num_noise_objects, language_generator=language_generator
+        ).instances():
+            instances.append(instance)
+    # shuffle and return the results
+    random.seed(0)
+    random.shuffle(instances)
+    return [ExplicitWithSituationInstanceGroup("monolingual", instances)]
 
 
 def bilingual_each_object_by_itself_curriculum_train(
