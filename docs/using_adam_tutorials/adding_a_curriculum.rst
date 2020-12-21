@@ -137,7 +137,7 @@ The result looks like this:
        template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
-            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL])
+            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL]),
             syntax_hints=[IGNORE_COLORS],
        )
 
@@ -157,7 +157,7 @@ The testing curriculum template looks similar:
        template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
-            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL])
+            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL]),
             syntax_hints=[IGNORE_COLORS],
        )
 
@@ -233,7 +233,7 @@ The resulting functions will look something like this:
        template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
-            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL])
+            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL]),
             syntax_hints=[IGNORE_COLORS],
        )
        return [
@@ -310,13 +310,13 @@ This is done as follows:
        ball_template = Phase1SituationTemplate(
            "a-ball",
             salient_object_variables=[ball],
-            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL])
+            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BALL]),
             syntax_hints=[IGNORE_COLORS],
        )
        box_template = Phase1SituationTemplate(
            "a-box",
             salient_object_variables=[box],
-            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BOX])
+            background_object_variables=make_noise_objects(num_noise_objects, banned_ontology_types=[BOX]),
             syntax_hints=[IGNORE_COLORS],
        )
        return [
