@@ -37,7 +37,7 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 )
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-
+from tabulate import tabulate
 
 def integrated_learner_factory(language_mode: LanguageMode):
     rng = random.Random()
@@ -62,13 +62,14 @@ def integrated_learner_factory(language_mode: LanguageMode):
 def run_experiment(learner, curricula, experiment_id):
     # Teach each pretraining curriculum
     for curriculum in curricula:
-        print("Teaching", curriculum.name())
+        print("Teaching", curriculum.name(), 'curriculum')
         for (
             _,
             linguistic_description,
             perceptual_representation,
         ) in curriculum.instances():
             # Get the object matches first - prepositison learner can't learn without already recognized objects
+            # print('Observation: ',' '.join(linguistic_description.as_token_sequence()))
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
             )
@@ -90,8 +91,10 @@ def run_experiment(learner, curricula, experiment_id):
         empty_situation, PHASE1_CHOOSER_FACTORY()
     )
     pseudoword_to_kind = {"wug": "animal", "vonk": "food", "snarp": "people"}
+
+    print("Teaching new objects in known categories")
     for word, kind in pseudoword_to_kind.items():
-        print(word, "s", "are", kind, "s")
+        print('Observation: ', word, "s", "are", kind, "s")
         learner.observe(
             LearningExample(
                 empty_perception,
@@ -107,7 +110,7 @@ def run_experiment(learner, curricula, experiment_id):
         semantics_graph=learner.semantics_graph
     )
     complete_results = []
-    print("Results for ", experiment_id)
+    print("\nResults for ", experiment_id)
     for word, _ in pseudoword_to_kind.items():
         results = [
             (kind, semantics_manager.evaluate_kind_membership(word, kind))
@@ -120,7 +123,10 @@ def run_experiment(learner, curricula, experiment_id):
         columns=["Animal", "Food", "People"],
     )
     results_df.insert(0, "Words", pseudoword_to_kind.keys())
-    print(results_df.to_csv(index=False))
+
+    # print(results_df.to_csv(index=False))
+    print(tabulate(results_df, headers='keys', tablefmt='psql'))
+
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
 
     learner.render_semantics_to_file(
@@ -177,7 +183,7 @@ if __name__ == "__main__":
         for curricula_name, pretraining_curriculum in pretraining_curricula.items():
             # Run experiment
             experiment = f"kind_semantics_ns-{num_samples}_cur-{curricula_name}"
-            print("\nRunning experiment:", experiment)
+            print("\nRunning Category Semantics Experiment:", experiment, '\n')
             integrated_learner = integrated_learner_factory(lm)
             run_experiment(
                 learner=integrated_learner,
