@@ -989,6 +989,7 @@ def integrated_pursuit_learner_experiment_test(
             chooser=chooser,
             block_multiple_of_same_type=True,
             language_generator=language_generator,
+            min_samples=num_samples,
         )
     ]
     if params.boolean("include_attributes", default=True):
@@ -1001,6 +1002,7 @@ def integrated_pursuit_learner_experiment_test(
                 chooser=chooser,
                 block_multiple_of_same_type=True,
                 language_generator=language_generator,
+                min_samples=num_samples,
             )
         )
     if params.boolean("include_relations", default=True):

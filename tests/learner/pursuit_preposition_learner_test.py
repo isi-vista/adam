@@ -338,17 +338,11 @@ def test_pursuit_preposition_behind_learner(language_mode, learner):
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     language_generator = phase1_language_generator(language_mode)
+    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
     behind_train_curriculum = phase1_instances(
         "Preposition Behind Unit Train",
         situations=sampled(
-            _behind_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=True,
-                is_near=True,
-                speaker_root_node=MOM,
-            ),
+            _behind_template(ball, table, [speaker], is_training=True, is_near=True),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
@@ -359,14 +353,7 @@ def test_pursuit_preposition_behind_learner(language_mode, learner):
     behind_test_curriculum = phase1_instances(
         "Preposition Behind Unit Test",
         situations=sampled(
-            _behind_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=False,
-                is_near=True,
-                speaker_root_node=MOM,
-            ),
+            _behind_template(ball, table, [speaker], is_training=False, is_near=True),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
@@ -405,17 +392,11 @@ def test_pursuit_preposition_in_front_learner(language_mode, learner):
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
     language_generator = phase1_language_generator(language_mode)
+    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
     in_front_train_curriculum = phase1_instances(
         "Preposition In Front Unit Train",
         situations=sampled(
-            _in_front_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=True,
-                is_near=True,
-                speaker_root_node=MOM,
-            ),
+            _in_front_template(ball, table, [speaker], is_training=True, is_near=True),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
@@ -426,14 +407,7 @@ def test_pursuit_preposition_in_front_learner(language_mode, learner):
     in_front_test_curriculum = phase1_instances(
         "Preposition In Front Unit Test",
         situations=sampled(
-            _in_front_template(
-                ball,
-                table,
-                immutableset(),
-                is_training=False,
-                is_near=True,
-                speaker_root_node=MOM,
-            ),
+            _in_front_template(ball, table, [speaker], is_training=False, is_near=True),
             chooser=PHASE1_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
