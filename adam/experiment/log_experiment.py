@@ -520,6 +520,7 @@ def learner_factory_from_params(
             if params.boolean("include_generics_learner", default=True)
             else None,
             plural_learner=plural_learner,
+            suppress_error=params.boolean("suppress_error", default=True),
         )
     elif learner_type == "integrated-pursuit-attribute-only":
         return lambda: IntegratedTemplateLearner(
