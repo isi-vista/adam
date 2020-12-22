@@ -51,20 +51,21 @@ def run_experiment(learner, curricula, experiment_id):
 
     # Teach pretraining curriculum
     for curriculum in curricula:
+        print("\nTeaching", curriculum.name())
         for (
             _,
             linguistic_description,
             perceptual_representation,
         ) in curriculum.instances():
             # Get the object matches first - preposition learner can't learn without already recognized objects
+            print("Observation: ", " ".join(linguistic_description.as_token_sequence()))
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
             )
 
-    print(learner.semantics_graph.nodes)
-
     # Evaluate assocations before generics
-    for word, color in english_color_dictionary.items():
+    print("\nColor assocations - Before Generics")
+    for word, _ in english_color_dictionary.items():
         word_concept = get_concept_node_from_graph(word, learner.semantics_graph)
         if not word_concept:
             continue
@@ -77,11 +78,17 @@ def run_experiment(learner, curricula, experiment_id):
             if isinstance(color_concept, AttributeConcept)
         ]
         results.sort(key=lambda x: x[1], reverse=True)
-        for r in results:
-            print(f'{word}, {color}, {r[0].replace("_slot1","")}, {r[1]}')
+        print(f"\nObject:", word)
+        print(
+            f"Associated Colors:", [(r[0].replace("_slot1", ""), r[1]) for r in results]
+        )
+        # for r in results:
+        #     print(f'{word}, {color}, {r[0].replace("_slot1","")}, {r[1]}')
 
     # Teach generics
     color_predicates = _make_colour_predicates_curriculum(None, None, language_generator)
+
+    print("\nTeaching color predicates")
     for (
         _,
         linguistic_description,
@@ -91,10 +98,11 @@ def run_experiment(learner, curricula, experiment_id):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
-        print(" ".join(linguistic_description.as_token_sequence()))
+        print("Observation:", " ".join(linguistic_description.as_token_sequence()))
 
     # Evaluate assocations after generics
-    for word, color in english_color_dictionary.items():
+    print("\nColor assocations - After Generics")
+    for word, _ in english_color_dictionary.items():
         word_concept = get_concept_node_from_graph(word, learner.semantics_graph)
         if not word_concept:
             continue
@@ -107,8 +115,11 @@ def run_experiment(learner, curricula, experiment_id):
             if isinstance(color_concept, AttributeConcept)
         ]
         results.sort(key=lambda x: x[1], reverse=True)
-        for r in results:
-            print(f'{word}, {color}, {r[0].replace("_slot1","")}, {r[1]}')
+
+        print(f"\nObject:", word)
+        print(
+            f"Associated Colors:", [(r[0].replace("_slot1", ""), r[1]) for r in results]
+        )
 
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
     learner.render_semantics_to_file(
@@ -136,7 +147,7 @@ if __name__ == "__main__":
             for curricula_name, pretraining_curricula in pretraining_curriculas.items():
                 # Run experiment
                 experiment = f"attribute_semantics_ns-{num_samples}_cur-{curricula_name}"
-                print("Running experiment:", experiment)
+                print("Running Attribute Semantics Experiment:", experiment)
                 integrated_learner = integrated_learner_factory(lm)
                 run_experiment(
                     learner=integrated_learner,
