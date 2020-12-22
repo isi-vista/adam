@@ -58,14 +58,14 @@ def run_experiment(learner, curricula, experiment_id):
             perceptual_representation,
         ) in curriculum.instances():
             # Get the object matches first - preposition learner can't learn without already recognized objects
-            print('Observation: ',' '.join(linguistic_description.as_token_sequence()))
+            print("Observation: ", " ".join(linguistic_description.as_token_sequence()))
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description)
             )
 
     # Evaluate assocations before generics
-    print('\nColor assocations - Before Generics')
-    for word, color in english_color_dictionary.items():
+    print("\nColor assocations - Before Generics")
+    for word, _ in english_color_dictionary.items():
         word_concept = get_concept_node_from_graph(word, learner.semantics_graph)
         if not word_concept:
             continue
@@ -78,8 +78,10 @@ def run_experiment(learner, curricula, experiment_id):
             if isinstance(color_concept, AttributeConcept)
         ]
         results.sort(key=lambda x: x[1], reverse=True)
-        print(f'\nObject:', word)
-        print(f'Associated Colors:', [(r[0].replace("_slot1", ""), r[1]) for r in results])
+        print(f"\nObject:", word)
+        print(
+            f"Associated Colors:", [(r[0].replace("_slot1", ""), r[1]) for r in results]
+        )
         # for r in results:
         #     print(f'{word}, {color}, {r[0].replace("_slot1","")}, {r[1]}')
 
@@ -96,11 +98,11 @@ def run_experiment(learner, curricula, experiment_id):
         learner.observe(
             LearningExample(perceptual_representation, linguistic_description)
         )
-        print('Observation:'," ".join(linguistic_description.as_token_sequence()))
+        print("Observation:", " ".join(linguistic_description.as_token_sequence()))
 
     # Evaluate assocations after generics
-    print('\nColor assocations - After Generics')
-    for word, color in english_color_dictionary.items():
+    print("\nColor assocations - After Generics")
+    for word, _ in english_color_dictionary.items():
         word_concept = get_concept_node_from_graph(word, learner.semantics_graph)
         if not word_concept:
             continue
@@ -114,10 +116,10 @@ def run_experiment(learner, curricula, experiment_id):
         ]
         results.sort(key=lambda x: x[1], reverse=True)
 
-        print(f'\nObject:', word)
-        print(f'Associated Colors:', [(r[0].replace("_slot1",""),r[1]) for r in results])
-        # for r in results:
-        #     print(f'{word}, {color}, {r[0].replace("_slot1","")}, {r[1]}')
+        print(f"\nObject:", word)
+        print(
+            f"Associated Colors:", [(r[0].replace("_slot1", ""), r[1]) for r in results]
+        )
 
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
     learner.render_semantics_to_file(

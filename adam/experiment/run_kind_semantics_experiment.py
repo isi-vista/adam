@@ -39,6 +39,7 @@ from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from tabulate import tabulate
 
+
 def integrated_learner_factory(language_mode: LanguageMode):
     rng = random.Random()
     rng.seed(0)
@@ -62,7 +63,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
 def run_experiment(learner, curricula, experiment_id):
     # Teach each pretraining curriculum
     for curriculum in curricula:
-        print("Teaching", curriculum.name(), 'curriculum')
+        print("Teaching", curriculum.name(), "curriculum")
         for (
             _,
             linguistic_description,
@@ -94,7 +95,7 @@ def run_experiment(learner, curricula, experiment_id):
 
     print("Teaching new objects in known categories")
     for word, kind in pseudoword_to_kind.items():
-        print('Observation: ', word, "s", "are", kind, "s")
+        print("Observation: ", word, "s", "are", kind, "s")
         learner.observe(
             LearningExample(
                 empty_perception,
@@ -125,7 +126,7 @@ def run_experiment(learner, curricula, experiment_id):
     results_df.insert(0, "Words", pseudoword_to_kind.keys())
 
     # print(results_df.to_csv(index=False))
-    print(tabulate(results_df, headers='keys', tablefmt='psql'))
+    print(tabulate(results_df, headers="keys", tablefmt="psql"))
 
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
 
@@ -183,7 +184,7 @@ if __name__ == "__main__":
         for curricula_name, pretraining_curriculum in pretraining_curricula.items():
             # Run experiment
             experiment = f"kind_semantics_ns-{num_samples}_cur-{curricula_name}"
-            print("\nRunning Category Semantics Experiment:", experiment, '\n')
+            print("\nRunning Category Semantics Experiment:", experiment, "\n")
             integrated_learner = integrated_learner_factory(lm)
             run_experiment(
                 learner=integrated_learner,

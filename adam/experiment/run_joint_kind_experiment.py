@@ -68,7 +68,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
 def run_experiment(learner, curricula, experiment_id):
     # Teach each pretraining curriculum
     for curriculum in curricula:
-        print("Teaching", curriculum.name(), 'curriculum')
+        print("Teaching", curriculum.name(), "curriculum")
         for (
             _,
             linguistic_description,
@@ -99,7 +99,7 @@ def run_experiment(learner, curricula, experiment_id):
     pseudoword_to_kind = {"wug": "animal", "vonk": "food", "snarp": "people"}
     print("Teaching new objects in known categories")
     for word, kind in pseudoword_to_kind.items():
-        print('Observation: ', word, "s", "are", kind, "s")
+        print("Observation: ", word, "s", "are", kind, "s")
         learner.observe(
             LearningExample(
                 empty_perception,
@@ -129,7 +129,7 @@ def run_experiment(learner, curricula, experiment_id):
     )
     results_df.insert(0, "Words", pseudoword_to_kind.keys())
     # print(results_df.to_csv(index=False))
-    print(tabulate(results_df, headers='keys', tablefmt='psql'))
+    print(tabulate(results_df, headers="keys", tablefmt="psql"))
     learner.log_hypotheses(Path(f"./renders/{experiment_id}"))
     learner.render_semantics_to_file(
         graph=learner.semantics_graph,
@@ -196,7 +196,7 @@ if __name__ == "__main__":
             # Run experiment
             experiment = f"joint_kind_semantics_ns-{num_samples}_cur-{condition}"
             print("\nRunning Joint Category Experiment:", experiment)
-            print(f'Ontology setup: {condition}\n')
+            print(f"Ontology setup: {condition}\n")
             integrated_learner = integrated_learner_factory(lm)
             run_experiment(
                 learner=integrated_learner,
