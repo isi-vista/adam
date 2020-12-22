@@ -172,10 +172,17 @@ class IntegratedTemplateLearner(
                 if not learning_example.perception.is_dynamic():
                     try:
                         sub_learner.learn_from(current_learner_state, offset=offset)
-                    except RuntimeError:
+                    except RuntimeError as e:
                         logging.warning(
-                            f"Sub_learner ({sub_learner}) was unable to learn from instance number {self._observation_num}."
-                            f"Instance: {current_learner_state}."
+                            f"Sub_learner ({sub_learner}) was unable to learn from instance number {self._observation_num}.\n"
+                            f"Instance: {current_learner_state}.\n"
+                            f"Full Error Information: {e}"
+                        )
+                    except KeyError as key_e:
+                        logging.warning(
+                            f"Sub_learner ({sub_learner}) encountered a key error on instance number {self._observation_num}.\n"
+                            f"Instance: {current_learner_state}.\n"
+                            f"Full Error Information: {key_e}"
                         )
                 current_learner_state = sub_learner.enrich_during_learning(
                     current_learner_state
@@ -187,9 +194,17 @@ class IntegratedTemplateLearner(
         if learning_example.perception.is_dynamic() and self.action_learner:
             try:
                 self.action_learner.learn_from(current_learner_state)
-            except RuntimeError:
+            except RuntimeError as e:
                 logging.warning(
-                    f"Action Learner ({self.action_learner}) was unable to learn from input. {current_learner_state}."
+                    f"Action Learner ({self.action_learner}) was unable to learn from instance number {self._observation_num}.\n"
+                    f"Instance: {current_learner_state}.\n"
+                    f"Full Error Information: {e}"
+                )
+            except KeyError as key_e:
+                logging.warning(
+                    f"Action Learner ({self.action_learner}) encountered a key error on instance number {self._observation_num}.\n"
+                    f"Instance: {current_learner_state}.\n"
+                    f"Full Error Information: {key_e}"
                 )
             current_learner_state = self.action_learner.enrich_during_learning(
                 current_learner_state
