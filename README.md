@@ -95,7 +95,9 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 
 # Contact
 
-Ryan Gabbard (`gabbard@isi.edu`)
+Deniz Beser (`beser@isi.edu`)
+Joe Cecil (`jcecil@isi.edu`)
+Ryan Gabbard (`ryan.gabbard@gmail.com`)
 
 # Suggested Reading
 
