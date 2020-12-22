@@ -47,6 +47,7 @@ from adam.curriculum.m6_curriculum import make_m6_curriculum
 from adam.curriculum.phase2_curriculum import (
     build_gaila_m8_curriculum,
     integrated_pursuit_learner_experiment_curriculum,
+    build_gaila_phase_2_curriculum,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
@@ -150,6 +151,7 @@ STR_TO_CURRICULUM: Mapping[str, CURRICULUM_BUILDER] = {
     "imprecise-size": make_imprecise_size_curriculum,
     "subtle-verb-distinction": make_subtle_verb_distinctions_curriculum,
     "integrated-experiment": integrated_pursuit_learner_experiment_curriculum,
+    "phase2": build_gaila_phase_2_curriculum,
 }
 
 
@@ -179,7 +181,9 @@ def main(params: Parameters) -> None:
         )
     else:
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-            num_samples, num_noise_objects, phase2_language_generator(language_mode)
+            num_samples,
+            num_noise_objects,
+            integrated_experiment_language_generator(language_mode),
         )
     sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:
@@ -364,8 +368,8 @@ class CurriculumToHtmlDumper:
             for f in output_directory.iterdir():
                 if f.suffix != ".html":
                     raise RuntimeError(
-                        r"Output directory does not appear to be a curriculum "
-                        r"dump. It contains the non-html file {f}"
+                        f"Output directory does not appear to be a curriculum "
+                        f"dump. It contains the non-html file {f}"
                     )
             shutil.rmtree(str(output_directory))
         output_directory.mkdir(parents=True, exist_ok=True)
