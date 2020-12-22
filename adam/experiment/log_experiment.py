@@ -656,8 +656,8 @@ def curriculum_from_params(
                 params=params.namespace_or_empty("train_curriculum"),
             ),
             test_instance_groups(
-                num_samples,
-                num_noise_objects,
+                5,
+                0,
                 language_generator,
                 params=params.namespace_or_empty("test_curriculum"),
             )
