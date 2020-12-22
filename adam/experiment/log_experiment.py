@@ -20,6 +20,8 @@ from adam.curriculum.phase2_curriculum import (
     build_gaila_m13_curriculum,
     build_m13_shuffled_curriculum,
     integrated_pursuit_learner_experiment_curriculum,
+    build_object_learner_experiment_curriculum_train,
+    build_pursuit_curriculum,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
@@ -32,10 +34,8 @@ from adam.experiment.experiment_utils import (
     build_debug_curriculum_test,
     build_generics_curriculum,
     build_m6_prepositions_curriculum,
-    build_pursuit_curriculum,
     build_functionally_defined_objects_train_curriculum,
     build_actions_and_generics_curriculum,
-    build_object_learner_experiment_curriculum_train,
     observer_states_by_most_recent,
     build_object_learner_factory,
     build_attribute_learner_factory,

@@ -2,7 +2,11 @@
 Additions for the Curricula for DARPA GAILA Phase 2
 """
 import math
+
+
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
+from adam.curriculum import AblatedLanguageSituationsInstanceGroup
+from adam.curriculum.m6_curriculum import M6_CURRICULUM_ALL_OBJECTS
 from adam.ontology.phase1_spatial_relations import Direction, PROXIMAL, DISTAL
 
 from immutablecollections import immutableset, ImmutableSet
@@ -14,7 +18,7 @@ import random
 from itertools import chain
 from typing import Sequence, Optional, Iterable, Any, Tuple
 
-from more_itertools import flatten
+from more_itertools import flatten, only
 
 from adam.language.language_generator import LanguageGenerator
 from adam.ontology.integrated_learner_experiement_ontology import (
@@ -52,6 +56,7 @@ from adam.curriculum.phase1_curriculum import (
     _make_generic_statements_curriculum,
     _make_part_whole_curriculum,
     _make_transitive_roll_curriculum,
+    _make_colour_predicates_curriculum,
     build_gaila_phase1_object_curriculum,
     build_gaila_plurals_curriculum,
     build_gaila_phase1_attribute_curriculum,
@@ -59,7 +64,11 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_verb_curriculum,
     make_sit_transitive,
     make_sit_template_intransitive,
+    build_classifier_curriculum,
+    build_gaila_phase1_relation_curriculum,
 )
+from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
+from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum, make_simple_pursuit_curriculum
 from adam.curriculum.preposition_curriculum import (
     make_prepositions_curriculum,
     _on_template,
@@ -95,7 +104,7 @@ from adam.ontology.phase1_ontology import (
     on,
     near,
     strictly_under,
-    far,
+    far, PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.ontology.phase2_ontology import (
     CHAIR_2,
@@ -109,9 +118,10 @@ from adam.ontology.phase2_ontology import (
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
-    INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
+    INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR, GazePerceivedNoisily,
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
-from adam.situation import Action
+from adam.situation import Action, SituationObject
 from adam.situation.templates.phase1_situation_templates import _put_in_template
 from adam.situation.templates.phase1_templates import (
     Phase1SituationTemplate,
@@ -881,3 +891,214 @@ def integrated_pursuit_learner_experiment_curriculum(
         if not params.boolean("random_order", default=False)
         else shuffle_curriculum(ordered_curriculum, rng=rng)
     )
+
+
+def build_gaila_phase_2_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+    use_path_instead_of_goal: bool = False,
+) -> Sequence[Phase1InstanceGroup]:
+    """
+    One particular instantiation of the curriculum for GAILA Phase 1.
+    """
+    return list(
+        chain(
+            # Objects
+            build_gaila_phase1_object_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            # Attributes
+            build_gaila_phase1_attribute_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            # Color predicates
+            [
+                _make_colour_predicates_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                )
+            ],
+            # Generics
+            build_gaila_generics_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            # Relations
+            make_prepositions_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            build_gaila_phase1_relation_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            # Verbs
+            build_gaila_phase1_verb_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            # Imprecise temporal
+            list(
+                make_imprecise_temporal_descriptions(
+                    num_samples, num_noise_objects, language_generator
+                )
+            ),
+            # Events with dynamic prepositions
+            make_verb_with_dynamic_prepositions_curriculum(
+                num_samples,
+                num_noise_objects,
+                language_generator,
+                use_path_instead_of_goal,
+            ),
+            # Subtle verb distinctions
+            list(
+                make_subtle_verb_distinctions_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                )
+            ),
+            # Functionally-defined objects
+            build_functionally_defined_objects_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            # Plurals
+            build_gaila_plurals_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            # Attribute constraining action
+            make_german_complete(num_samples, num_noise_objects, language_generator),
+            # Part-whole
+            [
+                _make_part_whole_curriculum(
+                    num_samples, num_noise_objects, language_generator
+                )
+            ],
+            # Pursuit
+            make_pursuit_curriculum(num_samples, num_noise_objects, language_generator),
+            build_pursuit_curriculum(num_samples, num_noise_objects, language_generator),
+            # Chinese classifiers
+            build_classifier_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+            # Object learner experiment
+            build_object_learner_experiment_curriculum_train(
+                num_samples, num_noise_objects, language_generator
+            ),
+            # Integrated learner experiment
+            integrated_pursuit_learner_experiment_curriculum(
+                num_samples, num_noise_objects, language_generator
+            ),
+        )
+    )
+
+
+def build_object_learner_experiment_curriculum_train(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+    *,
+    params: Parameters = Parameters.empty(),
+) -> Sequence[Phase1InstanceGroup]:
+    situations = make_multiple_object_situation(
+        num_samples, num_noise_objects, language_generator
+    )
+    accurate_language_chance = params.floating_point(
+        "accurate_language_percentage", default=0.5
+    )
+    output_situations = []
+    random.seed(params.integer("random_seed", default=0))
+    rng = RandomChooser.for_seed(params.integer("language_random_seed", default=0))
+    for (situation, language, perception) in situations.instances():
+        if random.random() <= accurate_language_chance:
+            output_language = language
+        else:
+            # Make Invalid Language
+            if situation and isinstance(situation, HighLevelSemanticsSituation):
+                # First, gather all OntologyNodes which aren't already present in the situation
+                present_ontology_nodes = [
+                    _object.ontology_node for _object in situation.all_objects
+                ]
+                valid_other_objects = [
+                    node
+                    for node in PHASE_1_CURRICULUM_OBJECTS
+                    if node not in present_ontology_nodes
+                ]
+                # Then choose one at random
+                chosen_ontology_node = rng.choice(valid_other_objects)
+                # Make a fake situation with just this object in it, ignoring colors
+                wrong_situation = HighLevelSemanticsSituation(
+                    ontology=GAILA_PHASE_2_ONTOLOGY,
+                    salient_objects=[
+                        SituationObject.instantiate_ontology_node(
+                            chosen_ontology_node, ontology=GAILA_PHASE_2_ONTOLOGY
+                        )
+                    ],
+                    syntax_hints=[IGNORE_COLORS],
+                )
+                # Generate the language as if it came from this fake situation rather than the original one
+                fake_language = only(
+                    language_generator.generate_language(wrong_situation, chooser=rng)
+                )
+                output_language = LinearizedDependencyTree(
+                    dependency_tree=fake_language.dependency_tree,
+                    surface_token_order=fake_language.surface_token_order,
+                    accurate=False,
+                )
+
+            else:
+                raise RuntimeError(
+                    f"Unable to make invalid language without a situation of type HighlevelSemanticsSituation. Got situation: {situation}"
+                )
+
+        output_situations.append((situation, output_language, perception))
+    return [
+        AblatedLanguageSituationsInstanceGroup(
+            name=f"{situations.name()}_ablated", instances=output_situations
+        )
+    ]
+
+
+def build_pursuit_curriculum(
+    num_samples: Optional[int],
+    num_noise_objects: Optional[int],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ],
+    *,
+    pursuit_curriculum_params: Parameters = Parameters.empty(),
+) -> Sequence[Phase1InstanceGroup]:
+
+    num_instances = pursuit_curriculum_params.integer(
+        "num_instances", default=num_samples if num_samples else 10
+    )
+    num_noise_instances = pursuit_curriculum_params.integer(
+        "num_noise_instances", default=num_noise_objects if num_noise_objects else 2
+    )
+    num_objects_in_instance = pursuit_curriculum_params.integer(
+        "num_objects_in_instance", default=3
+    )
+    add_gaze = pursuit_curriculum_params.boolean("add_gaze", default=False)
+    prob_given = pursuit_curriculum_params.floating_point("prob_given", default=1.0)
+    prob_not_given = pursuit_curriculum_params.floating_point(
+        "prob_not_given", default=0.0
+    )
+    rng = random.Random()
+    rng.seed(0)
+    gaze_perciever = GazePerceivedNoisily(
+        rng=rng,
+        prob_gaze_perceived_given_gaze=prob_given,
+        prob_gaze_perceived_given_not_gaze=prob_not_given,
+    )
+    perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+        ontology=GAILA_PHASE_2_ONTOLOGY, gaze_strategy=gaze_perciever
+    )
+    return [
+        make_simple_pursuit_curriculum(
+            target_objects=M6_CURRICULUM_ALL_OBJECTS,
+            num_instances=num_instances,
+            num_objects_in_instance=num_objects_in_instance,
+            num_noise_instances=num_noise_instances,
+            language_generator=language_generator,
+            add_gaze=add_gaze,
+            perception_generator=perception_generator,
+        )
+    ]

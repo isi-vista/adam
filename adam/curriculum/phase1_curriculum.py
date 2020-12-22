@@ -12,6 +12,7 @@ from typing import Iterable, Sequence, List, Dict, Optional
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
     GAILA_PHASE_2_LANGUAGE_GENERATOR,
+    INTEGRATED_EXPERIMENT_LANGUAGE_GENERATOR,
 )
 from adam.language_specific.chinese.chinese_language_generator import (
     GAILA_PHASE_1_CHINESE_LANGUAGE_GENERATOR,
@@ -883,6 +884,7 @@ def _make_part_whole_curriculum(  # pylint: disable=unused-argument
     if (
         language_generator == GAILA_PHASE_1_LANGUAGE_GENERATOR
         or language_generator == GAILA_PHASE_2_LANGUAGE_GENERATOR
+        or language_generator == INTEGRATED_EXPERIMENT_LANGUAGE_GENERATOR
     ):
         currdict = whole_object_to_parts
     elif (
