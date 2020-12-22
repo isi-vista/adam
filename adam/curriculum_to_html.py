@@ -51,7 +51,10 @@ from adam.curriculum.phase2_curriculum import (
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
-from adam.curriculum.phase1_curriculum import build_gaila_phase_1_curriculum
+from adam.curriculum.phase1_curriculum import (
+    build_gaila_phase_1_curriculum,
+    build_classifier_curriculum,
+)
 from adam.curriculum import InstanceGroup
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
@@ -151,6 +154,7 @@ STR_TO_CURRICULUM: Mapping[str, CURRICULUM_BUILDER] = {
     "imprecise-size": make_imprecise_size_curriculum,
     "subtle-verb-distinction": make_subtle_verb_distinctions_curriculum,
     "integrated-experiment": integrated_pursuit_learner_experiment_curriculum,
+    "chinese-classifiers": build_classifier_curriculum,
     "phase2": build_gaila_phase_2_curriculum,
 }
 
@@ -179,11 +183,15 @@ def main(params: Parameters) -> None:
             if params.has_namespace("curriculum_params")
             else Parameters.empty(namespace_prefix="curriculum_params"),
         )
-    else:
+    elif curriculum_string == "phase2":
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
             num_samples,
             num_noise_objects,
             integrated_experiment_language_generator(language_mode),
+        )
+    else:
+        curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
+            num_samples, num_noise_objects, phase2_language_generator(language_mode)
         )
     sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:

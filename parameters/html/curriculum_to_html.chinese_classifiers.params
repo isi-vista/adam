@@ -1,0 +1,5 @@
+_includes:
+    - curriculum_to_html.params
+
+curriculum: "chinese-classifiers"
+language_mode: CHINESE
