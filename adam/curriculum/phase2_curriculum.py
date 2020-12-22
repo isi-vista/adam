@@ -68,7 +68,10 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_relation_curriculum,
 )
 from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete
-from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum, make_simple_pursuit_curriculum
+from adam.curriculum.pursuit_curriculum import (
+    make_pursuit_curriculum,
+    make_simple_pursuit_curriculum,
+)
 from adam.curriculum.preposition_curriculum import (
     make_prepositions_curriculum,
     _on_template,
@@ -104,7 +107,8 @@ from adam.ontology.phase1_ontology import (
     on,
     near,
     strictly_under,
-    far, PHASE_1_CURRICULUM_OBJECTS,
+    far,
+    PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.ontology.phase2_ontology import (
     CHAIR_2,
@@ -118,7 +122,8 @@ from adam.ontology.phase2_ontology import (
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_2_PERCEPTION_GENERATOR,
-    INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR, GazePerceivedNoisily,
+    INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
+    GazePerceivedNoisily,
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
 from adam.situation import Action, SituationObject

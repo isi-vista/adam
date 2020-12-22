@@ -181,7 +181,9 @@ def main(params: Parameters) -> None:
         )
     else:
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-            num_samples, num_noise_objects, integrated_experiment_language_generator(language_mode)
+            num_samples,
+            num_noise_objects,
+            integrated_experiment_language_generator(language_mode),
         )
     sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:
