@@ -136,8 +136,8 @@ Next, we'll modify (2). Again, we'll put our change around the "on" case::
             and region.direction
             and region.direction.positive
             # constrain the axis so it doesn't handle "on the side of"
-            and (region.direction == GRAVITATIONAL_UP
-            or region.direction == GRAVITATIONAL_AXIS_FUNCTION)
+            and (region.direction.relative_to_axis == GRAVITATIONAL_DOWN_TO_UP_AXIS
+            or region.direction.relative_to_axis == GRAVITATIONAL_AXIS_FUNCTION)
         ):
             return "on"
         # add a branch for "on the side of"
