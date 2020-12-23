@@ -4,10 +4,11 @@ Additions for the Curricula for DARPA GAILA Phase 2
 import math
 
 
-from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
-from adam.curriculum import AblatedLanguageSituationsInstanceGroup, ExplicitWithSituationInstanceGroup
+from adam.curriculum import (
+    AblatedLanguageSituationsInstanceGroup,
+    ExplicitWithSituationInstanceGroup,
+)
 from adam.curriculum.m6_curriculum import M6_CURRICULUM_ALL_OBJECTS
-from adam.ontology.phase1_spatial_relations import Direction, PROXIMAL, DISTAL
 
 from immutablecollections import immutableset, ImmutableSet
 
@@ -65,7 +66,6 @@ from adam.curriculum.phase1_curriculum import (
     build_gaila_phase1_verb_curriculum,
     make_sit_transitive,
     make_sit_template_intransitive,
-    build_classifier_curriculum,
     build_gaila_phase1_relation_curriculum,
 )
 from adam.curriculum.attribute_constraining_action_curriculum import make_german_complete

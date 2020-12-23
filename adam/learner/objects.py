@@ -155,7 +155,9 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             for bound_surface_template in ret
             # For now, we require templates to account for the entire utterance.
             # See https://github.com/isi-vista/adam/issues/789
-            if covers_entire_utterance(bound_surface_template, language_alignment, ignore_determiners=True)
+            if covers_entire_utterance(
+                bound_surface_template, language_alignment, ignore_determiners=True
+            )
         )
 
     def _enrich_post_process(
