@@ -48,6 +48,7 @@ from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import (
     assert_static_situation,
     candidate_object_hypotheses,
+    covers_entire_utterance,
     get_objects_from_perception,
 )
 from adam.learner.object_recognizer import (
@@ -136,7 +137,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
         language_alignment = (
             language_perception_semantic_alignment.language_concept_alignment
         )
-        return immutableset(
+        ret = immutableset(
             SurfaceTemplateBoundToSemanticNodes(
                 SurfaceTemplate.for_object_name(token, language_mode=self._language_mode),
                 slot_to_semantic_node={},
@@ -147,6 +148,14 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
             if not language_alignment.token_index_is_aligned(tok_idx)
             # ignore determiners
             and token not in DETERMINERS
+        )
+
+        return immutableset(
+            bound_surface_template
+            for bound_surface_template in ret
+            # For now, we require templates to account for the entire utterance.
+            # See https://github.com/isi-vista/adam/issues/789
+            if covers_entire_utterance(bound_surface_template, language_alignment, ignore_determiners=True)
         )
 
     def _enrich_post_process(
