@@ -186,6 +186,22 @@ Putting it all together, our action description is going to look like this:
   TODO Should I warn users to be careful about using the variables, not the roles when describing relations, etc.?
   Not sure if that's necessary but I can see how someone might get confused.
 
+Finally, we'll tell ADAM to associate this description
+with our ontology node for the carry action (:code:`CARRY`)
+so that we can use it when creating curricula.
+To do this, we'll add our description to :code:`_ACTIONS_TO_DESCRIPTIONS`
+(ADAM's list of such associations, defined in `adam.ontology.phase1_ontology`)
+after the entry for PUT:
+
+.. code-block:: python
+
+   _ACTIONS_TO_DESCRIPTIONS = [
+       (PUT, _PUT_ACTION_DESCRIPTION),
+       (CARRY, _CARRY_ACTION_DESCRIPTION),
+       (GIVE, _GIVE_ACTION_DESCRIPTION),
+       ...
+   ]
+
 That takes care of describing the action.
 Now, as the final step, we'll add carrying to our lexicon.
 We'll add a lexicon entry to :py:const:`GAILA_PHASE_1_ENGLISH_LEXICON` after :code:`FLY`:
