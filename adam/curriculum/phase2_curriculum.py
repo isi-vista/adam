@@ -978,10 +978,6 @@ def build_gaila_phase_2_curriculum(
             # Pursuit
             make_pursuit_curriculum(num_samples, num_noise_objects, language_generator),
             build_pursuit_curriculum(num_samples, num_noise_objects, language_generator),
-            # Chinese classifiers
-            build_classifier_curriculum(
-                num_samples, num_noise_objects, language_generator
-            ),
             # Object learner experiment
             build_object_learner_experiment_curriculum_train(
                 num_samples, num_noise_objects, language_generator
