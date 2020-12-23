@@ -48,6 +48,7 @@ from adam.curriculum.phase2_curriculum import (
     build_gaila_m8_curriculum,
     integrated_pursuit_learner_experiment_curriculum,
     build_gaila_phase_2_curriculum,
+    integrated_pursuit_learner_experiment_test,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.pursuit_curriculum import make_pursuit_curriculum
@@ -156,6 +157,7 @@ STR_TO_CURRICULUM: Mapping[str, CURRICULUM_BUILDER] = {
     "integrated-experiment": integrated_pursuit_learner_experiment_curriculum,
     "chinese-classifiers": build_classifier_curriculum,
     "phase2": build_gaila_phase_2_curriculum,
+    "integrated-experiment-test": integrated_pursuit_learner_experiment_test,
 }
 
 
@@ -174,14 +176,15 @@ def main(params: Parameters) -> None:
     phase1_curriculum_dir.mkdir(parents=True, exist_ok=True)
     # We lazily instantiate the curriculum so we don't need to worry
     # about any of them we don't actually use.
-    if curriculum_string == "integrated-experiment":
+    if (
+        curriculum_string == "integrated-experiment"
+        or curriculum_string == "integrated-experiment-test"
+    ):
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
             num_samples,
             num_noise_objects,
             integrated_experiment_language_generator(language_mode),
-            params=params.namespace("curriculum_params")
-            if params.has_namespace("curriculum_params")
-            else Parameters.empty(namespace_prefix="curriculum_params"),
+            params=params.namespace_or_empty("curriculum_params"),
         )
     elif curriculum_string == "phase2":
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](

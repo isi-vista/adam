@@ -507,8 +507,26 @@ def execute_experiment(
                     test_instance_perception,
                     descriptions_from_learner,
                 )
+                test_observer.report()
 
             if log_path and num_test_observations % log_hypotheses_every_n_examples == 0:
+                observation_number = num_observations + num_test_observations
+                # if we are logging the learner state, we do it here
+                if log_learner_state:
+                    # dump the learner to a pickle file
+                    # While yes the learner here shouldn't be different as the test cases
+                    # Don't affect the internal state we need to the number of instances
+                    # Between the learner and the observers to match for experiment restoration
+                    pickle.dump(
+                        learner,
+                        open(
+                            learner_path
+                            / f"learner_state_at_{str(observation_number)}.pkl",
+                            "wb",
+                        ),
+                        pickle.HIGHEST_PROTOCOL,
+                    )
+
                 # Dump the observers to a pickle file
                 observers_holder = ObserversHolder(
                     pre_observers=experiment.pre_example_training_observers,
@@ -519,7 +537,7 @@ def execute_experiment(
                     observers_holder,
                     open(
                         observer_path
-                        / f"observers_state_at_{str(num_observations+num_test_observations)}.pkl",
+                        / f"observers_state_at_{str(observation_number)}.pkl",
                         "wb",
                     ),
                     pickle.HIGHEST_PROTOCOL,

@@ -221,15 +221,10 @@ def _in_front_template(
     *,
     is_training: bool,
     is_near: bool,
-    speaker_root_node: OntologyNode = PERSON,
     background_relations: Iterable[Relation[Any]] = immutableset(),
 ) -> Phase1SituationTemplate:
     handle = "training" if is_training else "testing"
     direction = Direction(positive=True, relative_to_axis=FacingAddresseeAxis(ground))
-    speaker = standard_object("speaker", speaker_root_node, added_properties=[IS_SPEAKER])
-    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
-    computed_background = [speaker, addressee]
-    computed_background.extend(background)
     relations = [
         near(figure, ground, direction=direction)
         if is_near
@@ -239,7 +234,7 @@ def _in_front_template(
     return Phase1SituationTemplate(
         f"preposition-{handle}-{figure.handle}-behind-{ground.handle}",
         salient_object_variables=[figure, ground],
-        background_object_variables=computed_background,
+        background_object_variables=background,
         asserted_always_relations=flatten_relations(relations),
         gazed_objects=[figure],
     )
@@ -516,6 +511,10 @@ def _make_behind_training(
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
 
+    speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
+    computed_background = [speaker, addressee]
+
     return phase1_instances(
         "Preposition Training Behind",
         chain(
@@ -526,7 +525,12 @@ def _make_behind_training(
                             _behind_template(
                                 figure,
                                 ground,
-                                make_noise_objects(noise_objects),
+                                flatten(
+                                    [
+                                        make_noise_objects(noise_objects),
+                                        computed_background,
+                                    ]
+                                ),
                                 is_training=True,
                                 is_near=close,
                             ),
@@ -564,6 +568,10 @@ def _make_in_front_training(
     figures = immutableset([figure_0, figure_1, figure_2])
     grounds = immutableset([ground_0, ground_1, ground_2])
 
+    speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
+    computed_background = [speaker, addressee]
+
     return phase1_instances(
         "Preposition Training In Front",
         chain(
@@ -574,7 +582,12 @@ def _make_in_front_training(
                             _in_front_template(
                                 figure,
                                 ground,
-                                make_noise_objects(noise_objects),
+                                flatten(
+                                    [
+                                        make_noise_objects(noise_objects),
+                                        computed_background,
+                                    ]
+                                ),
                                 is_training=True,
                                 is_near=close,
                             ),
@@ -972,6 +985,10 @@ def _make_behind_tests(
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
 
+    speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
+    computed_background = [speaker, addressee]
+
     return phase1_instances(
         "Preposition Testing Behind",
         chain(
@@ -982,7 +999,12 @@ def _make_behind_tests(
                             _behind_template(
                                 figure,
                                 ground,
-                                make_noise_objects(noise_objects),
+                                flatten(
+                                    [
+                                        make_noise_objects(noise_objects),
+                                        computed_background,
+                                    ]
+                                ),
                                 is_training=False,
                                 is_near=close,
                             ),
@@ -1025,6 +1047,10 @@ def _make_in_front_tests(
     figures = immutableset([figure_0, figure_1])
     grounds = immutableset([ground_0, ground_1])
 
+    speaker = standard_object("speaker", PERSON, added_properties=[IS_SPEAKER])
+    addressee = standard_object("addressee", LEARNER, added_properties=[IS_ADDRESSEE])
+    computed_background = [speaker, addressee]
+
     return phase1_instances(
         "Preposition Testing In Front",
         chain(
@@ -1035,7 +1061,12 @@ def _make_in_front_tests(
                             _in_front_template(
                                 figure,
                                 ground,
-                                make_noise_objects(noise_objects),
+                                flatten(
+                                    [
+                                        make_noise_objects(noise_objects),
+                                        computed_background,
+                                    ]
+                                ),
                                 is_training=False,
                                 is_near=close,
                             ),

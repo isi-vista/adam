@@ -21,6 +21,7 @@ from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.relations import SubsetRelationLearnerNew
+from adam.ontology import IS_SPEAKER
 from adam.ontology.phase1_ontology import (
     BALL,
     BOOK,
@@ -255,17 +256,11 @@ def test_subset_preposition_behind(language_mode, learner):
 def test_subset_preposition_in_front(language_mode, learner):
     ball = standard_object("ball", BALL)
     table = standard_object("table", TABLE)
+    speaker = standard_object("speaker", MOM, added_properties=[IS_SPEAKER])
 
     run_preposition_test(
         learner(language_mode),
-        _in_front_template(
-            ball,
-            table,
-            immutableset(),
-            is_training=True,
-            is_near=True,
-            speaker_root_node=MOM,
-        ),
+        _in_front_template(ball, table, [speaker], is_training=True, is_near=True),
         language_generator=phase1_language_generator(language_mode),
     )
 

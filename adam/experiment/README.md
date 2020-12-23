@@ -52,13 +52,14 @@ Currently the accessible observers by these parameters are HTML Observers which 
 
 ### Optional: Pegasus Workflow Params
 This section of parameters is specific to using the Pegasus workflow management tool in combination with the ISI Saga cluster.
-See [Pegasus Wrapper Overview][https://github.com/isi-vista/vista-pegasus-wrapper/blob/master/docs/api_overview.rst] for more details on how to use this section
+See [Pegasus Wrapper Overview](https://github.com/isi-vista/vista-pegasus-wrapper/blob/master/docs/api_overview.rst] for more details on how to use this section)
 
 ## Learner Parameters
 ### How To Define an Integrated Learner
 The integrated learner can be initialized many different ways in an experiment. The best way is to use `learner_type: "integrated-learner-params"` because this functionality extends an ability to fine tune all parameters and learner types. To use this learner type the namespaces `object_learner`, `attribute_learner`, `plural_learner`, `relation_learner`, and `action_learner` all follow the same layout below:
 - learner_type: str (Optional: "subset") - Indicates which learner model will be loaded. Normally the valid options are: "subset", "pursuit", and "none"
 - ontology: str (Optional: "phase2") - Indicates which ontology should be loaded with the learner
+- suppress_error: bool (Optional: True) - Indicates if runtime errors during the learning process should be suppressed to avoid program termination. Suppressed errors are instances which the learner does not learn from
 
 Any additional parameters for a learner type as described below should also be placed directly in the namespace. This configuration allows for detailed configuration of individual components.
 
@@ -96,6 +97,10 @@ None
 - lexicon_entry_threshold: Float - A value between 0 and 1 which indicates what probability a concept should be allowed into the 'known' lexicon
 - smoothing_parameter: Float - A value between 0 and 1 which is generally small which smooths the probabilities over time.
 - random_seed: Integer (Optional: 0) - A seed for the RandomChooser which is used in this learner
+
+### Object Recognizer
+*Valid For: Object*
+While not strictly a 'learner', this option builds in the knowledge of objects to the integrated learner removing any doubt around the learner's ability to recognize objects.
 
 ## Specific Experiment Details
 Any experiment specific parameters that are built into the program are explained below.

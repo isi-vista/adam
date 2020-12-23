@@ -266,12 +266,14 @@ class GraphMatching:
                     f"Requested to begin matching from an alignment which aligns "
                     f"semantically infeasible nodes: "
                     f"{pattern_node} to {aligned_graph_node}"
+                    f" when matching pattern against pattern = {self.matching_pattern_against_pattern}"
                 )
             if not self.syntactic_feasibility(aligned_graph_node, pattern_node):
                 raise RuntimeError(
                     f"Requested to begin matching from an alignment which aligns "
                     f"syntactically infeasible nodes: "
                     f"{pattern_node} to {aligned_graph_node}"
+                    f" when matching pattern against pattern = {self.matching_pattern_against_pattern}"
                 )
             self.state.__class__(self, aligned_graph_node, pattern_node)
 
@@ -363,6 +365,17 @@ class GraphMatching:
                                 self.graph.edges[predecessor, graph_node]["label"]
                                 == PART_OF
                             ):
+                                # Since this is an apparently complete match,
+                                # it must necessarily be a maximal (deepest) match,
+                                # since no match can be bigger than one
+                                # that matches up every pattern node to some graph node.
+                                #
+                                # Thus we set the failing pattern node
+                                # to the one that matched to this graph node.
+                                if not self.failing_pattern_node_for_deepest_match:
+                                    self.failing_pattern_node_for_deepest_match = self.graph_node_to_pattern_node[
+                                        graph_node
+                                    ]
                                 logging.info(
                                     "Blocking match against a non-sub-object portion of another "
                                     "object"

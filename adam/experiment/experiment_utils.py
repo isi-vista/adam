@@ -1,7 +1,7 @@
 import logging
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import LanguageMode
-from adam.learner.attributes import SubsetAttributeLearnerNew
+from adam.learner.attributes import SubsetAttributeLearnerNew, PursuitAttributeLearnerNew
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.objects import (
     SubsetObjectLearnerNew,
@@ -11,7 +11,7 @@ from adam.learner.objects import (
     CrossSituationalObjectLearner,
 )
 from adam.learner.plurals import SubsetPluralLearnerNew
-from adam.learner.relations import SubsetRelationLearnerNew
+from adam.learner.relations import SubsetRelationLearnerNew, PursuitRelationLearnerNew
 from adam.learner.template_learner import TemplateLearner
 from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.integrated_learner_experiement_ontology import (
@@ -233,7 +233,19 @@ def build_attribute_learner_factory(
             ontology=ontology, beam_size=beam_size, language_mode=language_mode
         )
     elif learner_type == "pursuit":
-        raise NotImplementedError("Pursuit Attribute Learner not yet implemented.")
+        rng = random.Random()
+        rng.seed(params.integer("random_seed", default=0))
+        return PursuitAttributeLearnerNew(
+            learning_factor=params.floating_point("learning_factor"),
+            graph_match_confirmation_threshold=params.floating_point(
+                "graph_match_confirmation_threshold"
+            ),
+            lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
+            rng=rng,
+            smoothing_parameter=params.floating_point("smoothing_parameter"),
+            ontology=ontology,
+            language_mode=language_mode,
+        )
     elif learner_type == "none":
         # We don't want to include this learner type.
         return None
@@ -258,8 +270,18 @@ def build_relation_learner_factory(
             ontology=ontology, beam_size=beam_size, language_mode=language_mode
         )
     elif learner_type == "pursuit":
-        raise NotImplementedError(
-            "Pursuit relations learner not updated to new style yet"
+        rng = random.Random()
+        rng.seed(params.integer("random_seed", default=0))
+        return PursuitRelationLearnerNew(
+            learning_factor=params.floating_point("learning_factor"),
+            graph_match_confirmation_threshold=params.floating_point(
+                "graph_match_confirmation_threshold"
+            ),
+            lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
+            rng=rng,
+            smoothing_parameter=params.floating_point("smoothing_parameter"),
+            ontology=ontology,
+            language_mode=language_mode,
         )
     elif learner_type == "none":
         # We don't want to include this learner type.

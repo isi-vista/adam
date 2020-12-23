@@ -22,6 +22,7 @@ from adam.curriculum.phase2_curriculum import (
     integrated_pursuit_learner_experiment_curriculum,
     build_object_learner_experiment_curriculum_train,
     build_pursuit_curriculum,
+    integrated_pursuit_learner_experiment_test,
 )
 from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
@@ -519,6 +520,7 @@ def learner_factory_from_params(
             if params.boolean("include_generics_learner", default=True)
             else None,
             plural_learner=plural_learner,
+            suppress_error=params.boolean("suppress_error", default=True),
         )
     elif learner_type == "integrated-pursuit-attribute-only":
         return lambda: IntegratedTemplateLearner(
@@ -586,7 +588,7 @@ def curriculum_from_params(
         ),
         "m18-integrated-learners-experiment": (
             integrated_pursuit_learner_experiment_curriculum,
-            None,
+            integrated_pursuit_learner_experiment_test,
         ),
     }
 
@@ -653,7 +655,12 @@ def curriculum_from_params(
                 language_generator,
                 params=params.namespace_or_empty("train_curriculum"),
             ),
-            test_instance_groups(num_samples, num_noise_objects, language_generator)
+            test_instance_groups(
+                5,
+                0,
+                language_generator,
+                params=params.namespace_or_empty("test_curriculum"),
+            )
             if test_instance_groups
             else [],
         )

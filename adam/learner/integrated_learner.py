@@ -115,6 +115,10 @@ class IntegratedTemplateLearner(
     _observation_num: int = attrib(init=False, default=0)
     _sub_learners: List[TemplateLearner] = attrib(init=False)
 
+    # Used to control if runtime errors should be escalated to cause a program crash
+    # Set to false if errors should not be suppressed
+    _suppress_error: bool = attrib(kw_only=True, default=True)
+
     potential_definiteness_markers: Counter[str] = attrib(
         init=False, factory=collections.Counter
     )
@@ -170,7 +174,18 @@ class IntegratedTemplateLearner(
                 # perception graph edge wrappers.
                 # See https://github.com/isi-vista/adam/issues/792 .
                 if not learning_example.perception.is_dynamic():
-                    sub_learner.learn_from(current_learner_state, offset=offset)
+                    # For more details on the try/excepts below
+                    # See: https://github.com/isi-vista/adam/issues/1008
+                    try:
+                        sub_learner.learn_from(current_learner_state, offset=offset)
+                    except (RuntimeError, KeyError) as e:
+                        logging.warning(
+                            f"Sub_learner ({sub_learner}) was unable to learn from instance number {self._observation_num}.\n"
+                            f"Instance: {current_learner_state}.\n"
+                            f"Full Error Information: {e}"
+                        )
+                        if not self._suppress_error:
+                            raise e
                 current_learner_state = sub_learner.enrich_during_learning(
                     current_learner_state
                 )
@@ -179,7 +194,17 @@ class IntegratedTemplateLearner(
                     self.learn_definiteness_markers(current_learner_state)
 
         if learning_example.perception.is_dynamic() and self.action_learner:
-            self.action_learner.learn_from(current_learner_state)
+            try:
+                self.action_learner.learn_from(current_learner_state)
+            except (RuntimeError, KeyError) as e:
+                logging.warning(
+                    f"Action Learner ({self.action_learner}) was unable to learn from instance number {self._observation_num}.\n"
+                    f"Instance: {current_learner_state}.\n"
+                    f"Full Error Information: {e}"
+                )
+                if not self._suppress_error:
+                    raise e
+
             current_learner_state = self.action_learner.enrich_during_learning(
                 current_learner_state
             )

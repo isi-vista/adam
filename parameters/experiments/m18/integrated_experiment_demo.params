@@ -1,0 +1,60 @@
+_includes:
+   - "../../root.params"
+
+
+num_samples: 100
+sort_learner_descriptions_by_length: true
+num_pretty_descriptions: 5
+
+log_hypothesis_every_n_steps: 50
+
+# Learner Params
+learner: integrated-learner-params
+object_learner:
+    learner_type: "pursuit"
+    ontology: "integrated_experiment"
+    random_seed: 0
+    learning_factor: 0.02
+    graph_match_confirmation_threshold: 0.9
+    lexicon_entry_threshold: 0.7
+    smoothing_parameter: 0.001
+attribute_learner:
+    learner_type: "none"
+relation_learner:
+    learner_type: "none"
+action_learner:
+    learner_type: "none"
+plural_learner:
+    learner_type: "none"
+include_functional_learner: false
+include_generics_learner: false
+
+# Observer Params
+post_observer:
+    include_acc_observer: false
+    include_pr_observer: true
+    log_pr: true
+test_observer:
+    accuracy_to_txt: true
+curriculum: m18-integrated-learners-experiment
+train_curriculum:
+    block_multiple_of_same_type: true
+    include_targets_in_noise: false
+    min_noise_objects: 2
+    max_noise_objects: 4
+    min_noise_relations: 1
+    max_noise_relations: 2
+    random_seed: 0
+    chooser_seed: 0
+    add_noise: true
+    shuffled: true
+    include_attributes: false
+    include_relations: false
+
+# Output Params
+experiment: "integrated-experiment-demo"
+experiment_group_dir: "%adam_experiment_root%/demo"
+hypothesis_log_dir: "%adam_experiment_root%/demo/hypotheses"
+learner_logging_path: "%adam_experiment_root%/demo"
+log_learner_state: true
+resume_from_latest_logged_state: true

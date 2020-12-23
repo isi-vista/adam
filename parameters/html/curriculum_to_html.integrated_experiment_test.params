@@ -1,0 +1,11 @@
+_includes:
+    - curriculum_to_html.params
+
+curriculum: "integrated-experiment-test"
+
+curriculum_params:
+    add_noise: False
+    block_multiple_of_same_type: True
+
+    random_seed: 1
+    chooser_seed: 1
