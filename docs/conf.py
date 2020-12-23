@@ -54,7 +54,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'adam'
-copyright = '2019, Information Sciences Institute, University of Southern California'
+copyright = '2020, Information Sciences Institute, University of Southern California'
 author = 'Marjorie Freedman, Ryan Gabbard, Mitch Marcus, Ralph Weischedel, and Charles Yang'
 
 # The version info for the project you're documenting, acts as replacement for
