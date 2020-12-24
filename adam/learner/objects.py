@@ -77,6 +77,7 @@ from adam.learner.template_learner import (
     AbstractTemplateLearnerNew,
     TemplateLearner,
 )
+from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
@@ -595,7 +596,10 @@ class ProposeButVerifyObjectLearner(
 
     @staticmethod
     def from_params(
-        params: Parameters, *, graph_logger: Optional[GraphLogger] = None
+        params: Parameters,
+        *,
+        ontology: Optional[Ontology] = None,
+        graph_logger: Optional[GraphLogger] = None,
     ) -> "ProposeButVerifyObjectLearner":
         rng = RandomChooser.for_seed(params.optional_integer("random_seed", default=0))
 
@@ -605,7 +609,7 @@ class ProposeButVerifyObjectLearner(
             ),
             graph_logger=graph_logger,
             rng=rng,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
+            ontology=ontology if ontology else GAILA_PHASE_1_ONTOLOGY,
             language_mode=params.enum(
                 "language_mode", LanguageMode, default=LanguageMode.ENGLISH
             ),
@@ -665,7 +669,10 @@ class CrossSituationalObjectLearner(
 
     @staticmethod
     def from_params(
-        params: Parameters, *, graph_logger: Optional[GraphLogger] = None
+        params: Parameters,
+        *,
+        ontology: Optional[Ontology] = None,
+        graph_logger: Optional[GraphLogger] = None,
     ) -> "CrossSituationalObjectLearner":
         return CrossSituationalObjectLearner(
             graph_match_confirmation_threshold=params.floating_point(
@@ -677,7 +684,7 @@ class CrossSituationalObjectLearner(
                 "expected_number_of_meanings"
             ),
             graph_logger=graph_logger,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
+            ontology=ontology if ontology else GAILA_PHASE_1_ONTOLOGY,
             language_mode=params.enum(
                 "language_mode", LanguageMode, default=LanguageMode.ENGLISH
             ),
