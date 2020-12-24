@@ -45,7 +45,7 @@ The ontology type definition then looks like this:
 .. code-block:: python
 
    TOY_BLOCK = OntologyNode(
-       "toy-block",
+       "block",
        [
            CAN_FILL_TEMPLATE_SLOT,
            PERSON_CAN_HAVE,
