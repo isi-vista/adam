@@ -77,6 +77,13 @@ We'll add our toy block after :code:`COW`::
        ]
    )
 
+.. warning::
+
+   When using English, the object recognizer uses the debug string as its name for the object.
+   If you plan to use the recognizer at all,
+   make sure the debug string matches the English name or description you give the object,
+   or the recognizer will produce the wrong language.
+
 Third, we need to define our schema for toy blocks.
 (This is typically done inside a function for organization purposes,
 but that's not strictly necessary.)
