@@ -18,7 +18,8 @@ Defining the object
 The process of defining an object in ADAM is simple.
 First, you need to define an *ontology type* for the object,
 which describes the kind of thing that this object is.
-Second, you need to define a *schema* for the object,
+Second, you need to add this ontology type to the list of curriculum objects.
+Third, you need to define a *schema* for the object,
 which describes its physical structure in detail.
 Finally, you must define its size relative to the other objects in the curriculum.
 
@@ -63,7 +64,17 @@ The ontology type definition then looks like this:
 
   ADAM also has :py:const:`PERSON` and :py:const:`NONHUMAN_ANIMAL` types if you want to add objects of those kinds.
 
-Second, we need to define our schema for toy blocks.
+Second, we'll add our toy block to the list of phase 1 curriculum objects::
+
+   PHASE_1_CURRICULUM_OBJECTS = immutableset(
+       [
+           ...
+           COW,
+           TOY_BLOCK,
+       ]
+   )
+
+Third, we need to define our schema for toy blocks.
 (This is typically done inside a function for organization purposes,
 but that's not strictly necessary.)
 An object schema requires, at minimum, an ontology node and a *geon*.
