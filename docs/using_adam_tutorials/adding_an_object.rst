@@ -25,9 +25,13 @@ Finally, you must define its size relative to the other objects in the curriculu
 Creating an ontology type
 -------------------------
 
-ADAM uses ontology types as a convenience for users to make creating curricula easier. It means that you can specify,
-for example, that you want a scene that shows liquid in a cup, or an animal eating a cookie, rather than having to
-specify explicit types. Note that the learner does not observe or interact with these ontology types at all.
+ADAM uses ontology types as a convenience for users to make creating curricula easier.
+It means that you can specify, for example,
+that you want a scene that shows liquid in a cup,
+or an animal eating a cookie,
+rather than having to specify concrete types
+(such as "milk in a cup" or "a dog eating a cookie").
+Note that the learner does not observe or interact with these ontology types at all.
 
 First, we'll define the ontology type of a toy block in :any:`adam.ontology.phase1_ontology`.
 To do this, we're going to use :any:`subtype` to define a subtype of :py:const:`INANIMATE_OBJECT`.
