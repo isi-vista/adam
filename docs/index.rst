@@ -76,8 +76,8 @@ by a `LanguageGenerator` and a `PerceptualRepresentationGenerator`.
 
 The analyses to perform on results are given by `DescriptionObserver`\ s.
 
-The ADAM system's main entry point is `adam.experiment.log_experiment`.
-For details on this see `adam/experiment/README.md`.
+The ADAM system's main entry point is :code:`adam.experiment.log_experiment`.
+For details on this see :file:`adam/experiment/README.md`.
 In addition, there may eventually be an interactive demonstration.
 
 ******************************************
