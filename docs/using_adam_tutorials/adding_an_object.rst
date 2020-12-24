@@ -55,6 +55,12 @@ The ontology type definition then looks like this:
 
 .. note::
 
+   The first line here is the *debug string* for the object.
+   This is primarily for developer use (as the name suggests)
+   to make it easier to verify what the learners are learning.
+
+.. note::
+
   ADAM also has :py:const:`PERSON` and :py:const:`NONHUMAN_ANIMAL` types if you want to add objects of those kinds.
 
 Second, we need to define our schema for toy blocks.
