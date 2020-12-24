@@ -32,8 +32,8 @@ specify explicit types. Note that the learner does not observe or interact with 
 First, we'll define the ontology type of a toy block in :any:`adam.ontology.phase1_ontology`.
 To do this, we're going to use :any:`subtype` to define a subtype of :py:const:`INANIMATE_OBJECT`.
 We want to give it some properties.
-First, we're going to say it can fill a slot in a template,
-which means that our learners can learn the object.
+First, we're going to say it can fill a slot in a situation template
+so we can use it in our curricula.
 Second, we're going to say that it's something a person can have.
 
 The ontology type definition then looks like this:
