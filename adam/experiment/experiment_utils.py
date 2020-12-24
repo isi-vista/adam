@@ -60,6 +60,7 @@ from adam.curriculum.phase1_curriculum import (
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
+from adam.random_utils import RandomChooser
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import sampled
 from vistautils.parameters import Parameters
@@ -184,9 +185,28 @@ def build_object_learner_factory(
             ontology=ontology, beam_size=beam_size, language_mode=language_mode
         )
     elif learner_type == "pbv":
-        return ProposeButVerifyObjectLearner.from_params(params)
+        chooser = RandomChooser.for_seed(
+            params.optional_integer("random_seed", default=0)
+        )
+        return ProposeButVerifyObjectLearner(
+            graph_match_confirmation_threshold=params.floating_point(
+                "graph_match_confirmation_threshold", default=0.8
+            ),
+            rng=chooser,
+            ontology=ontology,
+            language_mode=language_mode,
+        )
     elif learner_type == "cross-situational":
-        return CrossSituationalObjectLearner.from_params(params)
+        return CrossSituationalObjectLearner(
+            graph_match_confirmation_threshold=params.floating_point(
+                "graph_match_confirmation_threshold"
+            ),
+            lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
+            smoothing_parameter=params.floating_point("smoothing_parameter"),
+            expected_number_of_meanings=len(ontology.nodes_with_properties(THING)),
+            ontology=ontology,
+            language_mode=language_mode,
+        )
     elif learner_type == "pursuit":
         rng = random.Random()
         rng.seed(params.integer("random_seed", default=0))
@@ -362,7 +382,10 @@ def build_each_object_by_itself_curriculum_test(
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    *,
+    params: Parameters = Parameters.empty(),
 ) -> Sequence[Phase1InstanceGroup]:
+    # pylint: disable=unused-argument
     return [
         _make_each_object_by_itself_curriculum(
             num_samples, num_noise_objects, language_generator
@@ -497,4 +520,5 @@ def build_debug_curriculum_test(  # pylint: disable=unused-argument
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Sequence[Phase1InstanceGroup]:
+    # pylint: disable=unused-argument
     return []

@@ -23,6 +23,7 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
     initialize_vista_pegasus_wrapper(params)
 
     baseline_parameters = params.namespace("object_language_ablation")
+    pursuit_resource_request_params = params.namespace("pursuit_resource_request")
 
     # get the minimum and maximum number of objects in a scene
     min_num_objects = params.integer("min_num_objects", default=1)
@@ -69,7 +70,7 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
                                 "accurate_language_percentage": float(language_accuracy)
                             },
                             "object_learner_type": learner_type,
-                            "learner_params": learner_params,
+                            "object_learner": learner_params,
                             # We subtract one because the target object is a given
                             "num_noise_objects": num_objects - 1,
                         }
@@ -81,7 +82,7 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
                         experiment_params,
                         depends_on=[],
                         resource_request=SlurmResourceRequest.from_parameters(
-                            PURSUIT_RESOURCE_REQUEST
+                            pursuit_resource_request_params
                         )
                         if learner_type == "pursuit"
                         else None,
@@ -95,17 +96,67 @@ EXPERIMENT_NAME_FORMAT = "{num_objects:d}_objects-{language_accuracy:.2f}_langua
 
 # ["subset", "pbv", "cross_situational", "pursuit"]
 LEARNER_VALUES_TO_PARAMS: Dict[str, List[Tuple[str, Dict[str, Any]]]] = {
-    "subset": [("none", {})],
+    "subset": [("subset", {"learner_type": "subset", "ontology": "phase2"})],
     "pbv": [
-        ("0.9_graph_match_conf", {"graph_match_confirmation_threshold": 0.9}),
-        ("0.95_graph_match_conf", {"graph_match_confirmation_threshold": 0.95}),
-        ("1.0_graph_match_conf", {"graph_match_confirmation_threshold": 1.0}),
+        (
+            "0.9_graph_match_conf",
+            {
+                "learner_type": "pbv",
+                "random_seed": 0,
+                "graph_match_confirmation_threshold": 0.9,
+            },
+        ),
+        (
+            "0.95_graph_match_conf",
+            {
+                "learner_type": "pbv",
+                "random_seed": 0,
+                "graph_match_confirmation_threshold": 0.95,
+            },
+        ),
+        (
+            "1.0_graph_match_conf",
+            {
+                "learner_type": "pbv",
+                "random_seed": 0,
+                "graph_match_confirmation_threshold": 1.0,
+            },
+        ),
     ],
-    # "cross_situational": [{}], -- FILL OUT ONCE COMPLETE IMPLEMENTATION
+    "cross_situational": [
+        (
+            "0.9_graph_match_conf",
+            {
+                "learner_type": "cross-situational",
+                "lexicon_entry_threshold": 0.7,
+                "smoothing_parameter": 0.001,
+                "graph_match_confirmation_threshold": 0.9,
+            },
+        ),
+        (
+            "0.95_graph_match_conf",
+            {
+                "learner_type": "cross-situational",
+                "lexicon_entry_threshold": 0.7,
+                "smoothing_parameter": 0.001,
+                "graph_match_confirmation_threshold": 0.95,
+            },
+        ),
+        (
+            "1.0_graph_match_conf",
+            {
+                "learner_type": "cross-situational",
+                "lexicon_entry_threshold": 0.7,
+                "smoothing_parameter": 0.001,
+                "graph_match_confirmation_threshold": 1.0,
+            },
+        ),
+    ],
     "pursuit": [
         (
             "0.9_graph_match_conf",
             {
+                "learner_type": "pursuit",
                 "learning_factor": 0.02,
                 "graph_match_confirmation_threshold": 0.9,
                 "lexicon_entry_threshold": 0.7,
@@ -115,6 +166,7 @@ LEARNER_VALUES_TO_PARAMS: Dict[str, List[Tuple[str, Dict[str, Any]]]] = {
         (
             "0.95_graph_match_conf",
             {
+                "learner_type": "pursuit",
                 "learning_factor": 0.02,
                 "graph_match_confirmation_threshold": 0.95,
                 "lexicon_entry_threshold": 0.7,
@@ -124,6 +176,7 @@ LEARNER_VALUES_TO_PARAMS: Dict[str, List[Tuple[str, Dict[str, Any]]]] = {
         (
             "1.0_graph_match_conf",
             {
+                "learner_type": "pursuit",
                 "learning_factor": 0.02,
                 "graph_match_confirmation_threshold": 1.0,
                 "lexicon_entry_threshold": 0.7,
@@ -135,23 +188,20 @@ LEARNER_VALUES_TO_PARAMS: Dict[str, List[Tuple[str, Dict[str, Any]]]] = {
 
 FIXED_PARAMETERS = {
     "curriculum": "m15-object-noise-experiments",
-    "learner": "integrated-object-only",
+    "learner": "integrated-learner-params",
     "post_observer": {
         "include_acc_observer": False,
         "include_pr_observer": True,
         "log_pr": True,
     },
+    "attribute_learner": {"learner_type": "none"},
+    "relation_learner": {"learner_type": "none"},
+    "action_learner": {"learner_type": "none"},
+    "plural_learner": {"learner_type": "none"},
+    "include_functional_learner": False,
+    "include_generics_learner": False,
     "test_observer": {"accuracy_to_txt": True},
 }
-
-PURSUIT_RESOURCE_REQUEST = Parameters.from_mapping(
-    {
-        "exclude_list": f"saga01,saga02,saga03,saga04,saga05,saga06,saga07,saga08,saga09,saga10,saga11,saga12,saga13,"
-        f"saga14,saga15,saga16,saga17,saga18,saga19,saga20,saga21,saga22,saga23,saga24,saga25,saga26,"
-        f"gaia01,gaia02",
-        "partition": "ephemeral",
-    }
-)
 
 if __name__ == "__main__":
     parameters_only_entry_point(object_language_ablation_runner_entry_point)
