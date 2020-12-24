@@ -15,7 +15,7 @@ from adam.relation import Relation
 @attrs(slots=True, frozen=True)
 class DevelopmentalPrimitivePerceptionFrameDiff:
     r"""
-    Represents the difference between a `LanguageLearner`\ 's perception
+    Represents the difference between a `TopLevelLanguageLearner`\ 's perception
     of two different moments as sets of added and removed relations, perceived_objects, and property assertions.
     """
 

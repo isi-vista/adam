@@ -7,10 +7,8 @@ among other things.
 This file first defines `PerceptionGraph`\ s,
 then defines `PerceptionGraphPattern`\ s to match them.
 
-The `MatchedObjectNode` is defined at the top of this module as it is needed prior
-to defining the type of Nodes in our `PerceptionGraph`\ s readers should start with
-`PerceptionGraphProtocol`, `PerceptionGraph`, and `PerceptionGraphPattern` before
-reading other parts of this module.
+Readers should start with `PerceptionGraphProtocol`, `PerceptionGraph`,
+and `PerceptionGraphPattern` before reading other parts of this module.
 """
 import logging
 import pickle
@@ -146,8 +144,8 @@ UnwrappedPerceptionGraphNode = Union[
 EdgeLabel = Union[OntologyNode, str, Direction[Any]]
 """
 This is the core information stored on a perception graph edge.
-This is wrapped in `TemporallyScopedPerceptionGraphEdgeAttribute`
-before actually being applied to a `DiGraph` edge.
+This is wrapped in `TemporallyScopedEdgeLabel`
+before actually being applied to a dynamic `DiGraph` edge.
 """
 
 
@@ -268,11 +266,11 @@ Edge label in a `PerceptionGraph` linking an `ObjectPerception` to its associate
 """
 HAS_PROPERTY_LABEL = OntologyNode("has-property")
 """
-Edge label in a `PerceptionGraph` linking an `ObjectPerception` to its associated `Property`.
+Edge label in a `PerceptionGraph` linking an `ObjectPerception` to its associated `PropertyPerception`.
 """
 FACING_OBJECT_LABEL = OntologyNode("facing-axis")
 """
-Edge label in a `PerceptionGraph` linking an `Axis` to a `ObjectPerception` it is facing
+Edge label in a `PerceptionGraph` linking a `GeonAxis` to an `ObjectPerception` it is facing
 """
 REFERENCE_AXIS_LABEL = OntologyNode("reference-axis")
 """
@@ -1026,7 +1024,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         ] = None,
     ) -> Optional["PerceptionGraphPattern"]:
         """
-        Determine the largest partial match between two `PerceptionGraphPattern`s
+        Determine the largest partial match between two `PerceptionGraphPattern`\ s
 
         The algorithm used is approximate and is not guaranteed to return the largest
         possible match.
@@ -1691,7 +1689,7 @@ class PatternMatching:
 @attrs(frozen=True, slots=True, eq=False)
 class PerceptionGraphPatternMatch:
     """
-    Represents a match of a `PerceptionPatternGraph` against a `PerceptionGraph`.
+    Represents a match of a `PerceptionGraphPattern` against a `PerceptionGraph`.
     """
 
     matched_pattern: PerceptionGraphPattern = attrib(

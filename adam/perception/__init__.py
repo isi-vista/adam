@@ -1,6 +1,6 @@
 r"""
 This module provides classes related to the perceptual primitive representation
-used to describe `Situation`\ s from the point-of-view of `LanguageLearner`\ s.
+used to describe `Situation`\ s from the point-of-view of `TopLevelLanguageLearner`\ s.
 """
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -71,7 +71,7 @@ LEARNER_PERCEPTION = ObjectPerception("learner", geon=None, axes=LEARNER_AXES)
 
 class PerceptualRepresentationFrame(ABC):
     r"""
-    Represents a `LanguageLearner`\ 's perception of some `Situation`\ at a single moment.
+    Represents a `TopLevelLanguageLearner`\ 's perception of some `Situation`\ at a single moment.
 
     One or more of these forms a `PerceptualRepresentation`.
     """
@@ -85,7 +85,7 @@ _PerceptionT2 = TypeVar("_PerceptionT2", bound="PerceptualRepresentationFrame")
 @attrs(frozen=True)
 class PerceptualRepresentation(Generic[PerceptionT]):
     r"""
-    A `LanguageLearner`'s perception of a `Situation`
+    A `TopLevelLanguageLearner`'s perception of a `Situation`
     as a sequence of perceptual representations of individual moments (*frames*).
     """
 
@@ -153,7 +153,7 @@ class PerceptualRepresentationGenerator(Generic[_SituationT, PerceptionT], ABC):
 @attrs(frozen=True, slots=True)
 class BagOfFeaturesPerceptualRepresentationFrame(PerceptualRepresentationFrame):
     r"""
-    Represents a `LanguageLearner`'s perception of a `Situation` at a single moment
+    Represents a `TopLevelLanguageLearner`'s perception of a `Situation` at a single moment
     as an unstructured set of features.
 
     For testing purposes only.

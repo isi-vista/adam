@@ -24,7 +24,7 @@ class SurfaceTemplate:
     r"""
     A pattern over `TokenSequenceLinguisticDescription`\ s.
 
-    Such a pattern consists of a sequence of token strings and `SurfaceTemplateVariable`\ s.
+    Such a pattern consists of a sequence of token strings and `SyntaxSemanticsVariable`\ s.
     """
     elements: Tuple[Union[str, SyntaxSemanticsVariable], ...] = attrib(  # type: ignore
         converter=_to_tuple,

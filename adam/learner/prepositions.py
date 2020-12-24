@@ -121,7 +121,7 @@ def preposition_hypothesis_from_perception(
     if {SLOT1, SLOT2} != set(template_variables_to_object_match_nodes.keys()):
         raise RuntimeError(
             "Can only make a preposition hypothesis if the recognized "
-            "objects are aligned to SurfaceTemplateVariables SLOT1 and SLOT2"
+            "objects are aligned to SyntaxSemanticsVariables SLOT1 and SLOT2"
         )
 
     slot1_object = template_variables_to_object_match_nodes[SLOT1]

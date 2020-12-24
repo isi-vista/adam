@@ -1,7 +1,7 @@
 """
 Data structures for human language words.
 
-These are not used by the `LanguageLearner`,
+These are not used by the `TopLevelLanguageLearner`,
 but rather for generating the linguistic descriptions for situations.
 """
 from typing import Optional

@@ -18,7 +18,7 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 
 class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, PerceptionT], ABC):
     r"""
-    Something which can observe the descriptions produced by `LanguageLearner`\ s.
+    Something which can observe the descriptions produced by `TopLevelLanguageLearner`\ s.
 
     Typically a `DescriptionObserver` will provide some sort of summary of its observations
     when its *report* method is called.
@@ -33,15 +33,15 @@ class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, Perception
         predicted_descriptions: Mapping[LinguisticDescription, float],
     ) -> None:
         r"""
-        Observe a description provided by a `LanguageLearner`.
+        Observe a description provided by a `TopLevelLanguageLearner`.
 
         Args:
             situation: The `Situation` being described. This is optional.
             true_description: The "gold-standard" description of the situation.
             perceptual_representation: The `PerceptualRepresentation` of the situation received by
-                                       the `LanguageLearner`.
+                                       the `TopLevelLanguageLearner`.
             predicted_descriptions:  The scored `LinguisticDescription`\ s produced by
-                                     the `LanguageLearner`.
+                                     the `TopLevelLanguageLearner`.
         """
 
     @abstractmethod

@@ -8,6 +8,8 @@ ADAM: Abduction to Demonstrate an Articulate Machine
    :maxdepth: 2
    :caption: Contents:
 
+   using_adam
+
 
 .. autosummary::
    :toctree: _autosummary
@@ -63,15 +65,15 @@ System Architecture
 A particular "run" of the ADAM system is described by an `Experiment`.
 Every `Experiment` needs to know
 
-- what `LanguageLearner` to use,
-- what `Situation`\ s to present to the `LanguageLearner` to teach it,
-- what `Situation`\ s to present to the `LanguageLearner` to evaluate it,
+- what `TopLevelLanguageLearner` to use,
+- what `Situation`\ s to present to the `TopLevelLanguageLearner` to teach it,
+- what `Situation`\ s to present to the `TopLevelLanguageLearner` to evaluate it,
 - what sort of analyses to perform on the result.
 
 There are a variety of ways to specify the situations for training and testing,
 but this is prototypically done by generating them procedurally
 using a `SituationTemplateProcessor`.
-The way a `Situation` is presented to the `LanguageLearner` is controlled
+The way a `Situation` is presented to the `TopLevelLanguageLearner` is controlled
 by a `LanguageGenerator` and a `PerceptualRepresentationGenerator`.
 
 The analyses to perform on results are given by `DescriptionObserver`\ s.
@@ -102,6 +104,10 @@ adam.learner
 -----------------------------
 .. automodule:: adam.learner
 
+adam.semantics
+-----------------------------
+.. automodule:: adam.semantics
+
 adam.situation.templates
 -----------------------------
 .. automodule:: adam.situation.templates
@@ -115,11 +121,37 @@ adam.experiment
 .. automodule:: adam.experiment
 
 *******************************************
+Supporting Classes: Learner Internals
+*******************************************
+adam.learner.alignments
+-----------------------------
+.. automodule:: adam.learner.alignments
+
+adam.learner.surface_template
+-----------------------------
+.. automodule:: adam.learner.surface_templates
+
+*******************************************
 Supporting Classes: Representing Relations
 *******************************************
 adam.relation
 --------------
 .. automodule:: adam.relation
+
+*******************************************
+Supporting Classes: Representing Space
+*******************************************
+adam.geon
+--------------
+.. automodule:: adam.geon
+
+adam.axes
+--------------
+.. automodule:: adam.axes
+
+adam.axis
+--------------
+.. automodule:: adam.axis
 
 *******************************************
 Supporting Classes: Object Structure
@@ -207,6 +239,10 @@ adam.perception.high_level_semantics_situation_to_developmental_primitive_percep
 -------------------------------------------------------------------------------------
 ..automodule:: adam.perception.high_level_semantics_situation_to_developmental_primitive_perception
 
+adam.perception.perception_graph
+--------------------------------
+.. automodule:: adam.perception.perception_graph
+
 adam.perception.marr
 -----------------------------
 .. automodule:: adam.perception.marr
@@ -218,6 +254,10 @@ Supporting classes: Curricula
 adam.curriculum
 ----------------------------------
 .. automodule:: adam.curriculum
+
+adam.curriculum.curriculum_utils
+----------------------------------
+.. automodule:: adam.curriculum.curriculum_utils
 
 
 *********************************************
@@ -281,8 +321,9 @@ adam.language_specific.english.english_syntax
 ----------------------------------------------------------
 .. automodule:: adam.language_specific.english.english_syntax
 
+******************
 Indices and tables
-==================
+******************
 
 * :ref:`genindex`
 * :ref:`modindex`

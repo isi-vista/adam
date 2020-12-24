@@ -51,7 +51,7 @@ class Situation(ABC):
     curricula.
 
     Situations will be transformed into pairs of `PerceptualRepresentation`\ s and
-    `LinguisticDescription`\ s for input to a `LanguageLearner`
+    `LinguisticDescription`\ s for input to a `TopLevelLanguageLearner`
     by `PerceptualRepresentationGenerator`\ s and `LanguageGenerator`\ s, respectively.
     """
 

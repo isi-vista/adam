@@ -48,7 +48,7 @@ from adam.semantics import Concept
 class LearningExample(Generic[PerceptionT, LinguisticDescriptionT]):
     """
     A `PerceptualRepresentation` of a situation and its `LinguisticDescription`
-    that a `LanguageLearner` can learn from.
+    that a `TopLevelLanguageLearner` can learn from.
     """
 
     # attrs can't check the generic types, so we just check the super-types
@@ -56,7 +56,7 @@ class LearningExample(Generic[PerceptionT, LinguisticDescriptionT]):
         validator=instance_of(PerceptualRepresentation)
     )
     """
-    The `LanguageLearner`'s perception of the `Situation`
+    The `TopLevelLanguageLearner`'s perception of the `Situation`
     """
     linguistic_description: LinguisticDescriptionT = attrib(  # type:ignore
         validator=instance_of(LinguisticDescription)
@@ -70,9 +70,9 @@ class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT])
     r"""
     Models an infant learning language.
 
-    A `LanguageLearner` learns language by observing a sequence of `LearningExample`\ s.
+    A `TopLevelLanguageLearner` learns language by observing a sequence of `LearningExample`\ s.
 
-    A `LanguageLearner` can describe new situations given a `PerceptualRepresentation`\ .
+    A `TopLevelLanguageLearner` can describe new situations given a `PerceptualRepresentation`\ .
     """
 
     @abstractmethod
@@ -114,7 +114,7 @@ class MemorizingLanguageLearner(
     TopLevelLanguageLearner[PerceptionT, LinguisticDescription],
 ):
     """
-    A trivial implementation of `LanguageLearner` which just memorizes situations it has seen before
+    A trivial implementation of `TopLevelLanguageLearner` which just memorizes situations it has seen before
     and cannot produce descriptions of any other situations.
 
     If this learner observes the same `PerceptualRepresentation` multiple times, only the final
