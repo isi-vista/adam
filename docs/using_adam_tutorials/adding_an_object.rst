@@ -64,7 +64,10 @@ The ontology type definition then looks like this:
 
   ADAM also has :py:const:`PERSON` and :py:const:`NONHUMAN_ANIMAL` types if you want to add objects of those kinds.
 
-Second, we'll add our toy block to the list of phase 1 curriculum objects::
+Second, we'll add our toy block to the list of phase 1 curriculum objects.
+When running experiments using the object recognizer,
+ADAM uses this list to determine which objects the recognizer should recognize.
+We'll add our toy block after :code:`COW`::
 
    PHASE_1_CURRICULUM_OBJECTS = immutableset(
        [
