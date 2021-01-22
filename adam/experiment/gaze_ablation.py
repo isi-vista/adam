@@ -28,8 +28,11 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
     max_num_objects = params.integer("max_num_objects", default=7)
 
     # this gets the number of different accuracies to try; default = increment by 0.1
-    num_accuracy_increments = params.integer("num_increments", default=11)
-    values_for_accuracy = np.linspace(0, 1, num_accuracy_increments)
+    num_given_accuracy_increments = params.integer("given_gaze_num_increments", default=11)
+    values_for_given_gaze_accuracy = np.linspace(params.floating_point("given_gaze_minimum_accuracy", default=0), params.floating_point("given_gaze__maximum_accuracy", default=1), num_given_accuracy_increments)
+
+    num_not_given_increments = params.integer("not_given_gaze_num_increments", default=6)
+    values_for_not_given_gaze_accuracy = np.linspace(params.floating_point("not_given_gaze_minimum_accuracy", default=0), params.floating_point("not_given_gaze__maximum_accuracy", default=0.5), num_not_given_increments)
 
     # the number of noise instances to be included
     min_num_noise_instances = params.integer("min_num_noise", default=0)
@@ -50,8 +53,8 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
             # all possible numbers of instances
             for num_objects_in_instance in range(min_num_objects, max_num_objects + 1):
                 # all possible accuracies
-                for prob_given in values_for_accuracy:
-                    for prob_not_given in values_for_accuracy:
+                for prob_given in values_for_given_gaze_accuracy:
+                    for prob_not_given in values_for_not_given_gaze_accuracy:
                         # both ignoring and perceiving gaze
                         for add_gaze in [True, False]:
                             # Define the experiment name, which is used both as a job name and to

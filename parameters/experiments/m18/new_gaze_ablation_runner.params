@@ -4,17 +4,17 @@ _includes:
 experiment: 'gaze_ablation_pegasus'
 experiment_group_dir: '%adam_experiment_root%/%experiment%'
 
-min_num_objects: 3
-max_num_objects : 8
-given_gaze_num_increments: 11
-given_gaze_minimum_accuracy: 0.0
-given_gaze__maximum_accuracy: 1.0
+min_num_objects: 8
+max_num_objects : 8 # Exclusive
+given_gaze_num_increments: 5
+given_gaze_minimum_accuracy: 0.5
+given_gaze__maximum_accuracy: 0.9
 not_given_gaze_num_increments: 6
-not_given_gaze_minimum_accuracy: 0.0
-not_given_gaze__maximum_accuracy: 0.5
+not_given_gaze_minimum_accuracy: 0.05
+not_given_gaze__maximum_accuracy: 0.30
 min_num_noise : 0
 max_num_noise : 0
-min_instances : 15
+min_instances : 20
 max_instances : 20
 
 gaze_ablation:
@@ -26,6 +26,9 @@ gaze_ablation:
    # save_state_every_n_steps: 180
    log_hypothesis_every_n_steps: 180
    debug_learner_pickling: false
+
+   post_observer:
+       accuracy_to_txt: true
 
 workflow_name: 'gaze_ablation_pegasus'
 workflow_directory: '%adam_experiment_root%/%experiment%'

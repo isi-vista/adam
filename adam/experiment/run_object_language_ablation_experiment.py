@@ -43,10 +43,17 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
         "pursuit", params.integer("num_pursuit_learners_active", default=8)
     )
 
+    excluded_learner_types = params.string("excluded_learner_types", default="")
+    excluded_param_names = params.string("excluded_param_names", default="")
+
     for num_objects in range(min_num_objects, max_num_objects + 1):
         for language_accuracy in values_for_accuracy:
             for learner_type in LEARNER_VALUES_TO_PARAMS:
+                if learner_type in excluded_learner_types:
+                    continue
                 for params_str, learner_params in LEARNER_VALUES_TO_PARAMS[learner_type]:
+                    if params_str in excluded_param_names:
+                        continue
                     experiment_name_string = EXPERIMENT_NAME_FORMAT.format(
                         num_objects=num_objects,
                         language_accuracy=language_accuracy,
