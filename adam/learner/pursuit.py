@@ -231,25 +231,6 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
         )
         pattern_hypothesis = self._rng.choice(possible_pattern_hypothesis)
 
-        # pattern_hypothesis = first(hypotheses)
-        # min_score = float("inf")
-        # Of the possible meanings for the word in this scene,
-        # make our initial hypothesis the one with the least association
-        # with any other word.
-        # for hypothesis in hypotheses:
-        #    max_association_score = max(
-        #        [
-        #            s
-        #            for w, h_to_s in self._learned_item_to_hypotheses_and_scores.items()
-        #            for h, s in h_to_s.items()
-        #            if self._are_isomorphic(h, hypothesis)
-        #        ]
-        #        + [0]
-        #    )
-        #    if max_association_score < min_score:
-        #        pattern_hypothesis = hypothesis
-        #        min_score = max_association_score
-
         if self._hypothesis_logger:
             self._hypothesis_logger.log_hypothesis_graph(
                 pattern_hypothesis,
@@ -745,13 +726,12 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                 language_perception_semantic_alignment, bound_surface_template
             )
         )
+        hypotheses_to_consider: List[PerceptionGraphTemplate] = list()
         if not hypotheses:
             return
 
-        pattern_hypothesis = first(hypotheses)
-        min_score = float("inf")
         # get all objects that have gaze
-        gazed_at_hypotheses: List[PerceptionGraphTemplate] = []
+        gazed_at_hypotheses: List[PerceptionGraphTemplate] = list()
         if self.rank_gaze_higher:
             for hypothesis in hypotheses:
                 if GAZED_AT in [
@@ -760,34 +740,20 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                     if isinstance(node, IsOntologyNodePredicate)
                 ]:
                     gazed_at_hypotheses.append(hypothesis)
-        # if there is only one object that has gaze, then this is the one that we consider -- we prioritize gaze above all else
-        if len(gazed_at_hypotheses) == 1:
-            pattern_hypothesis = first(gazed_at_hypotheses)
-            min_score = max(
-                [
-                    s
-                    for w, h_to_s in self._concept_to_hypotheses_and_scores.items()
-                    for h, s in h_to_s.items()
-                    if h.graph_pattern.check_isomorphism(pattern_hypothesis.graph_pattern)
-                ]
-                + [0]
-            )
-        # otherwise, we make our initial hypothesis the one with the least association with any other word
+        # if there is only one object that has gaze, then this is the one that we consider
+        # -- we prioritize gaze above all else
+        if gazed_at_hypotheses:
+            hypotheses_to_consider = gazed_at_hypotheses
         else:
-            hypotheses_to_consider: List[PerceptionGraphTemplate] = []
-            # if there were no gazed objects, we consider all hypotheses
-            if gazed_at_hypotheses:
-                hypotheses_to_consider = gazed_at_hypotheses
-            # if there were multiple gazed objects, we consider all objects with gaze
-            else:
-                hypotheses_to_consider = list(hypotheses)
+            hypotheses_to_consider = hypotheses
 
-            # Of the possible meanings for the word in this scene,
-            # make our initial hypothesis the one with the least association
-            # with any other word.
-            for hypothesis in hypotheses_to_consider:
-                # TODO Try to make this more efficient?
-                max_association_score = max(
+        # otherwise, we make our initial hypothesis the one with the least association with any other word
+        hypothesis_to_max_association_score: Mapping[
+            PerceptionGraphTemplate, float
+        ] = immutabledict(
+            (
+                hypothesis,
+                max(
                     [
                         s
                         for w, h_to_s in self._concept_to_hypotheses_and_scores.items()
@@ -795,10 +761,17 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
                         if h.graph_pattern.check_isomorphism(hypothesis.graph_pattern)
                     ]
                     + [0]
-                )
-                if max_association_score < min_score:
-                    pattern_hypothesis = hypothesis
-                    min_score = max_association_score
+                ),
+            )
+            for hypothesis in hypotheses_to_consider
+        )
+        min_score = min(hypothesis_to_max_association_score.values())
+        possible_pattern_hypothesis = immutableset(
+            hypoth
+            for hypoth, score in hypothesis_to_max_association_score.items()
+            if score == min_score
+        )
+        pattern_hypothesis = self._rng.choice(possible_pattern_hypothesis)
 
         if self._hypothesis_logger:
             self._hypothesis_logger.log_hypothesis_graph(
