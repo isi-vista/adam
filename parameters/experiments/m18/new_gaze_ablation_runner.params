@@ -30,6 +30,9 @@ gaze_ablation:
    post_observer:
        accuracy_to_txt: true
 
+   pre_observer:
+       accuracy_to_txt: true
+
 workflow_name: 'gaze_ablation_pegasus'
 workflow_directory: '%adam_experiment_root%/%experiment%'
 site: 'saga'

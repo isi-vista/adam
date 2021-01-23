@@ -205,25 +205,50 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
             if hypothesis not in self._lexicon.values()
         ]
 
-        pattern_hypothesis = first(hypotheses)
-        min_score = float("inf")
+        # TODO Try to make this more efficient?
+        hypothesis_to_max_association_score: Mapping[
+            PerceptionGraphTemplate, float
+        ] = immutabledict(
+            (
+                hypothesis,
+                max(
+                    [
+                        s
+                        for w, h_to_s in self._learned_item_to_hypotheses_and_scores.items()
+                        for h, s in h_to_s.items()
+                        if self._are_isomorphic(h, hypothesis)
+                    ]
+                    + [0]
+                ),
+            )
+            for hypothesis in hypotheses
+        )
+        min_score = min(hypothesis_to_max_association_score.values())
+        possible_pattern_hypothesis = immutableset(
+            hypoth
+            for hypoth, score in hypothesis_to_max_association_score.items()
+            if score == min_score
+        )
+        pattern_hypothesis = self._rng.choice(possible_pattern_hypothesis)
+
+        # pattern_hypothesis = first(hypotheses)
+        # min_score = float("inf")
         # Of the possible meanings for the word in this scene,
         # make our initial hypothesis the one with the least association
         # with any other word.
-        for hypothesis in hypotheses:
-            # TODO Try to make this more efficient?
-            max_association_score = max(
-                [
-                    s
-                    for w, h_to_s in self._learned_item_to_hypotheses_and_scores.items()
-                    for h, s in h_to_s.items()
-                    if self._are_isomorphic(h, hypothesis)
-                ]
-                + [0]
-            )
-            if max_association_score < min_score:
-                pattern_hypothesis = hypothesis
-                min_score = max_association_score
+        # for hypothesis in hypotheses:
+        #    max_association_score = max(
+        #        [
+        #            s
+        #            for w, h_to_s in self._learned_item_to_hypotheses_and_scores.items()
+        #            for h, s in h_to_s.items()
+        #            if self._are_isomorphic(h, hypothesis)
+        #        ]
+        #        + [0]
+        #    )
+        #    if max_association_score < min_score:
+        #        pattern_hypothesis = hypothesis
+        #        min_score = max_association_score
 
         if self._hypothesis_logger:
             self._hypothesis_logger.log_hypothesis_graph(

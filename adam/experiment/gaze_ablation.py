@@ -28,11 +28,21 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
     max_num_objects = params.integer("max_num_objects", default=7)
 
     # this gets the number of different accuracies to try; default = increment by 0.1
-    num_given_accuracy_increments = params.integer("given_gaze_num_increments", default=11)
-    values_for_given_gaze_accuracy = np.linspace(params.floating_point("given_gaze_minimum_accuracy", default=0), params.floating_point("given_gaze__maximum_accuracy", default=1), num_given_accuracy_increments)
+    num_given_accuracy_increments = params.integer(
+        "given_gaze_num_increments", default=11
+    )
+    values_for_given_gaze_accuracy = np.linspace(
+        params.floating_point("given_gaze_minimum_accuracy", default=0),
+        params.floating_point("given_gaze__maximum_accuracy", default=1),
+        num_given_accuracy_increments,
+    )
 
     num_not_given_increments = params.integer("not_given_gaze_num_increments", default=6)
-    values_for_not_given_gaze_accuracy = np.linspace(params.floating_point("not_given_gaze_minimum_accuracy", default=0), params.floating_point("not_given_gaze__maximum_accuracy", default=0.5), num_not_given_increments)
+    values_for_not_given_gaze_accuracy = np.linspace(
+        params.floating_point("not_given_gaze_minimum_accuracy", default=0),
+        params.floating_point("not_given_gaze__maximum_accuracy", default=0.5),
+        num_not_given_increments,
+    )
 
     # the number of noise instances to be included
     min_num_noise_instances = params.integer("min_num_noise", default=0)

@@ -106,6 +106,8 @@ from adam.ontology.phase1_ontology import (
     INTEGRATED_EXPERIMENT_PROP,
     CAN_HAVE_THINGS_RESTING_ON_THEM,
     PHASE_1_CURRICULUM_OBJECTS,
+    HAND,
+    HEAD,
 )
 from adam.ontology.phase2_ontology import (
     CHAIR_2,
@@ -1142,10 +1144,11 @@ def build_object_learner_experiment_curriculum_train(
         "accurate_language_percentage", default=0.5
     )
     output_situations = []
-    random.seed(params.integer("random_seed", default=0))
-    rng = RandomChooser.for_seed(params.integer("language_random_seed", default=0))
+    rng = random.Random()
+    rng.seed(params.integer("random_seed", default=0))
+    chooser = RandomChooser.for_seed(params.integer("language_random_seed", default=0))
     for (situation, language, perception) in situations.instances():
-        if random.random() <= accurate_language_chance:
+        if rng.random() <= accurate_language_chance:
             output_language = language
         else:
             # Make Invalid Language
@@ -1157,10 +1160,10 @@ def build_object_learner_experiment_curriculum_train(
                 valid_other_objects = [
                     node
                     for node in PHASE_1_CURRICULUM_OBJECTS
-                    if node not in present_ontology_nodes
+                    if node not in present_ontology_nodes and node not in [HAND, HEAD]
                 ]
                 # Then choose one at random
-                chosen_ontology_node = rng.choice(valid_other_objects)
+                chosen_ontology_node = chooser.choice(valid_other_objects)
                 # Make a fake situation with just this object in it, ignoring colors
                 wrong_situation = HighLevelSemanticsSituation(
                     ontology=GAILA_PHASE_2_ONTOLOGY,
@@ -1173,7 +1176,7 @@ def build_object_learner_experiment_curriculum_train(
                 )
                 # Generate the language as if it came from this fake situation rather than the original one
                 fake_language = only(
-                    language_generator.generate_language(wrong_situation, chooser=rng)
+                    language_generator.generate_language(wrong_situation, chooser=chooser)
                 )
                 output_language = LinearizedDependencyTree(
                     dependency_tree=fake_language.dependency_tree,

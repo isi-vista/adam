@@ -46,6 +46,10 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
     excluded_learner_types = params.string("excluded_learner_types", default="")
     excluded_param_names = params.string("excluded_param_names", default="")
 
+    use_pypy = params.boolean("use_pypy", default=True)
+    curriculum_seed = params.integer("curriculum_random_seed", default=0)
+    false_language_random_seed = params.integer("false_language_random_seed", default=0)
+
     for num_objects in range(min_num_objects, max_num_objects + 1):
         for language_accuracy in values_for_accuracy:
             for learner_type in LEARNER_VALUES_TO_PARAMS:
@@ -74,7 +78,9 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
                             "log_learner_state": True,
                             "resume_from_latest_logged_state": True,
                             "train_curriculum": {
-                                "accurate_language_percentage": float(language_accuracy)
+                                "accurate_language_percentage": float(language_accuracy),
+                                "random_seed": curriculum_seed,
+                                "language_random_seed": false_language_random_seed,
                             },
                             "object_learner_type": learner_type,
                             "object_learner": learner_params,
@@ -91,9 +97,10 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
                         resource_request=SlurmResourceRequest.from_parameters(
                             pursuit_resource_request_params
                         )
-                        if learner_type == "pursuit"
+                        if learner_type in ["pursuit", "cross_situational"]
                         else None,
                         category=learner_type,
+                        use_pypy=use_pypy,
                     )
 
     write_workflow_description()
@@ -196,11 +203,6 @@ LEARNER_VALUES_TO_PARAMS: Dict[str, List[Tuple[str, Dict[str, Any]]]] = {
 FIXED_PARAMETERS = {
     "curriculum": "m15-object-noise-experiments",
     "learner": "integrated-learner-params",
-    "post_observer": {
-        "include_acc_observer": False,
-        "include_pr_observer": True,
-        "log_pr": True,
-    },
     "attribute_learner": {"learner_type": "none"},
     "relation_learner": {"learner_type": "none"},
     "action_learner": {"learner_type": "none"},
