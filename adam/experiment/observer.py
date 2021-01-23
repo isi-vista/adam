@@ -341,7 +341,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         params: Parameters = Parameters.empty(),
         experiment_group_dir: Optional[Path] = None,
     ) -> "DescriptionObserver":  # type: ignore
-        track_accuracy = params.boolean("include_acc_observer", default=False)
+        track_accuracy = params.boolean("include_acc_observer", default=True)
         log_accuracy = params.boolean("accuracy_to_txt", default=False)
         log_accuracy_path = params.string(
             "accuracy_logging_path",

@@ -31,6 +31,7 @@ gaze_ablation:
        accuracy_to_txt: true
 
    pre_observer:
+       include_acc_observer: true
        accuracy_to_txt: true
 
 workflow_name: 'gaze_ablation_pegasus'
