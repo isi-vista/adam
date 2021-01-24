@@ -98,6 +98,7 @@ None
 - lexicon_entry_threshold: Float - A value between 0 and 1 which indicates what probability a concept should be allowed into the 'known' lexicon
 - smoothing_parameter: Float - A value between 0 and 1 which is generally small which smooths the probabilities over time.
 - random_seed: Integer (Optional: 0) - A seed for the RandomChooser which is used in this learner
+- rank_gaze_higher: Boolean (Optional: False) - Enable the modifications to prioritize pursuit to objects which are `gazed-at` in the perception rather than a random sample of the entire scene
 
 ### Object Recognizer
 *Valid For: Object*

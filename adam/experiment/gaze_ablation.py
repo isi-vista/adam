@@ -1,4 +1,3 @@
-from pegasus_wrapper.resource_request import SlurmResourceRequest
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from pegasus_wrapper import (
@@ -53,8 +52,6 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
     min_num_instances_in_curriculum = params.integer("min_instances", default=10)
     max_num_instances_in_curriculum = params.integer("max_instances", default=20)
 
-    pursuit_resource_request_params = params.namespace("pursuit_resource_request")
-
     # all possible numbers of noise instances
     for num_noise_instances in range(
         min_num_noise_instances, max_num_noise_instances + 1
@@ -103,7 +100,7 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
                                         "num_instances": num_instances,
                                         "num_noise_instances": num_noise_instances,
                                         "num_objects_in_instance": num_objects_in_instance,
-                                        "add_gaze": add_gaze,
+                                        "add_gaze": True,
                                         "prob_given": float(prob_given),
                                         "prob_not_given": float(prob_not_given),
                                     },
@@ -115,10 +112,6 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
                                 log_experiment_script,
                                 experiment_params,
                                 depends_on=[],
-                                resource_request=SlurmResourceRequest.from_parameters(
-                                    pursuit_resource_request_params
-                                ),
-                                category="pursuit",
                             )
 
     write_workflow_description()
@@ -131,13 +124,13 @@ EXPERIMENT_NAME_FORMAT = (
 
 FIXED_PARAMETERS = {
     "curriculum": "pursuit",
-    "learner": "pursuit-gaze",
-    "pursuit": {
-        "learning_factor": 0.05,
-        "graph_match_confirmation_threshold": 0.7,
-        "lexicon_entry_threshold": 0.7,
-        "smoothing_parameter": 0.001,
-    },
+    "learner": "integrated-learner-params",
+    "attribute_learner": {"learner_type": "none"},
+    "relation_learner": {"learner_type": "none"},
+    "action_learner": {"learner_type": "none"},
+    "plural_learner": {"learner_type": "none"},
+    "include_functional_learner": False,
+    "include_generics_learner": False,
 }
 
 if __name__ == "__main__":

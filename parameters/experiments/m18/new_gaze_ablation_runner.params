@@ -4,11 +4,6 @@ _includes:
 experiment: 'gaze_ablation_pegasus'
 experiment_group_dir: '%adam_experiment_root%/%experiment%'
 
-num_pursuit_learners_active: 24
-pursuit_resource_request:
-    exclude_list: "saga01,saga02,saga03,saga04,saga05,saga06,saga07,saga08,saga10,saga11,saga12,saga13,saga14,saga15,saga16,saga17,saga18,saga19,saga20,saga21,saga22,saga23,saga24,saga25,saga26,gaia01,gaia02"
-    partition: ephemeral
-
 min_num_objects: 8
 max_num_objects : 8 # Exclusive
 given_gaze_num_increments: 5
@@ -32,6 +27,14 @@ gaze_ablation:
    log_hypothesis_every_n_steps: 180
    debug_learner_pickling: false
 
+   object_learner:
+       learner_type: pursuit
+       learning_factor: 0.05
+       graph_match_confirmation_threshold: 0.9
+       lexicon_entry_threshold: 0.7
+       smoothing_parameter: 0.001
+       rank_gaze_higher: True
+
    post_observer:
        accuracy_to_txt: true
 
@@ -49,5 +52,5 @@ partition: ephemeral
 num_cpus: 1
 num_gpus: 0
 memory: '2G'
-job_time_in_minutes: 240
+job_time_in_minutes: 720
 
