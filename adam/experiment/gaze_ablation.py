@@ -1,3 +1,4 @@
+from pegasus_wrapper.resource_request import SlurmResourceRequest
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 from pegasus_wrapper import (
@@ -51,6 +52,8 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
     # get the number of instances in the entire curriculum
     min_num_instances_in_curriculum = params.integer("min_instances", default=10)
     max_num_instances_in_curriculum = params.integer("max_instances", default=20)
+
+    pursuit_resource_request_params = params.namespace("pursuit_resource_request")
 
     # all possible numbers of noise instances
     for num_noise_instances in range(
@@ -112,6 +115,10 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
                                 log_experiment_script,
                                 experiment_params,
                                 depends_on=[],
+                                resource_request=SlurmResourceRequest.from_parameters(
+                                    pursuit_resource_request_params
+                                ),
+                                category="pursuit",
                             )
 
     write_workflow_description()

@@ -29,7 +29,6 @@ from typing import (
 from attr import Factory, attrib, attrs
 from attr.validators import in_, instance_of, optional
 from immutablecollections import immutabledict, immutableset
-from more_itertools import first
 from vistautils.range import Range
 
 from adam.learner import LanguagePerceptionSemanticAlignment
