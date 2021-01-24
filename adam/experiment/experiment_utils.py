@@ -220,7 +220,7 @@ def build_object_learner_factory(
             smoothing_parameter=params.floating_point("smoothing_parameter"),
             ontology=ontology,
             language_mode=language_mode,
-            rank_gaze_higher=params.boolean("rank_gaze_higher", default=False),
+            rank_gaze_higher=params.boolean("rank_gaze_higher"),
         )
     elif learner_type == "recognizer":
         object_recognizer = ObjectRecognizer.for_ontology_types(

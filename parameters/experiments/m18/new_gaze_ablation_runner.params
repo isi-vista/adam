@@ -27,14 +27,6 @@ gaze_ablation:
    log_hypothesis_every_n_steps: 180
    debug_learner_pickling: false
 
-   object_learner:
-       learner_type: pursuit
-       learning_factor: 0.05
-       graph_match_confirmation_threshold: 0.9
-       lexicon_entry_threshold: 0.7
-       smoothing_parameter: 0.001
-       rank_gaze_higher: True
-
    post_observer:
        accuracy_to_txt: true
 

@@ -651,7 +651,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
 
     _observation_num = attrib(init=False, default=0)
 
-    rank_gaze_higher: bool = attrib(default=False)
+    rank_gaze_higher: bool = attrib(default=False, kw_only=True)
 
     def _learning_step(
         self,

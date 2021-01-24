@@ -104,6 +104,14 @@ def gaze_ablation_runner_entry_point(params: Parameters) -> None:
                                         "prob_given": float(prob_given),
                                         "prob_not_given": float(prob_not_given),
                                     },
+                                    "object_learner": {
+                                        "learner_type": "pursuit",
+                                        "learning_factor": 0.05,
+                                        "graph_match_confirmation_threshold": 0.9,
+                                        "lexicon_entry_threshold": 0.7,
+                                        "smoothing_parameter": 0.001,
+                                        "rank_gaze_higher": add_gaze,
+                                    },
                                 }
                             )
 
