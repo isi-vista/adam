@@ -353,9 +353,9 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         log_precision_recall = params.boolean("log_pr", default=False)
         log_precision_recall_path = params.string(
             "pr_log_path",
-            default=f"{experiment_group_dir}/pr_post_out.txt"
+            default=f"{experiment_group_dir}/pr_pre_out.txt"
             if experiment_group_dir
-            else "pr_post_out.txt",
+            else "pr_pre_out.txt",
         )
         return HTMLLoggerPreObserver(
             name="Pre-observer",
