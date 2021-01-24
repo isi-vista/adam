@@ -1023,7 +1023,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             Callable[["PerceptionGraphPattern"], "PerceptionGraphPattern"]
         ] = None,
     ) -> Optional["PerceptionGraphPattern"]:
-        """
+        r"""
         Determine the largest partial match between two `PerceptionGraphPattern`\ s
 
         The algorithm used is approximate and is not guaranteed to return the largest

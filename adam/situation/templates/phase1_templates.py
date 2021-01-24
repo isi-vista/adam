@@ -204,7 +204,7 @@ class Phase1SituationTemplate(SituationTemplate):
     gazed_objects: ImmutableSet[TemplateObjectVariable] = attrib(
         converter=_to_immutableset, kw_only=True
     )
-    """
+    r"""
     A set of `TemplateObjectVariable`\ s which are the focus of the speaker. 
     Defaults to all semantic role fillers of situation actions.
     """
