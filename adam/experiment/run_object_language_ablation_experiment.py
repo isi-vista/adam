@@ -175,6 +175,7 @@ LEARNER_VALUES_TO_PARAMS: Dict[str, List[Tuple[str, Dict[str, Any]]]] = {
                 "graph_match_confirmation_threshold": 0.9,
                 "lexicon_entry_threshold": 0.7,
                 "smoothing_parameter": 0.001,
+                "rank_gaze_higher": False,
             },
         ),
         (
@@ -185,6 +186,7 @@ LEARNER_VALUES_TO_PARAMS: Dict[str, List[Tuple[str, Dict[str, Any]]]] = {
                 "graph_match_confirmation_threshold": 0.95,
                 "lexicon_entry_threshold": 0.7,
                 "smoothing_parameter": 0.001,
+                "rank_gaze_higher": False,
             },
         ),
         (
@@ -195,6 +197,7 @@ LEARNER_VALUES_TO_PARAMS: Dict[str, List[Tuple[str, Dict[str, Any]]]] = {
                 "graph_match_confirmation_threshold": 1.0,
                 "lexicon_entry_threshold": 0.7,
                 "smoothing_parameter": 0.001,
+                "rank_gaze_higher": False,
             },
         ),
     ],
