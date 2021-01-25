@@ -60,7 +60,6 @@ from adam.ontology.phase1_ontology import (
     PATIENT,
     COOKIE,
     PERSON,
-    WATERMELON,
     TOWARD,
     AWAY_FROM,
     MOM,
@@ -133,7 +132,7 @@ def make_eat_big_small_curriculum(  # pylint: disable=unused-argument
             debug_handle=eater_ontology_node.handle,
             ontology=GAILA_PHASE_1_ONTOLOGY,
         )
-        for _object in [COOKIE, WATERMELON]:
+        for _object in [COOKIE]:
             object_to_eat = SituationObject.instantiate_ontology_node(
                 ontology_node=_object,
                 debug_handle=_object.handle + "_salient",

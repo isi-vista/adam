@@ -474,11 +474,11 @@ class LearningProgressHtmlLogger:  # pragma: no cover
     ) -> None:
         append_str = ""
         if accuracy:
-            append_str += f"\nAccuracy: {accuracy:2.2f}"
+            append_str += f"<br/>Accuracy: {accuracy:2.2f}"
         if precision:
-            append_str += f"\nPrecision: {precision:2.2f}"
+            append_str += f"<br/>Precision: {precision:2.2f}"
         if recall:
-            append_str += f"\nRecall: {recall:2.2f}"
+            append_str += f"<br/>Recall: {recall:2.2f}"
         self.pre_observed_description = (
             pretty_descriptions(
                 predicted_descriptions,

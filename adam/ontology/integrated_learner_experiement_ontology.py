@@ -34,7 +34,6 @@ from adam.ontology.phase1_ontology import (
     _ARM,
     _ANIMAL_LEG,
     _INANIMATE_LEG,
-    WATERMELON,
     HAND,
     HEAD,
     _ARM_SEGMENT,
@@ -60,11 +59,9 @@ from adam.ontology.phase1_ontology import (
     BLUE,
     GREEN,
     ROLLABLE,
-    CAT,
     _BALL_SCHEMA,
     _BOX_SCHEMA,
     INTEGRATED_EXPERIMENT_PROP,
-    BEAR,
 )
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.phase2_ontology import (
@@ -137,7 +134,7 @@ DAYGIN = OntologyNode(
 subtype(DAYGIN, INANIMATE_OBJECT)
 
 INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS = immutableset(
-    [MAWG, TOMBUR, GLIM, ZUP, SPAD, DAYGIN, CAT, DOG, BIRD, BEAR, CUP, BOOK]
+    [MAWG, TOMBUR, GLIM, ZUP, SPAD, DAYGIN, DOG, BIRD, CUP, BOOK]
 )
 
 INTEGRATED_EXPERIMENT_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
@@ -154,7 +151,7 @@ INTEGRATED_EXPERIMENT_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_BODY,),
     (_TORSO, _CHAIR_BACK, _CHAIR_SEAT),
     (_ARM, _ANIMAL_LEG, _INANIMATE_LEG),
-    (WATERMELON, HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
+    (HAND, HEAD, _ARM_SEGMENT, _LEG_SEGMENT, _FOOT),
     (
         BALL,
         ZUP,

@@ -1,7 +1,7 @@
 _includes:
    - "../../root.params"
 
-experiment: 'object_language_ablation_random2_0'
+experiment: 'object_language_ablation_random2_2'
 experiment_group_dir: '%adam_experiment_root%/%experiment%'
 
 # Workflow Limitations Params
@@ -19,13 +19,13 @@ num_language_accuracy_increment: 5
 excluded_learner_types: "subset, pbv, cross_situational"
 excluded_param_names: "1.0_graph_match_conf, 0.95_graph_match_conf"
 curriculum_random_seed: 2
-false_language_random_seed: 0
+false_language_random_seed: 2
 
 # Baseline experiment params
 object_language_ablation:
    num_samples: 400
    sort_learner_descriptions_by_length: true
-   num_pretty_descriptions: 5
+   num_pretty_descriptions: 20
 
    log_hypothesis_every_n_steps: 100
    debug_learner_pickling: false
