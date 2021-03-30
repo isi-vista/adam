@@ -352,11 +352,13 @@ def build_each_object_by_itself_curriculum_train(
     # this shuffles, compared to the original
     instances = []
     # add 10 instances worth of the chinese curriculum
-    for _ in range(10):
+    for _ in range(1):
         for instance in _make_each_object_by_itself_curriculum(
             num_samples, num_noise_objects, language_generator=language_generator
         ).instances():
             instances.append(instance)
+    print(len(instances))
+    raise RuntimeError
     # shuffle and return the results
     random.seed(0)
     random.shuffle(instances)

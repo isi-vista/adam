@@ -291,54 +291,54 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
                     chooser=PHASE1_CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 ),
-                sampled(
-                    single_liquid_template,
-                    max_to_sample=num_samples,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                    block_multiple_of_the_same_type=True,
-                )
-                if num_samples
-                else all_possible(
-                    single_liquid_template,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
-                    ontology=GAILA_PHASE_1_ONTOLOGY,
-                ),
-                flatten(
-                    sampled(
-                        _make_single_addressee_template(addressee=object),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                    for object in [MOM, DAD, BABY]
-                ),
-                flatten(
-                    sampled(
-                        _make_single_speaker_template(speaker=object),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                    for object in [MOM, DAD, BABY]
-                ),
-                flatten(
-                    sampled(
-                        Phase1SituationTemplate(
-                            "only-object",
-                            salient_object_variables=[
-                                standard_object("addressee", object)
-                            ],
-                        ),
-                        ontology=GAILA_PHASE_1_ONTOLOGY,
-                        chooser=PHASE1_CHOOSER_FACTORY(),
-                        max_to_sample=5,
-                        block_multiple_of_the_same_type=True,
-                    )
-                    for object in [MOM, DAD, BABY]
-                ),
+                # sampled(
+                #     single_liquid_template,
+                #     max_to_sample=num_samples,
+                #     chooser=PHASE1_CHOOSER_FACTORY(),
+                #     ontology=GAILA_PHASE_1_ONTOLOGY,
+                #     block_multiple_of_the_same_type=True,
+                # )
+                # if num_samples
+                # else all_possible(
+                #     single_liquid_template,
+                #     chooser=PHASE1_CHOOSER_FACTORY(),
+                #     ontology=GAILA_PHASE_1_ONTOLOGY,
+                # ),
+                # flatten(
+                #     sampled(
+                #         _make_single_addressee_template(addressee=object),
+                #         ontology=GAILA_PHASE_1_ONTOLOGY,
+                #         chooser=PHASE1_CHOOSER_FACTORY(),
+                #         max_to_sample=5,
+                #         block_multiple_of_the_same_type=True,
+                #     )
+                #     for object in [MOM, DAD, BABY]
+                # ),
+                # flatten(
+                #     sampled(
+                #         _make_single_speaker_template(speaker=object),
+                #         ontology=GAILA_PHASE_1_ONTOLOGY,
+                #         chooser=PHASE1_CHOOSER_FACTORY(),
+                #         max_to_sample=5,
+                #         block_multiple_of_the_same_type=True,
+                #     )
+                #     for object in [MOM, DAD, BABY]
+                # ),
+                # flatten(
+                #     sampled(
+                #         Phase1SituationTemplate(
+                #             "only-object",
+                #             salient_object_variables=[
+                #                 standard_object("addressee", object)
+                #             ],
+                #         ),
+                #         ontology=GAILA_PHASE_1_ONTOLOGY,
+                #         chooser=PHASE1_CHOOSER_FACTORY(),
+                #         max_to_sample=5,
+                #         block_multiple_of_the_same_type=True,
+                #     )
+                #     for object in [MOM, DAD, BABY]
+                # ),
             ]
         ),
         language_generator=language_generator,

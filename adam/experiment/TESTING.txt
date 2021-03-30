@@ -1,0 +1,606 @@
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz 
+ba4 ba4 
+yi1_jang1_jr3 
+yi1_jang1_jwo1 dz 
+a_cat 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 
+a_chicken 
+a_hand 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 
+a_hat 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 
+nyou2 nai3 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 
+nyou2 nai3 milk 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 
+nyou2 nai3 milk 
+juice 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 
+nyou2 nai3 milk 
+juice 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
+
+ni3 
+Mom ma1 ma1 
+you 
+yi1_jang1_chwang2 a_bed 
+a_baby yi1_ge4_bau3 bau3 
+yi1_ge4_bei1 dz a_cup 
+ba4 ba4 Dad 
+yi1_jang1_jr3 a_paper 
+yi1_jang1_jwo1 dz a_table 
+a_cat yi1_jr1_mau1 
+yi1_jr1_nyau3 a_bird 
+a_chicken yi1_zhi1_ji1 
+a_hand yi1_jr1_shou3 
+a_head yi1_ge4_tou2 
+yi1_ben3_shu1 a_book 
+yi1_ge4_syi1 gwa1 a_watermelon 
+a_chair yi1_ba3_yi3 dz 
+a_box yi1_ge4_syang1 dz 
+a_truck yi1_lyang4_ka3 che1 
+a_door yi1_shan4_men2 
+yi1_jyan1_wu1 a_house 
+a_dog yi1_jr1_gou3 
+a_beef yi1_kwai4_niu2 rou1 
+a_car yi1_lyang4_chi4 che1 
+a_cow yi1_tiao2_niu2 
+yi1_ge4_chyou2 a_ball 
+a_hat yi1_ding3_mau4 dz 
+a_cookie yi1_kwai4_chyu1 chi2 bing3 
+a_bear yi1_jr1_syung2 
+me 
+shwei3 water 
+nyou2 nai3 milk 
+juice gwo3 jr1 
