@@ -15,6 +15,12 @@ and [here is a video](https://youtu.be/xGsIKHKqKdw) of a talk giving an overview
 Documentation can be found [here](https://adam-language-learner.readthedocs.io/en/latest/).
 The documentation includes tutorials on how to use ADAM (though it may not appear on Read the Docs).
 
+You can check out our papers to read more about the system and to cite our work:
+1. [ADAM: A Sandbox for Implementing Language Learning](https://arxiv.org/abs/2105.02263)
+2. [A Grounded Approach to Modeling Generic Knowledge Acquisition](https://arxiv.org/abs/2105.03207)
+
+
+
 # Project Setup
 
 1. Create a Python 3.6 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam python=3.6` followed by `conda activate adam`.
