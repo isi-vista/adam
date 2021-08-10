@@ -30,7 +30,7 @@ from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
+from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology import IS_SPEAKER, THING, IS_ADDRESSEE
 from adam.ontology.phase1_ontology import (
     INANIMATE_OBJECT,
@@ -63,18 +63,7 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
 )
 from immutablecollections import immutableset
-from tests.learner import (
-    LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
-    LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
-)
-
-
-def subset_verb_language_factory(language_mode: LanguageMode) -> SubsetVerbLearner:
-    return SubsetVerbLearner(
-        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        language_mode=language_mode,
-    )
+from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 
 
 def integrated_learner_factory(language_mode: LanguageMode):
@@ -149,16 +138,7 @@ def run_verb_test(learner, situation_template, language_generator):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_eat_simple(language_mode, learner):
     object_to_eat = standard_object("object_0", required_properties=[EDIBLE])
     eater = standard_object(
@@ -188,16 +168,7 @@ def drink_test_template():
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_drink(language_mode, learner):
     run_verb_test(
         learner(language_mode),
@@ -207,16 +178,7 @@ def test_drink(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_sit(language_mode, learner):
     for situation_template in make_sit_templates(None):
         run_verb_test(
@@ -227,16 +189,7 @@ def test_sit(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_put(language_mode, learner):
     for situation_template in make_put_templates(None):
         run_verb_test(
@@ -247,16 +200,7 @@ def test_put(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_push(language_mode, learner):
     for situation_template in make_push_templates(
         agent=standard_object(
@@ -280,16 +224,7 @@ def test_push(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_go(language_mode, learner):
     goer = standard_object("goer", THING, required_properties=[ANIMATE])
     under_goal_reference = standard_object(
@@ -317,16 +252,7 @@ def test_go(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_come(language_mode, learner):
     movee = standard_object(
         "movee",
@@ -380,16 +306,7 @@ def test_come(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_take(language_mode, learner):
     run_verb_test(
         learner(language_mode),
@@ -408,16 +325,7 @@ def test_take(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_give(language_mode, learner):
     for situation_template in make_give_templates(immutableset()):
         run_verb_test(
@@ -428,16 +336,7 @@ def test_give(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_spin(language_mode, learner):
     for situation_template in make_spin_templates(None):
         run_verb_test(
@@ -448,16 +347,7 @@ def test_spin(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_fall(language_mode, learner):
     for situation_template in make_fall_templates(immutableset()):
         run_verb_test(
@@ -468,16 +358,7 @@ def test_fall(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_throw(language_mode, learner):
     for situation_template in make_throw_templates(None):
         run_verb_test(
@@ -491,16 +372,7 @@ def test_throw(language_mode, learner):
     "language_mode",
     [LanguageMode.CHINESE, pytest.param(LanguageMode.ENGLISH, marks=pytest.mark.xfail)],
 )
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 # this tests gei vs. dau X shang for Chinese throw to
 # TODO: fix English implementation https://github.com/isi-vista/adam/issues/870
 def test_throw_animacy(language_mode, learner):
@@ -561,16 +433,7 @@ def test_throw_animacy(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_move(language_mode, learner):
     for situation_template in make_move_templates(None):
         run_verb_test(
@@ -581,16 +444,7 @@ def test_move(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_jump(language_mode, learner):
 
     jumper = standard_object(
@@ -619,16 +473,7 @@ def test_jump(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_roll(language_mode, learner):
     for situation_template in make_roll_templates(None):
         run_verb_test(
@@ -639,16 +484,7 @@ def test_roll(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_verb_language_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_fly(language_mode, learner):
     for situation_template in make_fly_templates(immutableset()):
         run_verb_test(

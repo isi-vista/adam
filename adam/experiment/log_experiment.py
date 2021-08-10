@@ -51,17 +51,13 @@ from adam.language.language_utils import (
     integrated_experiment_language_generator,
 )
 from adam.language_specific.english import ENGLISH_DETERMINERS
-from adam.learner.attributes import (
-    SubsetAttributeLearner,
-    SubsetAttributeLearnerNew,
-    PursuitAttributeLearnerNew,
-)
+from adam.learner.attributes import SubsetAttributeLearnerNew, PursuitAttributeLearnerNew
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.relations import SubsetRelationLearnerNew
 from adam.learner.template_learner import TemplateLearner
-from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
+from adam.learner.verbs import SubsetVerbLearnerNew
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
@@ -83,14 +79,8 @@ from adam.experiment import Experiment, execute_experiment
 from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.learner import TopLevelLanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.prepositions import SubsetPrepositionLearner
 from adam.learner.pursuit import HypothesisLogger
-from adam.learner.objects import (
-    ObjectPursuitLearner,
-    SubsetObjectLearner,
-    SubsetObjectLearnerNew,
-    ObjectRecognizerAsTemplateLearner,
-)
+from adam.learner.objects import SubsetObjectLearnerNew, ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     ME_HACK,
@@ -281,11 +271,6 @@ def learner_factory_from_params(
     learner_type = params.string(
         "learner",
         [
-            "pursuit",
-            "object-subset",
-            "preposition-subset",
-            "attribute-subset",
-            "verb-subset",
             "integrated-learner",
             "integrated-learner-recognizer-without-generics",
             "integrated-learner-recognizer",
@@ -313,11 +298,7 @@ def learner_factory_from_params(
         perception_generator=perception_generator,
     )
 
-    if learner_type == "pursuit":
-        return lambda: ObjectPursuitLearner.from_parameters(
-            params.namespace("pursuit"), graph_logger=graph_logger
-        )
-    elif learner_type == "pursuit-gaze":
+    if learner_type == "pursuit-gaze":
         return lambda: IntegratedTemplateLearner(
             object_learner=PursuitObjectLearnerNew(
                 learning_factor=0.05,
@@ -344,29 +325,6 @@ def learner_factory_from_params(
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-        )
-    elif learner_type == "object-subset":
-        return lambda: SubsetObjectLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, language_mode=LanguageMode.ENGLISH
-        )
-    elif learner_type == "attribute-subset":
-        return lambda: SubsetAttributeLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            object_recognizer=object_recognizer,
-            language_mode=LanguageMode.ENGLISH,
-        )
-    elif learner_type == "preposition-subset":
-        return lambda: SubsetPrepositionLearner(
-            # graph_logger=graph_logger,
-            object_recognizer=object_recognizer,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            language_mode=LanguageMode.ENGLISH,
-        )
-    elif learner_type == "verb-subset":
-        return lambda: SubsetVerbLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            object_recognizer=object_recognizer,
-            language_mode=LanguageMode.ENGLISH,
         )
     elif learner_type == "integrated-learner":
         return lambda: IntegratedTemplateLearner(

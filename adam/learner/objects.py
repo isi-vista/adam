@@ -1,10 +1,8 @@
 import logging
-from abc import ABC
 from itertools import chain
 from pathlib import Path
-from random import Random
 
-from attr import attrib, attrs, evolve
+from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from immutablecollections import (
     ImmutableSet,
@@ -15,18 +13,7 @@ from immutablecollections import (
 )
 from vistautils.parameters import Parameters
 
-from adam.language import LinguisticDescription
-from typing import (
-    AbstractSet,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Union,
-    Tuple,
-    Dict,
-    Mapping,
-)
+from typing import AbstractSet, Iterable, Optional, Tuple, Dict, Mapping
 
 from more_itertools import first
 
@@ -34,11 +21,7 @@ from adam.language_specific.chinese.chinese_phase_1_lexicon import (
     GAILA_PHASE_1_CHINESE_LEXICON,
 )
 from adam.language_specific.english import DETERMINERS
-from adam.learner import (
-    LearningExample,
-    get_largest_matching_pattern,
-    graph_without_learner,
-)
+from adam.learner import get_largest_matching_pattern, graph_without_learner
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
@@ -46,46 +29,27 @@ from adam.learner.alignments import (
 from adam.learner.cross_situational_learner import AbstractCrossSituationalLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.learner_utils import (
-    assert_static_situation,
     candidate_object_hypotheses,
     covers_entire_utterance,
     get_objects_from_perception,
 )
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
-    PerceptionGraphFromObjectRecognizer,
     extract_candidate_objects,
     replace_match_with_object_graph_node,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.propose_but_verify import AbstractProposeButVerifyLearner
-from adam.learner.pursuit import (
-    AbstractPursuitLearner,
-    HypothesisLogger,
-    AbstractPursuitLearnerNew,
-)
-from adam.learner.subset import (
-    AbstractTemplateSubsetLearner,
-    AbstractTemplateSubsetLearnerNew,
-)
+from adam.learner.pursuit import AbstractPursuitLearnerNew
+from adam.learner.subset import AbstractTemplateSubsetLearnerNew
 from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.learner.template_learner import (
-    AbstractTemplateLearner,
-    AbstractTemplateLearnerNew,
-    TemplateLearner,
-)
+from adam.learner.template_learner import AbstractTemplateLearnerNew, TemplateLearner
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
-from adam.ontology.phase1_spatial_relations import Region
-from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
-from adam.perception.deprecated import LanguageAlignedPerception
-from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame,
-    RgbColorPerception,
-)
+from adam.perception import ObjectPerception, MatchMode
 from adam.perception.perception_graph import (
     PerceptionGraph,
     PerceptionGraphPattern,
@@ -102,7 +66,6 @@ from adam.semantics import (
     FunctionalObjectConcept,
     SyntaxSemanticsVariable,
 )
-from adam.utils import networkx_utils
 from adam.utils.networkx_utils import subgraph
 
 
@@ -202,300 +165,6 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
         return (
             perception_graph_after_processing,
             immutableset(chain(immutable_new_nodes, new_nodes)),
-        )
-
-
-class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
-    def _assert_valid_input(
-        self,
-        to_check: Union[
-            LearningExample[DevelopmentalPrimitivePerceptionFrame, LinguisticDescription],
-            PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
-        ],
-    ) -> None:
-        assert_static_situation(to_check)
-
-    def _extract_perception_graph(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
-    ) -> PerceptionGraph:
-        return PerceptionGraph.from_frame(perception.frames[0])
-
-    def _preprocess_scene_for_learning(
-        self, language_concept_alignment: LanguageAlignedPerception
-    ) -> LanguageAlignedPerception:
-        return evolve(
-            language_concept_alignment,
-            perception_graph=self._common_preprocessing(
-                language_concept_alignment.perception_graph
-            ),
-        )
-
-    def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph
-    ) -> PerceptionGraphFromObjectRecognizer:
-        return PerceptionGraphFromObjectRecognizer(
-            self._common_preprocessing(perception_graph),
-            description_to_matched_object_node=immutabledict(),
-        )
-
-    def _common_preprocessing(self, perception_graph: PerceptionGraph) -> PerceptionGraph:
-        return graph_without_learner(perception_graph)
-
-    def _extract_surface_template(
-        self,
-        language_concept_alignment: LanguageAlignedPerception,
-        language_mode: LanguageMode = LanguageMode.ENGLISH,
-    ) -> SurfaceTemplate:
-        return SurfaceTemplate(
-            language_concept_alignment.language.as_token_sequence(),
-            language_mode=self._language_mode,
-        )
-
-
-@attrs
-class ObjectPursuitLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner):
-    """
-    An implementation of pursuit learner for object recognition
-    """
-
-    def _candidate_hypotheses(
-        self, language_aligned_perception: LanguageAlignedPerception
-    ) -> Sequence[PerceptionGraphTemplate]:
-        """
-        Given a learning input, returns all possible meaning hypotheses.
-        """
-        return [
-            self._hypothesis_from_perception(object_)
-            for object_ in self._candidate_perceptions(
-                language_aligned_perception.perception_graph
-            )
-        ]
-
-    def get_objects_from_perception(
-        self, observed_perception_graph: PerceptionGraph
-    ) -> List[PerceptionGraph]:
-        perception_as_digraph = observed_perception_graph.copy_as_digraph()
-        perception_as_graph = perception_as_digraph.to_undirected()
-
-        meanings = []
-
-        # 1) Take all of the obj perc that dont have part of relationships with anything else
-        root_object_percetion_nodes = []
-        for node in perception_as_graph.nodes:
-            if isinstance(node, ObjectPerception) and node.debug_handle != "the ground":
-                if not any(
-                    [
-                        u == node and str(data["label"]) == "partOf"
-                        for u, v, data in perception_as_digraph.edges.data()
-                    ]
-                ):
-                    root_object_percetion_nodes.append(node)
-
-        # 2) for each of these, walk along the part of relationships backwards,
-        # i.e find all of the subparts of the root object
-        for root_object_perception_node in root_object_percetion_nodes:
-            # Iteratively get all other object perceptions that connect to a root with a part of
-            # relation
-            all_object_perception_nodes = [root_object_perception_node]
-            frontier = [root_object_perception_node]
-            updated = True
-            while updated:
-                updated = False
-                new_frontier = []
-                for frontier_node in frontier:
-                    for node in perception_as_graph.neighbors(frontier_node):
-                        edge_data = perception_as_digraph.get_edge_data(
-                            node, frontier_node, default=-1
-                        )
-                        if edge_data != -1 and str(edge_data["label"]) == "partOf":
-                            new_frontier.append(node)
-
-                if new_frontier:
-                    all_object_perception_nodes.extend(new_frontier)
-                    updated = True
-                    frontier = new_frontier
-
-            # Now we have a list of all perceptions that are connected
-            # 3) For each of these objects including root object, get axes, properties,
-            # and relations and regions which are between these internal object perceptions
-            other_nodes = []
-            for node in all_object_perception_nodes:
-                for neighbor in perception_as_graph.neighbors(node):
-                    # Filter out regions that don't have a reference in all object perception nodes
-                    # TODO: We currently remove colors to achieve a match - otherwise finding
-                    #  patterns fails.
-                    if (
-                        isinstance(neighbor, Region)
-                        and neighbor.reference_object not in all_object_perception_nodes
-                        or isinstance(neighbor, RgbColorPerception)
-                    ):
-                        continue
-                    # Append all other none-object nodes to be kept in the subgraph
-                    if not isinstance(neighbor, ObjectPerception):
-                        other_nodes.append(neighbor)
-
-            generated_subgraph = networkx_utils.subgraph(
-                perception_as_digraph, all_object_perception_nodes + other_nodes
-            )
-            meanings.append(PerceptionGraph(generated_subgraph))
-
-        logging.info(f"Got {len(meanings)} candidate meanings")
-        return meanings
-
-    def _hypothesis_from_perception(
-        self, perception: PerceptionGraph
-    ) -> PerceptionGraphTemplate:
-        return PerceptionGraphTemplate(
-            graph_pattern=PerceptionGraphPattern.from_graph(
-                perception
-            ).perception_graph_pattern
-        )
-
-    def _candidate_perceptions(self, observed_perception_graph) -> List[PerceptionGraph]:
-        return self.get_objects_from_perception(observed_perception_graph)
-
-    def _matches(
-        self,
-        *,
-        hypothesis: PerceptionGraphTemplate,
-        observed_perception_graph: PerceptionGraph,
-    ) -> bool:
-        matcher = hypothesis.graph_pattern.matcher(
-            observed_perception_graph, match_mode=MatchMode.OBJECT
-        )
-        return any(
-            matcher.matches(
-                use_lookahead_pruning=True, graph_logger=self._hypothesis_logger
-            )
-        )
-
-    @attrs(frozen=True)
-    class ObjectHypothesisPartialMatch(AbstractPursuitLearner.PartialMatch):
-        partial_match_hypothesis: Optional[PerceptionGraphTemplate] = attrib(
-            validator=optional(instance_of(PerceptionGraphTemplate))
-        )
-        num_nodes_matched: int = attrib(validator=instance_of(int), kw_only=True)
-        num_nodes_in_pattern: int = attrib(validator=instance_of(int), kw_only=True)
-
-        def matched_exactly(self) -> bool:
-            return self.num_nodes_matched == self.num_nodes_in_pattern
-
-        def match_score(self) -> float:
-            return self.num_nodes_matched / self.num_nodes_in_pattern
-
-    def _find_partial_match(
-        self, hypothesis: PerceptionGraphTemplate, graph: PerceptionGraph
-    ) -> "ObjectPursuitLearner.ObjectHypothesisPartialMatch":
-        pattern = hypothesis.graph_pattern
-        hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
-            pattern,
-            graph,
-            debug_callback=self._debug_callback,
-            graph_logger=self._hypothesis_logger,
-            ontology=self._ontology,
-            match_mode=MatchMode.OBJECT,
-        )
-        self.debug_counter += 1
-
-        leading_hypothesis_num_nodes = len(pattern)
-        num_nodes_matched = (
-            len(hypothesis_pattern_common_subgraph.copy_as_digraph().nodes)
-            if hypothesis_pattern_common_subgraph
-            else 0
-        )
-
-        return ObjectPursuitLearner.ObjectHypothesisPartialMatch(
-            PerceptionGraphTemplate(graph_pattern=hypothesis_pattern_common_subgraph)
-            if hypothesis_pattern_common_subgraph
-            else None,
-            num_nodes_matched=num_nodes_matched,
-            num_nodes_in_pattern=leading_hypothesis_num_nodes,
-        )
-
-    def _find_identical_hypothesis(
-        self,
-        new_hypothesis: PerceptionGraphTemplate,
-        candidates: Iterable[PerceptionGraphTemplate],
-    ) -> Optional[PerceptionGraphTemplate]:
-        for candidate in candidates:
-            if new_hypothesis.graph_pattern.check_isomorphism(candidate.graph_pattern):
-                return candidate
-        return None
-
-    def _are_isomorphic(
-        self, h: PerceptionGraphTemplate, hypothesis: PerceptionGraphTemplate
-    ) -> bool:
-        return h.graph_pattern.check_isomorphism(hypothesis.graph_pattern)
-
-    @staticmethod
-    def from_parameters(
-        params: Parameters, *, graph_logger: Optional[HypothesisLogger] = None
-    ) -> "ObjectPursuitLearner":  # type: ignore
-        log_word_hypotheses_dir = params.optional_creatable_directory(
-            "log_word_hypotheses_dir"
-        )
-        if log_word_hypotheses_dir:
-            logging.info("Hypotheses will be logged to %s", log_word_hypotheses_dir)
-
-        rng = Random()
-        rng.seed(params.optional_integer("random_seed", default=0))
-
-        return ObjectPursuitLearner(
-            learning_factor=params.floating_point("learning_factor"),
-            graph_match_confirmation_threshold=params.floating_point(
-                "graph_match_confirmation_threshold"
-            ),
-            lexicon_entry_threshold=params.floating_point("lexicon_entry_threshold"),
-            smoothing_parameter=params.floating_point("smoothing_parameter"),
-            hypothesis_logger=graph_logger,
-            log_learned_item_hypotheses_to=log_word_hypotheses_dir,
-            rng=rng,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            language_mode=params.enum(
-                "language_mode", LanguageMode, default=LanguageMode.ENGLISH
-            ),
-        )
-
-    def log_hypotheses(self, log_output_path: Path) -> None:
-        for (surface_template, hypothesis) in self._lexicon.items():
-            template_string = surface_template.to_short_string()
-            hypothesis.render_to_file(template_string, log_output_path / template_string)
-
-
-@attrs(slots=True)
-class SubsetObjectLearner(AbstractTemplateSubsetLearner, AbstractObjectTemplateLearner):
-    """
-    An implementation of `TopLevelLanguageLearner` for subset learning based approach for single object detection.
-    """
-
-    def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageAlignedPerception
-    ) -> PerceptionGraphTemplate:
-        new_hypothesis = PerceptionGraphPattern.from_graph(
-            preprocessed_input.perception_graph
-        ).perception_graph_pattern
-        return PerceptionGraphTemplate(
-            graph_pattern=new_hypothesis,
-            template_variable_to_pattern_node=immutabledict(),
-        )
-
-    def _update_hypothesis(
-        self,
-        previous_pattern_hypothesis: PerceptionGraphTemplate,
-        current_pattern_hypothesis: PerceptionGraphTemplate,
-    ) -> Optional[PerceptionGraphTemplate]:
-        return previous_pattern_hypothesis.intersection(
-            current_pattern_hypothesis,
-            ontology=self._ontology,
-            match_mode=MatchMode.OBJECT,
-            allowed_matches=immutablesetmultidict(
-                [
-                    (node2, node1)
-                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
-                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
-                    if previous_slot == new_slot
-                ]
-            ),
         )
 
 

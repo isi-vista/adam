@@ -30,7 +30,6 @@ from adam.learner.objects import (
     ProposeButVerifyObjectLearner,
     CrossSituationalObjectLearner,
 )
-from adam.learner.objects import SubsetObjectLearner
 from adam.ontology import OntologyNode, THING
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -61,12 +60,6 @@ from adam.situation.templates.phase1_templates import (
     object_variable,
     sampled,
 )
-
-
-def subset_object_learner_factory(language_mode: LanguageMode):
-    return SubsetObjectLearner(
-        ontology=GAILA_PHASE_1_ONTOLOGY, language_mode=language_mode
-    )
 
 
 def integrated_learner_factory(language_mode: LanguageMode):
@@ -180,10 +173,6 @@ def run_subset_learner_for_object(
 @pytest.mark.parametrize(
     "learner",
     [
-        pytest.param(
-            subset_object_learner_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
         integrated_learner_factory,
         integrated_learner_pv_factory,
         integrated_learner_cs_factory,

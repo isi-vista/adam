@@ -2,54 +2,30 @@ from abc import ABC
 
 import logging
 
-# from itertools import chain
 from pathlib import Path
-from typing import AbstractSet, Union, Optional, Tuple, Iterable, Sequence, Mapping
+from typing import AbstractSet, Optional, Tuple, Iterable, Sequence, Mapping
 
-# from more_itertools import powerset
-from adam.language import LinguisticDescription
 from adam.language_specific.english import ENGLISH_DETERMINERS
-from adam.learner import LearningExample, get_largest_matching_pattern
-from adam.learner.language_mode import LanguageMode
+from adam.learner import get_largest_matching_pattern
 from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
 from adam.learner.learner_utils import (
-    assert_static_situation,
     pattern_remove_incomplete_region_or_spatial_path,
     covers_entire_utterance,
 )
-from adam.learner.object_recognizer import (
-    ObjectRecognizer,
-    PerceptionGraphFromObjectRecognizer,
-)
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.pursuit import AbstractPursuitLearnerNew
-from adam.learner.subset import (
-    AbstractTemplateSubsetLearner,
-    AbstractTemplateSubsetLearnerNew,
-)
-from adam.learner.surface_templates import (
-    SLOT1,
-    STANDARD_SLOT_VARIABLES,
-    SurfaceTemplate,
-    SurfaceTemplateBoundToSemanticNodes,
-)
-from adam.learner.template_learner import (
-    AbstractTemplateLearner,
-    AbstractTemplateLearnerNew,
-)
-from adam.perception import PerceptualRepresentation, MatchMode
-from adam.perception.deprecated import LanguageAlignedPerception
-from adam.perception.developmental_primitive_perception import (
-    DevelopmentalPrimitivePerceptionFrame,
-)
+from adam.learner.subset import AbstractTemplateSubsetLearnerNew
+from adam.learner.surface_templates import SLOT1, SurfaceTemplateBoundToSemanticNodes
+from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.perception import MatchMode
 from adam.perception.perception_graph import PerceptionGraph, HAS_PROPERTY_LABEL
 from adam.semantics import AttributeConcept, ObjectSemanticNode, SemanticNode
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-from immutablecollections import immutabledict, immutableset, immutablesetmultidict
+from immutablecollections import immutableset, immutablesetmultidict
 from vistautils.span import Span
 from adam.learner.learner_utils import SyntaxSemanticsVariable
 
@@ -141,102 +117,6 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
         immutable_new_nodes: AbstractSet[SemanticNode],
     ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
         return perception_graph_after_matching, immutable_new_nodes
-
-
-@attrs
-class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
-    # mypy doesn't realize that fields without defaults can come after those with defaults
-    # if they are keyword-only.
-    _object_recognizer: ObjectRecognizer = attrib(  # type: ignore
-        validator=instance_of(ObjectRecognizer), kw_only=True
-    )
-
-    def _assert_valid_input(
-        self,
-        to_check: Union[
-            PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame],
-            LearningExample[DevelopmentalPrimitivePerceptionFrame, LinguisticDescription],
-        ],
-    ) -> None:
-        assert_static_situation(to_check)
-
-    def _extract_perception_graph(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
-    ) -> PerceptionGraph:
-        return PerceptionGraph.from_frame(perception.frames[0])
-
-    def _preprocess_scene_for_learning(
-        self, language_concept_alignment: LanguageAlignedPerception
-    ) -> LanguageAlignedPerception:
-        post_recognition_object_perception_alignment = self._object_recognizer.match_objects_with_language_old(
-            language_concept_alignment
-        )
-        return post_recognition_object_perception_alignment
-
-    def _preprocess_scene_for_description(
-        self, perception_graph: PerceptionGraph
-    ) -> PerceptionGraphFromObjectRecognizer:
-        return self._object_recognizer.match_objects_old(perception_graph)
-
-    def _extract_surface_template(
-        self,
-        language_concept_alignment: LanguageAlignedPerception,
-        language_mode: LanguageMode = LanguageMode.ENGLISH,
-    ) -> SurfaceTemplate:
-        if len(language_concept_alignment.aligned_nodes) > 1:
-            raise RuntimeError("Input has too many aligned nodes for us to handle.")
-
-        return language_concept_alignment.to_surface_template(
-            object_node_to_template_variable=immutabledict(
-                zip(language_concept_alignment.aligned_nodes, STANDARD_SLOT_VARIABLES)
-            ),
-            # This is a hack to handle determiners.
-            # For attributes at the moment we learn the determiner together with the
-            # attribute, which is not ideal.
-            determiner_prefix_slots=immutableset(),
-        )
-
-
-@attrs
-class SubsetAttributeLearner(
-    AbstractTemplateSubsetLearner, AbstractAttributeTemplateLearner
-):
-    def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageAlignedPerception
-    ) -> PerceptionGraphTemplate:
-        num_nodes_aligned_to_language = len(preprocessed_input.aligned_nodes)
-        if num_nodes_aligned_to_language != 1:
-            raise RuntimeError(
-                f"Attribute learner can work only with a single aligned node,"
-                f"but got {num_nodes_aligned_to_language}. Language is "
-                f"{preprocessed_input.language.as_token_string()}"
-            )
-
-        return PerceptionGraphTemplate.from_graph(
-            preprocessed_input.perception_graph,
-            template_variable_to_matched_object_node=immutabledict(
-                zip(STANDARD_SLOT_VARIABLES, preprocessed_input.aligned_nodes)
-            ),
-        )
-
-    def _update_hypothesis(
-        self,
-        previous_pattern_hypothesis: PerceptionGraphTemplate,
-        current_pattern_hypothesis: PerceptionGraphTemplate,
-    ) -> Optional[PerceptionGraphTemplate]:
-        return previous_pattern_hypothesis.intersection(
-            current_pattern_hypothesis,
-            ontology=self._ontology,
-            match_mode=MatchMode.NON_OBJECT,
-            allowed_matches=immutablesetmultidict(
-                [
-                    (node2, node1)
-                    for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
-                    for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
-                    if previous_slot == new_slot
-                ]
-            ),
-        )
 
 
 @attrs
