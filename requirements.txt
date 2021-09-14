@@ -30,5 +30,5 @@ towncrier
 sphinx==2.1.2
 sphinx-autodoc-typehints==1.8.0
 sphinx_rtd_theme
-git+https://github.com/isi-vista/saga-tools.git@master#egg=saga-tools to requirements.txt
+git+https://github.com/isi-vista/saga-tools.git@master#egg=saga-tools
 
