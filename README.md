@@ -59,6 +59,15 @@ Run `adam.curriculum_to_html /full/path/to/parameters/html/curriculum_to_html.ph
 
 Run `adam.experiment.run_m9  /full/path/to/parameters/experiment/m9/m9.params`
 
+# To Run the angular viewer application
+
+The angular application is located under `/angular-viewer/adam-angular-demo`
+Navigate to the directory above and serve the application locally on port 4200:
+
+```
+ng serve --open
+```
+
 # Languages
 Currently, our curriculum dump and learner run in English by default, but they are also runnable in Chinese. 
 Our Chinese implementation uses Yale romanization to maintain UTF-8 encoding, but this can easily be [converted to the more common
