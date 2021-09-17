@@ -7,7 +7,7 @@ from adam.language.language_utils import phase2_language_generator
 from adam.learner import LanguageMode, LearningExample
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.verbs import SubsetVerbLearnerNew
+from adam.learner.verbs import SubsetVerbLearner
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 
@@ -15,7 +15,7 @@ from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
-        action_learner=SubsetVerbLearnerNew(
+        action_learner=SubsetVerbLearner(
             ontology=GAILA_PHASE_2_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
         functional_learner=FunctionalLearner(language_mode=language_mode),

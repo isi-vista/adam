@@ -14,7 +14,7 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.ontology.ontology import Ontology
 from adam.perception import MatchMode
 from adam.perception.perception_graph import (
@@ -27,7 +27,7 @@ from adam.semantics import Concept, SemanticNode
 
 
 @attrs
-class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
     _beam_size: int = attrib(validator=instance_of(int), kw_only=True)
     _concept_to_hypotheses: Dict[Concept, ImmutableSet[PerceptionGraphTemplate]] = attrib(
         init=False, default=Factory(dict)
@@ -256,9 +256,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
         return {k: v.graph_pattern for k, v, _ in self._primary_templates()}
 
 
-class AbstractTemplateSubsetLearnerNew(
-    AbstractSubsetLearnerNew, AbstractTemplateLearnerNew, ABC
-):
+class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearner, ABC):
     # pylint:disable=abstract-method
     def log_hypotheses(self, log_output_path: Path) -> None:
         logging.info(

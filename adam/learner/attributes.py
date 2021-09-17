@@ -16,10 +16,10 @@ from adam.learner.learner_utils import (
     covers_entire_utterance,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.pursuit import AbstractPursuitLearnerNew
-from adam.learner.subset import AbstractTemplateSubsetLearnerNew
+from adam.learner.pursuit import AbstractPursuitLearner
+from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SLOT1, SurfaceTemplateBoundToSemanticNodes
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.perception import MatchMode
 from adam.perception.perception_graph import PerceptionGraph, HAS_PROPERTY_LABEL
 from adam.semantics import AttributeConcept, ObjectSemanticNode, SemanticNode
@@ -31,7 +31,7 @@ from adam.learner.learner_utils import SyntaxSemanticsVariable
 
 
 @attrs
-class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractAttributeTemplateLearner(AbstractTemplateLearner, ABC):
     # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -120,8 +120,8 @@ class AbstractAttributeTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
 
 @attrs
-class SubsetAttributeLearnerNew(
-    AbstractTemplateSubsetLearnerNew, AbstractAttributeTemplateLearnerNew
+class SubsetAttributeLearner(
+    AbstractTemplateSubsetLearner, AbstractAttributeTemplateLearner
 ):
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -192,9 +192,7 @@ class SubsetAttributeLearnerNew(
 
 
 @attrs
-class PursuitAttributeLearnerNew(
-    AbstractPursuitLearnerNew, AbstractAttributeTemplateLearnerNew
-):
+class PursuitAttributeLearner(AbstractPursuitLearner, AbstractAttributeTemplateLearner):
     def _find_identical_hypothesis(
         self,
         new_hypothesis: PerceptionGraphTemplate,
@@ -206,7 +204,7 @@ class PursuitAttributeLearnerNew(
         return None
 
     @attrs(frozen=True)
-    class AttributeHypothesisPartialMatch(AbstractPursuitLearnerNew.PartialMatch):
+    class AttributeHypothesisPartialMatch(AbstractPursuitLearner.PartialMatch):
         partial_match_hypothesis: Optional[PerceptionGraphTemplate] = attrib(
             validator=optional(instance_of(PerceptionGraphTemplate))
         )
@@ -225,7 +223,7 @@ class PursuitAttributeLearnerNew(
         graph: PerceptionGraph,
         *,
         required_alignments: Mapping[SyntaxSemanticsVariable, ObjectSemanticNode],
-    ) -> "AbstractPursuitLearnerNew.PartialMatch":
+    ) -> "AbstractPursuitLearner.PartialMatch":
         pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
@@ -259,7 +257,7 @@ class PursuitAttributeLearnerNew(
         else:
             partial_hypothesis = None
 
-        return PursuitAttributeLearnerNew.AttributeHypothesisPartialMatch(
+        return PursuitAttributeLearner.AttributeHypothesisPartialMatch(
             partial_hypothesis,
             num_nodes_matched=num_nodes_matched,
             num_nodes_in_pattern=leading_hypothesis_num_nodes,

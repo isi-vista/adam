@@ -40,13 +40,13 @@ from adam.learner.object_recognizer import (
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.propose_but_verify import AbstractProposeButVerifyLearner
-from adam.learner.pursuit import AbstractPursuitLearnerNew
-from adam.learner.subset import AbstractTemplateSubsetLearnerNew
+from adam.learner.pursuit import AbstractPursuitLearner
+from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.learner.template_learner import AbstractTemplateLearnerNew, TemplateLearner
+from adam.learner.template_learner import AbstractTemplateLearner, TemplateLearner
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.perception import ObjectPerception, MatchMode
@@ -69,7 +69,7 @@ from adam.semantics import (
 from adam.utils.networkx_utils import subgraph
 
 
-class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
+class AbstractObjectTemplateLearner(AbstractTemplateLearner):
     # pylint:disable=abstract-method
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -169,9 +169,7 @@ class AbstractObjectTemplateLearnerNew(AbstractTemplateLearnerNew):
 
 
 @attrs(slots=True)
-class SubsetObjectLearnerNew(
-    AbstractObjectTemplateLearnerNew, AbstractTemplateSubsetLearnerNew
-):
+class SubsetObjectLearner(AbstractObjectTemplateLearner, AbstractTemplateSubsetLearner):
     """
     An implementation of `TopLevelLanguageLearner` for subset learning based approach for single object detection.
     """
@@ -257,7 +255,7 @@ class SubsetObjectLearnerNew(
 
 @attrs(slots=True)
 class ProposeButVerifyObjectLearner(
-    AbstractObjectTemplateLearnerNew, AbstractProposeButVerifyLearner
+    AbstractObjectTemplateLearner, AbstractProposeButVerifyLearner
 ):
     """
     An implementation of `TopLevelLanguageLearner` for Propose but Verify learning based approach for single object detection.
@@ -330,7 +328,7 @@ class ProposeButVerifyObjectLearner(
 
 @attrs(slots=True)
 class CrossSituationalObjectLearner(
-    AbstractCrossSituationalLearner, AbstractObjectTemplateLearnerNew
+    AbstractCrossSituationalLearner, AbstractObjectTemplateLearner
 ):
     """
     An implementation of `TopLevelLanguageLearner` for Cross Situational learning based approach for single object detection.
@@ -542,9 +540,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
 
 
 @attrs
-class PursuitObjectLearnerNew(
-    AbstractPursuitLearnerNew, AbstractObjectTemplateLearnerNew
-):
+class PursuitObjectLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner):
     """
     An implementation of pursuit learner for object recognition
     """
@@ -591,7 +587,7 @@ class PursuitObjectLearnerNew(
         return True
 
     @attrs(frozen=True)
-    class ObjectHypothesisPartialMatch(AbstractPursuitLearnerNew.PartialMatch):
+    class ObjectHypothesisPartialMatch(AbstractPursuitLearner.PartialMatch):
         partial_match_hypothesis: Optional[PerceptionGraphTemplate] = attrib(
             validator=optional(instance_of(PerceptionGraphTemplate))
         )
@@ -612,7 +608,7 @@ class PursuitObjectLearnerNew(
         required_alignments: Mapping[
             SyntaxSemanticsVariable, ObjectSemanticNode
         ],  # pylint:disable=unused-argument
-    ) -> "PursuitObjectLearnerNew.ObjectHypothesisPartialMatch":
+    ) -> "PursuitObjectLearner.ObjectHypothesisPartialMatch":
         pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
@@ -631,7 +627,7 @@ class PursuitObjectLearnerNew(
             else 0
         )
 
-        return PursuitObjectLearnerNew.ObjectHypothesisPartialMatch(
+        return PursuitObjectLearner.ObjectHypothesisPartialMatch(
             PerceptionGraphTemplate(graph_pattern=hypothesis_pattern_common_subgraph)
             if hypothesis_pattern_common_subgraph
             else None,

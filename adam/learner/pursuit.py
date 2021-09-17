@@ -27,7 +27,7 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.ontology.ontology import Ontology
 from adam.perception.perception_graph import (
     DebugCallableType,
@@ -73,7 +73,7 @@ class HypothesisLogger(GraphLogger):
 
 
 @attrs
-class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
     """
     An implementation of `TemplateLearnerNew` for pursuit learning as a base for different pursuit based
     learners. Paper on Pursuit Learning Algorithm: https://www.ling.upenn.edu/~ycharles/papers/pursuit-final.pdf
@@ -656,7 +656,7 @@ class AbstractPursuitLearnerNew(AbstractTemplateLearnerNew, ABC):
         graph: PerceptionGraph,
         *,
         required_alignments: Mapping[SyntaxSemanticsVariable, ObjectSemanticNode],
-    ) -> "AbstractPursuitLearnerNew.PartialMatch":
+    ) -> "AbstractPursuitLearner.PartialMatch":
         """
         Compute the degree to which a meaning matches a perception.
         The resulting score should be between 0.0 (no match) and 1.0 (a perfect match)

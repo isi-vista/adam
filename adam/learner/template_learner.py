@@ -49,7 +49,7 @@ class TemplateLearner(ComposableLearner, ABC):
 
 
 @attrs
-class AbstractTemplateLearnerNew(TemplateLearner, ABC):
+class AbstractTemplateLearner(TemplateLearner, ABC):
     """
     Super-class for learners using template-based syntax-semantics mappings.
     """

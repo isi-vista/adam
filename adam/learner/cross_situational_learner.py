@@ -22,7 +22,7 @@ from adam.perception import MatchMode
 from adam.semantics import Concept, SemanticNode
 from vistautils.range import Range
 
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractTemplateLearner
 
 
 # Cross Situational Learner was originally implemented by Justin Martine on branch
@@ -39,7 +39,7 @@ from adam.perception.perception_graph import (
 
 
 @attrs
-class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
+class AbstractCrossSituationalLearner(AbstractTemplateLearner, ABC):
     """
     An Abstract Implementation of the Cross Situation Learning Model
 

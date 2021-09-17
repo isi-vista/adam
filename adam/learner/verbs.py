@@ -7,9 +7,9 @@ from adam.learner.alignments import (
     PerceptionSemanticAlignment,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.subset import AbstractTemplateSubsetLearnerNew
+from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.perception import MatchMode
 from adam.perception.perception_graph import PerceptionGraph
 from adam.semantics import ActionConcept, SemanticNode
@@ -23,7 +23,7 @@ _MAXIMUM_ACTION_TEMPLATE_TOKEN_LENGTH = 3
 
 
 @attrs
-class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
     # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -97,9 +97,7 @@ class AbstractVerbTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
 
 @attrs
-class SubsetVerbLearnerNew(
-    AbstractTemplateSubsetLearnerNew, AbstractVerbTemplateLearnerNew
-):
+class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearner):
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> bool:
