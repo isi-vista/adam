@@ -25,12 +25,11 @@ from adam.learner.alignments import LanguageConceptAlignment
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import (
-    PursuitObjectLearnerNew,
-    SubsetObjectLearnerNew,
+    PursuitObjectLearner,
+    SubsetObjectLearner,
     ProposeButVerifyObjectLearner,
     CrossSituationalObjectLearner,
 )
-from adam.learner.objects import SubsetObjectLearner
 from adam.ontology import OntologyNode, THING
 from adam.ontology.phase1_ontology import (
     BALL,
@@ -63,15 +62,9 @@ from adam.situation.templates.phase1_templates import (
 )
 
 
-def subset_object_learner_factory(language_mode: LanguageMode):
-    return SubsetObjectLearner(
-        ontology=GAILA_PHASE_1_ONTOLOGY, language_mode=language_mode
-    )
-
-
 def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
-        object_learner=SubsetObjectLearnerNew(
+        object_learner=SubsetObjectLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=10, language_mode=language_mode
         )
     )
@@ -180,10 +173,6 @@ def run_subset_learner_for_object(
 @pytest.mark.parametrize(
     "learner",
     [
-        pytest.param(
-            subset_object_learner_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
         integrated_learner_factory,
         integrated_learner_pv_factory,
         integrated_learner_cs_factory,
@@ -252,7 +241,7 @@ def test_subset_learner_subobject():
         always_relations=flatten_relations(negate(on(house, ground))),
     )
 
-    object_learner = SubsetObjectLearnerNew(
+    object_learner = SubsetObjectLearner(
         ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=LanguageMode.ENGLISH
     )
 
@@ -358,7 +347,7 @@ def test_pursuit_object_learner(language_mode):
     rng = random.Random()
     rng.seed(0)
     learner = IntegratedTemplateLearner(
-        object_learner=PursuitObjectLearnerNew(
+        object_learner=PursuitObjectLearner(
             learning_factor=0.05,
             graph_match_confirmation_threshold=0.7,
             lexicon_entry_threshold=0.7,
@@ -451,7 +440,7 @@ def test_pursuit_object_learner_with_gaze(language_mode):
     rng = random.Random()
     rng.seed(0)
     learner = IntegratedTemplateLearner(
-        object_learner=PursuitObjectLearnerNew(
+        object_learner=PursuitObjectLearner(
             learning_factor=0.05,
             graph_match_confirmation_threshold=0.7,
             lexicon_entry_threshold=0.7,

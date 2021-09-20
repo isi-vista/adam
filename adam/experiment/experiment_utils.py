@@ -1,19 +1,19 @@
 import logging
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import LanguageMode
-from adam.learner.attributes import SubsetAttributeLearnerNew, PursuitAttributeLearnerNew
+from adam.learner.attributes import SubsetAttributeLearner, PursuitAttributeLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.objects import (
-    SubsetObjectLearnerNew,
+    SubsetObjectLearner,
     ProposeButVerifyObjectLearner,
-    PursuitObjectLearnerNew,
+    PursuitObjectLearner,
     ObjectRecognizerAsTemplateLearner,
     CrossSituationalObjectLearner,
 )
-from adam.learner.plurals import SubsetPluralLearnerNew
-from adam.learner.relations import SubsetRelationLearnerNew, PursuitRelationLearnerNew
+from adam.learner.plurals import SubsetPluralLearner
+from adam.learner.relations import SubsetRelationLearner, PursuitRelationLearner
 from adam.learner.template_learner import TemplateLearner
-from adam.learner.verbs import SubsetVerbLearnerNew
+from adam.learner.verbs import SubsetVerbLearner
 from adam.ontology.integrated_learner_experiement_ontology import (
     INTEGRATED_EXPERIMENT_ONTOLOGY,
     INTEGRATED_EXPERIMENT_CURRICULUM_OBJECTS,
@@ -181,7 +181,7 @@ def build_object_learner_factory(
     ]
 
     if learner_type == "subset":
-        return SubsetObjectLearnerNew(
+        return SubsetObjectLearner(
             ontology=ontology, beam_size=beam_size, language_mode=language_mode
         )
     elif learner_type == "pbv":
@@ -210,7 +210,7 @@ def build_object_learner_factory(
     elif learner_type == "pursuit":
         rng = random.Random()
         rng.seed(params.integer("random_seed", default=0))
-        return PursuitObjectLearnerNew(
+        return PursuitObjectLearner(
             learning_factor=params.floating_point("learning_factor"),
             graph_match_confirmation_threshold=params.floating_point(
                 "graph_match_confirmation_threshold"
@@ -249,13 +249,13 @@ def build_attribute_learner_factory(
     ]
 
     if learner_type == "subset":
-        return SubsetAttributeLearnerNew(
+        return SubsetAttributeLearner(
             ontology=ontology, beam_size=beam_size, language_mode=language_mode
         )
     elif learner_type == "pursuit":
         rng = random.Random()
         rng.seed(params.integer("random_seed", default=0))
-        return PursuitAttributeLearnerNew(
+        return PursuitAttributeLearner(
             learning_factor=params.floating_point("learning_factor"),
             graph_match_confirmation_threshold=params.floating_point(
                 "graph_match_confirmation_threshold"
@@ -286,13 +286,13 @@ def build_relation_learner_factory(
     ]
 
     if learner_type == "subset":
-        return SubsetRelationLearnerNew(
+        return SubsetRelationLearner(
             ontology=ontology, beam_size=beam_size, language_mode=language_mode
         )
     elif learner_type == "pursuit":
         rng = random.Random()
         rng.seed(params.integer("random_seed", default=0))
-        return PursuitRelationLearnerNew(
+        return PursuitRelationLearner(
             learning_factor=params.floating_point("learning_factor"),
             graph_match_confirmation_threshold=params.floating_point(
                 "graph_match_confirmation_threshold"
@@ -323,7 +323,7 @@ def build_action_learner_factory(
     ]
 
     if learner_type == "subset":
-        return SubsetVerbLearnerNew(
+        return SubsetVerbLearner(
             ontology=ontology, beam_size=beam_size, language_mode=language_mode
         )
     elif learner_type == "none":
@@ -346,7 +346,7 @@ def build_plural_learner_factory(
     ]
 
     if learner_type == "subset":
-        return SubsetPluralLearnerNew(
+        return SubsetPluralLearner(
             ontology=ontology, beam_size=beam_size, language_mode=language_mode
         )
     elif learner_type == "none":

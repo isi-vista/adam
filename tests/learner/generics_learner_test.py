@@ -14,12 +14,12 @@ from adam.curriculum.phase1_curriculum import (
 )
 from adam.language.language_utils import phase2_language_generator
 from adam.learner import LearningExample
-from adam.learner.attributes import SubsetAttributeLearnerNew
+from adam.learner.attributes import SubsetAttributeLearner
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.plurals import SubsetPluralLearnerNew
-from adam.learner.verbs import SubsetVerbLearnerNew
+from adam.learner.plurals import SubsetPluralLearner
+from adam.learner.verbs import SubsetVerbLearner
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
@@ -38,13 +38,13 @@ def integrated_learner_factory(language_mode: LanguageMode):
     rng.seed(0)
     return IntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
-        attribute_learner=SubsetAttributeLearnerNew(
+        attribute_learner=SubsetAttributeLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
-        plural_learner=SubsetPluralLearnerNew(
+        plural_learner=SubsetPluralLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
-        action_learner=SubsetVerbLearnerNew(
+        action_learner=SubsetVerbLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
         generics_learner=SimpleGenericsLearner(),

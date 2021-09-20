@@ -17,9 +17,9 @@ from adam.learner.learner_utils import (
     pattern_remove_incomplete_region_or_spatial_path,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.subset import AbstractTemplateSubsetLearnerNew
+from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import SurfaceTemplateBoundToSemanticNodes
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.ontology.phase2_ontology import TWO, HAS_COUNT, MANY
 from adam.perception import MatchMode
 from adam.perception.perception_graph import PerceptionGraph
@@ -29,7 +29,7 @@ _MAXIMUM_PLURAL_TEMPLATE_TOKEN_LENGTH = 5
 
 
 @attrs
-class AbstractPluralTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractPluralTemplateLearner(AbstractTemplateLearner, ABC):
     # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -67,9 +67,7 @@ class AbstractPluralTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
 
 @attrs
-class SubsetPluralLearnerNew(
-    AbstractTemplateSubsetLearnerNew, AbstractPluralTemplateLearnerNew
-):
+class SubsetPluralLearner(AbstractTemplateSubsetLearner, AbstractPluralTemplateLearner):
     potential_plural_markers: typing.Counter[str] = attrib(
         init=False, default=collections.Counter()
     )

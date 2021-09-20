@@ -16,7 +16,7 @@ from adam.learner import (
 )
 from adam.learner.learner_utils import compute_match_ratio, pattern_match_to_semantic_node
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.ontology.ontology import Ontology
 from adam.perception import MatchMode
 from adam.perception.perception_graph import (
@@ -34,7 +34,7 @@ from adam.semantics import Concept, SemanticNode
 # and was adapted by Jacob Lichtefeld into the new style learner. Due to the age of the branch
 # at time of writing it was simplier to start a new branch than rebase
 @attrs
-class AbstractProposeButVerifyLearner(AbstractTemplateLearnerNew, ABC):
+class AbstractProposeButVerifyLearner(AbstractTemplateLearner, ABC):
     """
     An Abstract Implementation of the Propose but Verify Learning Model
 

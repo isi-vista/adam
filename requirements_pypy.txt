@@ -1,5 +1,5 @@
 # core requirements
--e git://github.com/python-attrs/attrs.git#egg=attrs
+attrs==21.2.0
 vistautils==0.24.0
 immutablecollections==0.12.0
 networkx==2.3

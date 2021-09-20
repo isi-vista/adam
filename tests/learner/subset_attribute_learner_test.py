@@ -16,7 +16,7 @@ from adam.curriculum.phase1_curriculum import (
 from adam.language.language_utils import phase1_language_generator
 from adam.language_specific.english.english_language_generator import IGNORE_HAS_AS_VERB
 from adam.learner import LearningExample
-from adam.learner.attributes import SubsetAttributeLearner, SubsetAttributeLearnerNew
+from adam.learner.attributes import SubsetAttributeLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
@@ -44,18 +44,10 @@ from tests.learner import (
 )
 
 
-def subset_attribute_leaner_factory(language_mode: LanguageMode):
-    return SubsetAttributeLearner(
-        object_recognizer=LANGUAGE_MODE_TO_OBJECT_RECOGNIZER[language_mode],
-        ontology=GAILA_PHASE_1_ONTOLOGY,
-        language_mode=language_mode,
-    )
-
-
 def integrated_learner_factory(language_mode: LanguageMode):
     return IntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
-        attribute_learner=SubsetAttributeLearnerNew(
+        attribute_learner=SubsetAttributeLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
     )
@@ -75,16 +67,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
     ],
 )
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_attribute_leaner_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_subset_color_attribute(
     color_node, object_0_node, object_1_node, language_mode, learner
 ):
@@ -162,16 +145,7 @@ def test_subset_color_attribute(
 # hack: wo de and ni de are currently considered to be one word. This won't work for third person possession
 # TODO: Fix this learning test. See: https://github.com/isi-vista/adam/issues/861
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_attribute_leaner_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_subset_my_attribute_learner_integrated(language_mode, learner):
     inanimate_object = standard_object(
         "object", INANIMATE_OBJECT, required_properties=[PERSON_CAN_HAVE]
@@ -244,16 +218,7 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-@pytest.mark.parametrize(
-    "learner",
-    [
-        pytest.param(
-            subset_attribute_leaner_factory,
-            marks=pytest.mark.skip("No Longer Need to Test Old Learners"),
-        ),
-        integrated_learner_factory,
-    ],
-)
+@pytest.mark.parametrize("learner", [integrated_learner_factory])
 def test_your_attribute_learner(language_mode, learner):
     person_0 = standard_object(
         "speaker",

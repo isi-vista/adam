@@ -30,7 +30,7 @@ from adam.learner.alignments import (
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
-from adam.learner.attributes import SubsetAttributeLearnerNew
+from adam.learner.attributes import SubsetAttributeLearner
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.language_mode import LanguageMode
@@ -38,7 +38,7 @@ from adam.learner.learner_utils import (
     get_classifier_for_string,
     get_slot_from_semantic_node,
 )
-from adam.learner.plurals import SubsetPluralLearnerNew
+from adam.learner.plurals import SubsetPluralLearner
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
 from adam.ontology.phase1_ontology import PART_OF
@@ -68,7 +68,7 @@ from adam.semantics import (
 )
 
 
-class LanguageLearnerNew:
+class LanguageLearner:
     def observe(
         self,
         learning_example: LearningExample[
@@ -224,7 +224,7 @@ class IntegratedTemplateLearner(
                 desc.as_token_sequence() for desc in descs
             ]:
                 # Pass plural markers to generics before learning from a statement
-                if isinstance(self.plural_learner, SubsetPluralLearnerNew):
+                if isinstance(self.plural_learner, SubsetPluralLearner):
                     self.generics_learner.plural_markers = list(  # pylint: disable=assigning-non-slot
                         self.plural_learner.potential_plural_markers.keys()
                     )
@@ -516,7 +516,7 @@ class IntegratedTemplateLearner(
     def learned_attribute_tokens(self) -> List[str]:
         attribute_tokens = []
         if self.attribute_learner and isinstance(
-            self.attribute_learner, SubsetAttributeLearnerNew
+            self.attribute_learner, SubsetAttributeLearner
         ):
             for template in self.attribute_learner.surface_template_to_concept.keys():
                 for element in template.elements:
