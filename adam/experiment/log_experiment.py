@@ -36,9 +36,7 @@ from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
 from adam.experiment import Experiment, execute_experiment
-from adam.experiment.curriculum_repository import (
-    read_p3_experiment_curriculum,
-)
+from adam.experiment.curriculum_repository import read_p3_experiment_curriculum
 from adam.experiment.experiment_utils import (
     build_each_object_by_itself_curriculum_train,
     build_each_object_by_itself_curriculum_test,
