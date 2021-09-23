@@ -17,12 +17,6 @@ import adam.experiment.log_experiment as log_experiment_script
 from adam.experiment.log_experiment import log_experiment_entry_point
 
 
-def read_p3_curriculum(repository: Path):
-    # TODO: load a list of perception language pairs
-    ExplicitWithoutSituationInstanceGroup
-    return []
-
-
 def main(params: Parameters):
     adam_root = params.existing_directory("adam_root")
     p3_experiments_dir = adam_root / "parameters" / "experiments" / "p3"

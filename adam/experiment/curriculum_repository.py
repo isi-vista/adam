@@ -11,13 +11,12 @@ include all parameters other than the ones that have been specifically ignored. 
 additional ignored parameters as appropriate. Unrecognized parameters are an error.
 """
 import os
-from typing import Tuple, AbstractSet, List
-from pathlib import Path
 import pickle
+from pathlib import Path
+from typing import Tuple, AbstractSet
 
 import yaml
 from attr import attrs, attrib
-
 from immutablecollections import immutableset, ImmutableSet
 from immutablecollections.converter_utils import _to_tuple
 from vistautils.parameters import Parameters
@@ -28,7 +27,6 @@ from adam.language import TokenSequenceLinguisticDescription
 from adam.learner.language_mode import LanguageMode, LANGUAGE_MODE_TO_NAME
 from adam.perception import PerceptualRepresentation, VisualPerceptionFrame
 from adam.pickle import AdamPickler, AdamUnpickler
-
 
 _PARAMETER_ORDER: ImmutableSet[str] = immutableset(
     [
@@ -164,27 +162,48 @@ def _build_curriculum_path(
     return curriculum_file_path / _EXPERIMENT_CURRICULUM_FILE_NAME
 
 
-def read_p3_experiment_curriculum(repository: Path, parameters: Parameters) -> ExperimentCurriculum:
+def read_p3_experiment_curriculum(
+    repository: Path, parameters: Parameters
+) -> ExperimentCurriculum:
     # List of tuples of LinguisticDescription and Perception
     all_instances = []
     # Load yaml and jsons in directory
-    for situation_dir in [dir for dir in sorted(os.listdir(repository)) if 'situation' in dir]:
+    for situation_dir in [
+        dir for dir in sorted(os.listdir(repository)) if "situation" in dir
+    ]:
         perception_frames = []
-        for perception_file in [dir for dir in sorted(os.listdir(repository / situation_dir)) if 'perception' in dir]:
-            with open(repository / situation_dir / + perception_file) as perception_file:
+        # Load perception file
+        for perception_dir in [
+            dir
+            for dir in sorted(os.listdir(repository / situation_dir))
+            if "perception" in dir
+        ]:
+            with open(
+                repository / situation_dir / perception_dir, "r"
+            ) as perception_file:
                 perception_yaml = yaml.load(perception_file)
                 perception_frames.append(VisualPerceptionFrame(perception_yaml))
-        with open(repository / situation_dir / 'description.yaml') as description_file:
+        # Load description file
+        with open(
+            repository / situation_dir / "description.yaml", "r"
+        ) as description_file:
             description_yaml = yaml.load(description_file)
-            utterance = description_yaml['language']
+            utterance = description_yaml["language"]
 
         linguistic_description = TokenSequenceLinguisticDescription(utterance.split())
         perceptual_representation = PerceptualRepresentation(perception_frames)
         all_instances.append((linguistic_description, perceptual_representation))
-    # 3) Convert them to InstanceGroups
-    train_curriculum = tuple([ExplicitWithoutSituationInstanceGroup(parameters.string("experiment"), tuple(all_instances))])
-    test_curriculum = tuple()
+    # Convert them to InstanceGroups
+    train_curriculum: Tuple[Phase1InstanceGroup, ...] = tuple(
+        [
+            ExplicitWithoutSituationInstanceGroup(
+                parameters.string("experiment"), tuple(all_instances)
+            )
+        ]
+    )
+    test_curriculum: Tuple[Phase1InstanceGroup, ...] = tuple()
     return ExperimentCurriculum(train_curriculum, test_curriculum)
+
 
 def read_experiment_curriculum(
     repository: Path,
