@@ -1,0 +1,15 @@
+scene_num: 1
+output_language:
+  - text: "a table"
+    confidence: 0.9
+    features:
+      - name: arbitrary_feature_description
+      - name: feature_2
+      - name: feature_3
+    sub_objects:
+      -  text: "" # If known, e.g. "leg"
+         confidence: 0.3
+         features:
+           - name: feature_4
+           - name: feature_2
+#      - ...
