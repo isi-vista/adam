@@ -1,13 +1,4 @@
 language: python
-python:
-    - "3.6"
-    - "pypy3.6-7.1.1"
-
-cache:
-    pip: true
-
-install: skip
-script: skip
 
 jobs:
     include:
@@ -20,6 +11,8 @@ jobs:
               - echo "python version $(python --version) running"
               - echo "pip version $(pip --version) running"
               - make check
+          cache:
+            pip: true
         - python: "pypy3.6-7.1.1"
           stage: test
           install:
@@ -31,6 +24,8 @@ jobs:
               - echo "pip version $(pip --version) running"
 #              - make coverage
               - make test
+          cache:
+            pip: true
 #          after_success:
 #              - codecov -t 452b6965-c9da-4306-97d5-a5e86626af8f
 
