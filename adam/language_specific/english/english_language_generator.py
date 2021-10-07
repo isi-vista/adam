@@ -387,7 +387,7 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                     len(possession_relations) == 1
                     and self.situation.is_dynamic
                     and possession_relations[0].first_slot
-                    not in only(self.situation.actions).argument_roles_to_fillers[AGENT]
+                    not in only(self.situation.actions).argument_roles_to_fillers[AGENT]  # type: ignore
                 ):
                     determiner_node = self._noun_for_object(
                         possession_relations[0].first_slot
@@ -592,29 +592,29 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             # which in English depends on the subject
             verb_word_form: str
             subject_heads = syntactic_roles_to_argument_heads[NOMINAL_SUBJECT]
-            if subject_heads:
-                if len(subject_heads) == 1:
-                    subject_head = only(subject_heads)
-                    if (
-                        FIRST_PERSON in subject_head.morphosyntactic_properties
-                        or SECOND_PERSON in subject_head.morphosyntactic_properties
-                    ):
-                        verb_word_form = verb_lexical_entry.base_form
-                    elif verb_lexical_entry.verb_form_sg3_prs:
-                        verb_word_form = verb_lexical_entry.verb_form_sg3_prs
-                    else:
-                        raise RuntimeError(
-                            f"Verb has no 3SG present tense form: {verb_lexical_entry.base_form}"
-                        )
-                else:
-                    raise RuntimeError(
-                        f"Cannot currently handle multiple subject_heads: {action}; "
-                        f"semantic role mapping: {syntactic_roles_to_argument_heads}"
-                    )
-            else:
+            subject_head = only(
+                subject_heads,
+                too_long=RuntimeError(
+                    f"Cannot currently handle multiple subject_heads: {action}; "
+                    f"semantic role mapping: {syntactic_roles_to_argument_heads}"
+                ),
+            )
+            if not subject_head:
                 raise RuntimeError(
                     f"Cannot currently handle an absent subject: {action}; "
                     f"semantic role mapping: {syntactic_roles_to_argument_heads}"
+                )
+
+            if (
+                FIRST_PERSON in subject_head.morphosyntactic_properties
+                or SECOND_PERSON in subject_head.morphosyntactic_properties
+            ):
+                verb_word_form = verb_lexical_entry.base_form
+            elif verb_lexical_entry.verb_form_sg3_prs:
+                verb_word_form = verb_lexical_entry.verb_form_sg3_prs
+            else:
+                raise RuntimeError(
+                    f"Verb has no 3SG present tense form: {verb_lexical_entry.base_form}"
                 )
 
             # actually add the verb to the dependency tree
@@ -921,8 +921,10 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         path_object,
                         spatial_path,
                     ) in action.during.objects_to_paths.items():
-                        spatial_prepositonal_modifier = self._translate_spatial_path_to_action_modifier(
-                            action, path_object, spatial_path
+                        spatial_prepositonal_modifier = (
+                            self._translate_spatial_path_to_action_modifier(
+                                action, path_object, spatial_path
+                            )
                         )
                         if spatial_prepositonal_modifier:
                             modifiers.append(
@@ -1235,18 +1237,20 @@ class SimpleRuleBasedEnglishLanguageGenerator(
             lexicon_entries = self.generator._ontology_lexicon.words_for_node(  # pylint:disable=protected-access
                 ontology_node
             )
-            if lexicon_entries:
-                if len(lexicon_entries) == 1:
-                    return only(lexicon_entries)
-                else:
-                    raise RuntimeError(
-                        f"We don't yet know how to deal with ontology nodes which "
-                        f"could be realized by multiple lexical entries: "
-                        f"{ontology_node} --> {lexicon_entries}. "
-                        f"This is https://github.com/isi-vista/adam/issues/59 ."
-                    )
-            else:
+            lexicon_entry = only(
+                lexicon_entries,
+                too_long=RuntimeError(
+                    f"We don't yet know how to deal with ontology nodes which "
+                    f"could be realized by multiple lexical entries: "
+                    f"{ontology_node} --> {lexicon_entries}. "
+                    f"This is https://github.com/isi-vista/adam/issues/59 ."
+                ),
+            )
+
+            if not lexicon_entry:
                 raise RuntimeError(f"No lexicon entry for ontology node {ontology_node}")
+
+            return lexicon_entry
 
         @object_counts.default
         def _init_object_counts(self) -> Mapping[OntologyNode, int]:

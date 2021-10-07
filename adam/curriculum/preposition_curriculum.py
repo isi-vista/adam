@@ -1235,7 +1235,7 @@ def make_prepositions_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Sequence[Phase1InstanceGroup]:
-    return flatten(
+    return flatten(  # type: ignore
         [
             make_prepositions_curriculum_training(
                 num_samples, num_noise_objects, language_generator

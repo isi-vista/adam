@@ -76,8 +76,10 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from adam_test_utils import perception_with_handle, situation_object
 from sample_situations import make_bird_flies_over_a_house
 
-_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-    GAILA_PHASE_1_ONTOLOGY
+_PERCEPTION_GENERATOR = (
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+        GAILA_PHASE_1_ONTOLOGY
+    )
 )
 
 
@@ -481,10 +483,10 @@ def test_liquid_in_and_out_of_container():
 
     two_perceived_objects = two_d_perception.frames[0].perceived_objects
     two_object_handles = set(obj.debug_handle for obj in two_perceived_objects)
-    assert all(handle in two_object_handles for handle in {"**juice_0", "**table_0"})
+    assert all(handle in two_object_handles for handle in ("**juice_0", "**table_0"))
     three_perceived_objects = three_d_perception.frames[0].perceived_objects
     three_object_handles = set(obj.debug_handle for obj in three_perceived_objects)
-    assert all(handle in three_object_handles for handle in {"**juice_0", "**box_0"})
+    assert all(handle in three_object_handles for handle in ("**juice_0", "**box_0"))
 
     assert any(
         isinstance(p, HasBinaryProperty)

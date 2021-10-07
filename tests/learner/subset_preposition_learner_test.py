@@ -34,7 +34,6 @@ from adam.ontology.phase1_ontology import (
 from adam.situation.templates.phase1_templates import object_variable, sampled
 from immutablecollections import immutableset
 from tests.learner import (
-    LANGUAGE_MODE_TO_OBJECT_RECOGNIZER,
     LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER,
 )
 

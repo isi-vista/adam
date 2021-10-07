@@ -38,7 +38,7 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
             # This generates templates for examples like "Mom falls"
             for output in immutableset(
                 itertools.permutations(
-                    [AlignmentSlots.Argument, AlignmentSlots.FixedString], 2
+                    [AlignmentSlots.ARGUMENT, AlignmentSlots.FIXEDSTRING], 2
                 )
             ):
                 yield output
@@ -48,15 +48,15 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
             # However, currently our templates don't distinguish subject and object
             # So we only need to handle AAF, AFA, FAA
             # Example: "Mom throws a ball"
-            # We include an extra FixedString to account for adverbial modifiers such as in the example
+            # We include an extra FIXEDSTRING to account for adverbial modifiers such as in the example
             # "Mom throws a ball up"
             for output in immutableset(
                 itertools.permutations(
                     [
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.FixedString,
-                        AlignmentSlots.FixedString,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.FIXEDSTRING,
+                        AlignmentSlots.FIXEDSTRING,
                     ],
                     4,
                 )
@@ -68,12 +68,12 @@ class AbstractVerbTemplateLearner(AbstractTemplateLearner, ABC):
             for output in immutableset(
                 itertools.permutations(
                     [
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.FixedString,
-                        AlignmentSlots.FixedString,
-                        AlignmentSlots.FixedString,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.FIXEDSTRING,
+                        AlignmentSlots.FIXEDSTRING,
+                        AlignmentSlots.FIXEDSTRING,
                     ],
                     6,
                 )

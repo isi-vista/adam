@@ -112,7 +112,7 @@ class PerceptualRepresentation(Generic[PerceptionT]):
 
     @staticmethod
     def single_frame(
-        perception_frame: _PerceptionT2
+        perception_frame: _PerceptionT2,
     ) -> "PerceptualRepresentation[_PerceptionT2]":
         """
         Convenience method for generating a `PerceptualRepresentation` which is a single frame.

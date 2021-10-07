@@ -520,7 +520,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
 
     @_concepts_to_templates.default
     def _init_concepts_to_templates(
-        self
+        self,
     ) -> ImmutableSetMultiDict[Concept, SurfaceTemplate]:
         # Ground is added explicitly to this list because the code
         # Which matches the ground matches by recognition and not shape

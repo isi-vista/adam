@@ -27,7 +27,7 @@ def perception_with_handle(
 
 
 def all_possible_test(
-    template: Phase1SituationTemplate
+    template: Phase1SituationTemplate,
 ) -> Iterable[HighLevelSemanticsSituation]:
     """
     Shorcut for `all_possible` with the GAILA phase 1 ontology and a `RandomChooser` with seed 0.

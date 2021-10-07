@@ -404,7 +404,7 @@ class SituationVisualizer(ShowBase):
 
     def top_level_positions(self) -> Dict[str, Tuple[float, float, float]]:
         """Returns a Map of name -> position of all nodes of geometry objects
-           (so not cameras and lights). """
+        (so not cameras and lights)."""
         return {name: node.getPos() for name, node in self.geo_nodes.items()}
 
     def set_positions(self, new_positions: PositionsMap):
@@ -425,7 +425,7 @@ class SituationVisualizer(ShowBase):
 
     def run_for_seconds(self, seconds: float) -> None:
         """Executes main rendering loop for given seconds. This needs to be a
-           healthy fraction of a second to see changes reflected in the scene."""
+        healthy fraction of a second to see changes reflected in the scene."""
         start = int(time.time())
         while time.time() - start < seconds:
             self.taskMgr.step()

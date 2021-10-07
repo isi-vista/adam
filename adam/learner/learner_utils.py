@@ -194,7 +194,7 @@ def assert_static_situation(
 
 
 def pattern_remove_incomplete_region_or_spatial_path(
-    perception_graph: PerceptionGraphPattern
+    perception_graph: PerceptionGraphPattern,
 ) -> PerceptionGraphPattern:
     """
     Helper function to return a `PerceptionGraphPattern` verifying
@@ -301,8 +301,8 @@ def covers_entire_utterance(
 class AlignmentSlots(Enum):
     """An argument is a slot for an object, and a fixed string is something we wish to learn"""
 
-    Argument = auto()
-    FixedString = auto()
+    ARGUMENT = auto()
+    FIXEDSTRING = auto()
 
 
 @attrs(frozen=True, slots=True)
@@ -424,13 +424,13 @@ def candidate_templates(
         postfix_string_start = None
         # In the event we generate a candidate template like:
         # A, F, F, A then we want to compute this like A, F, A
-        # So we keep track if the previous token was a FixedString indicator
+        # So we keep track if the previous token was a FIXEDSTRING indicator
         previous_node_was_string = False
 
         for token in candidate_template:
             # If the token in our template is an argument we need to assign it a
             # unique SyntaxSemanticsVariable, and map it to the SemanticNode
-            if token == AlignmentSlots.Argument:
+            if token == AlignmentSlots.ARGUMENT:
                 slot_semantic_variable = STANDARD_SLOT_VARIABLES[aligned_node_index]
                 template_elements.append(slot_semantic_variable)
                 aligned_node = aligned_nodes[aligned_node_index].node
@@ -456,7 +456,7 @@ def candidate_templates(
                 elif aligned_node_index == len(aligned_nodes):
                     postfix_string_start = aligned_nodes[aligned_node_index - 1].span.end
                 else:
-                    # If our FixedString is flanked by two Arguments we just want to acquire all the tokens
+                    # If our FIXEDSTRING is flanked by two Arguments we just want to acquire all the tokens
                     # between them
                     if (
                         aligned_nodes[aligned_node_index - 1].span.end
@@ -584,7 +584,7 @@ def candidate_templates(
     # Generate all the possible verb template alignments
     for candidate_template in candidate_templates_function():
         for aligned_nodes in aligned_object_nodes(
-            sum(1 for token in candidate_template if token == AlignmentSlots.Argument),
+            sum(1 for token in candidate_template if token == AlignmentSlots.ARGUMENT),
             num_arguments_to_alignments_sets,
             language_concept_alignment,
         ):
@@ -682,7 +682,7 @@ def compute_match_ratio(
 
 
 def get_objects_from_perception(
-    observed_perception_graph: PerceptionGraph
+    observed_perception_graph: PerceptionGraph,
 ) -> List[PerceptionGraph]:
     """
     Utility function to get a list of `PerceptionGraphs` which are independent objects in the scene
@@ -757,7 +757,7 @@ def get_objects_from_perception(
 
 
 def candidate_object_hypotheses(
-    language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
+    language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
 ) -> Sequence[PerceptionGraphTemplate]:
     """
     Given a learning input, returns all possible meaning hypotheses.

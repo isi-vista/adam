@@ -131,7 +131,7 @@ SHARED_WORLD_ITEMS = set(
 # Used by ObjectRecognizer below.
 # See: https://github.com/isi-vista/adam/issues/648
 def _sort_mapping_by_pattern_complexity(
-    pairs
+    pairs,
 ) -> ImmutableDict[str, PerceptionGraphPattern]:
     # we type: ignore because the proper typing of pairs is huge and mypy is going to screw it up
     # anyway.
@@ -341,7 +341,7 @@ class ObjectRecognizer:
                         candidate_object_graph, match_mode=MatchMode.OBJECT
                     )
                     pattern_match = first(
-                        matcher.matches(use_lookahead_pruning=True), None
+                        matcher.matches(use_lookahead_pruning=True), None  # type: ignore
                     )
                 if pattern_match:
                     cumulative_millis_in_successful_matches_ms += t.elapsed
@@ -521,7 +521,7 @@ class ObjectRecognizer:
 
     @_concepts_to_dynamic_patterns.default
     def _init_concepts_to_dynamic_patterns(
-        self
+        self,
     ) -> ImmutableDict[ObjectConcept, PerceptionGraphPattern]:
         return immutabledict(
             (concept, static_pattern.copy_with_temporal_scopes(ENTIRE_SCENE))
@@ -647,7 +647,7 @@ def extract_candidate_objects(
     # order needed to ensure that gaze is assigned to the correct object if there are multiple in the scene
     if sort_by_increasing_size:
         candidate_objects.sort(
-            key=lambda x: len(x._graph.node)  # pylint:disable=protected-access
+            key=lambda x: len(x._graph.nodes)  # pylint:disable=protected-access
         )
     return candidate_objects
 

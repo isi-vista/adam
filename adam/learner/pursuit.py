@@ -188,7 +188,9 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
         new_hypothesis = copy.deepcopy(hypothesis)
         for (
             node
-        ) in new_hypothesis.graph_pattern._graph.node:  # pylint: disable=protected-access
+        ) in (
+            new_hypothesis.graph_pattern._graph.nodes  # pylint: disable=protected-access
+        ):
             if (
                 isinstance(node, IsOntologyNodePredicate)
                 and node.property_value == GAZED_AT
@@ -226,7 +228,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
             for hypothesis in hypotheses:
                 if GAZED_AT in [
                     node.property_value
-                    for node in hypothesis.graph_pattern.copy_as_digraph().node
+                    for node in hypothesis.graph_pattern.copy_as_digraph().nodes
                     if isinstance(node, IsOntologyNodePredicate)
                 ]:
                     gazed_at_hypotheses.append(hypothesis)
@@ -456,8 +458,11 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
                     hypothesis_to_reward_without_gaze = self.remove_gaze_from_hypothesis(
                         hypothesis_to_reward
                     )
-                    existing_hypothesis_matching_new_hypothesis = self._find_identical_hypothesis(
-                        hypothesis_to_reward_without_gaze, candidates=hypotheses_for_item
+                    existing_hypothesis_matching_new_hypothesis = (
+                        self._find_identical_hypothesis(
+                            hypothesis_to_reward_without_gaze,
+                            candidates=hypotheses_for_item,
+                        )
                     )
                     if existing_hypothesis_matching_new_hypothesis:
                         hypothesis_object_to_reward = (
@@ -479,9 +484,10 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
                     cur_score_for_new_hypothesis = hypotheses_for_item.get(
                         hypothesis_object_to_reward, 0.0
                     )
-                    hypotheses_for_item[hypothesis_object_to_reward] = (
-                        cur_score_for_new_hypothesis
-                        + self._learning_factor * (1.0 - cur_score_for_new_hypothesis)
+                    hypotheses_for_item[
+                        hypothesis_object_to_reward
+                    ] = cur_score_for_new_hypothesis + self._learning_factor * (
+                        1.0 - cur_score_for_new_hypothesis
                     )
                     hypothesis_objects_boosted_on_this_update.add(
                         hypothesis_object_to_reward
@@ -704,7 +710,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
         """
 
     def _primary_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         return [
             (self._surface_template_to_concept[surface_template], graph_pattern, 1.0)
@@ -712,7 +718,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
         ]
 
     def _fallback_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         for (
             concept,

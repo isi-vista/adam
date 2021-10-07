@@ -352,7 +352,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
     def from_dynamic_perceptual_representation(
         perceptual_representation: PerceptualRepresentation[
             DevelopmentalPrimitivePerceptionFrame
-        ]
+        ],
     ) -> "PerceptionGraph":
         return _FrameTranslation().translate_frames(perceptual_representation)
 
@@ -412,7 +412,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
     def count_nodes_matching(
         self, node_predicate: Callable[["PerceptionGraphNode"], bool]
     ):
-        return ilen(filter(node_predicate, self._graph.nodes))
+        return ilen(filter(node_predicate, self._graph.nodes))  # type: ignore
 
     def render_to_file(  # pragma: no cover
         self,
@@ -594,8 +594,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
                             assert_valid_edge_label(label_value)
                 else:
                     raise RuntimeError(
-                        f"Every edge in a PerceptionGraph must have a 'label' "
-                        f"attribute"
+                        "Every edge in a PerceptionGraph must have a 'label' attribute"
                     )
             except RuntimeError as e:
                 raise RuntimeError(
@@ -687,7 +686,6 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         situation = HighLevelSemanticsSituation(
             ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[schema_situation_object]
         )
-        perception_generator = perception_generator
         # We explicitly exclude groundin perception generation, which were not
         # specified in the schema
         perception = perception_generator.generate_perception(
@@ -718,7 +716,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
     @staticmethod
     def from_graph(
-        perception_graph: PerceptionGraph
+        perception_graph: PerceptionGraph,
     ) -> "PerceptionGraphPatternFromGraph":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
@@ -850,7 +848,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
     def count_nodes_matching(
         self, node_predicate: Callable[["NodePredicate"], bool]
     ) -> int:
-        return ilen(filter(node_predicate, self._graph.nodes))
+        return ilen(filter(node_predicate, self._graph.nodes))  # type: ignore
 
     @staticmethod
     def _translate_graph(
@@ -1024,7 +1022,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         ] = None,
     ) -> Optional["PerceptionGraphPattern"]:
         """
-        Determine the largest partial match between two `PerceptionGraphPattern`\ s
+        Determine the largest partial match between two `PerceptionGraphPattern`s
 
         The algorithm used is approximate and is not guaranteed to return the largest
         possible match.
@@ -1057,8 +1055,8 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
 class DumpPartialMatchCallback:
     """
-        Helper callable class for debugging purposes. An instance of this object can be provided as the `debug_callback` argument of `GraphMatching.match` to render
-        the match search process at every 100 time steps. We start rendering after the first 60 seconds.
+    Helper callable class for debugging purposes. An instance of this object can be provided as the `debug_callback` argument of `GraphMatching.match` to render
+    the match search process at every 100 time steps. We start rendering after the first 60 seconds.
     """
 
     def __init__(
@@ -2109,7 +2107,7 @@ class AndNodePredicate(NodePredicate):
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         raise NotImplementedError(
-            f"Matches Predicate between AndNodePredicate " f"is not yet implemented"
+            "Matches Predicate between AndNodePredicate is not yet implemented"
         )
 
 

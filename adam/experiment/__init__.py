@@ -461,7 +461,7 @@ def execute_experiment(
         if log_learner_state:
             pickle.dump(
                 learner,
-                open(learner_path / f"final_learner_state.pkl", "wb"),
+                open(learner_path / "final_learner_state.pkl", "wb"),
                 pickle.HIGHEST_PROTOCOL,
             )
             # Dump the observers to a pickle file
@@ -472,7 +472,7 @@ def execute_experiment(
             )
             pickle.dump(
                 observers_holder,
-                open(observer_path / f"final_observers_state.pkl", "wb"),
+                open(observer_path / "final_observers_state.pkl", "wb"),
                 pickle.HIGHEST_PROTOCOL,
             )
 

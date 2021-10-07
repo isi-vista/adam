@@ -252,8 +252,10 @@ def test_subset_learner_subobject():
         floating_ball_situation,
         floating_house_situation,
     ]:
-        perceptual_representation = GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
-            situation, chooser=RandomChooser.for_seed(0)
+        perceptual_representation = (
+            GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
+                situation, chooser=RandomChooser.for_seed(0)
+            )
         )
         for linguistic_description in GAILA_PHASE_1_LANGUAGE_GENERATOR.generate_language(
             situation, chooser=RandomChooser.for_seed(0)
@@ -273,8 +275,10 @@ def test_subset_learner_subobject():
                 )
             )
 
-    mom_perceptual_representation = GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
-        mom_situation, chooser=RandomChooser.for_seed(0)
+    mom_perceptual_representation = (
+        GAILA_PHASE_1_PERCEPTION_GENERATOR.generate_perception(
+            mom_situation, chooser=RandomChooser.for_seed(0)
+        )
     )
     perception_graph = PerceptionGraph.from_frame(mom_perceptual_representation.frames[0])
     enriched = object_learner.enrich_during_description(

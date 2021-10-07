@@ -863,7 +863,7 @@ def _contact_region_factory(reference_object: _ObjectT) -> Region[_ObjectT]:
 # 'def (Union[ObjectT`-1, typing.Iterable[ObjectT`-1]], Union[ObjectT`-1, typing.Iterable[
 # ObjectT`-1]]) -> builtins.tuple[adam.relation.Relation[ObjectT`-1]]'
 # but `ObjectT`-1 won't bind, so when called below we get things like
-# Argument 2 has incompatible type "SubObject"; expected "Union[ObjectT, Iterable[ObjectT]]"
+# ARGUMENT 2 has incompatible type "SubObject"; expected "Union[ObjectT, Iterable[ObjectT]]"
 # For now I'm just suppressing the typing and I'll look more into this later.
 contacts = make_symmetric_dsl_region_relation(  # pylint:disable=invalid-name
     _contact_region_factory
@@ -1060,7 +1060,7 @@ def _make_cookie_schema() -> ObjectStructuralSchema:
 
 
 def _make_cup_schema(
-    cross_section_size: CrossSectionSize = SMALL_TO_LARGE
+    cross_section_size: CrossSectionSize = SMALL_TO_LARGE,
 ) -> ObjectStructuralSchema:
     bottom_to_top = straight_up("bottom-to-top")
     side_to_side_0 = symmetric("side-to-side-0")

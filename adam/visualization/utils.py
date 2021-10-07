@@ -269,7 +269,7 @@ def model_lookup(
                 int(object_percept.debug_handle.split("_")[1])
                 % _PART_CARDINALITY[parent_name][name]
             )
-            return "%s-%s_%d" % (parent_name, name, sub_object_cardinality)
+            return f"{parent_name}-{name}_{sub_object_cardinality}"
 
     # fallback: if this object at least has a geon, we will render that instead
     if object_percept.geon:

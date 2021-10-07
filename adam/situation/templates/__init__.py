@@ -266,7 +266,7 @@ def one_situation_per_template(
     sequence_chooser: SequenceChooser,
 ) -> Iterable[SituationT]:
     return (
-        take(
+        take(  # type: ignore
             1,
             situation_template_processor.generate_situations(
                 template=situation_template, chooser=sequence_chooser

@@ -1,28 +1,32 @@
 # core requirements
-attrs==21.2.0
-vistautils==0.24.0
-immutablecollections==0.12.0
-networkx==2.3
-more-itertools==7.2.0
-contexttimer==0.3.3
+attrs>=21.2.0
+vistautils>=0.24.0
+immutablecollections>=0.12.0
+networkx>=2.3
+more-itertools>=7.2.0
+contexttimer>=0.3.3
 
 # for some experiment generation
 git+https://github.com/isi-vista/saga-tools.git@master#egg=saga-tools
 
+# for visualization within UI
+Flask
+Flask-Cors
+
 # for visualizing perception graphs and patterns
-graphviz==0.13
+graphviz>=0.13
 
 # extras for development
-black==18.9b0
-pytest-benchmark==3.2.2
-pytest==5.2.1
-pytest-cov==2.6.1
-pytest-pythonpath==0.7.3
+black>=18.9b0
+pytest-benchmark>=3.2.2
+pytest>=5.2.1
+pytest-cov>=2.6.1
+pytest-pythonpath>=0.7.3
 coverage
-pylint==2.3.0
-flake8==3.5.0
-mypy==0.620
+pylint>=2.3.0
+flake8>=3.5.0
+mypy>=0.620
 towncrier
-sphinx==2.1.2
-sphinx-autodoc-typehints==1.8.0
+sphinx>=2.1.2
+sphinx-autodoc-typehints>=1.8.0
 sphinx_rtd_theme
