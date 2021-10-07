@@ -56,7 +56,6 @@ from adam.ontology.phase1_ontology import (
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_spatial_relations import (
     Direction,
-    Distance,
     PathOperator,
     Region,
     SpatialPath,
@@ -73,6 +72,31 @@ from adam.perception.developmental_primitive_perception import (
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
 )
+from adam.perception.perception_graph_nodes import (
+    PerceptionGraphNode,
+    UnwrappedPerceptionGraphNode,
+    ObjectNode,
+    CategoricalNode,
+    ContinuousNode,
+    RgbColorNode,
+)
+from adam.perception.perception_graph_predicates import (
+    NodePredicate,
+    GeonPredicate,
+    CrossSectionPredicate,
+    RegionPredicate,
+    AxisPredicate,
+    AnyObjectPerception,
+    IsOntologyNodePredicate,
+    IsColorNodePredicate,
+    ObjectSemanticNodePerceptionPredicate,
+    IsPathPredicate,
+    PathOperatorPredicate,
+    AnyObjectPredicate,
+    CategoricalPredicate,
+    ContinuousPredicate,
+    RgbColorPredicate,
+)
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.semantics import ObjectSemanticNode
@@ -81,7 +105,7 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from adam.utilities import sign
 from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
 from attr import attrib, attrs
-from attr.validators import deep_iterable, instance_of, optional
+from attr.validators import deep_iterable, instance_of
 from immutablecollections import (
     ImmutableDict,
     ImmutableSet,
@@ -93,7 +117,6 @@ from immutablecollections import (
 from immutablecollections.converter_utils import (
     _to_immutabledict,
     _to_immutableset,
-    _to_tuple,
 )
 from vistautils.misc_utils import str_list_limited
 from vistautils.preconditions import check_arg
@@ -112,33 +135,6 @@ class Incrementer:
 
 
 DebugCallableType = Callable[[DiGraph, Dict[Any, Any]], None]
-
-PerceptionGraphNode = Union[
-    ObjectPerception,
-    OntologyNode,
-    Tuple[Region[Any], int],
-    Tuple[Geon, int],
-    GeonAxis,
-    CrossSection,
-    ObjectSemanticNode,
-    SpatialPath[ObjectPerception],
-    PathOperator,
-]
-
-# Some perception graph nodes are wrapped in tuples with counters
-# to avoid them be treated as equal in NetworkX graphs.
-# This type is the same as PerceptionGraphNode, except with such wrapping removed.
-UnwrappedPerceptionGraphNode = Union[
-    ObjectPerception,
-    OntologyNode,
-    Region[Any],
-    Geon,
-    GeonAxis,
-    CrossSection,
-    ObjectSemanticNode,
-    SpatialPath[ObjectPerception],
-    PathOperator,
-]
 
 # If this is changed, assert_valid_edge_label below needs to be updated.
 EdgeLabel = Union[OntologyNode, str, Direction[Any]]
@@ -896,6 +892,20 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                     perception_node_to_pattern_node[key] = IsPathPredicate()
                 elif isinstance(node, PathOperator):
                     perception_node_to_pattern_node[key] = PathOperatorPredicate(node)
+                elif isinstance(node, ObjectNode):
+                    perception_node_to_pattern_node[key] = AnyObjectPredicate()
+                elif isinstance(node, CategoricalNode):
+                    perception_node_to_pattern_node[key] = CategoricalPredicate.from_node(
+                        node
+                    )
+                elif isinstance(node, ContinuousNode):
+                    perception_node_to_pattern_node[key] = ContinuousPredicate.from_node(
+                        node
+                    )
+                elif isinstance(node, RgbColorNode):
+                    perception_node_to_pattern_node[key] = RgbColorPredicate.from_node(
+                        node
+                    )
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
@@ -1706,474 +1716,6 @@ class PerceptionGraphPatternMatch:
     A mapping of pattern nodes from `matched_pattern` to the nodes
     in `matched_sub_graph` they were aligned to.
     """
-
-
-# Below are various types of noes and edges which can appear in a pattern graph.
-# The nodes and edges of perception graphs are just ordinary ADAM objects,
-# so nothing special is needed for them.
-
-
-class NodePredicate(ABC):
-    r"""
-    Super-class for pattern graph nodes.
-
-    All `NodePredicate`\ s should compare non-equal to one another
-    (if the are *attrs* classes, set *eq=False*).
-    """
-
-    @abstractmethod
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        """
-        Determines whether a *graph_node* is matched by this predicate.
-        """
-
-    @abstractmethod
-    def dot_label(self) -> str:
-        """
-        Node label to use when rendering patterns as graphs using *dot*.
-        """
-
-    @abstractmethod
-    def is_equivalent(self, other: "NodePredicate") -> bool:
-        """
-        Compares two predicates and return true if they are equivalent
-        """
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        """
-        Determines whether a NodePredicate matches another Node Predicate
-        """
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class AnyNodePredicate(NodePredicate):
-    """
-    Matches any node whatsoever.
-    """
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        return True
-
-    def dot_label(self) -> str:
-        return "*"
-
-    def is_equivalent(self, other) -> bool:
-        return isinstance(other, AndNodePredicate)
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        return isinstance(predicate_node, AnyNodePredicate)
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class AnyObjectPerception(NodePredicate):
-    """
-    Matches any `ObjectPerception` node.
-    """
-
-    debug_handle: Optional[str] = attrib(validator=optional(instance_of(str)))
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        return isinstance(graph_node, ObjectPerception)
-
-    def dot_label(self) -> str:
-        if self.debug_handle is not None:
-            debug_handle_str = f"[{self.debug_handle}]"
-        else:
-            debug_handle_str = ""
-        return f"*obj{debug_handle_str}"
-
-    def is_equivalent(self, other) -> bool:
-        return isinstance(other, AnyObjectPerception) or isinstance(
-            other, ObjectSemanticNode
-        )
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        return isinstance(predicate_node, AnyObjectPerception)
-
-
-def unwrap_if_necessary(graph_node: PerceptionGraphNode) -> UnwrappedPerceptionGraphNode:
-    """
-    Some nodes might be wrapped in tuples together with IDs to prevent them
-    from being compared equal and collapsed in perception graphs.
-    This method removes that wrapping.
-    """
-    if isinstance(graph_node, tuple):
-        return graph_node[0]
-    else:
-        return graph_node
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class AxisPredicate(NodePredicate):
-    """
-    Represents constraints on an axis given in a `PerceptionGraphPattern`
-    """
-
-    curved: Optional[bool] = attrib(validator=optional(instance_of(bool)))
-    directed: Optional[bool] = attrib(validator=optional(instance_of(bool)))
-    aligned_to_gravitational: Optional[bool] = attrib(
-        validator=optional(instance_of(bool))
-    )
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        unwrapped_graph_node = unwrap_if_necessary(graph_node)
-
-        if isinstance(unwrapped_graph_node, GeonAxis):
-            if self.curved is not None and self.curved != unwrapped_graph_node.curved:
-                return False
-            if (
-                self.directed is not None
-                and self.directed != unwrapped_graph_node.directed
-            ):
-                return False
-            if (
-                self.aligned_to_gravitational is not None
-                and self.aligned_to_gravitational
-                != unwrapped_graph_node.aligned_to_gravitational
-            ):
-                return False
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def from_axis(axis_to_match: GeonAxis) -> "AxisPredicate":
-        return AxisPredicate(
-            curved=axis_to_match.curved,
-            directed=axis_to_match.directed,
-            aligned_to_gravitational=axis_to_match.aligned_to_gravitational,
-        )
-
-    def dot_label(self) -> str:
-        constraints = []
-
-        if self.curved is not None:
-            constraints.append(f"{sign(self.curved)}curved")
-        if self.directed is not None:
-            constraints.append(f"{sign(self.directed)}directed")
-        if self.aligned_to_gravitational is not None:
-            constraints.append(f"{sign(self.aligned_to_gravitational)}grav_aligned")
-
-        return f"axis({', '.join(constraints)})"
-
-    def is_equivalent(self, other) -> bool:
-        if isinstance(other, AxisPredicate):
-            return (
-                self.aligned_to_gravitational == other.aligned_to_gravitational
-                and self.curved == other.curved
-                and self.directed == other.directed
-            )
-        return False
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        if isinstance(predicate_node, AxisPredicate):
-            if self.curved != predicate_node.curved:
-                return False
-            if self.directed != predicate_node.directed:
-                return False
-            if self.aligned_to_gravitational != predicate_node.aligned_to_gravitational:
-                return False
-            else:
-                return True
-        else:
-            return False
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class GeonPredicate(NodePredicate):
-    """
-    Represents constraints on a `Geon` given in a `PerceptionGraphPattern`
-    """
-
-    template_geon: Geon = attrib(validator=instance_of(Geon))
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # geons might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        unwrapped_graph_node = unwrap_if_necessary(graph_node)
-
-        if isinstance(unwrapped_graph_node, Geon):
-            return (
-                self.template_geon.cross_section == unwrapped_graph_node.cross_section
-                and self.template_geon.cross_section_size
-                == unwrapped_graph_node.cross_section_size
-            )
-        else:
-            return False
-
-    def dot_label(self) -> str:
-        return f"geon({self.template_geon})"
-
-    @staticmethod
-    def exactly_matching(geon: Geon) -> "GeonPredicate":
-        return GeonPredicate(geon)
-
-    def is_equivalent(self, other) -> bool:
-        if isinstance(other, GeonPredicate):
-            return (
-                self.template_geon.axes.axis_relations
-                == other.template_geon.axes.axis_relations
-                and self.template_geon.axes.orienting_axes
-                == other.template_geon.axes.orienting_axes
-                and self.template_geon.axes.primary_axis
-                == other.template_geon.axes.primary_axis
-                and self.template_geon.cross_section.curved
-                == other.template_geon.cross_section.curved
-                and self.template_geon.cross_section.has_reflective_symmetry
-                == other.template_geon.cross_section.has_reflective_symmetry
-                and self.template_geon.cross_section.has_rotational_symmetry
-                == other.template_geon.cross_section.has_rotational_symmetry
-                and self.template_geon.cross_section_size.name
-                == other.template_geon.cross_section_size.name
-                and self.template_geon.generating_axis.curved
-                == other.template_geon.generating_axis.curved
-                and self.template_geon.generating_axis.directed
-                == other.template_geon.generating_axis.directed
-                and self.template_geon.generating_axis.aligned_to_gravitational
-                == other.template_geon.generating_axis.aligned_to_gravitational
-            )
-        return False
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        if isinstance(predicate_node, GeonPredicate):
-            return (
-                self.template_geon.cross_section
-                == predicate_node.template_geon.cross_section
-                and self.template_geon.cross_section_size
-                == predicate_node.template_geon.cross_section_size
-            )
-        else:
-            return False
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class CrossSectionPredicate(NodePredicate):
-    """
-    Represents constraints on a `Geon` given in a `PerceptionGraphPattern`
-    """
-
-    cross_section: CrossSection = attrib(validator=instance_of(CrossSection))
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-
-        unwrapped_graph_node = unwrap_if_necessary(graph_node)
-
-        if isinstance(unwrapped_graph_node, CrossSection):
-            return self.cross_section == unwrapped_graph_node
-        else:
-            return False
-
-    def dot_label(self) -> str:
-        return f"cross-section({self.cross_section})"
-
-    @staticmethod
-    def exactly_matching(cs: CrossSection) -> "CrossSectionPredicate":
-        return CrossSectionPredicate(cs)
-
-    def is_equivalent(self, other) -> bool:
-        if isinstance(other, CrossSectionPredicate):
-            return (
-                self.cross_section.curved == other.cross_section.curved
-                and self.cross_section.has_reflective_symmetry
-                == other.cross_section.has_reflective_symmetry
-                and self.cross_section.has_rotational_symmetry
-                == other.cross_section.has_rotational_symmetry
-            )
-        return False
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        if isinstance(predicate_node, CrossSectionPredicate):
-            return self.cross_section == predicate_node.cross_section
-        else:
-            return False
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class RegionPredicate(NodePredicate):
-    """
-    Represents constraints on a `Region` given in a `PerceptionGraphPattern`.
-    """
-
-    distance: Optional[Distance] = attrib(validator=optional(instance_of(Distance)))
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        # regions might be wrapped in tuples with their id()
-        # in order to simulate comparison by object ID.
-        unwrapped_graph_node = unwrap_if_necessary(graph_node)
-        return (
-            isinstance(unwrapped_graph_node, Region)
-            and self.distance == unwrapped_graph_node.distance
-        )
-
-    def dot_label(self) -> str:
-        return f"dist({self.distance})"
-
-    @staticmethod
-    def matching_distance(region: Region[Any]) -> "RegionPredicate":
-        return RegionPredicate(region.distance)
-
-    def is_equivalent(self, other) -> bool:
-        if isinstance(other, RegionPredicate):
-            if self.distance is None and other.distance is None:
-                return True
-            elif self.distance is not None and other.distance is not None:
-                return self.distance.name == other.distance.name
-        return False
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        if isinstance(predicate_node, RegionPredicate):
-            return predicate_node.distance == self.distance
-        else:
-            return False
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class IsOntologyNodePredicate(NodePredicate):
-    property_value: OntologyNode = attrib(validator=instance_of(OntologyNode))
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        unwrapped_graph_node = unwrap_if_necessary(graph_node)
-        return unwrapped_graph_node == self.property_value
-
-    def dot_label(self) -> str:
-        return f"{self.property_value.handle}"
-
-    def is_equivalent(self, other) -> bool:
-        if isinstance(other, IsOntologyNodePredicate):
-            return self.property_value == other.property_value
-        return False
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        if isinstance(predicate_node, IsOntologyNodePredicate):
-            return predicate_node.property_value == self.property_value
-        return False
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class IsColorNodePredicate(NodePredicate):
-    color: RgbColorPerception = attrib(validator=instance_of(RgbColorPerception))
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        unwrapped_graph_node = unwrap_if_necessary(graph_node)
-        if isinstance(unwrapped_graph_node, RgbColorPerception):
-            return (
-                (unwrapped_graph_node.red == self.color.red)
-                and (unwrapped_graph_node.blue == self.color.blue)
-                and (unwrapped_graph_node.green == self.color.green)
-            )
-        return False
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        if isinstance(predicate_node, IsColorNodePredicate):
-            return (
-                (predicate_node.color.red == self.color.red)
-                and (predicate_node.color.blue == self.color.blue)
-                and (predicate_node.color.green == self.color.green)
-            )
-        return False
-
-    def dot_label(self) -> str:
-        return f"{self.color.hex}"
-
-    def is_equivalent(self, other) -> bool:
-        if isinstance(other, IsColorNodePredicate):
-            return self.color.hex == other.color.hex
-        return False
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class AndNodePredicate(NodePredicate):
-    """
-    `NodePredicate` which matches if all its *sub_predicates* match.
-    """
-
-    sub_predicates: Tuple[NodePredicate, ...] = attrib(converter=_to_tuple)
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        return all(sub_predicate(graph_node) for sub_predicate in self.sub_predicates)
-
-    def dot_label(self) -> str:
-        return " & ".join(sub_pred.dot_label() for sub_pred in self.sub_predicates)
-
-    def is_equivalent(self, other) -> bool:
-        if isinstance(other, AndNodePredicate) and len(self.sub_predicates) == len(
-            other.sub_predicates
-        ):
-            return all(
-                any(pred1.is_equivalent(pred2) for pred1 in self.sub_predicates)
-                for pred2 in other.sub_predicates
-            )
-        return False
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        raise NotImplementedError(
-            "Matches Predicate between AndNodePredicate is not yet implemented"
-        )
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class ObjectSemanticNodePerceptionPredicate(NodePredicate):
-    """
-    `NodePredicate` which matches if the node is of this type
-    """
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        return isinstance(graph_node, ObjectSemanticNode)
-
-    def dot_label(self) -> str:
-        return "*[matched-obj]"
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        return isinstance(predicate_node, ObjectSemanticNodePerceptionPredicate)
-
-    def is_equivalent(self, other) -> bool:
-        return isinstance(other, ObjectSemanticNodePerceptionPredicate)
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class IsPathPredicate(NodePredicate):
-    """
-    Matches any `SpatialPath` node.
-    """
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        return isinstance(graph_node, SpatialPath)
-
-    def dot_label(self) -> str:
-        return "* [path]"
-
-    def is_equivalent(self, other) -> bool:
-        return isinstance(other, IsPathPredicate)
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        return isinstance(predicate_node, IsPathPredicate)
-
-
-@attrs(frozen=True, slots=True, eq=False)
-class PathOperatorPredicate(NodePredicate):
-    r"""
-    Predicate to match against `PathOperator`\ s
-    """
-    reference_path_operator: PathOperator = attrib(validator=instance_of(PathOperator))
-
-    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-
-        return unwrap_if_necessary(graph_node) == self.reference_path_operator
-
-    def dot_label(self) -> str:
-        return self.reference_path_operator.name
-
-    def is_equivalent(self, other) -> bool:
-        return (
-            isinstance(other, PathOperatorPredicate)
-            and other.reference_path_operator == self.reference_path_operator
-        )
-
-    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
-        return (
-            isinstance(predicate_node, PathOperatorPredicate)
-            and predicate_node.reference_path_operator == self.reference_path_operator
-        )
 
 
 class EdgePredicate(ABC):
