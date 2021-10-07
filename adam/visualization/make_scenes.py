@@ -467,7 +467,7 @@ def print_obj_names(obj: ObjectPerception) -> None:
 
 @attrs(frozen=True, slots=True)
 class SceneElements:
-    """ Convenience wrapper for the various sub-objects returned by SceneCreator """
+    """Convenience wrapper for the various sub-objects returned by SceneCreator"""
 
     instance_group_name: str = attr.ib()
     # Objects -> their properties
@@ -719,8 +719,8 @@ class SceneCreator:
         recurse_fn: Callable[[ObjectPerception, Any], Any],
     ) -> None:
         """Apply some function only to root elements of graph.
-           Use return value from top level function as argument in
-           recursively applied function. """
+        Use return value from top level function as argument in
+        recursively applied function."""
         for top_level in graph:
             # special cases not rendered here:
             if top_level.perceived_obj.debug_handle in OBJECT_NAMES_TO_EXCLUDE:

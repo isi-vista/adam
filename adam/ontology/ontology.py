@@ -274,13 +274,14 @@ class Ontology:
         )
 
         if matching_descriptions:
-            if len(matching_descriptions) == 1:
-                return only(matching_descriptions)
-            else:
-                raise RuntimeError(
-                    f"Multiple action descriptions match action type "
-                    f"{action_type} and roles {semantic_roles_set}"
-                )
+            rtrnr = only(matching_descriptions)
+            if rtrnr:
+                return rtrnr
+
+            raise RuntimeError(
+                f"Multiple action descriptions match action type "
+                f"{action_type} and roles {semantic_roles_set}"
+            )
         else:
             available_frames: Any = [
                 immutableset(description.frame.roles_to_variables.keys())
@@ -301,7 +302,7 @@ class Ontology:
 
     @subjects_to_relations.default
     def _subjects_to_relations(
-        self
+        self,
     ) -> ImmutableSetMultiDict[OntologyNode, Relation[OntologyNode]]:
         return immutablesetmultidict(
             (relation.first_slot, relation) for relation in self.relations

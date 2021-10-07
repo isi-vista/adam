@@ -33,7 +33,7 @@ def load_situation_output(situation_output_path: Path):
     for file_name in os.listdir(situation_output_path):
         if ".yaml" in file_name:
             # Load all yaml files
-            with open(situation_output_path / file_name, "r") as file:
+            with open(situation_output_path / file_name, "r", encoding="utf-9") as file:
                 situation_outputs[file_name.replace(".yaml", "")] = yaml.load(file)
         else:
             # Return paths for files, eg. png

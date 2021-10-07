@@ -49,8 +49,10 @@ def test_recognizes_ontology_objects(object_type, language_mode):
             )
         ],
     )
-    perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-        GAILA_PHASE_1_ONTOLOGY
+    perception_generator = (
+        HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+            GAILA_PHASE_1_ONTOLOGY
+        )
     )
     perception = perception_generator.generate_perception(
         situation, chooser=RandomChooser.for_seed(0), include_ground=False
@@ -79,8 +81,10 @@ def test_trivial_dynamic_situation_with_schemaless_object(language_mode):
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[dad_situation_object]
     )
-    perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-        GAILA_PHASE_1_ONTOLOGY
+    perception_generator = (
+        HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+            GAILA_PHASE_1_ONTOLOGY
+        )
     )
     # We explicitly exclude ground in perception generation
 

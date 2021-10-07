@@ -53,9 +53,9 @@ class AbstractRelationTemplateLearner(AbstractTemplateLearner, ABC):
             for output in immutableset(
                 itertools.permutations(
                     [
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.FixedString,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.FIXEDSTRING,
                     ],
                     3,
                 )
@@ -66,10 +66,10 @@ class AbstractRelationTemplateLearner(AbstractTemplateLearner, ABC):
             for output in immutableset(
                 itertools.permutations(
                     [
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.FixedString,
-                        AlignmentSlots.FixedString,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.FIXEDSTRING,
+                        AlignmentSlots.FIXEDSTRING,
                     ],
                     4,
                 )

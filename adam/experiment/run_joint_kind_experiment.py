@@ -124,7 +124,7 @@ def run_experiment(learner, curricula, experiment_id):
         complete_results.append(results)
 
     results_df = pd.DataFrame(
-        [[np.asscalar(i[1]) for i in l] for l in complete_results],
+        [[np.asscalar(i[1]) for i in line] for line in complete_results],
         columns=["Animal", "Food", "People"],
     )
     results_df.insert(0, "Words", pseudoword_to_kind.keys())
@@ -138,11 +138,10 @@ def run_experiment(learner, curricula, experiment_id):
     )
 
 
-if __name__ == "__main__":
+def main():
     for lm in [LanguageMode.ENGLISH]:
         language_generator = phase2_language_generator(lm)
         num_samples = 200
-        ban_all = [CHICKEN, BEEF, COW]
         condition_and_banned_objects = {
             "without-chicken-beef-cow": [CHICKEN, BEEF, COW],
             "chicken": [BEEF, COW],
@@ -203,3 +202,7 @@ if __name__ == "__main__":
                 curricula=pretraining_curricula,
                 experiment_id=experiment,
             )
+
+
+if __name__ == "__main__":
+    main()

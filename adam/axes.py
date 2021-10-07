@@ -85,10 +85,10 @@ class AxisFunction(Protocol, Generic[_ObjectT]):
     def copy_remapping_objects(
         self, object_map: Mapping[_ObjectT, _ObjectToT]
     ) -> "AxisFunction[_ObjectToT]":
-        pass
+        """Copy remapping objects"""
 
     def accumulate_referenced_objects(self, object_accumulator: List[_ObjectT]) -> None:
-        pass
+        """Accumulate referenced objects"""  # type: ignore
 
 
 @attrs(frozen=True, repr=False)
@@ -165,20 +165,18 @@ class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
         if not addressee:
             raise RuntimeError("Addressee must be specified to use FacingAddresseeAxis")
         object_axes = immutableset(self._object.axes.all_axes)
-        object_axes_facing_addressee = axes_info.axes_facing[addressee].intersection(
-            object_axes
+        object_axes_facing_addressee = only(
+            axes_info.axes_facing[addressee].intersection(object_axes),
+            too_long=RuntimeError("Cannot handle multiple axes facing the addressee."),
         )
 
         if object_axes_facing_addressee:
-            if len(object_axes_facing_addressee) == 1:
-                return only(object_axes_facing_addressee)
-            else:
-                raise RuntimeError("Cannot handle multiple axes facing the addressee.")
-        else:
-            raise RuntimeError(
-                f"Could not find axis of {self._object} facing addressee {addressee}. Axis info is "
-                f"{axes_info}.  Axes of object is {object_axes}"
-            )
+            return object_axes_facing_addressee
+
+        raise RuntimeError(
+            f"Could not find axis of {self._object} facing addressee {addressee}. Axis info is "
+            f"{axes_info}.  Axes of object is {object_axes}"
+        )
 
     def copy_remapping_objects(
         self, object_map: Mapping[_ObjectT, _ObjectToT]

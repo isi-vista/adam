@@ -225,8 +225,10 @@ class IntegratedTemplateLearner(
             ]:
                 # Pass plural markers to generics before learning from a statement
                 if isinstance(self.plural_learner, SubsetPluralLearner):
-                    self.generics_learner.plural_markers = list(  # pylint: disable=assigning-non-slot
-                        self.plural_learner.potential_plural_markers.keys()
+                    self.generics_learner.plural_markers = (
+                        list(  # pylint: disable=assigning-non-slot
+                            self.plural_learner.potential_plural_markers.keys()
+                        )
                     )
                 self.generics_learner.learn_from(current_learner_state)
 
@@ -655,8 +657,9 @@ class IntegratedTemplateLearner(
                         obj_con, other_con, slot=slot, weight=1.0
                     )
                     # if the object is a wug - a new object heard through generics
-                    if obj_con not in self.object_learner.concepts_to_patterns() and isinstance(
-                        other_con, KindConcept
+                    if (
+                        obj_con not in self.object_learner.concepts_to_patterns()
+                        and isinstance(other_con, KindConcept)
                     ):
                         # Create a representation of the kind using association of its neighbors
                         kind_neighbor_associations: DefaultDict[

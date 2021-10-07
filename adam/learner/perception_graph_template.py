@@ -180,7 +180,7 @@ class PerceptionGraphTemplate:
 
     @pattern_node_to_template_variable.default
     def _init_pattern_node_to_template_variable(
-        self
+        self,
     ) -> ImmutableDict[ObjectSemanticNodePerceptionPredicate, SyntaxSemanticsVariable]:
         return immutabledict(
             {v: k for k, v in self.template_variable_to_pattern_node.items()}

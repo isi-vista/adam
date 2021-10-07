@@ -28,7 +28,7 @@ LANGUAGE_MODE_PARAMETER = "language_mode"
 
 
 def evaluate_curriculum(
-    lazy_curriculum: Iterable[Phase1InstanceGroup]
+    lazy_curriculum: Iterable[Phase1InstanceGroup],
 ) -> List[Phase1InstanceGroup]:
     strict_curriculum: List[Phase1InstanceGroup] = []
     for instance_group in lazy_curriculum:

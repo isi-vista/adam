@@ -175,16 +175,18 @@ class SituationObject(HasAxes):
             schema_axis_to_object_axis = immutabledict()
             object_concrete_axes = WORLD_AXES
         else:
-            structural_schemata = ontology.structural_schemata(ontology_node)
+            structural_schemata = only(
+                ontology.structural_schemata(ontology_node),
+                too_long=RuntimeError(
+                    f"Multiple structural schemata available for {ontology_node}, "
+                    f"please construct the SituationObject manually."
+                    f"{ontology.structural_schemata(ontology_node)}"
+                ),
+            )
             if not structural_schemata:
                 raise RuntimeError(f"No structural schema found for {ontology_node}")
-            if len(structural_schemata) > 1:
-                raise RuntimeError(
-                    f"Multiple structural schemata available for {ontology_node}, "
-                    f"please construct the SituationObject manually: "
-                    f"{structural_schemata}"
-                )
-            schema_abstract_axes = only(structural_schemata).axes
+
+            schema_abstract_axes = structural_schemata.axes
             # The copy is needed or e.g. all tires of a truck
             # would share the same axis objects.
             object_concrete_axes = schema_abstract_axes.copy()

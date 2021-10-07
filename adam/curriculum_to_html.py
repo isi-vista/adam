@@ -169,7 +169,7 @@ def main(params: Parameters) -> None:
     language_mode = params.enum(
         "language_mode", LanguageMode, default=LanguageMode.ENGLISH
     )
-    language_string = str(language_mode).split(".")[-1].lower()
+    language_string = str(language_mode).rsplit(".", maxsplit=1)[-1].lower()
     num_samples = params.optional_positive_integer("num_samples")
     num_noise_objects = params.optional_positive_integer("num_noise_objects")
     phase1_curriculum_dir = root_output_directory / language_string / curriculum_string
@@ -303,10 +303,12 @@ class CurriculumToHtmlDumper:
             relative_filename = f"{instance_group_header}"
             print(relative_filename)
             files_written.append((instance_group_header, relative_filename))
-            with open(output_directory / relative_filename, "w") as html_out:
+            with open(
+                output_directory / relative_filename, "w", encoding="utf-8"
+            ) as html_out:
                 html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
                 html_out.write(f"\n<body>\n\t<h1>{title} - {curriculum_string}</h1>")
-                html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
+                html_out.write("\t<a href='index.html'> Back to Index</a>")
                 html_out.write(EXPLANATION_HEADER.format(date=date.today()))
                 for (instance_number, instance_holder) in enumerate(immutableset(chunk)):
                     # By using the immutable set we guaruntee iteration order and remove duplicates
@@ -337,9 +339,11 @@ class CurriculumToHtmlDumper:
                         f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                     )
                     html_out.write("\n</body>")
-                html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
+                html_out.write("\t<a href='index.html'> Back to Index</a>")
 
-        with open(str(output_directory / "index.html"), "w") as index_out:
+        with open(
+            str(output_directory / "index.html"), "w", encoding="utf-8"
+        ) as index_out:
             index_out.write(f"<head><title>{title}</title></head><body>")
             index_out.write("<ul>")
             for (
@@ -368,7 +372,7 @@ class CurriculumToHtmlDumper:
     ):
         r"""
         Method to take a list of `InstanceGroup`\ s and turns each one into an individual page
-        
+
         Given a list of `InstanceGroup`\ s and an output directory of *outputdestination*
         along with a *title* for the pages the generator loops through each group
         and calls the internal method to create HTML pages.
@@ -400,7 +404,7 @@ class CurriculumToHtmlDumper:
             )
 
         # write an table of contents to index.html
-        with open(output_directory / "index.html", "w") as index_out:
+        with open(output_directory / "index.html", "w", encoding="utf-8") as index_out:
             index_out.write(f"<head><title>{title}</title></head><body>")
             index_out.write("<ul>")
             for (
@@ -466,10 +470,10 @@ class CurriculumToHtmlDumper:
                 )
             )
 
-        with open(output_destination, "w") as html_out:
+        with open(output_destination, "w", encoding="utf-8") as html_out:
             html_out.write(f"<head>\n\t<style>{CSS}\n\t</style>\n</head>")
             html_out.write(f"\n<body>\n\t<h1>{title}</h1>")
-            html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
+            html_out.write("\t<a href='index.html'> Back to Index</a>")
             html_out.write(EXPLANATION_HEADER.format(date=date.today()))
             # By using the immutable set we guarantee iteration order and remove duplicates
             for (instance_number, instance_holder) in enumerate(
@@ -501,7 +505,7 @@ class CurriculumToHtmlDumper:
                     f'\t\t\t\t<td valign="top">{instance_holder.perception}\n\t\t\t\t</td>\n'
                     f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>"
                 )
-            html_out.write(f"\t<a href='index.html'>" f"Back to Index</a>")
+            html_out.write("\t<a href='index.html'> Back to Index</a>")
             html_out.write("\n</body>")
 
     def situation_text(
@@ -511,7 +515,7 @@ class CurriculumToHtmlDumper:
         Converts a situation description into its sub-parts as a table entry
         """
         speaker = None
-        output_text = [f"\n\t\t\t\t\t<h4>Objects</h4>\n\t\t\t\t\t<ul>"]
+        output_text = ["\n\t\t\t\t\t<h4>Objects</h4>\n\t\t\t\t\t<ul>"]
         seen_handles_to_next_index: Dict[str, int] = {}
         situation_obj_to_handle: Dict[SituationObject, str] = {}
         for obj in situation.all_objects:
@@ -808,7 +812,7 @@ class CurriculumToHtmlDumper:
                     node, static_objects, first_frame_objects
                 )
                 output_text.append(
-                    f"\t" * (6 + depth)
+                    "\t" * (6 + depth)
                     + f"<li>{obj_prefix}{render_object(node)}{obj_suffix}<ul>"
                 )
                 if node.geon:
@@ -832,7 +836,7 @@ class CurriculumToHtmlDumper:
                     depth = depth + 6
                     dfs_walk(succ, depth)
                     depth = depth - 6
-            output_text.append("\t" * (6 + depth) + f"</ul></li>")
+            output_text.append("\t" * (6 + depth) + "</ul></li>")
 
         dfs_walk(root)
         output_text.append("\t\t\t\t\t</ul>")

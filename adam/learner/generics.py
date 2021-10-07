@@ -52,7 +52,7 @@ class SimpleGenericsLearner(TemplateLearner):
             log_output_path,
         )
         Path(log_output_path).mkdir(parents=True, exist_ok=True)
-        with open(log_output_path / f"generics_log.txt", "w") as out:
+        with open(log_output_path / "generics_log.txt", "w", encoding="utf-8") as out:
             for (
                 sequence,
                 (object_concept, others),

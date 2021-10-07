@@ -163,7 +163,7 @@ def get_largest_matching_pattern(
     ] = None,
     allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
 ) -> Optional[PerceptionGraphPattern]:
-    """ Helper function to return the largest matching `PerceptionGraphPattern`
+    """Helper function to return the largest matching `PerceptionGraphPattern`
     for learner from a perception pattern and graph pair."""
     matching = pattern.matcher(
         graph,
@@ -180,7 +180,7 @@ def get_largest_matching_pattern(
 
 
 def graph_without_learner(perception_graph: PerceptionGraph) -> PerceptionGraph:
-    """ Helper function to return a `PerceptionGraph`
+    """Helper function to return a `PerceptionGraph`
     without a ground object and its related nodes."""
     graph = perception_graph.copy_as_digraph()
     # Get the learner node

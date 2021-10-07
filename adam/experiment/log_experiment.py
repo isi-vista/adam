@@ -143,7 +143,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
     if resume_from_last_logged_state and observers_state:
         raise RuntimeError(
-            f"Can not resume from last logged state and provide explicit observer state paths"
+            "Can not resume from last logged state and provide explicit observer state paths"
         )
 
     if resume_from_last_logged_state:
@@ -262,7 +262,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
 def learner_factory_from_params(
     params: Parameters,
-    graph_logger: Optional[HypothesisLogger],
+    graph_logger: Optional[HypothesisLogger],  # pylint: disable=unused-argument
     language_mode: LanguageMode = LanguageMode.ENGLISH,
 ) -> Callable[[], TopLevelLanguageLearner]:  # type: ignore
     learner_type = params.string(

@@ -262,8 +262,8 @@ class AbstractTemplateLearner(TemplateLearner, ABC):
                     perception_graph_after_matching = (
                         replacement_result.perception_graph_after_replacement
                     )
-                    already_replaced.update(  # type: ignore
-                        replacement_result.removed_nodes
+                    already_replaced.update(
+                        replacement_result.removed_nodes  # type: ignore
                     )
                     new_nodes.append(matched_object_node)
                 except networkx.exception.NetworkXError:
@@ -362,7 +362,7 @@ class AbstractTemplateLearner(TemplateLearner, ABC):
 
     @abstractmethod
     def _primary_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         """
         Our high-confidence (e.g. lexicalized) templates to match when describing a scene.
@@ -370,7 +370,7 @@ class AbstractTemplateLearner(TemplateLearner, ABC):
 
     @abstractmethod
     def _fallback_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         """
         Get the secondary templates to try during description if none of the primary templates

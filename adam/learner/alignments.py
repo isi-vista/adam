@@ -89,7 +89,7 @@ class LanguageConceptAlignment:
 
     @language_span_to_node.default
     def _init_language_span_to_node(
-        self
+        self,
     ) -> ImmutableSetMultiDict[Span, ObjectSemanticNode]:
         return immutablesetmultidict(
             (v, k) for (k, v) in self.node_to_language_span.items()
@@ -335,7 +335,7 @@ class PerceptionSemanticAlignment:
 
     @staticmethod
     def create_unaligned(
-        perception_graph: PerceptionGraph
+        perception_graph: PerceptionGraph,
     ) -> "PerceptionSemanticAlignment":
         return PerceptionSemanticAlignment(perception_graph, [])
 

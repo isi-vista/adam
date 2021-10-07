@@ -218,7 +218,7 @@ class LearnerSemantics:
 
     @objects_to_attributes.default
     def _init_objects_to_attributes(
-        self
+        self,
     ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
         return immutablesetmultidict(
             (one(attribute.slot_fillings.values()), attribute)
@@ -227,12 +227,12 @@ class LearnerSemantics:
 
     @objects_to_relation_in_slot1.default
     def _init_objects_to_relations(
-        self
+        self,
     ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
         return immutablesetmultidict(
             flatten(
                 [
-                    (slot_filler, relation)
+                    (slot_filler, relation)  # type: ignore
                     for slot_filler in relation.slot_fillings.values()
                 ]
                 for relation in self.relations
@@ -241,11 +241,11 @@ class LearnerSemantics:
 
     @objects_to_actions.default
     def _init_objects_to_actions(
-        self
+        self,
     ) -> ImmutableSetMultiDict[ObjectSemanticNode, AttributeSemanticNode]:
         return immutablesetmultidict(
             flatten(
-                [(slot_filler, action) for slot_filler in action.slot_fillings.values()]
+                [(slot_filler, action) for slot_filler in action.slot_fillings.values()]  # type: ignore
                 for action in self.actions
             )
         )

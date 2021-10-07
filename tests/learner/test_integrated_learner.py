@@ -29,8 +29,10 @@ def test_with_object_recognizer(language_mode):
     situation = HighLevelSemanticsSituation(
         ontology=GAILA_PHASE_1_ONTOLOGY, salient_objects=[dad_situation_object]
     )
-    perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-        GAILA_PHASE_1_ONTOLOGY
+    perception_generator = (
+        HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+            GAILA_PHASE_1_ONTOLOGY
+        )
     )
     # We explicitly exclude ground in perception generation
 

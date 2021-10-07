@@ -232,7 +232,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
         """
 
     def _primary_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         return (
             (concept, hypotheses[0], 1.0)
@@ -242,7 +242,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
         )
 
     def _fallback_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         # Alternate hypotheses stored in the beam.
         return (

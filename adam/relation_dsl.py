@@ -14,7 +14,7 @@ _ObjectT = TypeVar("_ObjectT")
 
 
 def make_dsl_relation(
-    relation_type: OntologyNode
+    relation_type: OntologyNode,
 ) -> Callable[
     [Union[_ObjectT, Iterable[_ObjectT]], Union[_ObjectT, Iterable[_ObjectT]]],
     Tuple[Relation[_ObjectT], ...],
@@ -42,7 +42,7 @@ def make_dsl_relation(
 
 
 def make_symetric_dsl_relation(
-    relation_type: OntologyNode
+    relation_type: OntologyNode,
 ) -> Callable[
     [Union[_ObjectT, Iterable[_ObjectT]], Union[_ObjectT, Iterable[_ObjectT]]],
     Tuple[Relation[_ObjectT], ...],
@@ -62,7 +62,7 @@ def make_symetric_dsl_relation(
     ) -> Tuple[Relation[_ObjectT], ...]:
         arg1s = _ensure_iterable(arg1s)
         arg2s = _ensure_iterable(arg2s)
-        return flatten(
+        return flatten(  # type: ignore
             [
                 tuple(
                     Relation(relation_type, arg1, arg2)
@@ -102,7 +102,7 @@ def make_opposite_dsl_relation(
     ) -> Tuple[Relation[_ObjectT], ...]:
         arg1s = _ensure_iterable(arg1s)
         arg2s = _ensure_iterable(arg2s)
-        return flatten(
+        return flatten(  # type: ignore
             [
                 tuple(
                     Relation(relation_type, arg1, arg2)
@@ -140,7 +140,7 @@ def make_symmetric_dsl_region_relation(
     ) -> Tuple["Relation[_ObjectT]", ...]:
         arg1s = _ensure_iterable(arg1s)
         arg2s = _ensure_iterable(arg2s)
-        return flatten(
+        return flatten(  # type: ignore
             [
                 tuple(
                     Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
@@ -180,7 +180,7 @@ def make_opposite_dsl_region_relation(
     ) -> Tuple[Relation[_ObjectT], ...]:
         arg1s = _ensure_iterable(arg1s)
         arg2s = _ensure_iterable(arg2s)
-        return flatten(
+        return flatten(  # type: ignore
             [
                 tuple(
                     Relation(IN_REGION, arg1, region_factory(arg2, **kw_args))
@@ -238,7 +238,7 @@ def located(
     arg1s = _ensure_iterable(arg1s)
     arg2s = _ensure_iterable(arg2s)
 
-    return flatten(
+    return flatten(  # type: ignore
         [
             tuple(
                 Relation(

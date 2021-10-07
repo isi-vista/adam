@@ -198,14 +198,14 @@ class Phase1SituationTemplate(SituationTemplate):
     """
     all_object_variables: ImmutableSet[TemplateObjectVariable] = attrib(init=False)
     r"""
-    All `TemplateObjectVariable`\ s in the situation, 
+    All `TemplateObjectVariable`s in the situation, 
     both salient and auxiliary to actions.
     """
     gazed_objects: ImmutableSet[TemplateObjectVariable] = attrib(
         converter=_to_immutableset, kw_only=True
     )
     """
-    A set of `TemplateObjectVariable`\ s which are the focus of the speaker. 
+    A set of `TemplateObjectVariable`s which are the focus of the speaker. 
     Defaults to all semantic role fillers of situation actions.
     """
     before_action_relations: ImmutableSet[Relation[TemplateObjectVariable]] = attrib(
@@ -610,8 +610,8 @@ class _Phase1SituationTemplateGenerator(
     ) -> bool:
         for constraining_relation in template.constraining_relations:
             # the constraint is satisfied if it is explicitly-specified as true
-            relation_bound_to_situation_objects = constraining_relation.copy_remapping_objects(
-                variable_binding
+            relation_bound_to_situation_objects = (
+                constraining_relation.copy_remapping_objects(variable_binding)
             )
             relation_explicitly_specified = instantiated_situation.relation_always_holds(
                 relation_bound_to_situation_objects
@@ -700,27 +700,26 @@ class _Phase1SituationTemplateGenerator(
             for obj in object_var_to_instantiations.values()
             if IS_ADDRESSEE in obj.properties
         )
-        if addressees:
-            if len(addressees) > 1:
-                raise RuntimeError("Multiple addressees not supported")
-            else:
-                addressee: SituationObject = only(addressees)
-                return AxesInfo(
-                    addressee=addressee,
-                    axes_facing=[
-                        (
-                            addressee,
-                            # TODO: fix this hack
-                            HorizontalAxisOfObject(  # type: ignore
-                                obj, index=1
-                            ).to_concrete_axis(None),
-                        )
-                        for obj in object_var_to_instantiations.values()
-                        if obj.axes
-                    ],
-                )
-        else:
+        addressee = only(
+            addressees, too_long=RuntimeError("Multiple addressees not supported")
+        )
+        if not addressee:
             return AxesInfo()
+
+        return AxesInfo(
+            addressee=addressee,
+            axes_facing=[
+                (
+                    addressee,
+                    # TODO: fix this hack
+                    HorizontalAxisOfObject(obj, index=1).to_concrete_axis(  # type: ignore
+                        None
+                    ),
+                )
+                for obj in object_var_to_instantiations.values()
+                if obj.axes
+            ],
+        )
 
 
 def object_variable(

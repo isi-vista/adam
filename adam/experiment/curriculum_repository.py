@@ -179,13 +179,13 @@ def read_p3_experiment_curriculum(
             if "perception" in dir
         ]:
             with open(
-                repository / situation_dir / perception_dir, "r"
+                repository / situation_dir / perception_dir, "r", encoding="utf-8"
             ) as perception_file:
                 perception_yaml = yaml.load(perception_file)
                 perception_frames.append(VisualPerceptionFrame(perception_yaml))
         # Load description file
         with open(
-            repository / situation_dir / "description.yaml", "r"
+            repository / situation_dir / "description.yaml", "r", encoding="utf-8"
         ) as description_file:
             description_yaml = yaml.load(description_file)
             utterance = description_yaml["language"]

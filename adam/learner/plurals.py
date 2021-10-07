@@ -43,8 +43,8 @@ class AbstractPluralTemplateLearner(AbstractTemplateLearner, ABC):
             for i in [2, 3]:
                 for output in immutableset(
                     itertools.permutations(
-                        [AlignmentSlots.Argument]
-                        + [AlignmentSlots.FixedString] * (i - 1),
+                        [AlignmentSlots.ARGUMENT]
+                        + [AlignmentSlots.FIXEDSTRING] * (i - 1),
                         i,
                     )
                 ):

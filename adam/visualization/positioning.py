@@ -278,7 +278,7 @@ class AxisAlignedBoundingBox:
     def nearest_center_face_distance_from_point(
         self, point: torch.Tensor
     ) -> torch.Tensor:
-        """ returns the distance from the closest face center to the given point
+        """returns the distance from the closest face center to the given point
 
         Args:
             point: tensor (3,) of a coordinate to check distance from this box's face centers
@@ -408,19 +408,22 @@ class AxisAlignedBoundingBox:
         )
 
     def get_corners(self) -> torch.Tensor:
-        return self.center.expand(8, 3) + torch.tensor(  # pylint: disable=not-callable
-            [
-                [-1, -1, -1],
-                [1, -1, -1],
-                [-1, 1, -1],
-                [1, 1, -1],
-                [-1, -1, 1],
-                [1, -1, 1],
-                [-1, 1, 1],
-                [1, 1, 1],
-            ],
-            dtype=torch.float,
-        ).matmul(self.scale)
+        return (
+            self.center.expand(8, 3)
+            + torch.tensor(  # pylint: disable=not-callable
+                [
+                    [-1, -1, -1],
+                    [1, -1, -1],
+                    [-1, 1, -1],
+                    [1, 1, -1],
+                    [-1, -1, 1],
+                    [1, -1, 1],
+                    [-1, 1, 1],
+                    [1, 1, 1],
+                ],
+                dtype=torch.float,
+            ).matmul(self.scale)
+        )
         # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 
     def get_face_centers(self) -> torch.Tensor:
@@ -848,7 +851,9 @@ class BelowGroundPenalty(nn.Module):  # type: ignore
     Model that penalizes boxes lying outside of the scene (i.e. below the ground plane) or off-camera)
     """
 
-    def __init(self) -> None:  # pylint: disable=useless-super-delegation
+    def __init(  # pylint: disable=unused-private-member
+        self,
+    ) -> None:
         super().__init__()
 
     def forward(  # type: ignore
@@ -1045,8 +1050,8 @@ class CollisionPenalty(nn.Module):  # type: ignore
 
 
 class InRegionPenalty(nn.Module):  # type: ignore
-    """ Model that penalizes boxes for not adhering to relational (distance and direction)
-        constraints with other boxes -- for being outside of the Region it is supposed to occupy
+    """Model that penalizes boxes for not adhering to relational (distance and direction)
+    constraints with other boxes -- for being outside of the Region it is supposed to occupy
     """
 
     def __init__(

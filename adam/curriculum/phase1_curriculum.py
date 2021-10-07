@@ -1068,7 +1068,7 @@ def fall_on_ground_template(
 
 
 def make_fall_templates(
-    background: Iterable[TemplateObjectVariable]
+    background: Iterable[TemplateObjectVariable],
 ) -> Iterable[Phase1SituationTemplate]:
     arbitary_object = standard_object(
         "object_0", THING, banned_properties=[IS_SPEAKER, IS_ADDRESSEE]
@@ -1128,7 +1128,7 @@ def _make_fall_curriculum(
 
 
 def make_give_templates(
-    background: Iterable[TemplateObjectVariable]
+    background: Iterable[TemplateObjectVariable],
 ) -> Iterable[Phase1SituationTemplate]:
     action_variable("transfer-verb", with_properties=[TRANSFER_OF_POSSESSION])
     # banning being the speaker or addressee keeps us from trying to instantiate "you" or "me" hack nodes
@@ -1273,14 +1273,14 @@ def _make_object_under_or_over_object_curriculum(
 
     templates = [
         Phase1SituationTemplate(
-            f"object-under-object",
+            "object-under-object",
             salient_object_variables=[object_above, object_under],
             constraining_relations=[bigger_than(object_above, object_under)],
             asserted_always_relations=[strictly_under(object_under, object_above)],
             background_object_variables=make_noise_objects(noise_objects),
         ),
         Phase1SituationTemplate(
-            f"object-over-object",
+            "object-over-object",
             salient_object_variables=[object_under, object_above],
             asserted_always_relations=[strictly_over(object_above, object_under)],
             background_object_variables=make_noise_objects(noise_objects),
@@ -1581,7 +1581,7 @@ def transitive_roll_with_surface(
 
 
 def make_roll_templates(
-    noise_objects: Optional[int]
+    noise_objects: Optional[int],
 ) -> Sequence[Phase1SituationTemplate]:
     animate_0 = standard_object(
         "object_0",
@@ -1635,7 +1635,7 @@ def _make_roll_curriculum(
 
 
 def make_transitive_roll_templates(
-    noise_objects: Optional[int]
+    noise_objects: Optional[int],
 ) -> Iterable[Phase1SituationTemplate]:
     animate_0 = standard_object("object_0", THING, required_properties=[ANIMATE])
     rollable_0 = standard_object(
@@ -2579,7 +2579,7 @@ def transitive_move_template(
 
 
 def make_move_templates(
-    noise_objects: Optional[int]
+    noise_objects: Optional[int],
 ) -> Iterable[Phase1SituationTemplate]:
     self_mover_0 = standard_object(
         "self-mover_0",
@@ -2636,7 +2636,7 @@ def _make_move_curriculum(
 
 
 def make_spin_templates(
-    noise_objects: Optional[int]
+    noise_objects: Optional[int],
 ) -> Iterable[Phase1SituationTemplate]:
     self_turner = standard_object(
         "self-spinner_0",
@@ -3155,7 +3155,7 @@ def throw_to_region_template(
 
 # for testing gei vs dao X shang in Chinese
 def make_throw_animacy_templates(
-    noise_objects: Optional[int]
+    noise_objects: Optional[int],
 ) -> Iterable[Phase1SituationTemplate]:
     thrower = standard_object(
         "thrower_0",
@@ -3184,7 +3184,7 @@ def make_throw_animacy_templates(
 
 
 def make_throw_templates(
-    noise_objects: Optional[int]
+    noise_objects: Optional[int],
 ) -> Iterable[Phase1SituationTemplate]:
     thrower = standard_object(
         "thrower_0",

@@ -28,8 +28,6 @@ from adam.language.dependency.universal_dependencies import (
     ADVERBIAL_MODIFIER,
     CASE_POSSESSIVE,
     CASE_SPATIAL,
-    DETERMINER,
-    DETERMINER_ROLE,
     INDIRECT_OBJECT,
     NOMINAL_MODIFIER,
     NOMINAL_MODIFIER_POSSESSIVE,
@@ -44,6 +42,7 @@ from adam.language.dependency.universal_dependencies import (
     IS_ATTRIBUTE,
     ADVERBIAL_CLAUSE_MODIFIER,
     PRE_VERBAL_ADVERBIAL_CLAUSE_MODIFIER,
+    OTHER,
 )
 from adam.language.language_generator import LanguageGenerator
 from adam.language.lexicon import LexiconEntry
@@ -151,7 +150,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
     @attrs(frozen=True, slots=True)
     class _Generation:
         """This class encapsulates all the mutable state for an execution of the
-           SimpleRuleBasedChineseLanguageGenerator on a single input"""
+        SimpleRuleBasedChineseLanguageGenerator on a single input"""
 
         # keep the reference to the parent because python doesn't have real inner classes
         generator: "SimpleRuleBasedChineseLanguageGenerator" = attrib()
@@ -459,7 +458,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
 
         def _translate_spatial_path(
             self,
-            action: Optional[Action[OntologyNode, SituationObject]],
+            action: Action[OntologyNode, SituationObject],
             path_object: SituationObject,
             spatial_path: SpatialPath[SituationObject],
         ):
@@ -588,15 +587,16 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # we only translate in_region relations because have relations are translated elsewhere
             elif relation.relation_type == IN_REGION:
                 # legal arguments include the theme or the agent or patient if there is no theme (intransitive verbs such as jump and fall)
-                fills_legal_argument_role = relation.first_slot in action.argument_roles_to_fillers[
-                    THEME
-                ] or (
-                    (
-                        relation.first_slot in action.argument_roles_to_fillers[AGENT]
-                        or relation.first_slot
-                        not in action.argument_roles_to_fillers[THEME]
+                fills_legal_argument_role = (
+                    relation.first_slot in action.argument_roles_to_fillers[THEME]
+                    or (
+                        (
+                            relation.first_slot in action.argument_roles_to_fillers[AGENT]
+                            or relation.first_slot
+                            not in action.argument_roles_to_fillers[THEME]
+                        )
+                        and not action.argument_roles_to_fillers[THEME]
                     )
-                    and not action.argument_roles_to_fillers[THEME]
                 )
                 # check if the relation includes legal arguments; if it doesn't we don't handle it
                 if fills_legal_argument_role:
@@ -755,7 +755,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                     "for is GOAL"
                 )
 
-        def _localiser_for_region_as_goal(self, region: SituationRegion) -> str:
+        def _localiser_for_region_as_goal(self, region: SituationRegion) -> str:  # type: ignore
             """
             When a `Region` appears as the filler of the semantic role `GOAL`,
             determine what localiser to use to express it in Chinese.
@@ -908,7 +908,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
             # https://github.com/isi-vista/adam/issues/802 -- currently for Chinese we only count salient objects
 
             if _object.ontology_node not in self.object_counts:
-                return
+                return DependencyTreeToken("", part_of_speech=OTHER)
             else:
                 count = self.object_counts[_object.ontology_node]
 
@@ -1037,7 +1037,7 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 # handle the 3rd person possessor based on the relation
                 elif (not self.situation.is_dynamic) or (
                     possession_relations[0].first_slot
-                    not in only(self.situation.actions).argument_roles_to_fillers[AGENT]
+                    not in only(self.situation.actions).argument_roles_to_fillers[AGENT]  # type: ignore
                 ):
                     possessor = self._noun_for_object(possession_relations[0].first_slot)
                     de = DependencyTreeToken("de", PARTICLE)
@@ -1379,20 +1379,19 @@ class SimpleRuleBasedChineseLanguageGenerator(
                 ontology_node
             )
             # if there is one possible match, return it
-            if lexicon_entries:
-                if len(lexicon_entries) == 1:
-                    return only(lexicon_entries)
+            lexicon_entry = only(
+                lexicon_entries,
+                too_long=RuntimeError(
+                    f"We don't yet know how to deal with ontology nodes which "
+                    f"could be realized by multiple lexical entries: "
+                    f"{ontology_node} --> {lexicon_entries}. "
+                    f"This is https://github.com/isi-vista/adam/issues/59 ."
+                ),
+            )
+            if lexicon_entry:
+                return lexicon_entry
 
-                # if there's more than one possible match, we don't know how to handle this
-                else:
-                    raise RuntimeError(
-                        f"We don't yet know how to deal with ontology nodes which "
-                        f"could be realized by multiple lexical entries: "
-                        f"{ontology_node} --> {lexicon_entries}. "
-                        f"This is https://github.com/isi-vista/adam/issues/59 ."
-                    )
-            else:
-                raise RuntimeError(f"No lexicon entry for ontology node {ontology_node}")
+            raise RuntimeError(f"No lexicon entry for ontology node {ontology_node}")
 
         def _only_translate_if_referenced(self, object_: SituationObject) -> bool:
             """Some objects like the ground or speaker shouldn't be addressed unless explicitly mentioned"""

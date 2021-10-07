@@ -28,5 +28,5 @@ def match_object(object_to_match):
 @pytest.mark.parametrize("object_to_match", OBJECTS_TO_MATCH)
 def test_object_matching(object_to_match: OntologyNode, benchmark):
     benchmark.name = object_to_match.handle
-    benchmark.group = f"Object matching"
+    benchmark.group = "Object matching"
     benchmark.pedantic(match_object, [object_to_match], iterations=1, rounds=1)

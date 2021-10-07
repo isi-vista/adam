@@ -60,7 +60,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearner, ABC):
         pattern_template: PerceptionGraphTemplate = attrib(
             validator=instance_of(PerceptionGraphTemplate)
         )
-        association_score: float = attrib(validator=instance_of(float), default=0)
+        association_score: float = attrib(validator=instance_of(float), default=0.0)
         probability: float = attrib(validator=in_(Range.open(0, 1)), default=0)
         observation_count: int = attrib(default=1)
 
@@ -525,7 +525,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearner, ABC):
         """
 
     def _primary_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         return (
             (concept, hypothesis.pattern_template, hypothesis.probability)
@@ -538,7 +538,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearner, ABC):
         )
 
     def _fallback_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         # Alternate hypotheses either below our _lexicon_entry_threshold or our _minimum_observation_amount
         return (

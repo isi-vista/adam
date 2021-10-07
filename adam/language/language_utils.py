@@ -14,7 +14,7 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 
 
 def phase1_language_generator(
-    language_mode: LanguageMode
+    language_mode: LanguageMode,
 ) -> LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]:
     if language_mode == LanguageMode.ENGLISH:
         return GAILA_PHASE_1_LANGUAGE_GENERATOR
@@ -25,7 +25,7 @@ def phase1_language_generator(
 
 
 def phase2_language_generator(
-    language_mode: LanguageMode
+    language_mode: LanguageMode,
 ) -> LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]:
     if language_mode == LanguageMode.ENGLISH:
         return GAILA_PHASE_2_LANGUAGE_GENERATOR
@@ -36,7 +36,7 @@ def phase2_language_generator(
 
 
 def integrated_experiment_language_generator(
-    language_mode: LanguageMode
+    language_mode: LanguageMode,
 ) -> LanguageGenerator[HighLevelSemanticsSituation, LinearizedDependencyTree]:
     if language_mode == LanguageMode.ENGLISH:
         return INTEGRATED_EXPERIMENT_LANGUAGE_GENERATOR

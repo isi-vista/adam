@@ -129,7 +129,7 @@ class CandidateAccuracyObserver(
         # write out to an accuracy file if requested to do so by the user
         if self.accuracy_to_txt:
             try:
-                with open(self.txt_path, "a") as f:
+                with open(self.txt_path, "a", encoding="utf-8") as f:
                     f.write(f"{accuracy}\n")
             # we currently catch errors with a warning rather than stopping the program if we can't log accuracy
             except OSError as e:
@@ -217,7 +217,7 @@ class PrecisionRecallObserver(
         # write out to an accuracy file if requested to do so by the user
         if self.make_report:
             try:
-                with open(self.txt_path, "a") as f:
+                with open(self.txt_path, "a", encoding="utf-8") as f:
                     f.write(f"{precision},{recall}\n")
             # we currently catch errors with a warning rather than stopping the program if we can't log accuracy
             except OSError as e:
@@ -531,7 +531,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
 
         # Log into html file
         # We want to log the true description, the learners guess, the perception, and situation
-        with open(self.output_file_str, "a+") as outfile:
+        with open(self.output_file_str, "a+", encoding="utf-8") as outfile:
             outfile.write(
                 f"\n\t<table>\n"
                 f"\t\t<thead>\n"
@@ -572,9 +572,9 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             )
             if self.include_links_to_images:
                 outfile.write(
-                    f"\t\t\t\t\t<td>\n"
-                    f"\t\t\t\t\t<h3>Scene Renderings</h3>\n"
-                    f"\t\t\t\t\t</td>\n"
+                    "\t\t\t\t\t<td>\n"
+                    "\t\t\t\t\t<h3>Scene Renderings</h3>\n"
+                    "\t\t\t\t\t</td>\n"
                 )
             outfile.write(
                 f"\t\t\t</tr>\n"
@@ -613,7 +613,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             )
             if self.include_links_to_images:
                 outfile.write(f"\t\t\t\t<td valign='top'>{render_buttons_text}</td>")
-            outfile.write(f"\t\t\t</tr>\n\t\t</tbody>\n\t</table>")
+            outfile.write("\t\t\t</tr>\n\t\t</tbody>\n\t</table>")
             outfile.write("\n</body>")
 
     def _get_button_suffix(self) -> str:
@@ -780,7 +780,9 @@ def pretty_descriptions(
         )
         parts.append("</ul>")
         return "\n".join(parts)
-    elif len(descriptions) == 1:
-        return "".join(only(descriptions).as_token_string())
+
+    description = only(descriptions)
+    if description is not None:
+        return "".join(description.as_token_string())
     else:
         return ""
