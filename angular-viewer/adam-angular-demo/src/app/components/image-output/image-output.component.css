@@ -1,0 +1,10 @@
+.img{
+    height: auto; 
+    width: auto; 
+    max-width: 700px; 
+    max-height: 700px;
+}
+
+.imgWrapper{
+    margin: 20px
+}

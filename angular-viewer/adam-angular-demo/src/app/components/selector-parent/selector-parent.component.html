@@ -1,0 +1,11 @@
+<div class="row selector-grid">
+    <app-selectors class="col" function="Learner" [directories]="learners"></app-selectors>
+    <app-selectors class="col" function="Pretraining Data" [directories]="pretraining_data"></app-selectors>
+    <app-selectors class="col" function="Training Data" [directories]="training_data"></app-selectors>
+    <app-selectors class="col" function="Test Data" [directories]="test_data"></app-selectors>
+    <app-button class="col" (btnClick)="onButtonClick()"></app-button>
+</div>
+<div class="row">
+    <app-image-output class="col"></app-image-output>
+    <app-object-results class="col"></app-object-results>
+</div>

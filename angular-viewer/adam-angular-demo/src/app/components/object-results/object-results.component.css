@@ -1,0 +1,11 @@
+.result-wrapper{
+    margin: 20px;
+    background-color: #eeeeee;
+    border: 2px beige;
+    border-radius:5px;
+    height: max-content; 
+    width: auto; 
+    max-width: 700px; 
+    max-height: 700px;
+    padding: 20px;
+}

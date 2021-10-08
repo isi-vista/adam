@@ -1,0 +1,13 @@
+.button-color{
+    background-color: #00C851;
+}
+
+.text{
+    color:#FFFFFF;
+}
+
+.box{
+    margin: 55px 0 0 20px;
+    display: flex;
+    align-items: center;
+}
