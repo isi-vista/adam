@@ -90,7 +90,7 @@ class ActionDescriptionFrame:
 
     @variables_to_roles.default
     def _init_entities_to_roles(
-        self
+        self,
     ) -> ImmutableSetMultiDict[ActionDescriptionVariable, OntologyNode]:
         return immutablesetmultidict(
             (entity, role) for role, entity in self.roles_to_variables.items()

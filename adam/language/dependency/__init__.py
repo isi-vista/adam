@@ -285,7 +285,7 @@ class RoleOrderDependencyTreeLinearizer(DependencyTreeLinearizer):
                     f"{role} relative to head of POS tag "
                     f"{head_node.part_of_speech}. We know how to handle the "
                     f"following roles: {role_order}"
-                )
+                ) from ValueError
 
         nodes_in_order = sorted(nodes_to_order, key=position)
 

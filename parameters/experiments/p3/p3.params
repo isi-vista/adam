@@ -1,0 +1,12 @@
+_includes:
+   - "../../root.params"
+
+experiment_group_dir: '%adam_experiment_root%/p3/'
+
+hypothesis_log_dir: "%experiment_group_dir%/hypotheses"
+include_image_links: true
+
+sort_learner_descriptions_by_length: True
+num_pretty_descriptions: 5
+
+load_from_curriculum_repository: '%adam_root%/p3_curricula/m4_curriculum'

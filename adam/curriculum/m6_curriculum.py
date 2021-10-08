@@ -347,10 +347,10 @@ def _make_m6_mixed_curriculum(
     ],
 ) -> Phase1InstanceGroup:
     r.seed(0)
-    all_instances = flatten(
-        make_m6_curriculum(num_samples, noise_objects, language_generator)
+    all_instances = flatten(  # type: ignore
+        make_m6_curriculum(num_samples, noise_objects, language_generator)  # type: ignore
     )
-    r.shuffle(all_instances)
+    r.shuffle(all_instances)  # type: ignore
     return ExplicitWithSituationInstanceGroup("m6_mixed", tuple(all_instances))
 
 

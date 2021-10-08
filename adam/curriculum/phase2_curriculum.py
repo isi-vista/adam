@@ -17,7 +17,7 @@ from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import random
 
 from itertools import chain
-from typing import Sequence, Optional, Iterable, Any
+from typing import Sequence, Optional, Iterable, Any, MutableSequence
 
 from more_itertools import flatten, only
 
@@ -429,8 +429,8 @@ def build_m13_shuffled_curriculum(
 ) -> Sequence[Phase1InstanceGroup]:
 
     random.seed(0)
-    situations = flatten(
-        build_gaila_m13_curriculum(
+    situations: MutableSequence[Phase1InstanceGroup] = flatten(  # type: ignore
+        build_gaila_m13_curriculum(  # type: ignore
             num_samples, num_noise_objects, language_generator, use_path_instead_of_goal
         )
     )
@@ -1175,12 +1175,14 @@ def build_object_learner_experiment_curriculum_train(
                 fake_language = only(
                     language_generator.generate_language(wrong_situation, chooser=rng)
                 )
-                output_language = LinearizedDependencyTree(
-                    dependency_tree=fake_language.dependency_tree,
-                    surface_token_order=fake_language.surface_token_order,
-                    accurate=False,
-                )
-
+                if fake_language:
+                    output_language = LinearizedDependencyTree(
+                        dependency_tree=fake_language.dependency_tree,
+                        surface_token_order=fake_language.surface_token_order,
+                        accurate=False,
+                    )
+                else:
+                    raise RuntimeError("No fake language successfully generated")
             else:
                 raise RuntimeError(
                     f"Unable to make invalid language without a situation of type HighlevelSemanticsSituation. Got situation: {situation}"
@@ -1225,8 +1227,10 @@ def build_pursuit_curriculum(
         prob_gaze_perceived_given_gaze=prob_given,
         prob_gaze_perceived_given_not_gaze=prob_not_given,
     )
-    perception_generator = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-        ontology=GAILA_PHASE_2_ONTOLOGY, gaze_strategy=gaze_perciever
+    perception_generator = (
+        HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+            ontology=GAILA_PHASE_2_ONTOLOGY, gaze_strategy=gaze_perciever
+        )
     )
     return [
         make_simple_pursuit_curriculum(

@@ -45,8 +45,8 @@ def object_language_ablation_runner_entry_point(params: Parameters) -> None:
 
     for num_objects in range(min_num_objects, max_num_objects + 1):
         for language_accuracy in values_for_accuracy:
-            for learner_type in LEARNER_VALUES_TO_PARAMS:
-                for params_str, learner_params in LEARNER_VALUES_TO_PARAMS[learner_type]:
+            for (learner_type, params_value) in LEARNER_VALUES_TO_PARAMS.items():
+                for params_str, learner_params in params_value:
                     experiment_name_string = EXPERIMENT_NAME_FORMAT.format(
                         num_objects=num_objects,
                         language_accuracy=language_accuracy,

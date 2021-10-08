@@ -85,7 +85,7 @@ _subtype(_LEARNER, _PERSON)
 
 
 def _testing_schemata(
-    nodes: Iterable[OntologyNode]
+    nodes: Iterable[OntologyNode],
 ) -> ImmutableSetMultiDict[OntologyNode, ObjectStructuralSchema]:
     return immutablesetmultidict(
         (node, ObjectStructuralSchema(node, axes=WORLD_AXES)) for node in nodes

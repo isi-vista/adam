@@ -1,20 +1,27 @@
 import logging
 import pickle
-
+import random
 from pathlib import Path
-
 from typing import Callable, Optional, Mapping, Iterable, Tuple, cast
+
+from vistautils.parameters import Parameters
+from vistautils.parameters_only_entrypoint import parameters_only_entry_point
+
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_size_curriculum,
     make_imprecise_temporal_descriptions,
     make_subtle_verb_distinctions_curriculum,
 )
-import random
-
-from adam.experiment.curriculum_repository import read_experiment_curriculum
-from adam.learner.generics import SimpleGenericsLearner
-from adam.learner.objects import PursuitObjectLearnerNew, ProposeButVerifyObjectLearner
+from adam.curriculum.m6_curriculum import make_m6_curriculum
+from adam.curriculum.phase1_curriculum import (
+    build_gaila_phase1_object_curriculum,
+    build_gaila_phase1_attribute_curriculum,
+    build_classifier_curriculum,
+    build_gaila_phase1_relation_curriculum,
+    build_gaila_phase1_verb_curriculum,
+    build_gaila_phase_1_curriculum,
+)
 from adam.curriculum.phase2_curriculum import (
     build_functionally_defined_objects_curriculum,
     build_gaila_m13_curriculum,
@@ -28,6 +35,8 @@ from adam.curriculum.preposition_curriculum import make_prepositions_curriculum
 from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
+from adam.experiment import Experiment, execute_experiment
+from adam.experiment.curriculum_repository import read_p3_experiment_curriculum
 from adam.experiment.experiment_utils import (
     build_each_object_by_itself_curriculum_train,
     build_each_object_by_itself_curriculum_test,
@@ -44,6 +53,7 @@ from adam.experiment.experiment_utils import (
     build_action_learner_factory,
     build_plural_learner_factory,
 )
+from adam.experiment.observer import LearningProgressHtmlLogger
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import (
@@ -51,53 +61,31 @@ from adam.language.language_utils import (
     integrated_experiment_language_generator,
 )
 from adam.language_specific.english import ENGLISH_DETERMINERS
-from adam.learner.attributes import (
-    SubsetAttributeLearner,
-    SubsetAttributeLearnerNew,
-    PursuitAttributeLearnerNew,
-)
+from adam.learner import TopLevelLanguageLearner
+from adam.learner.attributes import SubsetAttributeLearner, PursuitAttributeLearner
 from adam.learner.functional_learner import FunctionalLearner
+from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.relations import SubsetRelationLearnerNew
-from adam.learner.template_learner import TemplateLearner
-from adam.learner.verbs import SubsetVerbLearner, SubsetVerbLearnerNew
-from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
-from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
-    GAILA_PHASE_1_PERCEPTION_GENERATOR,
-)
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from vistautils.parameters import Parameters
-from vistautils.parameters_only_entrypoint import parameters_only_entry_point
-
-from adam.curriculum.m6_curriculum import make_m6_curriculum
-from adam.curriculum.phase1_curriculum import (
-    build_gaila_phase1_object_curriculum,
-    build_gaila_phase1_attribute_curriculum,
-    build_classifier_curriculum,
-    build_gaila_phase1_relation_curriculum,
-    build_gaila_phase1_verb_curriculum,
-    build_gaila_phase_1_curriculum,
-)
-from adam.experiment import Experiment, execute_experiment
-from adam.experiment.observer import LearningProgressHtmlLogger
-from adam.learner import TopLevelLanguageLearner
 from adam.learner.object_recognizer import ObjectRecognizer
-from adam.learner.prepositions import SubsetPrepositionLearner
+from adam.learner.objects import PursuitObjectLearner, ProposeButVerifyObjectLearner
+from adam.learner.objects import SubsetObjectLearner, ObjectRecognizerAsTemplateLearner
 from adam.learner.pursuit import HypothesisLogger
-from adam.learner.objects import (
-    ObjectPursuitLearner,
-    SubsetObjectLearner,
-    SubsetObjectLearnerNew,
-    ObjectRecognizerAsTemplateLearner,
-)
+from adam.learner.relations import SubsetRelationLearner
+from adam.learner.template_learner import TemplateLearner
+from adam.learner.verbs import SubsetVerbLearner
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     ME_HACK,
     YOU_HACK,
     PHASE_1_CURRICULUM_OBJECTS,
 )
+from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
+from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
+    GAILA_PHASE_1_PERCEPTION_GENERATOR,
+)
 from adam.random_utils import RandomChooser
+from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
 LANGUAGE_GEN = LanguageGenerator[  # pylint: disable=invalid-name
     HighLevelSemanticsSituation, LinearizedDependencyTree
@@ -129,9 +117,8 @@ def log_experiment_entry_point(params: Parameters) -> None:
         "load_from_curriculum_repository"
     )
     if curriculum_repository_path:
-        curriculum = read_experiment_curriculum(
-            curriculum_repository_path, params, language_mode
-        )
+        curriculum = read_p3_experiment_curriculum(curriculum_repository_path, params)
+        # curriculum = read_experiment_curriculum(curriculum_repository_path, params, language_mode) # P2
         (training_instance_groups, test_instance_groups) = (
             curriculum.train_curriculum,
             curriculum.test_curriculum,
@@ -156,7 +143,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
     if resume_from_last_logged_state and observers_state:
         raise RuntimeError(
-            f"Can not resume from last logged state and provide explicit observer state paths"
+            "Can not resume from last logged state and provide explicit observer state paths"
         )
 
     if resume_from_last_logged_state:
@@ -275,17 +262,12 @@ def log_experiment_entry_point(params: Parameters) -> None:
 
 def learner_factory_from_params(
     params: Parameters,
-    graph_logger: Optional[HypothesisLogger],
+    graph_logger: Optional[HypothesisLogger],  # pylint: disable=unused-argument
     language_mode: LanguageMode = LanguageMode.ENGLISH,
 ) -> Callable[[], TopLevelLanguageLearner]:  # type: ignore
     learner_type = params.string(
         "learner",
         [
-            "pursuit",
-            "object-subset",
-            "preposition-subset",
-            "attribute-subset",
-            "verb-subset",
             "integrated-learner",
             "integrated-learner-recognizer-without-generics",
             "integrated-learner-recognizer",
@@ -313,13 +295,9 @@ def learner_factory_from_params(
         perception_generator=perception_generator,
     )
 
-    if learner_type == "pursuit":
-        return lambda: ObjectPursuitLearner.from_parameters(
-            params.namespace("pursuit"), graph_logger=graph_logger
-        )
-    elif learner_type == "pursuit-gaze":
+    if learner_type == "pursuit-gaze":
         return lambda: IntegratedTemplateLearner(
-            object_learner=PursuitObjectLearnerNew(
+            object_learner=PursuitObjectLearner(
                 learning_factor=0.05,
                 graph_match_confirmation_threshold=0.7,
                 lexicon_entry_threshold=0.7,
@@ -329,63 +307,40 @@ def learner_factory_from_params(
                 language_mode=language_mode,
                 rank_gaze_higher=True,
             ),
-            attribute_learner=SubsetAttributeLearnerNew(
+            attribute_learner=SubsetAttributeLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-            relation_learner=SubsetRelationLearnerNew(
+            relation_learner=SubsetRelationLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-            action_learner=SubsetVerbLearnerNew(
+            action_learner=SubsetVerbLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-        )
-    elif learner_type == "object-subset":
-        return lambda: SubsetObjectLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, language_mode=LanguageMode.ENGLISH
-        )
-    elif learner_type == "attribute-subset":
-        return lambda: SubsetAttributeLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            object_recognizer=object_recognizer,
-            language_mode=LanguageMode.ENGLISH,
-        )
-    elif learner_type == "preposition-subset":
-        return lambda: SubsetPrepositionLearner(
-            # graph_logger=graph_logger,
-            object_recognizer=object_recognizer,
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            language_mode=LanguageMode.ENGLISH,
-        )
-    elif learner_type == "verb-subset":
-        return lambda: SubsetVerbLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY,
-            object_recognizer=object_recognizer,
-            language_mode=LanguageMode.ENGLISH,
         )
     elif learner_type == "integrated-learner":
         return lambda: IntegratedTemplateLearner(
-            object_learner=SubsetObjectLearnerNew(
+            object_learner=SubsetObjectLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-            attribute_learner=SubsetAttributeLearnerNew(
+            attribute_learner=SubsetAttributeLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-            relation_learner=SubsetRelationLearnerNew(
+            relation_learner=SubsetRelationLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-            action_learner=SubsetVerbLearnerNew(
+            action_learner=SubsetVerbLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
@@ -397,17 +352,17 @@ def learner_factory_from_params(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=object_recognizer, language_mode=language_mode
             ),
-            attribute_learner=SubsetAttributeLearnerNew(
+            attribute_learner=SubsetAttributeLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-            relation_learner=SubsetRelationLearnerNew(
+            relation_learner=SubsetRelationLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-            action_learner=SubsetVerbLearnerNew(
+            action_learner=SubsetVerbLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
@@ -420,17 +375,17 @@ def learner_factory_from_params(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=object_recognizer, language_mode=language_mode
             ),
-            attribute_learner=SubsetAttributeLearnerNew(
+            attribute_learner=SubsetAttributeLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-            relation_learner=SubsetRelationLearnerNew(
+            relation_learner=SubsetRelationLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
             ),
-            action_learner=SubsetVerbLearnerNew(
+            action_learner=SubsetVerbLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
@@ -452,8 +407,8 @@ def learner_factory_from_params(
         object_learner_factory: Callable[[], TemplateLearner]
         if object_learner_type == "subset":
 
-            def subset_factory() -> SubsetObjectLearnerNew:
-                return SubsetObjectLearnerNew(  # type: ignore
+            def subset_factory() -> SubsetObjectLearner:
+                return SubsetObjectLearner(  # type: ignore
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                     beam_size=beam_size,
                     language_mode=language_mode,
@@ -471,8 +426,8 @@ def learner_factory_from_params(
             object_learner_factory = pbv_factory
         elif object_learner_type == "pursuit":
 
-            def pursuit_factory() -> PursuitObjectLearnerNew:
-                return PursuitObjectLearnerNew(  # type: ignore
+            def pursuit_factory() -> PursuitObjectLearner:
+                return PursuitObjectLearner(  # type: ignore
                     learning_factor=learner_params.floating_point("learning_factor"),
                     graph_match_confirmation_threshold=learner_params.floating_point(
                         "graph_match_confirmation_threshold"
@@ -527,7 +482,7 @@ def learner_factory_from_params(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=object_recognizer, language_mode=language_mode
             ),
-            attribute_learner=PursuitAttributeLearnerNew(
+            attribute_learner=PursuitAttributeLearner(
                 learning_factor=0.05,
                 graph_match_confirmation_threshold=0.7,
                 lexicon_entry_threshold=0.7,

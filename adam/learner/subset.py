@@ -1,13 +1,12 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, Tuple
+from typing import AbstractSet, Dict, Iterable, Optional, Set, Tuple
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from immutablecollections import ImmutableSet, immutabledict, immutableset
+from immutablecollections import ImmutableSet, immutableset
 
-from adam.language import TokenSequenceLinguisticDescription
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
 from adam.learner.learner_utils import pattern_match_to_semantic_node
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -15,13 +14,9 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
-from adam.learner.template_learner import (
-    AbstractTemplateLearner,
-    AbstractTemplateLearnerNew,
-)
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.ontology.ontology import Ontology
 from adam.perception import MatchMode
-from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.perception_graph import (
     DebugCallableType,
     PerceptionGraph,
@@ -33,102 +28,6 @@ from adam.semantics import Concept, SemanticNode
 
 @attrs
 class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
-    _surface_template_to_hypothesis: Dict[
-        SurfaceTemplate, PerceptionGraphTemplate
-    ] = attrib(init=False, default=Factory(dict))
-    _ontology: Ontology = attrib(validator=instance_of(Ontology), kw_only=True)
-    _debug_callback: Optional[DebugCallableType] = attrib(default=None, kw_only=True)
-
-    @abstractmethod
-    def _update_hypothesis(
-        self,
-        previous_pattern_hypothesis: PerceptionGraphTemplate,
-        current_pattern_hypothesis: PerceptionGraphTemplate,
-    ) -> Optional[PerceptionGraphTemplate]:
-        """
-        Method to handle how to intersect hypothesis to possibly update hypothesis
-        """
-
-    def _learning_step(
-        self,
-        preprocessed_input: LanguageAlignedPerception,
-        surface_template: SurfaceTemplate,
-    ) -> None:
-        if surface_template in self._surface_template_to_hypothesis:
-            # If already observed, get the largest matching subgraph of the pattern in the
-            # current observation and
-            # previous pattern hypothesis
-            # TODO: We should relax this requirement for learning: issue #361
-            previous_pattern_hypothesis = self._surface_template_to_hypothesis[
-                surface_template
-            ]
-
-            updated_hypothesis = self._update_hypothesis(
-                previous_pattern_hypothesis,
-                self._hypothesis_from_perception(preprocessed_input),
-            )
-
-            if updated_hypothesis:
-                # Update the leading hypothesis
-                self._surface_template_to_hypothesis[
-                    surface_template
-                ] = updated_hypothesis
-            else:
-                logging.warning(
-                    "Intersection of graphs had empty result; keeping original pattern"
-                )
-
-        else:
-            # If it's a new description, learn a new hypothesis/pattern, generated as a pattern
-            # graph frm the
-            # perception graph.
-            self._surface_template_to_hypothesis[
-                surface_template
-            ] = self._hypothesis_from_perception(preprocessed_input)
-
-    @abstractmethod
-    def _hypothesis_from_perception(
-        self, preprocessed_input: LanguageAlignedPerception
-    ) -> PerceptionGraphTemplate:
-        pass
-
-    def _primary_templates(
-        self
-    ) -> Iterable[Tuple[SurfaceTemplate, PerceptionGraphTemplate, float]]:
-        return (
-            (surface_template, hypothesis, 1.0)
-            for (
-                surface_template,
-                hypothesis,
-            ) in self._surface_template_to_hypothesis.items()
-        )
-
-    def _fallback_templates(
-        self
-    ) -> Iterable[Tuple[SurfaceTemplate, PerceptionGraphTemplate, float]]:
-        return tuple()
-
-    def _post_process_descriptions(
-        self,
-        match_results: Sequence[
-            Tuple[TokenSequenceLinguisticDescription, PerceptionGraphTemplate, float]
-        ],
-    ) -> Mapping[TokenSequenceLinguisticDescription, float]:
-        if not match_results:
-            return immutabledict()
-
-        largest_pattern_num_nodes = max(
-            len(template.graph_pattern) for (_, template, _) in match_results
-        )
-
-        return immutabledict(
-            (description, len(template.graph_pattern) / largest_pattern_num_nodes)
-            for (description, template, score) in match_results
-        )
-
-
-@attrs
-class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
     _beam_size: int = attrib(validator=instance_of(int), kw_only=True)
     _concept_to_hypotheses: Dict[Concept, ImmutableSet[PerceptionGraphTemplate]] = attrib(
         init=False, default=Factory(dict)
@@ -333,7 +232,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
         """
 
     def _primary_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         return (
             (concept, hypotheses[0], 1.0)
@@ -343,7 +242,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
         )
 
     def _fallback_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         # Alternate hypotheses stored in the beam.
         return (
@@ -357,25 +256,7 @@ class AbstractSubsetLearnerNew(AbstractTemplateLearnerNew, ABC):
         return {k: v.graph_pattern for k, v, _ in self._primary_templates()}
 
 
-@attrs  # pylint:disable=abstract-method
 class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearner, ABC):
-    def log_hypotheses(self, log_output_path: Path) -> None:
-        logging.info(
-            "Logging %s hypotheses to %s",
-            len(self._surface_template_to_hypothesis),
-            log_output_path,
-        )
-        for (
-            surface_template,
-            hypothesis,
-        ) in self._surface_template_to_hypothesis.items():
-            template_string = surface_template.to_short_string()
-            hypothesis.render_to_file(template_string, log_output_path / template_string)
-
-
-class AbstractTemplateSubsetLearnerNew(
-    AbstractSubsetLearnerNew, AbstractTemplateLearnerNew, ABC
-):
     # pylint:disable=abstract-method
     def log_hypotheses(self, log_output_path: Path) -> None:
         logging.info(

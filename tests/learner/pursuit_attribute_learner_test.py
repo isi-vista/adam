@@ -13,7 +13,7 @@ from adam.curriculum.curriculum_utils import (
 from adam.curriculum.phase1_curriculum import _object_with_color_template
 from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
-from adam.learner.attributes import PursuitAttributeLearnerNew
+from adam.learner.attributes import PursuitAttributeLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.ontology.phase1_ontology import (
@@ -37,7 +37,7 @@ def pursuit_learner_factory(language_mode: LanguageMode):
     rng.seed(0)
     return IntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
-        attribute_learner=PursuitAttributeLearnerNew(
+        attribute_learner=PursuitAttributeLearner(
             learning_factor=0.05,
             graph_match_confirmation_threshold=0.7,
             lexicon_entry_threshold=0.7,

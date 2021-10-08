@@ -22,14 +22,14 @@ from adam.curriculum.phase1_curriculum import (
 from adam.language import TokenSequenceLinguisticDescription
 from adam.language.language_utils import phase2_language_generator
 from adam.learner import LearningExample
-from adam.learner.attributes import SubsetAttributeLearnerNew
+from adam.learner.attributes import SubsetAttributeLearner
 from adam.learner.generics import SimpleGenericsLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
-from adam.learner.objects import SubsetObjectLearnerNew
-from adam.learner.plurals import SubsetPluralLearnerNew
+from adam.learner.objects import SubsetObjectLearner
+from adam.learner.plurals import SubsetPluralLearner
 from adam.learner.semantics_utils import SemanticsManager
-from adam.learner.verbs import SubsetVerbLearnerNew
+from adam.learner.verbs import SubsetVerbLearner
 from adam.ontology.phase1_ontology import (
     GAILA_PHASE_1_ONTOLOGY,
     GROUND,
@@ -49,16 +49,16 @@ def integrated_learner_factory(language_mode: LanguageMode):
     rng = random.Random()
     rng.seed(0)
     return IntegratedTemplateLearner(
-        object_learner=SubsetObjectLearnerNew(
+        object_learner=SubsetObjectLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
-        attribute_learner=SubsetAttributeLearnerNew(
+        attribute_learner=SubsetAttributeLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
-        plural_learner=SubsetPluralLearnerNew(
+        plural_learner=SubsetPluralLearner(
             ontology=GAILA_PHASE_2_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
-        action_learner=SubsetVerbLearnerNew(
+        action_learner=SubsetVerbLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
         generics_learner=SimpleGenericsLearner(),
@@ -124,7 +124,7 @@ def run_experiment(learner, curricula, experiment_id):
         complete_results.append(results)
 
     results_df = pd.DataFrame(
-        [[np.asscalar(i[1]) for i in l] for l in complete_results],
+        [[np.asscalar(i[1]) for i in line] for line in complete_results],
         columns=["Animal", "Food", "People"],
     )
     results_df.insert(0, "Words", pseudoword_to_kind.keys())
@@ -138,11 +138,10 @@ def run_experiment(learner, curricula, experiment_id):
     )
 
 
-if __name__ == "__main__":
+def main():
     for lm in [LanguageMode.ENGLISH]:
         language_generator = phase2_language_generator(lm)
         num_samples = 200
-        ban_all = [CHICKEN, BEEF, COW]
         condition_and_banned_objects = {
             "without-chicken-beef-cow": [CHICKEN, BEEF, COW],
             "chicken": [BEEF, COW],
@@ -203,3 +202,7 @@ if __name__ == "__main__":
                 curricula=pretraining_curricula,
                 experiment_id=experiment,
             )
+
+
+if __name__ == "__main__":
+    main()

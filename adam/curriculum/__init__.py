@@ -36,7 +36,7 @@ class InstanceGroup(ABC, Generic[SituationT, LinguisticDescriptionT, PerceptionT
 
     @abstractmethod
     def instances(
-        self
+        self,
     ) -> Iterable[
         Tuple[
             Optional[SituationT],
@@ -70,7 +70,7 @@ class ExplicitWithoutSituationInstanceGroup(
         return self._name
 
     def instances(
-        self
+        self,
     ) -> Iterable[
         Tuple[SituationT, LinguisticDescriptionT, PerceptualRepresentation[PerceptionT]]
     ]:
@@ -98,7 +98,7 @@ class ExplicitWithSituationInstanceGroup(
         return self._name
 
     def instances(
-        self
+        self,
     ) -> Iterable[
         Tuple[
             Optional[SituationT],
@@ -148,7 +148,7 @@ class GeneratedFromSituationsInstanceGroup(
         return self._name
 
     def instances(
-        self
+        self,
     ) -> Iterable[
         Tuple[
             Optional[SituationT],
@@ -194,7 +194,7 @@ class AblatedLanguageSituationsInstanceGroup(
         return self._name
 
     def instances(
-        self
+        self,
     ) -> Iterable[
         Tuple[
             Optional[SituationT],

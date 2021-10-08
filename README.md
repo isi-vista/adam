@@ -68,7 +68,13 @@ Navigate to the directory above and serve the application locally on port 4200:
 ng serve --open
 ```
 
-For a more detailed overview including how to check for versions, please refer: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
+# To install npm on your machine
+
+```
+npm install -g npm
+```
+
+For more detailed information including how to check npm versions on your machine, please refer: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 
 # Languages
 Currently, our curriculum dump and learner run in English by default, but they are also runnable in Chinese. 

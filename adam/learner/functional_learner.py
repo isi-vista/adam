@@ -186,7 +186,9 @@ class FunctionalLearner(TemplateLearner):
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         # Could possibly be improved see: https://github.com/isi-vista/adam/issues/938
-        with open(log_output_path / "functional_learner.txt", "w") as file:
+        with open(
+            log_output_path / "functional_learner.txt", "w", encoding="utf-8"
+        ) as file:
             for concept in self._concept_to_slots_to_function_counter:
                 file.write(f"{concept}\n")
                 for slot in self._concept_to_slots_to_function_counter[concept]:

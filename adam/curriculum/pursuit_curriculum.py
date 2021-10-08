@@ -5,6 +5,9 @@ metrics to pursue the strongest hypothesis as long as it is supported by the fol
 Paper: The Pursuit of Word Meanings (Stevens et al., 2017)
 """
 from typing import Optional, Sequence
+
+from immutablecollections import immutableset
+
 from adam.ontology import IS_ADDRESSEE, IS_SPEAKER
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.language.language_generator import LanguageGenerator
@@ -50,7 +53,7 @@ def make_simple_pursuit_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
     *,
-    target_objects=[BALL, CHAIR, MOM, DAD, BABY, TABLE, DOG, BIRD, BOX],
+    target_objects=immutableset([BALL, CHAIR, MOM, DAD, BABY, TABLE, DOG, BIRD, BOX]),
     num_objects_in_instance: int = 3,
     perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = GAILA_PHASE_2_PERCEPTION_GENERATOR,
     add_gaze: bool = False,

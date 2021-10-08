@@ -16,8 +16,8 @@ from adam.curriculum.imprecise_descriptions_curriculum import (
 )
 from adam.learner import LearningExample
 
-from adam.learner.verbs import SubsetVerbLearnerNew
-from adam.learner.attributes import SubsetAttributeLearnerNew
+from adam.learner.verbs import SubsetVerbLearner
+from adam.learner.attributes import SubsetAttributeLearner
 from adam.learner.integrated_learner import IntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
@@ -32,10 +32,10 @@ def integrated_learner_factory(language_mode: LanguageMode):
             object_recognizer=object_recognizer_factory(language_mode),
             language_mode=language_mode,
         ),
-        attribute_learner=SubsetAttributeLearnerNew(
+        attribute_learner=SubsetAttributeLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
-        action_learner=SubsetVerbLearnerNew(
+        action_learner=SubsetVerbLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
         ),
     )

@@ -1,3 +1,4 @@
+import logging
 from enum import Enum, auto
 from itertools import chain
 from random import Random
@@ -232,9 +233,11 @@ class _PerceptionGeneration:
     `HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator`
     """
 
-    _generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = attrib(
-        validator=instance_of(
-            HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator
+    _generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator = (
+        attrib(
+            validator=instance_of(
+                HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator
+            )
         )
     )
     _situation: HighLevelSemanticsSituation = attrib(
@@ -465,19 +468,20 @@ class _PerceptionGeneration:
             object_schemata = self._generator.ontology.structural_schemata(
                 situation_object.ontology_node
             )
-            if len(object_schemata) > 1:
-                # TODO: add issue for this
-                # https://github.com/isi-vista/adam/issues/87
-                raise RuntimeError(
-                    f"Support for objects with multiple structural schemata has not "
-                    f"yet been implemented."
-                )
             if object_schemata:
                 # We know the object's structure.
                 # It might have complicated internal structure,
                 # which we will recursively instantiate.
+                # We can't handle an object with more than one structural schemata
+                # https://github.com/isi-vista/adam/issues/87
                 perceived_object = self._instantiate_object_schema(
-                    only(object_schemata), situation_object=situation_object
+                    only(  # type: ignore
+                        object_schemata,
+                        too_long=RuntimeError(
+                            "Support for objects with multiple structural schemata has not yet been implemented."
+                        ),
+                    ),
+                    situation_object=situation_object,
                 ).instantiated_object
             else:
                 if self._generator.ontology.has_property(
@@ -614,8 +618,10 @@ class _PerceptionGeneration:
 
         # Properties derived from the role of the situation object in the action
         for action in self._situation.actions:
-            action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.required_action_description(
-                action.action_type, action.argument_roles_to_fillers.keys()
+            action_description: ActionDescription = (
+                GAILA_PHASE_1_ONTOLOGY.required_action_description(
+                    action.action_type, action.argument_roles_to_fillers.keys()
+                )
             )
             for role in action_description.frame.semantic_roles:  # e.g. AGENT
                 variable = action_description.frame.roles_to_variables[
@@ -778,15 +784,20 @@ class _PerceptionGeneration:
                     )
 
                 # If a color is explicitly defined, use that color
-                if explicitly_specified_colors:
-                    if len(explicitly_specified_colors) == 1:
-                        inherited_color = handle_color_property(
-                            node, only(explicitly_specified_colors)
-                        )
-                    else:
-                        raise RuntimeError(
+                explicitly_specified_color = (
+                    only(
+                        explicitly_specified_colors,
+                        too_long=RuntimeError(
                             "Cannot have multiple explicit colors on an object."
-                        )
+                        ),
+                    )
+                    if explicitly_specified_colors
+                    else None
+                )
+                if explicitly_specified_color:
+                    inherited_color = handle_color_property(
+                        node, explicitly_specified_color
+                    )
                 # If an object's type already has a color associated with it,
                 # assign that color to the object
                 elif ontology_node in ontology_nodes_to_colors:
@@ -835,8 +846,8 @@ class _PerceptionGeneration:
             size_relation_same_type = Relation(
                 relation_type=new_relation_type,
                 first_slot=self._objects_to_perceptions[relation.first_slot],
-                second_slot=self._objects_to_perceptions[  # type:ignore
-                    relation.second_slot
+                second_slot=self._objects_to_perceptions[
+                    relation.second_slot  # type:ignore
                 ],
                 negated=relation.negated,
             )
@@ -862,18 +873,21 @@ class _PerceptionGeneration:
                 if relation.relation_type in SIZE_RELATIONS
                 and relation.second_slot == BABY
             )
-            if size_relations:
-                if len(size_relations) > 1:
-                    raise RuntimeError(
-                        f"Expected only one size relations for "
-                        f"{ontology_type} but got {size_relations}"
-                    )
+            size_relation = only(
+                size_relations,
+                too_long=RuntimeError(
+                    f"Expected only one size relations for "
+                    f"{ontology_type} but got {size_relations}"
+                ),
+            )
+
+            if not size_relation:
                 self._property_assertion_perceptions.append(
-                    HasBinaryProperty(perception, only(size_relations).relation_type)
+                    HasBinaryProperty(perception, ABOUT_THE_SAME_SIZE_AS_LEARNER)
                 )
             else:
                 self._property_assertion_perceptions.append(
-                    HasBinaryProperty(perception, ABOUT_THE_SAME_SIZE_AS_LEARNER)
+                    HasBinaryProperty(perception, size_relation.relation_type)
                 )
 
     def _perceive_axis_info(self) -> AxesInfo[ObjectPerception]:
@@ -967,13 +981,17 @@ class _PerceptionGeneration:
         # e.g: SituationAction(PUT, ((AGENT, mom),(THEME, ball),(DESTINATION, SituationRelation(
         # IN_REGION, ball, ON(TABLE)))))
         # Get description from PUT (PUT is action_type)
-        action_description: ActionDescription = GAILA_PHASE_1_ONTOLOGY.required_action_description(
-            situation_action.action_type,
-            situation_action.argument_roles_to_fillers.keys(),
+        action_description: ActionDescription = (
+            GAILA_PHASE_1_ONTOLOGY.required_action_description(
+                situation_action.action_type,
+                situation_action.argument_roles_to_fillers.keys(),
+            )
         )
 
-        action_objects_variables_to_perceived_objects = self._bind_action_objects_variables_to_perceived_objects(
-            situation_action, action_description
+        action_objects_variables_to_perceived_objects = (
+            self._bind_action_objects_variables_to_perceived_objects(
+                situation_action, action_description
+            )
         )
 
         enduring_relations = self._perceive_action_relations(
@@ -1027,18 +1045,23 @@ class _PerceptionGeneration:
             situation_object_bound_to_role = only(
                 situation_action.argument_roles_to_fillers[role]
             )
-            if isinstance(situation_object_bound_to_role, SituationObject):
-                bindings[action_object] = self._objects_to_perceptions[
-                    situation_object_bound_to_role
-                ]
-            elif isinstance(situation_object_bound_to_role, Region):
-                bindings[action_object] = Region(
-                    reference_object=self._objects_to_perceptions[
-                        situation_object_bound_to_role.reference_object
-                    ],
-                    distance=situation_object_bound_to_role.distance,
-                    direction=situation_object_bound_to_role.direction,
-                )
+            if situation_object_bound_to_role:
+                if isinstance(situation_object_bound_to_role, SituationObject):
+                    bindings[action_object] = self._objects_to_perceptions[
+                        situation_object_bound_to_role
+                    ]
+                elif isinstance(situation_object_bound_to_role, Region):
+                    bindings[action_object] = Region(
+                        reference_object=self._objects_to_perceptions[
+                            situation_object_bound_to_role.reference_object
+                        ],
+                        distance=situation_object_bound_to_role.distance,
+                        direction=situation_object_bound_to_role.direction.copy_remapping_objects(
+                            self._objects_to_perceptions, axis_mapping=immutabledict()
+                        )
+                        if situation_object_bound_to_role.direction
+                        else None,
+                    )
 
         # but there are also action description objects
         # which don't fill semantic roles directly.
@@ -1120,8 +1143,6 @@ class _PerceptionGeneration:
         # https://github.com/isi-vista/adam/issues/400#issuecomment-655155521
         # https://github.com/isi-vista/adam/issues/400#issuecomment-655575820
         def satisfies_part_of_restrictions(object_perception) -> bool:
-            import logging
-
             for condition_set in (action_description.enduring_conditions,):
                 for unbound_condition in condition_set:
                     if (
@@ -1157,7 +1178,7 @@ class _PerceptionGeneration:
         ]
 
         if len(perceived_objects_matching_constraints) == 1:
-            return only(perceived_objects_matching_constraints)
+            return perceived_objects_matching_constraints[0]
         elif not perceived_objects_matching_constraints:
             raise RuntimeError(
                 f"Can not find object with properties {action_object_variable} in order to bind "
@@ -1443,7 +1464,12 @@ class _PerceptionGeneration:
     def _compute_during(
         self, during_from_action_description: Optional[DuringAction[ObjectPerception]]
     ) -> Optional[DuringAction[ObjectPerception]]:
-        during_from_situation = only(self._situation.actions).during
+        situation_action = only(self._situation.actions)
+        if not situation_action:
+            raise RuntimeError(
+                f"Trying to compute during for action when not action exists. {self._situation.actions}"
+            )
+        during_from_situation = situation_action.during
 
         if during_from_situation:
             remapped_during_from_situation = during_from_situation.copy_remapping_objects(
@@ -1483,9 +1509,11 @@ class _PerceptionGeneration:
                     f"which doesn't have an entry in the Object Perceptions "
                     f"to Ontology Nodes dictionary."
                 )
-            relations_predicated_of_object_type = self._situation.ontology.subjects_to_relations[
-                self._object_perceptions_to_ontology_nodes[situation_object]
-            ]
+            relations_predicated_of_object_type = (
+                self._situation.ontology.subjects_to_relations[
+                    self._object_perceptions_to_ontology_nodes[situation_object]
+                ]
+            )
 
             for other_object in self._object_perceptions:
                 if not other_object == situation_object:
@@ -1526,18 +1554,26 @@ class _PerceptionGeneration:
                                 )
 
 
-GAILA_PHASE_1_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-    GAILA_PHASE_1_ONTOLOGY
+GAILA_PHASE_1_PERCEPTION_GENERATOR = (
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+        GAILA_PHASE_1_ONTOLOGY
+    )
 )
-GAILA_PHASE_2_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-    GAILA_PHASE_2_ONTOLOGY
+GAILA_PHASE_2_PERCEPTION_GENERATOR = (
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+        GAILA_PHASE_2_ONTOLOGY
+    )
 )
-INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-    INTEGRATED_EXPERIMENT_ONTOLOGY
+INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR = (
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+        INTEGRATED_EXPERIMENT_ONTOLOGY
+    )
 )
 
-GAILA_M6_PERCEPTION_GENERATOR = HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
-    GAILA_PHASE_1_ONTOLOGY, color_perception_mode=ColorPerceptionMode.DISCRETE
+GAILA_M6_PERCEPTION_GENERATOR = (
+    HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
+        GAILA_PHASE_1_ONTOLOGY, color_perception_mode=ColorPerceptionMode.DISCRETE
+    )
 )
 """
 This is the same as `GAILA_PHASE_1_PERCEPTION_GENERATOR`,

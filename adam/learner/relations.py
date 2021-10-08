@@ -6,7 +6,7 @@ from pathlib import Path
 from networkx import all_shortest_paths
 
 from abc import ABC
-from adam.learner.pursuit import AbstractPursuitLearnerNew
+from adam.learner.pursuit import AbstractPursuitLearner
 
 from typing import AbstractSet, Optional, Iterable, Tuple, Mapping, Sequence
 import itertools
@@ -16,14 +16,14 @@ from adam.learner import (
     get_largest_matching_pattern,
 )
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
-from adam.learner.subset import AbstractTemplateSubsetLearnerNew
+from adam.learner.subset import AbstractTemplateSubsetLearner
 from adam.learner.surface_templates import (
     SurfaceTemplateBoundToSemanticNodes,
     SLOT1,
     SLOT2,
 )
 from attr import attrs, attrib
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractTemplateLearner
 from adam.perception import MatchMode, ObjectPerception
 from adam.perception.perception_graph import PerceptionGraph, _graph_node_order
 from adam.semantics import (
@@ -40,7 +40,7 @@ _MAXIMUM_RELATION_TEMPLATE_TOKEN_LENGTH = 5
 
 
 @attrs
-class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
+class AbstractRelationTemplateLearner(AbstractTemplateLearner, ABC):
     # pylint:disable=abstract-method
     def _candidate_templates(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -53,9 +53,9 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             for output in immutableset(
                 itertools.permutations(
                     [
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.FixedString,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.FIXEDSTRING,
                     ],
                     3,
                 )
@@ -66,10 +66,10 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
             for output in immutableset(
                 itertools.permutations(
                     [
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.Argument,
-                        AlignmentSlots.FixedString,
-                        AlignmentSlots.FixedString,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.ARGUMENT,
+                        AlignmentSlots.FIXEDSTRING,
+                        AlignmentSlots.FIXEDSTRING,
                     ],
                     4,
                 )
@@ -92,8 +92,8 @@ class AbstractRelationTemplateLearnerNew(AbstractTemplateLearnerNew, ABC):
 
 
 @attrs
-class SubsetRelationLearnerNew(
-    AbstractTemplateSubsetLearnerNew, AbstractRelationTemplateLearnerNew
+class SubsetRelationLearner(
+    AbstractTemplateSubsetLearner, AbstractRelationTemplateLearner
 ):
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -158,9 +158,7 @@ class SubsetRelationLearnerNew(
 
 
 @attrs
-class PursuitRelationLearnerNew(
-    AbstractPursuitLearnerNew, AbstractRelationTemplateLearnerNew
-):
+class PursuitRelationLearner(AbstractPursuitLearner, AbstractRelationTemplateLearner):
     """
     An implementation of TemplateLearnerNew for the Pursuit learning algorithm over relations
     """
@@ -176,7 +174,7 @@ class PursuitRelationLearnerNew(
         return None
 
     @attrs(frozen=True)
-    class RelationHypothesisPartialMatch(AbstractPursuitLearnerNew.PartialMatch):
+    class RelationHypothesisPartialMatch(AbstractPursuitLearner.PartialMatch):
         partial_match_hypothesis: Optional[PerceptionGraphTemplate] = attrib(
             validator=optional(instance_of(PerceptionGraphTemplate))
         )
@@ -195,7 +193,7 @@ class PursuitRelationLearnerNew(
         graph: PerceptionGraph,
         *,
         required_alignments: Mapping[SyntaxSemanticsVariable, ObjectSemanticNode],
-    ) -> "AbstractPursuitLearnerNew.PartialMatch":
+    ) -> "AbstractPursuitLearner.PartialMatch":
         pattern = hypothesis.graph_pattern
         hypothesis_pattern_common_subgraph = get_largest_matching_pattern(
             pattern,
@@ -229,7 +227,7 @@ class PursuitRelationLearnerNew(
         else:
             partial_hypothesis = None
 
-        return PursuitRelationLearnerNew.RelationHypothesisPartialMatch(
+        return PursuitRelationLearner.RelationHypothesisPartialMatch(
             partial_hypothesis,
             num_nodes_matched=num_nodes_matched,
             num_nodes_in_pattern=leading_hypothesis_num_nodes,

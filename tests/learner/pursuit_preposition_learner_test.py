@@ -1,6 +1,6 @@
 import random
 from adam.learner.integrated_learner import IntegratedTemplateLearner
-from adam.learner.relations import PursuitRelationLearnerNew
+from adam.learner.relations import PursuitRelationLearner
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import pytest
 from adam.curriculum.phase1_curriculum import _x_has_y_template
@@ -44,7 +44,7 @@ def pursuit_learner_factory(language_mode: LanguageMode):
     rng.seed(0)
     return IntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
-        relation_learner=PursuitRelationLearnerNew(
+        relation_learner=PursuitRelationLearner(
             learning_factor=0.05,
             graph_match_confirmation_threshold=0.7,
             lexicon_entry_threshold=0.7,

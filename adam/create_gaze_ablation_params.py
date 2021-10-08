@@ -61,7 +61,9 @@ def create_gaze_ablation_entry_point(params: Parameters) -> None:
                                 prob_given=prob_given,
                                 prob_not_given=prob_not_given,
                             )
-                            with open(f"{parameters_dir}/{file_name}", "a") as f:
+                            with open(
+                                f"{parameters_dir}/{file_name}", "a", encoding="utf-8"
+                            ) as f:
                                 f.write(param_file_string)
 
 

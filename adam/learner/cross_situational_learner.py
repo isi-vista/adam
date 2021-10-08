@@ -22,7 +22,7 @@ from adam.perception import MatchMode
 from adam.semantics import Concept, SemanticNode
 from vistautils.range import Range
 
-from adam.learner.template_learner import AbstractTemplateLearnerNew
+from adam.learner.template_learner import AbstractTemplateLearner
 
 
 # Cross Situational Learner was originally implemented by Justin Martine on branch
@@ -39,7 +39,7 @@ from adam.perception.perception_graph import (
 
 
 @attrs
-class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
+class AbstractCrossSituationalLearner(AbstractTemplateLearner, ABC):
     """
     An Abstract Implementation of the Cross Situation Learning Model
 
@@ -60,7 +60,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         pattern_template: PerceptionGraphTemplate = attrib(
             validator=instance_of(PerceptionGraphTemplate)
         )
-        association_score: float = attrib(validator=instance_of(float), default=0)
+        association_score: float = attrib(validator=instance_of(float), default=0.0)
         probability: float = attrib(validator=in_(Range.open(0, 1)), default=0)
         observation_count: int = attrib(default=1)
 
@@ -525,7 +525,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         """
 
     def _primary_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         return (
             (concept, hypothesis.pattern_template, hypothesis.probability)
@@ -538,7 +538,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearnerNew, ABC):
         )
 
     def _fallback_templates(
-        self
+        self,
     ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
         # Alternate hypotheses either below our _lexicon_entry_threshold or our _minimum_observation_amount
         return (
