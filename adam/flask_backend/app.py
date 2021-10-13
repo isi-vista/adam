@@ -44,7 +44,7 @@ def get_all_train_curriculum() -> Any:
 def get_all_test_curriculum() -> Any:
     """Get all available test curriculum."""
     test_cur = get_test_curricula(DATA_DIR)
-    return {"training_curriculum": test_cur}
+    return {"testing_curriculum": test_cur}
 
 
 @app.route("/api/load_scene", methods=["GET"])

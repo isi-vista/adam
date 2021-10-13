@@ -16,12 +16,24 @@ export class AdamService {
   //   return "results";
   // }
   constructor(private http: HttpClient) {
-    this.fetchYaml('../../../../../data/learners/integrated_subset/experiments/objects_one/test_curriculums/objects_one_instance/test_curriculums/object_test_curriculum_one/situation_1/post_decode.yaml')
+    
    }
 
   public fetchYaml(fileName) {
     return this.http.get(fileName,{responseType: 'text'}).pipe(
       map(yamlString => load(yamlString))
     )
+  }
+
+  public getLearnerData(){
+    return this.http.get("http://127.0.0.1:5000/api/learners")
+  }
+
+  public getTrainingData(){
+    return this.http.get("http://127.0.0.1:5000/api/training_curriculum")
+  }
+
+  public getTestingData(){
+    return this.http.get("http://127.0.0.1:5000/api/testing_curriculum")
   }
 }

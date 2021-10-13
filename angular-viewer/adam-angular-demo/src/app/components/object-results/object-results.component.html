@@ -1,14 +1,6 @@
 <div class="result-wrapper">
-    <p>Scene number: {{scene_number}}</p>
-    <p>Result Object:</p>
-    <p>Text: {{result_object.text}}</p>
-    <p>Confidence: {{result_object.confidence}}</p>
-    <p>Features:</p>
-    <p *ngFor="let feature of result_object.features">&nbsp;&nbsp;&nbsp;{{feature.name}}</p>
-    <p>Sub objects: </p>
-    <p>&nbsp;&nbsp;&nbsp;Text: {{result_object.sub_objects[0].text}}</p>
-    <p>&nbsp;&nbsp;&nbsp;Confidence: {{result_object.sub_objects[0].confidence}}</p>
-    <p>&nbsp;&nbsp;&nbsp;Features:</p>
-    <p *ngFor="let feature of result_object.sub_objects[0].features">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{feature.name}}</p>
-
+    <p>{{result_object.text}} ({{result_object.confidence}})</p>
+    <p *ngFor="let feature of result_object.features">&nbsp;&nbsp;&nbsp;*{{feature.name}}</p>
+    <p>&nbsp;&nbsp;&nbsp;{{result_object.sub_objects[0].text}} ({{result_object.sub_objects[0].confidence}})</p>
+    <p *ngFor="let feature of result_object.sub_objects[0].features">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*{{feature.name}}</p>
 </div>
