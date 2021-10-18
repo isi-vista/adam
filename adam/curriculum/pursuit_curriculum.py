@@ -15,7 +15,7 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
     phase1_instances,
-    PHASE1_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
     Phase1InstanceGroup,
     standard_object,
 )
@@ -106,7 +106,7 @@ def make_simple_pursuit_curriculum(
                 sampled(
                     object_is_present_template,
                     max_to_sample=num_instances - num_noise_instances,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                     block_multiple_of_the_same_type=True,
                 ),
@@ -130,7 +130,7 @@ def make_simple_pursuit_curriculum(
             sampled(
                 noise_template,
                 max_to_sample=num_noise_instances,
-                chooser=PHASE1_CHOOSER_FACTORY(),
+                chooser=CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 block_multiple_of_the_same_type=True,
             ),

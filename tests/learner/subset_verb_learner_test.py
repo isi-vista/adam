@@ -2,8 +2,8 @@ from itertools import chain
 
 import pytest
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER_FACTORY,
-    PHASE1_TEST_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
+    TEST_CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
 )
@@ -94,7 +94,7 @@ def run_verb_test(learner, situation_template, language_generator):
                     situation_template,
                     max_to_sample=20,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     block_multiple_of_the_same_type=True,
                 )
             ]
@@ -109,7 +109,7 @@ def run_verb_test(learner, situation_template, language_generator):
                     situation_template,
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+                    chooser=TEST_CHOOSER_FACTORY(),
                     block_multiple_of_the_same_type=True,
                 )
             ]
@@ -385,7 +385,7 @@ def test_throw_animacy(language_mode, learner):
                     situation_template=situation_template,
                     max_to_sample=10,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     block_multiple_of_the_same_type=True,
                 )
                 for situation_template in make_throw_animacy_templates(None)
@@ -402,7 +402,7 @@ def test_throw_animacy(language_mode, learner):
                     situation_template=situation_template,
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     block_multiple_of_the_same_type=True,
                 )
                 for situation_template in make_throw_animacy_templates(None)

@@ -6,8 +6,8 @@ import pytest
 from immutablecollections import immutableset
 from more_itertools import flatten
 
-from adam.curriculum.curriculum_utils import PHASE1_TEST_CHOOSER_FACTORY
-from adam.curriculum.phase1_curriculum import PHASE1_CHOOSER_FACTORY, phase1_instances
+from adam.curriculum.curriculum_utils import TEST_CHOOSER_FACTORY
+from adam.curriculum.phase1_curriculum import CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
@@ -42,6 +42,7 @@ from adam.ontology.phase1_ontology import (
     HOUSE,
     MOM,
     on,
+    PHASE_1_CONCEPT,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
@@ -104,7 +105,11 @@ def run_subset_learner_for_object(
 ):
     colored_obj_objects = [
         object_variable(
-            "obj-with-color", node, added_properties=[color_variable("color")]
+            "obj-with-color",
+            node,
+            added_properties=[
+                color_variable("color", required_properties=[PHASE_1_CONCEPT])
+            ],
         )
         for node in nodes
     ]
@@ -124,7 +129,7 @@ def run_subset_learner_for_object(
             [
                 all_possible(
                     obj_template,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                 )
                 for obj_template in obj_templates
@@ -137,7 +142,7 @@ def run_subset_learner_for_object(
         "obj test",
         situations=sampled(
             obj_templates[0],
-            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+            chooser=TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -320,7 +325,7 @@ def test_pursuit_object_learner(language_mode):
         target_test_templates.extend(
             all_possible(
                 test_template,
-                chooser=PHASE1_CHOOSER_FACTORY(),
+                chooser=CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             )
         )
@@ -412,7 +417,7 @@ def test_pursuit_object_learner_with_gaze(language_mode):
         target_test_templates.extend(
             all_possible(
                 test_template,
-                chooser=PHASE1_CHOOSER_FACTORY(),
+                chooser=CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
             )
         )

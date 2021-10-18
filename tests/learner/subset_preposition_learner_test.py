@@ -1,9 +1,9 @@
 import pytest
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
-    PHASE1_TEST_CHOOSER_FACTORY,
+    TEST_CHOOSER_FACTORY,
 )
 from adam.curriculum.phase1_curriculum import _x_has_y_template
 from adam.curriculum.preposition_curriculum import (
@@ -52,7 +52,7 @@ def run_preposition_test(learner, situation_template, language_generator):
         "Preposition Unit Train",
         situations=sampled(
             situation_template,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
             block_multiple_of_the_same_type=True,
@@ -63,7 +63,7 @@ def run_preposition_test(learner, situation_template, language_generator):
         "Preposition Unit Test",
         situations=sampled(
             situation_template,
-            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+            chooser=TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -207,7 +207,7 @@ def test_subset_preposition_has(language_mode, learner):
             language_generator=language_generator,
             situations=sampled(
                 _x_has_y_template(person, cup),
-                chooser=PHASE1_CHOOSER_FACTORY(),
+                chooser=CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 max_to_sample=1,
                 block_multiple_of_the_same_type=True,
@@ -220,7 +220,7 @@ def test_subset_preposition_has(language_mode, learner):
             language_generator=language_generator,
             situations=sampled(
                 _x_has_y_template(person, book),
-                chooser=PHASE1_CHOOSER_FACTORY(),
+                chooser=CHOOSER_FACTORY(),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 max_to_sample=1,
                 block_multiple_of_the_same_type=True,
@@ -232,7 +232,7 @@ def test_subset_preposition_has(language_mode, learner):
         "Has Unit Test",
         situations=sampled(
             _x_has_y_template(person, ball),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,

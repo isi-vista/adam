@@ -4,7 +4,7 @@ from typing import Iterable
 import pytest
 
 from adam.axes import AxesInfo
-from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
+from adam.curriculum.curriculum_utils import CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.phase1_curriculum import (
     _make_generic_statements_curriculum,
     _make_eat_curriculum,
@@ -82,7 +82,7 @@ def run_generics_test(learner, language_mode):
     plurals = phase1_instances(
         "plurals pretraining",
         build_object_multiples_situations(
-            ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
+            ontology=GAILA_PHASE_1_ONTOLOGY, chooser=CHOOSER_FACTORY()
         ),
         language_generator=language_generator,
     )

@@ -7,7 +7,7 @@ from more_itertools import first, only
 from networkx import DiGraph
 
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
 )
@@ -241,7 +241,7 @@ def test_last_failed_pattern_node():
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
     template = all_possible(
-        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+        obj_template, chooser=CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
     )
 
     train_curriculum = phase1_instances("all obj situations", situations=template)
@@ -308,7 +308,7 @@ def test_successfully_extending_partial_match():
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
     template = all_possible(
-        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+        obj_template, chooser=CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
     )
 
     train_curriculum = phase1_instances("all obj situations", situations=template)
@@ -367,7 +367,7 @@ def test_semantically_infeasible_partial_match():
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
     template = all_possible(
-        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+        obj_template, chooser=CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
     )
 
     train_curriculum = phase1_instances("all obj situations", situations=template)
@@ -455,7 +455,7 @@ def test_syntactically_infeasible_partial_match():
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
     template = all_possible(
-        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+        obj_template, chooser=CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
     )
 
     train_curriculum = phase1_instances("all obj situations", situations=template)
@@ -521,7 +521,7 @@ def test_allowed_matches_with_bad_partial_match():
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
     template = all_possible(
-        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+        obj_template, chooser=CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
     )
 
     train_curriculum = phase1_instances("all obj situations", situations=template)
@@ -642,7 +642,7 @@ def test_copy_with_temporal_scopes_content():
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
     template = all_possible(
-        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+        obj_template, chooser=CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
     )
 
     train_curriculum = phase1_instances("all obj situations", situations=template)
@@ -679,7 +679,7 @@ def test_perception_graph_post_init_edge_cases():
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
     template = all_possible(
-        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+        obj_template, chooser=CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
     )
     train_curriculum = phase1_instances("all obj situations", situations=template)
     perceptual_representation = only(train_curriculum.instances())[2]
@@ -728,7 +728,7 @@ def test_matching_static_vs_dynamic_graphs():
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
     template = all_possible(
-        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+        obj_template, chooser=CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
     )
     train_curriculum = phase1_instances("all obj situations", situations=template)
     perceptual_representation = only(train_curriculum.instances())[2]
@@ -774,7 +774,7 @@ def test_copy_with_temporal_scope_pattern_content():
         "colored-obj-object", salient_object_variables=[train_obj_object]
     )
     template = all_possible(
-        obj_template, chooser=PHASE1_CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
+        obj_template, chooser=CHOOSER_FACTORY(), ontology=GAILA_PHASE_1_ONTOLOGY
     )
 
     train_curriculum = phase1_instances("all obj situations", situations=template)

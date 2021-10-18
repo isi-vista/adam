@@ -19,7 +19,7 @@ from adam.language.dependency import LinearizedDependencyTree
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
     Phase1InstanceGroup,
     phase1_instances,
     standard_object,
@@ -132,7 +132,7 @@ def _make_m6_on_curriculum(
                         make_noise_objects(noise_objects),
                         is_training=True,
                     ),
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
                     block_multiple_of_the_same_type=True,
@@ -165,7 +165,7 @@ def _make_m6_beside_curriculum(
                         is_training=True,
                         is_right=True,
                     ),
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
                     block_multiple_of_the_same_type=True,
@@ -198,7 +198,7 @@ def _make_m6_under_curriculum(
                         is_training=True,
                         is_distal=True,
                     ),
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
                     block_multiple_of_the_same_type=True,
@@ -231,7 +231,7 @@ def _make_m6_over_curriculum(
                         is_training=True,
                         is_distal=True,
                     ),
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
                     block_multiple_of_the_same_type=True,
@@ -265,7 +265,7 @@ def _make_m6_behind_curriculum(
                     _behind_template(
                         object_1, object_2, background, is_training=True, is_near=True
                     ),
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
                     block_multiple_of_the_same_type=True,
@@ -299,7 +299,7 @@ def _make_m6_in_front_curriculum(
                     _behind_template(
                         object_1, object_2, background, is_training=True, is_near=True
                     ),
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
                     max_to_sample=num_samples if num_samples else 1,
                     block_multiple_of_the_same_type=True,

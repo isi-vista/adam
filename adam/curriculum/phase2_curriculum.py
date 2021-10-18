@@ -37,7 +37,7 @@ from adam.relation import Relation
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.dependency import LinearizedDependencyTree
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
     Phase1InstanceGroup,
     standard_object,
     phase2_instances,
@@ -171,7 +171,7 @@ def _make_sit_on_chair_curriculum(
             *[
                 sampled(
                     template,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                     max_to_sample=num_samples,
                     block_multiple_of_the_same_type=True,
@@ -179,7 +179,7 @@ def _make_sit_on_chair_curriculum(
                 if num_samples
                 else all_possible(
                     template,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                 )
                 for template in templates
@@ -228,7 +228,7 @@ def _make_drink_cups_curriculum(
             *[
                 sampled(
                     cup_template,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                     max_to_sample=num_samples,
                     block_multiple_of_the_same_type=True,
@@ -236,7 +236,7 @@ def _make_drink_cups_curriculum(
                 if num_samples
                 else all_possible(
                     cup_template,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     ontology=GAILA_PHASE_2_ONTOLOGY,
                 )
                 for cup_template in templates
@@ -268,7 +268,7 @@ def _make_put_in_curriculum(
         sampled(
             _put_in_template(agent, theme, goal_in, make_noise_objects(noise_objects)),
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             max_to_sample=num_samples if num_samples else 20,
             block_multiple_of_the_same_type=True,
         ),
@@ -468,7 +468,7 @@ def make_multiple_object_situation(
         sampled(
             _make_multiple_object_template(target_object, noise_object_variables),
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             max_to_sample=num_samples if num_samples else 20,
             block_multiple_of_the_same_type=True,
         ),

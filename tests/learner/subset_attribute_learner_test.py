@@ -6,8 +6,8 @@ from more_itertools import flatten
 from adam.curriculum.curriculum_utils import (
     standard_object,
     phase1_instances,
-    PHASE1_CHOOSER_FACTORY,
-    PHASE1_TEST_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
+    TEST_CHOOSER_FACTORY,
 )
 from adam.curriculum.phase1_curriculum import (
     _object_with_color_template,
@@ -93,7 +93,7 @@ def test_subset_color_attribute(
                     [
                         sampled(
                             template,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=2,
                             block_multiple_of_the_same_type=True,
@@ -109,7 +109,7 @@ def test_subset_color_attribute(
         f"{color.handle} Color Test",
         situations=sampled(
             color_object_template,
-            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+            chooser=TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -162,7 +162,7 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
                     syntax_hints=[IGNORE_HAS_AS_VERB],
                 ),
                 ontology=GAILA_PHASE_1_ONTOLOGY,
-                chooser=PHASE1_CHOOSER_FACTORY(),
+                chooser=CHOOSER_FACTORY(),
                 max_to_sample=5,
                 block_multiple_of_the_same_type=True,
             )
@@ -186,7 +186,7 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
             ),
             block_multiple_of_the_same_type=True,
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+            chooser=TEST_CHOOSER_FACTORY(),
             max_to_sample=1,
         ),
         language_generator=language_generator,
@@ -248,7 +248,7 @@ def test_your_attribute_learner(language_mode, learner):
             ),
             block_multiple_of_the_same_type=True,
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             max_to_sample=5,
         ),
         language_generator=language_generator,
@@ -265,7 +265,7 @@ def test_your_attribute_learner(language_mode, learner):
             ),
             block_multiple_of_the_same_type=True,
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+            chooser=TEST_CHOOSER_FACTORY(),
             max_to_sample=1,
         ),
         language_generator=language_generator,
