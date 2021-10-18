@@ -5,6 +5,9 @@ from typing import Iterable, List, Mapping, MutableMapping, Optional, Tuple, Uni
 from adam.language_specific.english.english_integrated_experiment_lexicon import (
     INTEGRATED_EXPERIMENT_ENGLISH_LEXICON,
 )
+from adam.language_specific.english.english_phase_3_lexicon import (
+    GAILA_PHASE_3_ENGLISH_LEXICON,
+)
 from adam.ontology.phase2_ontology import gravitationally_aligned_axis_is_largest
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -93,6 +96,7 @@ from adam.ontology.phase1_ontology import (
     TAKE,
     HARD_FORCE,
     DRINK,
+    SHAPE_PROPERTY_DESCRIPTION,
 )
 from adam.ontology.phase1_spatial_relations import (
     EXTERIOR_BUT_IN_CONTACT,
@@ -431,6 +435,20 @@ class SimpleRuleBasedEnglishLanguageGenerator(
                         )
                         self.dependency_graph.add_edge(
                             color_node, noun_dependency_node, role=ADJECTIVAL_MODIFIER
+                        )
+            if IGNORE_SHAPE_PROPERTY not in self.situation.syntax_hints:
+                for property_ in _object.properties:
+                    if self.situation.ontology.is_subtype_of(
+                        property_, SHAPE_PROPERTY_DESCRIPTION
+                    ):
+                        shape_lexicon_entry = self._unique_lexicon_entry(property_)
+                        shape_node = DependencyTreeToken(
+                            shape_lexicon_entry.base_form,
+                            shape_lexicon_entry.part_of_speech,
+                            shape_lexicon_entry.intrinsic_morphosyntactic_properties,
+                        )
+                        self.dependency_graph.add_edge(
+                            shape_node, noun_dependency_node, role=ADJECTIVAL_MODIFIER
                         )
             for relation in self.situation.always_relations:
                 if relation.first_slot == _object:
@@ -1284,6 +1302,9 @@ GAILA_PHASE_2_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
 INTEGRATED_EXPERIMENT_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
     ontology_lexicon=INTEGRATED_EXPERIMENT_ENGLISH_LEXICON
 )
+GAILA_PHASE_3_LANGUAGE_GENERATOR = SimpleRuleBasedEnglishLanguageGenerator(
+    ontology_lexicon=GAILA_PHASE_3_ENGLISH_LEXICON
+)
 
 # these are "hints" situations can pass to the language generator
 # to control its behavior
@@ -1297,3 +1318,4 @@ IGNORE_SIZE_ATTRIBUTE = "IGNORE_SIZE_ATTRIBUTE"
 IGNORE_GOAL = "IGNORE_GOAL"
 USE_ABOVE_BELOW = "USE_ABOVE_BELOW"
 USE_NEAR = "USE_NEAR"
+IGNORE_SHAPE_PROPERTY = "IGNORE_SHAPE_PROPERTY"

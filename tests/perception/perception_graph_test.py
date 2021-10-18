@@ -30,6 +30,7 @@ from adam.ontology.phase1_ontology import (
     above,
     bigger_than,
     on,
+    PHASE_1_CONCEPT,
 )
 from adam.ontology.phase1_spatial_relations import DISTAL, EXTERIOR_BUT_IN_CONTACT, Region
 from adam.ontology.structural_schema import ObjectStructuralSchema
@@ -130,7 +131,7 @@ def do_object_on_table_test(
     """
     # we create four situations:
     # a object_to_match above or under a table with color red or blue
-    color = color_variable("color")
+    color = color_variable("color", required_properties=[PHASE_1_CONCEPT])
     object_to_match = object_variable(
         debug_handle=object_type_to_match.handle,
         root_node=object_type_to_match,

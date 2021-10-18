@@ -251,7 +251,7 @@ def _make_each_object_by_itself_curriculum(  # pylint: disable=unused-argument
     ],
     banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
-    color = color_variable("color")
+    color = color_variable("color", required_properties=[PHASE_1_CONCEPT])
     single_object_template = Phase1SituationTemplate(
         "single-object",
         salient_object_variables=[
@@ -364,7 +364,7 @@ def _make_objects_with_colors_curriculum(
     ],
     banned_ontology_types: Iterable[OntologyNode] = immutableset(),
 ) -> Phase1InstanceGroup:
-    color = color_variable("color")
+    color = color_variable("color", required_properties=[PHASE_1_CONCEPT])
     object_with_color = standard_object(
         "object", added_properties=[color], banned_ontology_types=banned_ontology_types
     )
@@ -404,7 +404,7 @@ def _make_objects_with_colors_is_curriculum(
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
 ) -> Phase1InstanceGroup:
-    color = color_variable("color")
+    color = color_variable("color", required_properties=[PHASE_1_CONCEPT])
     object_with_color = standard_object("object", added_properties=[color])
 
     return phase1_instances(

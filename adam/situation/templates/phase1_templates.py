@@ -237,6 +237,14 @@ class Phase1SituationTemplate(SituationTemplate):
     Those are handled automatically. 
     """
 
+    @property
+    def has_relations(self):
+        return (
+            self.before_action_relations
+            or self.after_action_relations
+            or self.asserted_always_relations
+        )
+
     def __attrs_post_init__(self) -> None:
         check_arg(
             self.salient_object_variables, "A situation must contain at least one object"
@@ -825,12 +833,19 @@ def action_variable(
     return TemplateActionTypeVariable(debug_handle, selector)
 
 
-def color_variable(debug_handle: str) -> TemplatePropertyVariable:
+def color_variable(
+    debug_handle: str, *, required_properties: Iterable[OntologyNode] = immutableset()
+) -> TemplatePropertyVariable:
     r"""
     Create a `TemplatePropertyVariable` with the specified *debug_handle*
     which ranges over all colors in the ontology.
     """
-    return property_variable(debug_handle, COLOR, banned_values=[COLOR, TRANSPARENT])
+    return property_variable(
+        debug_handle,
+        COLOR,
+        banned_values=[COLOR, TRANSPARENT],
+        with_meta_properties=required_properties,
+    )
 
 
 @attrs(frozen=True, slots=True)

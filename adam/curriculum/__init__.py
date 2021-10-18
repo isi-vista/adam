@@ -203,3 +203,53 @@ class AblatedLanguageSituationsInstanceGroup(
         ]
     ]:
         return self._instances
+
+
+@attrs(frozen=True, slots=True)
+class AblatedPerceptionSituationsInstanceGroup(
+    InstanceGroup[SituationT, LinguisticDescriptionT, PerceptionT]
+):
+    r"""
+    Creates a collection of instances
+    by taking an iterable of `Situation`\ s
+    and deriving the `LinguisticDescription`\ s and `PerceptualRepresentation`\ s
+    by applying the *language_generator* and *perception_generator*, respectively.
+    """
+    _name: str = attrib(validator=instance_of(str))
+    """
+    The name of the instance group.
+    """
+    _situations: Tuple[SituationT, ...] = attrib(converter=_to_tuple)
+    r"""
+    The sequence of `Situation`\ s to derive linguistic and perceptual representations from for
+    training.
+
+    These `Situation`\ s could themselves be produced by `SituationTemplate`\ s.
+    """
+    _language_generator: LanguageGenerator[SituationT, LinguisticDescriptionT] = attrib(
+        validator=instance_of(LanguageGenerator)
+    )
+    """
+    How to generate the `LanguageRepresentation` of a training `Situation`.
+    """
+    _chooser: SequenceChooser = attrib(validator=instance_of(SequenceChooser))
+
+    def name(self) -> str:
+        return self._name
+
+    def instances(
+        self,
+    ) -> Iterable[
+        Tuple[
+            Optional[SituationT],
+            LinguisticDescriptionT,
+            PerceptualRepresentation[PerceptionT],
+        ]
+    ]:
+        for situation in self._situations:
+            # suppress PyCharm type inference bug
+            # noinspection PyTypeChecker
+            for linguistic_description in self._language_generator.generate_language(
+                situation, self._chooser
+            ):
+                yield situation, linguistic_description, None  # type: ignore
