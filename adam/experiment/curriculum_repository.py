@@ -25,7 +25,8 @@ from adam.curriculum import ExplicitWithoutSituationInstanceGroup
 from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.language import TokenSequenceLinguisticDescription
 from adam.learner.language_mode import LanguageMode, LANGUAGE_MODE_TO_NAME
-from adam.perception import PerceptualRepresentation, VisualPerceptionFrame
+from adam.perception import PerceptualRepresentation
+from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.pickle import AdamPickler, AdamUnpickler
 
 _PARAMETER_ORDER: ImmutableSet[str] = immutableset(

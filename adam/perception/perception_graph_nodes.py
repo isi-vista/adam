@@ -22,8 +22,6 @@ class GraphNode(ABC):
     """Super-class for all perception graph nodes, useful for types."""
 
     weight: float = attrib(validator=instance_of(float))
-    center_x: Optional[float] = attrib(validator=optional(instance_of(float)))
-    center_y: Optional[float] = attrib(validator=optional(instance_of(float)))
 
 
 PerceptionGraphNode = Union[
@@ -61,6 +59,9 @@ class ObjectNode(GraphNode):
     """A node representing a source of an object cluster perception."""
 
     _cluster_id: int = attrib(validator=instance_of(int))
+    _viewpoint_id: int = attrib(validator=instance_of(int))
+    center_x: Optional[float] = attrib(validator=optional(instance_of(float)))
+    center_y: Optional[float] = attrib(validator=optional(instance_of(float)))
 
 
 @attrs(frozen=True, slots=True, eq=False)
