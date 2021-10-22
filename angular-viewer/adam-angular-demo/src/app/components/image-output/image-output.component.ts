@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-image-output',
@@ -7,6 +7,9 @@ import { Component, OnInit } from '@angular/core';
 })
 export class ImageOutputComponent implements OnInit {
 
+
+  @Input() img_src:string;
+  
   constructor() { }
 
   ngOnInit(): void {

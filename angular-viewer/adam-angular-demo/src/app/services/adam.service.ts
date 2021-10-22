@@ -5,6 +5,7 @@ import { catchError, retry } from 'rxjs/operators';
 // import {parse} from 'yamljs';
 import {map} from 'rxjs/operators';
 import {load,loadAll} from 'js-yaml'
+import { environment } from 'src/environments/environment';
 
 
 @Injectable({
@@ -26,14 +27,22 @@ export class AdamService {
   }
 
   public getLearnerData(){
-    return this.http.get("http://127.0.0.1:5000/api/learners")
+    return this.http.get(environment.API_URL+"/api/learners")
   }
 
   public getTrainingData(){
-    return this.http.get("http://127.0.0.1:5000/api/training_curriculum")
+    return this.http.get(environment.API_URL+"/api/training_curriculum")
   }
 
   public getTestingData(){
-    return this.http.get("http://127.0.0.1:5000/api/testing_curriculum")
+    return this.http.get(environment.API_URL+"/api/testing_curriculum")
+  }
+
+  public loadScene(url:URL){
+    let learner:string = url.searchParams.get("learner")
+    let training_curriculum:string = url.searchParams.get("training_curriculum")
+    let testing_curriculum:string = url.searchParams.get("testing_curriculum")
+    let scene_number:string = url.searchParams.get("scene_number")
+    return this.http.get(environment.API_URL+"/api/load_scene?"+"learner="+learner+"&training_curriculum="+training_curriculum+"&testing_curriculum="+testing_curriculum+"&scene_number="+scene_number)
   }
 }

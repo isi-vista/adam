@@ -3,6 +3,8 @@ import { SelectorsComponent } from '../selectors/selectors.component';
 import { ButtonComponent } from '../button/button.component';
 import { HttpClient } from '@angular/common/http';
 import { AdamService } from 'src/app/services/adam.service';
+import { Router } from '@angular/router';
+import { NgForm } from '@angular/forms';
 
 @Component({
   selector: 'app-selector-parent',
@@ -19,6 +21,10 @@ export class SelectorParentComponent implements OnInit {
   preTrainingData : JSON
   trainingData : JSON
   testData : JSON
+  selectedLevel: string='';
+  selectedLearner: string='';
+  selectedPretrain: string="objects_one"
+  selectedTrain: string="objects_one"
 
   constructor(private getResponseData : AdamService) { }
 
@@ -47,6 +53,37 @@ export class SelectorParentComponent implements OnInit {
 
   onButtonClick(){
     console.log("A button has been clicked")
+  }
+
+  learner_selected(event: any){
+    this.selectedLearner=event.target.value;
+  }
+
+  pretraining_selected(event: any){
+    this.selectedPretrain=event.target.value;
+  }
+
+  training_selected(event: any){
+    this.selectedTrain=event.target.value;
+  }
+
+  selected(event: any){
+    let url = new URL("http://127.0.0.1:5000/api/load_scene");
+    this.selectedLevel = event.target.value;
+    url.searchParams.set("learner",this.selectedLearner)
+    url.searchParams.set("training_curriculum",this.selectedTrain)
+    url.searchParams.set("testing_curriculum",this.selectedLevel)
+    url.searchParams.set("scene_number","1")
+    console.log(this.selectedLevel)
+    console.log(url)
+    this.getResponseData.loadScene(url).subscribe(data => {
+      console.log(data)
+    })
+  }
+
+  formSubmit(form: NgForm){
+    const learner_val = form.controls['selectLearner'].value;
+    console.log(learner_val)
   }
 
 }

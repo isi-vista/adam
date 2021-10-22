@@ -2,11 +2,11 @@
     background-color: #00C851;
 }
 
-.text{
+.button-text{
     color:#FFFFFF;
 }
 
-.box{
+.button-box{
     margin: 55px 0 0 20px;
     display: flex;
     align-items: center;

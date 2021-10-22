@@ -12,6 +12,11 @@ export class SelectorsComponent implements OnInit {
   ngOnInit(): void {
   }
 
+  selectedTest;
+  selectedTrain;
+  selectedPretrain;
+  selectedLearner;
+
   @Input() function:string;
   @Input() directories:string[];
 
@@ -20,5 +25,9 @@ export class SelectorsComponent implements OnInit {
   log(msg: any) {
     console.log(this.directories);
 }
+
+  selected(){
+    console.log(this.selectedTest);
+  }
 
 }
