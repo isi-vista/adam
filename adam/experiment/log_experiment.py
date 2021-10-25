@@ -65,7 +65,7 @@ from adam.learner import TopLevelLanguageLearner
 from adam.learner.attributes import SubsetAttributeLearner, PursuitAttributeLearner
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.generics import SimpleGenericsLearner
-from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.objects import PursuitObjectLearner, ProposeButVerifyObjectLearner
@@ -296,7 +296,7 @@ def learner_factory_from_params(
     )
 
     if learner_type == "pursuit-gaze":
-        return lambda: IntegratedTemplateLearner(
+        return lambda: SymbolicIntegratedTemplateLearner(
             object_learner=PursuitObjectLearner(
                 learning_factor=0.05,
                 graph_match_confirmation_threshold=0.7,
@@ -324,7 +324,7 @@ def learner_factory_from_params(
             ),
         )
     elif learner_type == "integrated-learner":
-        return lambda: IntegratedTemplateLearner(
+        return lambda: SymbolicIntegratedTemplateLearner(
             object_learner=SubsetObjectLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
@@ -348,7 +348,7 @@ def learner_factory_from_params(
             functional_learner=FunctionalLearner(language_mode=language_mode),
         )
     elif learner_type == "integrated-learner-recognizer":
-        return lambda: IntegratedTemplateLearner(
+        return lambda: SymbolicIntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=object_recognizer, language_mode=language_mode
             ),
@@ -371,7 +371,7 @@ def learner_factory_from_params(
             generics_learner=SimpleGenericsLearner(),
         )
     elif learner_type == "ic":
-        return lambda: IntegratedTemplateLearner(
+        return lambda: SymbolicIntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=object_recognizer, language_mode=language_mode
             ),
@@ -446,7 +446,9 @@ def learner_factory_from_params(
             object_learner_factory = pursuit_factory
         else:
             raise RuntimeError(f"Invalid Object Learner Type Selected: {learner_type}")
-        return lambda: IntegratedTemplateLearner(object_learner=object_learner_factory())
+        return lambda: SymbolicIntegratedTemplateLearner(
+            object_learner=object_learner_factory()
+        )
     elif learner_type == "integrated-learner-params":
         object_learner = build_object_learner_factory(  # type:ignore
             params.namespace_or_empty("object_learner"), beam_size, language_mode
@@ -463,7 +465,7 @@ def learner_factory_from_params(
         plural_learner = build_plural_learner_factory(  # type:ignore
             params.namespace_or_empty("plural_learner"), beam_size, language_mode
         )
-        return lambda: IntegratedTemplateLearner(
+        return lambda: SymbolicIntegratedTemplateLearner(
             object_learner=object_learner,
             attribute_learner=attribute_learner,
             relation_learner=relation_learner,
@@ -478,7 +480,7 @@ def learner_factory_from_params(
             suppress_error=params.boolean("suppress_error", default=True),
         )
     elif learner_type == "integrated-pursuit-attribute-only":
-        return lambda: IntegratedTemplateLearner(
+        return lambda: SymbolicIntegratedTemplateLearner(
             object_learner=ObjectRecognizerAsTemplateLearner(
                 object_recognizer=object_recognizer, language_mode=language_mode
             ),

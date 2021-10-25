@@ -17,7 +17,7 @@ from adam.curriculum.preposition_curriculum import (
 )
 from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
-from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.relations import SubsetRelationLearner
 from adam.ontology import IS_SPEAKER
@@ -39,7 +39,7 @@ from tests.learner import (
 
 
 def integrated_learner_factory(language_mode: LanguageMode):
-    return IntegratedTemplateLearner(
+    return SymbolicIntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         relation_learner=SubsetRelationLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode

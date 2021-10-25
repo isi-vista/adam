@@ -4,7 +4,7 @@ used to describe `Situation`\ s from the point-of-view of `TopLevelLanguageLearn
 """
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Generic, Optional, Tuple, TypeVar, Mapping, Any
+from typing import Generic, Optional, Tuple, TypeVar
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional

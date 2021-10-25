@@ -1,6 +1,7 @@
 import collections
 import itertools
 import logging
+from abc import ABC, abstractmethod
 from itertools import chain, combinations
 from pathlib import Path
 from typing import (
@@ -14,15 +15,20 @@ from typing import (
     Counter,
     Set,
     DefaultDict,
+    Generic,
 )
 
 import graphviz
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-from immutablecollections import immutabledict
+from immutablecollections import immutabledict, immutableset
 from networkx import Graph, DiGraph
 
-from adam.language import LinguisticDescription, TokenSequenceLinguisticDescription
+from adam.language import (
+    LinguisticDescription,
+    TokenSequenceLinguisticDescription,
+    LinguisticDescriptionT,
+)
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
 from adam.learner import LearningExample, TopLevelLanguageLearner
 from adam.learner.alignments import (
@@ -42,7 +48,10 @@ from adam.learner.plurals import SubsetPluralLearner
 from adam.learner.surface_templates import MASS_NOUNS, SLOT1
 from adam.learner.template_learner import TemplateLearner
 from adam.ontology.phase1_ontology import PART_OF
-from adam.perception import PerceptualRepresentation
+from adam.perception import (
+    PerceptualRepresentation,
+    PerceptionT,
+)
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
 )
@@ -68,22 +77,11 @@ from adam.semantics import (
 )
 
 
-class LanguageLearner:
-    def observe(
-        self,
-        learning_example: LearningExample[
-            DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
-        ],
-        offset: int = 0,
-    ) -> None:
-        pass
-
-
 @attrs
 class IntegratedTemplateLearner(
-    TopLevelLanguageLearner[
-        DevelopmentalPrimitivePerceptionFrame, TokenSequenceLinguisticDescription
-    ]
+    Generic[PerceptionT, LinguisticDescriptionT],
+    TopLevelLanguageLearner[PerceptionT, LinguisticDescriptionT],
+    ABC,
 ):
     """
     A `TopLevelLanguageLearner` which uses template-based syntax to learn objects, attributes, relations,
@@ -128,36 +126,20 @@ class IntegratedTemplateLearner(
         init=False, factory=dict
     )
 
-    def observe(
+    def observe_common(
         self,
-        learning_example: LearningExample[
-            DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
-        ],
+        current_learner_state: LanguagePerceptionSemanticAlignment,
+        linguistic_description: LinguisticDescription,
+        is_dynamic: bool,
         offset: int = 0,
-    ) -> None:
-
+    ):
         logging.info(
             "Observation %s: %s",
             self._observation_num + offset,
-            learning_example.linguistic_description.as_token_string(),
+            linguistic_description.as_token_string(),
         )
 
         self._observation_num += 1
-
-        # We need to track the alignment between perceived objects
-        # and portions of the input language, so internally we operate over
-        # LanguageAlignedPerceptions.
-        current_learner_state = LanguagePerceptionSemanticAlignment(
-            language_concept_alignment=LanguageConceptAlignment.create_unaligned(
-                language=learning_example.linguistic_description
-            ),
-            perception_semantic_alignment=PerceptionSemanticAlignment(
-                perception_graph=self._extract_perception_graph(
-                    learning_example.perception
-                ),
-                semantic_nodes=[],
-            ),
-        )
 
         # We iteratively let each "layer" of semantic analysis attempt
         # to learn from the perception,
@@ -173,7 +155,7 @@ class IntegratedTemplateLearner(
                 # because the static learners do not know how to deal with the temporal
                 # perception graph edge wrappers.
                 # See https://github.com/isi-vista/adam/issues/792 .
-                if not learning_example.perception.is_dynamic():
+                if not is_dynamic:
                     # For more details on the try/excepts below
                     # See: https://github.com/isi-vista/adam/issues/1008
                     try:
@@ -193,7 +175,7 @@ class IntegratedTemplateLearner(
                 if sub_learner == self.object_learner:
                     self.learn_definiteness_markers(current_learner_state)
 
-        if learning_example.perception.is_dynamic() and self.action_learner:
+        if is_dynamic and self.action_learner:
             try:
                 self.action_learner.learn_from(current_learner_state)
             except (RuntimeError, KeyError) as e:
@@ -220,7 +202,7 @@ class IntegratedTemplateLearner(
                 current_learner_state.perception_semantic_alignment
             )
             # If the statement isn't a recognized sentence, run learner
-            if not learning_example.linguistic_description.as_token_sequence() in [
+            if not linguistic_description.as_token_sequence() in [
                 desc.as_token_sequence() for desc in descs
             ]:
                 # Pass plural markers to generics before learning from a statement
@@ -235,16 +217,17 @@ class IntegratedTemplateLearner(
         # Update concept semantics
         self.update_concept_semantics(current_learner_state)
 
-    def describe(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+    @abstractmethod
+    def observe(
+        self,
+        learning_example: LearningExample[PerceptionT, LinguisticDescription],
+        offset: int = 0,
+    ) -> None:
+        raise NotImplementedError
+
+    def describe_common(
+        self, cur_description_state: PerceptionSemanticAlignment, is_dynamic: bool
     ) -> Mapping[LinguisticDescription, float]:
-
-        perception_graph = self._extract_perception_graph(perception)
-
-        cur_description_state = PerceptionSemanticAlignment.create_unaligned(
-            perception_graph
-        )
-
         for sub_learner in [
             self.object_learner,
             self.attribute_learner,
@@ -256,7 +239,7 @@ class IntegratedTemplateLearner(
                     cur_description_state
                 )
 
-        if perception.is_dynamic() and self.action_learner:
+        if is_dynamic and self.action_learner:
             cur_description_state = self.action_learner.enrich_during_description(
                 cur_description_state
             )
@@ -266,6 +249,12 @@ class IntegratedTemplateLearner(
                     cur_description_state
                 )
         return self._linguistic_descriptions_from_semantics(cur_description_state)
+
+    @abstractmethod
+    def describe(
+        self, perception: PerceptualRepresentation[PerceptionT]
+    ) -> Mapping[LinguisticDescription, float]:
+        raise NotImplementedError()
 
     def _linguistic_descriptions_from_semantics(
         self, description_state: PerceptionSemanticAlignment
@@ -313,68 +302,6 @@ class IntegratedTemplateLearner(
         return immutabledict(
             (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
         )
-
-    def _add_determiners(
-        self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
-    ) -> Tuple[str, ...]:
-        # handle Chinese Classifiers by casing on the words -- this is hackish
-        if (
-            self.object_learner._language_mode  # pylint: disable=protected-access
-            == LanguageMode.CHINESE
-        ):
-            if self.plural_learner:
-                return tuple([token for token in cur_string if token[:3] != "yi1"])
-            # specially handle the case of my and your in Chinese since these organize the classifier and attribute differently
-            if cur_string[0] in ["ni3 de", "wo3 de"] and len(cur_string) > 1:
-                my_your_classifier = get_classifier_for_string(cur_string[1])
-                if my_your_classifier:
-                    return tuple(
-                        chain((cur_string[0], my_your_classifier), cur_string[1:])
-                    )
-                else:
-                    return cur_string
-            # get the classifier and add it to the language
-            classifier = get_classifier_for_string(cur_string[-1])
-            # if the classifier was already hypothesized by the relation learner
-            if classifier and cur_string[0][:4] != "yi1_":
-                return tuple(chain((classifier,), cur_string))
-            else:
-                return cur_string
-
-        # handle English determiners
-        elif (
-            self.object_learner._language_mode  # pylint: disable=protected-access
-            == LanguageMode.ENGLISH
-        ):
-            # If plural, we want to strip any "a" that might preceed a noun after "many" or "two"
-            if self.plural_learner:
-                if "a" in cur_string:
-                    a_position = cur_string.index("a")
-                    if a_position > 0 and cur_string[a_position - 1] in ["many", "two"]:
-                        return tuple(
-                            [
-                                token
-                                for i, token in enumerate(cur_string)
-                                if i != a_position
-                            ]
-                        )
-            # English-specific hack to deal with us not understanding determiners:
-            # https://github.com/isi-vista/adam/issues/498
-            # The "is lower" check is a hack to block adding a determiner to proper names.
-            # Ground is a specific thing so we special case this to be assigned
-            if (
-                object_node.concept.debug_string not in MASS_NOUNS
-                and object_node.concept.debug_string.islower()
-                and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
-            ):
-                if object_node.concept == GROUND_OBJECT_CONCEPT:
-                    return tuple(chain(("the",), cur_string))
-                else:
-                    return tuple(chain(("a",), cur_string))
-            else:
-                return cur_string
-        else:
-            return cur_string
 
     def _instantiate_object(
         self, object_node: ObjectSemanticNode, learner_semantics: LearnerSemantics
@@ -426,7 +353,7 @@ class IntegratedTemplateLearner(
                             ) in learner.templates_for_concept(  # type: ignore
                                 attribute.concept
                             ):
-                                yield self._add_determiners(
+                                yield self.add_determiners(
                                     object_node,
                                     attribute_template.instantiate(
                                         template_variable_to_filler={SLOT1: cur_string},
@@ -434,7 +361,7 @@ class IntegratedTemplateLearner(
                                     ).as_token_sequence(),
                                 )
 
-                yield self._add_determiners(object_node, cur_string)
+                yield self.add_determiners(object_node, cur_string)
 
     def _instantiate_relation(
         self, relation_node: RelationSemanticNode, learner_semantics: LearnerSemantics
@@ -488,13 +415,60 @@ class IntegratedTemplateLearner(
         for sub_learner in self._sub_learners:
             sub_learner.log_hypotheses(log_output_path)
 
-    def _extract_perception_graph(
-        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+    def render_semantics_to_file(  # pragma: no cover
+        self, graph: Graph, graph_name: str, output_file: Path
+    ) -> None:
+
+        dot_graph = graphviz.Graph(graph_name)
+        dot_graph.attr(rankdir="LR")
+        # combine parallel edges to cut down on clutter
+        dot_graph.attr(concentrate="true")
+
+        next_node_id = Incrementer()
+
+        # add all nodes to the graph
+        semantics_nodes_to_dot_node_ids = {
+            semantics_node: self.to_dot_node(dot_graph, semantics_node, next_node_id)
+            for semantics_node in graph.nodes
+        }
+
+        for (source_node, target_node, data) in graph.edges.data():
+            edge_label = " ".join([f"{k}={str(v)}" for k, v in data.items()])
+            source_dot_node = semantics_nodes_to_dot_node_ids[source_node]
+            target_dot_node = semantics_nodes_to_dot_node_ids[target_node]
+            dot_graph.edge(source_dot_node, target_dot_node, edge_label)
+
+        dot_graph.render(str(output_file))
+
+    def to_dot_node(  # pragma: no cover
+        self,
+        dot_graph: graphviz.Graph,
+        node: Union[Concept, NodePredicate],
+        next_node_id: Incrementer,
+    ) -> str:
+        label = node.dot_label() if isinstance(node, NodePredicate) else node.debug_string
+        attributes = {"label": label, "style": "solid"}
+        node_id = f"node-{next_node_id.value()}"
+        next_node_id.increment()
+        dot_graph.node(node_id, **attributes)
+        return node_id
+
+    @abstractmethod
+    def add_determiners(
+        self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
+    ) -> Tuple[str, ...]:
+        """Function to add determiners strings to objects."""
+        raise NotImplementedError(
+            "add_determiners is not implemented in the abstract IntegratedLearner"
+        )
+
+    @abstractmethod
+    def extract_perception_graph(
+        self, perception: PerceptualRepresentation[PerceptionT]
     ) -> PerceptionGraph:
-        if perception.is_dynamic():
-            return PerceptionGraph.from_dynamic_perceptual_representation(perception)
-        else:
-            return PerceptionGraph.from_frame(perception.frames[0])
+        raise NotImplementedError(
+            "_extract_perception_graph is not implemented in the abstract IntegratedLearner"
+        )
 
     @_sub_learners.default
     def _init_sub_learners(self) -> List[TemplateLearner]:
@@ -515,17 +489,8 @@ class IntegratedTemplateLearner(
             valid_sub_learners.append(self.generics_learner)
         return valid_sub_learners
 
-    def learned_attribute_tokens(self) -> List[str]:
-        attribute_tokens = []
-        if self.attribute_learner and isinstance(
-            self.attribute_learner, SubsetAttributeLearner
-        ):
-            for template in self.attribute_learner.surface_template_to_concept.keys():
-                for element in template.elements:
-                    if isinstance(element, str):
-                        attribute_tokens.append(element)
-        return attribute_tokens
-
+    # TODO: Extract semantics learning into its own sub-learner
+    # https://github.com/isi-vista/adam/issues/1050
     def learn_definiteness_markers(self, current_learner_state):
         # Helper method to learn definiteness markers from objects
         sequence = (
@@ -597,6 +562,17 @@ class IntegratedTemplateLearner(
                             sequence[span.start - 1] in markers
                         )
         return any(definite_marker_matches)
+
+    def learned_attribute_tokens(self) -> List[str]:
+        attribute_tokens = []
+        if self.attribute_learner and isinstance(
+            self.attribute_learner, SubsetAttributeLearner
+        ):
+            for template in self.attribute_learner.surface_template_to_concept.keys():
+                for element in template.elements:
+                    if isinstance(element, str):
+                        attribute_tokens.append(element)
+        return attribute_tokens
 
     def update_concept_semantics(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
@@ -705,10 +681,10 @@ class IntegratedTemplateLearner(
     def get_semantics_with_patterns(self) -> DiGraph:
         complete_semantics_graph = self.semantics_graph.to_directed()
         for concept, pattern in self.concepts_to_patterns.items():
-            pattern_graph = pattern.copy_as_digraph().to_directed()
             if concept not in complete_semantics_graph.nodes:
                 print(concept, "not found")
                 continue
+            pattern_graph = pattern.copy_as_digraph().to_directed()
             if isinstance(concept, ObjectConcept):
                 # Get root object perception of pattern
                 potential_roots: Set[
@@ -756,40 +732,123 @@ class IntegratedTemplateLearner(
 
         return complete_semantics_graph
 
-    def render_semantics_to_file(  # pragma: no cover
-        self, graph: Graph, graph_name: str, output_file: Path
+
+@attrs
+class SymbolicIntegratedTemplateLearner(
+    IntegratedTemplateLearner[
+        DevelopmentalPrimitivePerceptionFrame, TokenSequenceLinguisticDescription
+    ]
+):
+    """
+    An `IntegratedTemplateLearner` which uses template-based syntax to learn objects, attributes, relations,
+    and actions all at once over a symbolic perception space.
+    """
+
+    def observe(
+        self,
+        learning_example: LearningExample[
+            DevelopmentalPrimitivePerceptionFrame, LinguisticDescription
+        ],
+        offset: int = 0,
     ) -> None:
 
-        dot_graph = graphviz.Graph(graph_name)
-        dot_graph.attr(rankdir="LR")
-        # combine parallel edges to cut down on clutter
-        dot_graph.attr(concentrate="true")
+        # We need to track the alignment between perceived objects
+        # and portions of the input language, so internally we operate over
+        # LanguageAlignedPerceptions.
+        current_learner_state = LanguagePerceptionSemanticAlignment(
+            language_concept_alignment=LanguageConceptAlignment.create_unaligned(
+                language=learning_example.linguistic_description
+            ),
+            perception_semantic_alignment=PerceptionSemanticAlignment(
+                perception_graph=self.extract_perception_graph(
+                    learning_example.perception
+                ),
+                semantic_nodes=immutableset(),
+            ),
+        )
 
-        next_node_id = Incrementer()
+        self.observe_common(
+            current_learner_state,
+            learning_example.linguistic_description,
+            learning_example.perception.is_dynamic(),
+            offset,
+        )
 
-        # add all nodes to the graph
-        semantics_nodes_to_dot_node_ids = {
-            semantics_node: self.to_dot_node(dot_graph, semantics_node, next_node_id)
-            for semantics_node in graph.nodes
-        }
+    def describe(
+        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+    ) -> Mapping[LinguisticDescription, float]:
+        cur_description_state = PerceptionSemanticAlignment.create_unaligned(
+            self.extract_perception_graph(perception)
+        )
 
-        for (source_node, target_node, data) in graph.edges.data():
-            edge_label = " ".join([f"{k}={str(v)}" for k, v in data.items()])
-            source_dot_node = semantics_nodes_to_dot_node_ids[source_node]
-            target_dot_node = semantics_nodes_to_dot_node_ids[target_node]
-            dot_graph.edge(source_dot_node, target_dot_node, edge_label)
+        return self.describe_common(cur_description_state, perception.is_dynamic())
 
-        dot_graph.render(str(output_file))
+    def add_determiners(
+        self, object_node: ObjectSemanticNode, cur_string: Tuple[str, ...]
+    ) -> Tuple[str, ...]:
+        # handle Chinese Classifiers by casing on the words -- this is hackish
+        if (
+            self.object_learner._language_mode  # pylint: disable=protected-access
+            == LanguageMode.CHINESE
+        ):
+            if self.plural_learner:
+                return tuple([token for token in cur_string if token[:3] != "yi1"])
+            # specially handle the case of my and your in Chinese since these organize the classifier and attribute differently
+            if cur_string[0] in ["ni3 de", "wo3 de"] and len(cur_string) > 1:
+                my_your_classifier = get_classifier_for_string(cur_string[1])
+                if my_your_classifier:
+                    return tuple(
+                        chain((cur_string[0], my_your_classifier), cur_string[1:])
+                    )
+                else:
+                    return cur_string
+            # get the classifier and add it to the language
+            classifier = get_classifier_for_string(cur_string[-1])
+            # if the classifier was already hypothesized by the relation learner
+            if classifier and cur_string[0][:4] != "yi1_":
+                return tuple(chain((classifier,), cur_string))
+            else:
+                return cur_string
 
-    def to_dot_node(
-        self,
-        dot_graph: graphviz.Graph,
-        node: Union[Concept, NodePredicate],
-        next_node_id: Incrementer,
-    ) -> str:
-        label = node.dot_label() if isinstance(node, NodePredicate) else node.debug_string
-        attributes = {"label": label, "style": "solid"}
-        node_id = f"node-{next_node_id.value()}"
-        next_node_id.increment()
-        dot_graph.node(node_id, **attributes)
-        return node_id
+        # handle English determiners
+        elif (
+            self.object_learner._language_mode  # pylint: disable=protected-access
+            == LanguageMode.ENGLISH
+        ):
+            # If plural, we want to strip any "a" that might preceed a noun after "many" or "two"
+            if self.plural_learner:
+                if "a" in cur_string:
+                    a_position = cur_string.index("a")
+                    if a_position > 0 and cur_string[a_position - 1] in ["many", "two"]:
+                        return tuple(
+                            [
+                                token
+                                for i, token in enumerate(cur_string)
+                                if i != a_position
+                            ]
+                        )
+            # English-specific hack to deal with us not understanding determiners:
+            # https://github.com/isi-vista/adam/issues/498
+            # The "is lower" check is a hack to block adding a determiner to proper names.
+            # Ground is a specific thing so we special case this to be assigned
+            if (
+                object_node.concept.debug_string not in MASS_NOUNS
+                and object_node.concept.debug_string.islower()
+                and not cur_string[0] in ENGLISH_BLOCK_DETERMINERS
+            ):
+                if object_node.concept == GROUND_OBJECT_CONCEPT:
+                    return tuple(chain(("the",), cur_string))
+                else:
+                    return tuple(chain(("a",), cur_string))
+            else:
+                return cur_string
+        else:
+            return cur_string
+
+    def extract_perception_graph(
+        self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
+    ) -> PerceptionGraph:
+        if perception.is_dynamic():
+            return PerceptionGraph.from_dynamic_perceptual_representation(perception)
+        else:
+            return PerceptionGraph.from_frame(perception.frames[0])
