@@ -36,7 +36,10 @@ from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
     make_verb_with_dynamic_prepositions_curriculum,
 )
 from adam.experiment import Experiment, execute_experiment
-from adam.experiment.curriculum_repository import read_p3_experiment_curriculum
+from adam.experiment.curriculum_repository import (
+    read_p3_experiment_curriculum,
+    read_experiment_curriculum,
+)
 from adam.experiment.experiment_utils import (
     build_each_object_by_itself_curriculum_train,
     build_each_object_by_itself_curriculum_test,
@@ -65,7 +68,10 @@ from adam.learner import TopLevelLanguageLearner
 from adam.learner.attributes import SubsetAttributeLearner, PursuitAttributeLearner
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.generics import SimpleGenericsLearner
-from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
+from adam.learner.integrated_learner import (
+    SymbolicIntegratedTemplateLearner,
+    SimulatedIntegratedTemplateLearner,
+)
 from adam.learner.language_mode import LanguageMode
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.objects import PursuitObjectLearner, ProposeButVerifyObjectLearner
@@ -113,12 +119,23 @@ def log_experiment_entry_point(params: Parameters) -> None:
         "language_mode", LanguageMode, default=LanguageMode.ENGLISH
     )
 
+    curriculum_phase3_path = params.optional_existing_directory(
+        "phase3_curriculum_repository"
+    )
+
     curriculum_repository_path = params.optional_existing_directory(
         "load_from_curriculum_repository"
     )
-    if curriculum_repository_path:
-        curriculum = read_p3_experiment_curriculum(curriculum_repository_path, params)
-        # curriculum = read_experiment_curriculum(curriculum_repository_path, params, language_mode) # P2
+    if curriculum_phase3_path:
+        curriculum = read_p3_experiment_curriculum(curriculum_phase3_path, params)
+        (training_instance_groups, test_instance_groups) = (
+            curriculum.train_curriculum,
+            curriculum.test_curriculum,
+        )
+    elif curriculum_repository_path:
+        curriculum = read_experiment_curriculum(
+            curriculum_repository_path, params, language_mode
+        )
         (training_instance_groups, test_instance_groups) = (
             curriculum.train_curriculum,
             curriculum.test_curriculum,
@@ -275,6 +292,7 @@ def learner_factory_from_params(
             "integrated-object-only",
             "integrated-learner-params",
             "integrated-pursuit-attribute-only",
+            "simulated-integrated-learner-params",
         ],
     )
 
@@ -494,6 +512,36 @@ def learner_factory_from_params(
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 language_mode=language_mode,
             ),
+        )
+    elif learner_type == "simulated-integrated-learner-params":
+        object_learner = build_object_learner_factory(  # type:ignore
+            params.namespace_or_empty("object_learner"), beam_size, language_mode
+        )
+        attribute_learner = build_attribute_learner_factory(  # type:ignore
+            params.namespace_or_empty("attribute_learner"), beam_size, language_mode
+        )
+        relation_learner = build_relation_learner_factory(  # type:ignore
+            params.namespace_or_empty("relation_learner"), beam_size, language_mode
+        )
+        action_learner = build_action_learner_factory(  # type:ignore
+            params.namespace_or_empty("action_learner"), beam_size, language_mode
+        )
+        plural_learner = build_plural_learner_factory(  # type:ignore
+            params.namespace_or_empty("plural_learner"), beam_size, language_mode
+        )
+        return lambda: SimulatedIntegratedTemplateLearner(
+            object_learner=object_learner,
+            attribute_learner=attribute_learner,
+            relation_learner=relation_learner,
+            action_learner=action_learner,
+            functional_learner=FunctionalLearner(language_mode=language_mode)
+            if params.boolean("include_functional_learner", default=True)
+            else None,
+            generics_learner=SimpleGenericsLearner()
+            if params.boolean("include_generics_learner", default=True)
+            else None,
+            plural_learner=plural_learner,
+            suppress_error=params.boolean("suppress_error", default=True),
         )
     else:
         raise RuntimeError("can't happen")

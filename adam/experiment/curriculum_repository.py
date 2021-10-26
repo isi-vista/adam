@@ -10,6 +10,7 @@ Since the curriculum parameters are not currently "sandboxed" away from script p
 include all parameters other than the ones that have been specifically ignored. The user can specify
 additional ignored parameters as appropriate. Unrecognized parameters are an error.
 """
+import json
 import os
 import pickle
 from pathlib import Path
@@ -182,8 +183,8 @@ def read_p3_experiment_curriculum(
             with open(
                 repository / situation_dir / perception_dir, "r", encoding="utf-8"
             ) as perception_file:
-                perception_yaml = yaml.load(perception_file)
-                perception_frames.append(VisualPerceptionFrame(perception_yaml))
+                perception_json = json.load(perception_file)
+            perception_frames.append(VisualPerceptionFrame.from_json(perception_json))
         # Load description file
         with open(
             repository / situation_dir / "description.yaml", "r", encoding="utf-8"
@@ -192,7 +193,9 @@ def read_p3_experiment_curriculum(
             utterance = description_yaml["language"]
 
         linguistic_description = TokenSequenceLinguisticDescription(utterance.split())
-        perceptual_representation = PerceptualRepresentation(perception_frames)
+        perceptual_representation = PerceptualRepresentation[VisualPerceptionFrame](
+            perception_frames
+        )
         all_instances.append((linguistic_description, perceptual_representation))
     # Convert them to InstanceGroups
     train_curriculum: Tuple[Phase1InstanceGroup, ...] = tuple(

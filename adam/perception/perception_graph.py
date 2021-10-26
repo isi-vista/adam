@@ -81,10 +81,12 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.perception.perception_graph_nodes import (
     PerceptionGraphNode,
     UnwrappedPerceptionGraphNode,
-    ObjectNode,
+    ObjectClusterNode,
     CategoricalNode,
     ContinuousNode,
     RgbColorNode,
+    GraphNode,
+    ObjectStroke,
 )
 from adam.perception.perception_graph_predicates import (
     NodePredicate,
@@ -102,7 +104,9 @@ from adam.perception.perception_graph_predicates import (
     CategoricalPredicate,
     ContinuousPredicate,
     RgbColorPredicate,
+    ObjectStrokePredicate,
 )
+from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.semantics import ObjectSemanticNode
@@ -288,7 +292,17 @@ HAS_PATH_OPERATOR = OntologyNode("has-path-operator")
 Edge label in a `PerceptionGraph` linking a `SpatialPath`
 to its `PathOperator`
 """
-
+HAS_STROKE_LABEL = OntologyNode("has-stroke-label")
+"""
+Edge label in a `PerceptionGraph` linking an object cluster to one
+of the `ObjectStroke`s which make up the object.
+"""
+ADJACENT_STROKE_LABEL = OntologyNode("adjacent-stroke-label")
+"""
+Edge label in a `PerceptionGraph` linking an `ObjectStroke` to another
+`ObjectStroke` to indicate the two are adjacent. The relationship is
+symmetric even though the edge is not.
+"""
 ORIENTATION_CHANGED_PROPERTY = OntologyNode("orientation-changed")
 """
 Property used in perception graphs to indicate an orientation change
@@ -386,6 +400,18 @@ class PerceptionGraph(PerceptionGraphProtocol):
             digraph.edges[source, target]["label"] = temporally_scoped_label
 
         return digraph
+
+    @staticmethod
+    def from_simulated_frame(frame: VisualPerceptionFrame) -> "PerceptionGraph":
+        return _VisualPerceptionFrameTranslation().translate_frame(frame)
+
+    @staticmethod
+    def from_dynamic_simulated_perception_frame(
+        perceptual_representation: PerceptualRepresentation[VisualPerceptionFrame],
+    ) -> "PerceptionGraph":
+        return _VisualPerceptionFrameTranslation().translate_frames(
+            perceptual_representation
+        )
 
     def copy_with_temporal_scopes(
         self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
@@ -900,7 +926,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                     perception_node_to_pattern_node[key] = IsPathPredicate()
                 elif isinstance(node, PathOperator):
                     perception_node_to_pattern_node[key] = PathOperatorPredicate(node)
-                elif isinstance(node, ObjectNode):
+                elif isinstance(node, ObjectClusterNode):
                     perception_node_to_pattern_node[key] = AnyObjectPredicate()
                 elif isinstance(node, CategoricalNode):
                     perception_node_to_pattern_node[key] = CategoricalPredicate.from_node(
@@ -914,6 +940,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                     perception_node_to_pattern_node[key] = RgbColorPredicate.from_node(
                         node
                     )
+                elif isinstance(node, ObjectStroke):
+                    perception_node_to_pattern_node[
+                        key
+                    ] = ObjectStrokePredicate.from_node(node)
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
@@ -2040,6 +2070,16 @@ def _translate_region(
 _PATTERN_PREDICATE_NODE_ORDER = [
     # If we have matchedObjects in the pattern we want to try and find these first.
     ObjectSemanticNodePerceptionPredicate,
+    # The graph predicate types listed here
+    AnyObjectPredicate,
+    ObjectStrokePredicate,
+    CategoricalPredicate,
+    ContinuousPredicate,
+    RgbColorPredicate,
+    ObjectStroke,
+    CategoricalNode,
+    ContinuousNode,
+    RgbColorNode,
     # Paths are rare, match them next
     IsPathPredicate,
     PathOperatorPredicate,
@@ -2066,6 +2106,11 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 # This should match _PATTERN_PREDICATE_NODE_ORDER above.
 _GRAPH_NODE_ORDER = [  # type: ignore
     ObjectSemanticNode,
+    ObjectClusterNode,
+    ObjectStroke,
+    CategoricalNode,
+    ContinuousNode,
+    RgbColorNode,
     SpatialPath,
     PathOperator,
     OntologyNode,
@@ -2648,6 +2693,62 @@ class _DevelopmentalPrimitivePerceptionFrameTranslation(
             self._map_node(relation.first_slot),
             self._map_node(relation.second_slot),
             label=label,
+        )
+
+
+@attrs
+class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]):
+    def _translate_frame(self, frame: VisualPerceptionFrame) -> DiGraph:
+        """Gets the `DiGraph` corresponding to a `VisualPerceptionFrame`."""
+        graph = DiGraph()
+
+        # This will be used in the future when linking relationships between clusters
+        cluster_perception_to_graph_node = dict()
+
+        for perceived_cluster in frame.clusters:
+            cluster_node = ObjectClusterNode(
+                cluster_id=perceived_cluster.cluster_id,
+                viewpoint_id=perceived_cluster.viewpoint_id,
+                center_x=perceived_cluster.centroid_x,
+                center_y=perceived_cluster.centroid_y,
+                weight=1.0,
+            )
+            cluster_perception_to_graph_node[perceived_cluster] = cluster_node
+            graph.add_node(cluster_node)
+
+            for obj_property in perceived_cluster.properties:
+                dest_node = self._map_node(obj_property)
+                graph.add_edge(cluster_node, dest_node, label=HAS_PROPERTY_LABEL)
+
+            for stroke in perceived_cluster.strokes:
+                graph.add_edge(cluster_node, stroke, label=HAS_STROKE_LABEL)
+
+            for source_stroke, adj_strokes in perceived_cluster.adjacent_strokes.items():
+                for dest_stroke, is_adjacent in adj_strokes.items():
+                    # We want to ensure we don't create a cycle in the DiGraph
+                    # so we check that there isn't an edge in the opposite direction
+                    # of what we are going to add
+                    if not graph.has_edge(dest_stroke, source_stroke) and is_adjacent:
+                        graph.add_edge(
+                            source_stroke, dest_stroke, label=ADJACENT_STROKE_LABEL
+                        )
+
+        return graph
+
+    def _translate_frames(
+        self,
+        perceptual_representation: PerceptualRepresentation[VisualPerceptionFrame],
+    ) -> DiGraph:
+        """Gets the dynamic `DiGraph` corresponding to a `VisualPerceptionFrame`."""
+        check_arg(
+            len(perceptual_representation.frames) == 2,
+            "Can only create a DynamicPerceptionGraph from exactly two frames, "
+            "but got %s",
+            (len(perceptual_representation.frames),),
+        )
+
+        raise NotImplementedError(
+            "Multiple frame translation is not yet supported for Visual Perception Frames."
         )
 
 

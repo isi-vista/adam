@@ -2,10 +2,13 @@ from abc import ABC
 from typing import Union, Tuple, Any, Optional
 
 from attr import attrs, attrib
-from attr.validators import instance_of, in_, optional
+from attr.validators import instance_of, in_, optional, deep_iterable
+from immutablecollections import ImmutableSet
+from immutablecollections.converter_utils import _to_immutableset
 
 from adam.axis import GeonAxis
 from adam.geon import Geon, CrossSection
+from adam.math_3d import Point
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_spatial_relations import (
     Region,
@@ -14,6 +17,15 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.perception import ObjectPerception
 from adam.semantics import ObjectSemanticNode
+
+
+@attrs(slots=True, frozen=True)
+class ObjectStroke:
+    """Class to hold the coordinates of a Stroke."""
+
+    normalized_coordinates: ImmutableSet[Point] = attrib(
+        validator=deep_iterable(instance_of(Point)), converter=_to_immutableset
+    )
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -35,6 +47,7 @@ PerceptionGraphNode = Union[
     SpatialPath[ObjectPerception],
     PathOperator,
     GraphNode,
+    ObjectStroke,
 ]
 
 # Some perception graph nodes are wrapped in tuples with counters
@@ -51,15 +64,16 @@ UnwrappedPerceptionGraphNode = Union[
     SpatialPath[ObjectPerception],
     PathOperator,
     GraphNode,
+    ObjectStroke,
 ]
 
 
 @attrs(frozen=True, slots=True, eq=False)
-class ObjectNode(GraphNode):
+class ObjectClusterNode(GraphNode):
     """A node representing a source of an object cluster perception."""
 
-    _cluster_id: int = attrib(validator=instance_of(int))
-    _viewpoint_id: int = attrib(validator=instance_of(int))
+    cluster_id: int = attrib(validator=instance_of(int))
+    viewpoint_id: int = attrib(validator=instance_of(int))
     center_x: Optional[float] = attrib(validator=optional(instance_of(float)))
     center_y: Optional[float] = attrib(validator=optional(instance_of(float)))
 
@@ -75,6 +89,7 @@ class CategoricalNode(GraphNode):
 class ContinuousNode(GraphNode):
     """A node representing a continuous value feature."""
 
+    label: str = attrib(validator=instance_of(str))
     value: float = attrib(validator=instance_of(float))
 
 

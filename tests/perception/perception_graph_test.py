@@ -55,6 +55,7 @@ from adam.perception.perception_graph import (
     AnyObjectPerception,
     PerceptionGraphNode,
 )
+from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.situation.templates.phase1_templates import (
@@ -65,6 +66,8 @@ from adam.situation.templates.phase1_templates import (
 )
 from adam_test_utils import all_possible_test
 from immutablecollections import immutableset, immutablesetmultidict
+
+from tests.perception import ONE_OBJECT_TEST_SCENE_JSON
 
 r.seed(0)
 
@@ -852,3 +855,21 @@ def test_copy_with_temporal_scope_pattern_content():
         # Non temporal edge exception
         with pytest.raises(RuntimeError):
             temporal_predicate(source, label, target)
+
+
+def test_simulated_one_object_graph():
+    representation = PerceptualRepresentation.single_frame(
+        VisualPerceptionFrame.from_json_str(ONE_OBJECT_TEST_SCENE_JSON)
+    )
+
+    perception_graph = PerceptionGraph.from_simulated_frame(representation.frames[0])
+    perception_graph_pattern = PerceptionGraphPattern.from_graph(
+        perception_graph
+    ).perception_graph_pattern
+
+    matcher = perception_graph_pattern.matcher(
+        perception_graph, match_mode=MatchMode.NON_OBJECT
+    )
+    result = any(matcher.matches(use_lookahead_pruning=False))
+    if not result:
+        return False
