@@ -33,6 +33,6 @@
     <button type="submit" class="btn button-color button-text button-box" (click)="onButtonClick()"> Submit data</button>
 </form>
 <div class="row">
-    <app-image-output class="col"></app-image-output>
-    <app-object-results class="col"></app-object-results>
+    <app-image-output class="col" [img_src]="targetImgURLs"></app-image-output>
+    <app-object-results *ngIf="outputObject" class="col" [output_object]="outputObject"></app-object-results>
 </div>

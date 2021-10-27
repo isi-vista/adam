@@ -26,6 +26,10 @@ export class SelectorParentComponent implements OnInit {
   selectedPretrain: string="objects_one"
   selectedTrain: string="objects_one"
 
+  outputImage:string="";
+  outputObject={};
+  targetImgURLs:string[];
+
   constructor(private getResponseData : AdamService) { }
 
   ngOnInit(): void {
@@ -78,12 +82,31 @@ export class SelectorParentComponent implements OnInit {
     console.log(url)
     this.getResponseData.loadScene(url).subscribe(data => {
       console.log(data)
+      this.outputImage=data["scene_images"][0]
+      let result = {}
+      result["main"]=data["post_learning"]["output_language"][0]
+      let sub_objects=data["post_learning"]["output_language"][0]["sub_objects"][0]
+      result["sub_objects"]=sub_objects
+      let scene_num = data["post_learning"]["scene_num"]
+      result["scene_num"]=scene_num
+      this.outputObject=result
+      
+      // this.outputObject="test string updated"
+      this.targetImgURLs=data["scene_images"]
+      // this.scene_number=response.scene_num;
+      // console.log(this.result_object);
+      console.log("Image url ",this.outputImage)
+      console.log("Scene Number:",scene_num);
+      console.log("Sub Objects:",sub_objects);
+      console.log("Main output object: ",this.outputObject)
+
     })
   }
 
   formSubmit(form: NgForm){
     const learner_val = form.controls['selectLearner'].value;
-    console.log(learner_val)
+    // console.log(learner_val)
+    
   }
 
 }
