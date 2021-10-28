@@ -26,8 +26,6 @@ export class ObjectResultsComponent implements OnInit {
     let tempObject;
     for (const propName in changes){
       const chng = changes[propName]
-      // const cur = JSON.stringify(chng.currentValue)
-      // console.log(cur)
       const cur = JSON.parse(JSON.stringify(chng.currentValue))
       const prev = JSON.parse(JSON.stringify(chng.previousValue))     
       console.log(cur)
@@ -51,7 +49,6 @@ export class ObjectResultsComponent implements OnInit {
       subobject.features = new Array<Features>();
       element.features.forEach(element => {
         let feat = new Features;
-        // console.log(element)
         feat.name=element["name"]
         subobject.features.push(feat)
       });
@@ -63,18 +60,5 @@ export class ObjectResultsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.getResponseData.fetchYaml("../../../assets/learners/integrated_subset/experiments/objects_one/test_curriculums/objects_one_instance/test_curriculums/object_test_curriculum_one/situation_1/post_decode.yaml").subscribe(response => {
-      console.log(response)
-      this.result_object=response.output_language[0];
-      this.sub_objects=response.output_language[0].sub_objects[0];
-      this.scene_number=response.scene_num;
-      console.log(this.result_object);
-      console.log(this.scene_number);
-      console.log(this.sub_objects);
-      console.log("Output object:",this.output_object)
-    });
   }
-
-  
-
 }

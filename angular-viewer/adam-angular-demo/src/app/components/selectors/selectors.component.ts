@@ -20,8 +20,6 @@ export class SelectorsComponent implements OnInit {
   @Input() function:string;
   @Input() directories:string[];
 
-  // console.log(directories);
-
   log(msg: any) {
     console.log(this.directories);
 }
@@ -29,5 +27,4 @@ export class SelectorsComponent implements OnInit {
   selected(){
     console.log(this.selectedTest);
   }
-
 }

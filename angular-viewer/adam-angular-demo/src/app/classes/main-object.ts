@@ -7,11 +7,4 @@ export class MainObject {
     text:string;
     features:Features[];
     subObject:SubObject[];
-
-    // constructor(confidence,text,features,subObject){
-    //     this.confidence = confidence;
-    //     this.text=text;
-    //     this.features=features;
-    //     this.subObject=subObject;
-    // }
 }

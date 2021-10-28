@@ -14,11 +14,4 @@ export class AppComponent {
   testData : JSON
 
   constructor(private httpClient : HttpClient) { }
-
-  getLearnerData(){
-    this.httpClient.get("http://127.0.0.1:5000/api/learners").subscribe(data => {
-      this.learnerData = data as JSON
-      console.log(this.learnerData)
-    })
-  }
 }

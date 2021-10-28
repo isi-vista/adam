@@ -1,10 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { SelectorsComponent } from '../selectors/selectors.component';
-import { ButtonComponent } from '../button/button.component';
-import { HttpClient } from '@angular/common/http';
 import { AdamService } from 'src/app/services/adam.service';
-import { Router } from '@angular/router';
 import { NgForm } from '@angular/forms';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-selector-parent',
@@ -72,15 +69,8 @@ export class SelectorParentComponent implements OnInit {
   }
 
   selected(event: any){
-    let url = new URL("http://127.0.0.1:5000/api/load_scene");
     this.selectedLevel = event.target.value;
-    url.searchParams.set("learner",this.selectedLearner)
-    url.searchParams.set("training_curriculum",this.selectedTrain)
-    url.searchParams.set("testing_curriculum",this.selectedLevel)
-    url.searchParams.set("scene_number","1")
-    console.log(this.selectedLevel)
-    console.log(url)
-    this.getResponseData.loadScene(url).subscribe(data => {
+    this.getResponseData.loadSceneTwo(this.selectedLearner,this.selectedTrain,this.selectedLevel,"1").subscribe(data => {
       console.log(data)
       this.outputImage=data["scene_images"][0]
       let result = {}
@@ -90,11 +80,7 @@ export class SelectorParentComponent implements OnInit {
       let scene_num = data["post_learning"]["scene_num"]
       result["scene_num"]=scene_num
       this.outputObject=result
-      
-      // this.outputObject="test string updated"
       this.targetImgURLs=data["scene_images"]
-      // this.scene_number=response.scene_num;
-      // console.log(this.result_object);
       console.log("Image url ",this.outputImage)
       console.log("Scene Number:",scene_num);
       console.log("Sub Objects:",sub_objects);
@@ -105,8 +91,7 @@ export class SelectorParentComponent implements OnInit {
 
   formSubmit(form: NgForm){
     const learner_val = form.controls['selectLearner'].value;
-    // console.log(learner_val)
-    
+
   }
 
 }
