@@ -6,7 +6,7 @@ DATA_DIR = TOP_LEVEL_DIR / "data"
 CURRICULUM_DIR = DATA_DIR / "curriculum"
 TRAINING_CURRICULUM_DIR = CURRICULUM_DIR / "train"
 TESTING_CURRICULUM_DIR = CURRICULUM_DIR / "test"
-LEARNERS_DIR = DATA_DIR / "learner"
+LEARNERS_DIR = DATA_DIR / "learners"
 
 dirs = [
     DATA_DIR,
@@ -18,7 +18,7 @@ dirs = [
 for directory in dirs:
     directory.mkdir(parents=True, exist_ok=True)
 
-EXPERIMENTS_DIR_NAME = "experiment"
+EXPERIMENTS_DIR_NAME = "experiments"
 EXPERIMENTS_TESTING_DIR_NAME = "test_curriculums"
 SITUATION_DIR_NAME = "situation_{num}"
 PRE_LEARN_FILE_NAME = "pre_decode.yaml"

@@ -1,0 +1,38 @@
+<form class="row selector-grid" (ngSubmit)="formSubmit(f)" #f="ngForm" >
+        <div class="select outline box">
+            Choose Learner
+            <select (change)="learner_selected($event)" class="form-control select" name="selectLearner">
+              <option *ngFor = "let i of learners" [value]="i">{{i}}</option>
+            </select>
+        </div>
+    <div class="outline box">
+        <div class="dropdown">
+            Choose Pre-training Data
+            <select class="form-control select" aria-labelledby="dropdownMenuButton" name="selectPreTraining">
+              <option href="#" *ngFor = "let i of pretraining_data" [ngValue]="i">{{i}}</option>
+            </select>
+          </div>
+    </div>
+    <div class="outline box">
+        <div class="dropdown">
+            Choose Training Data
+            <select class="form-control select" aria-labelledby="dropdownMenuButton" name="selectTraining">
+              <option href="#" *ngFor = "let i of training_data" [ngValue]="i">{{i}}</option>
+            </select>
+          </div>
+    </div>
+    <div class="outline box">
+        <div class="dropdown">
+            Choose Testing Data
+            <select (change)="selected($event)" class="form-control select" aria-labelledby="dropdownMenuButton" name="selectTesting">
+              <option>None</option>
+              <option *ngFor = "let i of test_data" [ngValue]="i">{{i}}</option>
+            </select>
+          </div>
+    </div>
+    <button type="submit" class="btn button-color button-text button-box" (click)="onButtonClick()"> Submit data</button>
+</form>
+<div class="row">
+    <app-image-output class="col" [img_src]="targetImgURLs"></app-image-output>
+    <app-object-results *ngIf="outputObject" class="col" [output_object]="outputObject"></app-object-results>
+</div>

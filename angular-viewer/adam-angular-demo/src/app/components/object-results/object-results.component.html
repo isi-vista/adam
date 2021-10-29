@@ -1,0 +1,6 @@
+<div *ngIf="isObject" class="result-wrapper">
+    <p>{{result.text}} ({{result.confidence}})</p>
+    <p *ngFor="let feature of result.features">&nbsp;&nbsp;&nbsp;*{{feature.name}}</p>
+    <p>&nbsp;&nbsp;&nbsp;{{result.subObject[0].text}} ({{result.subObject[0].confidence}})</p>
+    <p *ngFor="let feature of result.subObject[0].features">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*{{feature.name}}</p>
+</div>

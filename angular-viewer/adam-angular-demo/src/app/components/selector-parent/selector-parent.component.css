@@ -1,0 +1,37 @@
+.button-color{
+    background-color: #CFD8DC;
+}
+
+.text{
+    color:#263238;
+}
+
+.outline {
+    border: #B0BEC5 1px solid;
+    width:fit-content;
+    padding: 10px 10px 20px 10px;
+    border-radius: 10px;
+}
+
+.box{
+    margin: 40px 0 0 20px;
+}
+
+.selector-grid{
+    margin-left: 10px;
+}
+
+.button-color{
+    background-color: #00C851;
+}
+
+.button-text{
+    color:#FFFFFF;
+}
+
+.button-box{
+    margin: 55px 0 0 20px;
+    display: flex;
+    align-items: center;
+    height: fit-content;
+}

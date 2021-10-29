@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-root',
@@ -6,5 +7,11 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'adam-angular-demo';
+  title:string = 'adam-angular-demo';
+  learnerData : JSON
+  preTrainingData : JSON
+  trainingData : JSON
+  testData : JSON
+
+  constructor(private httpClient : HttpClient) { }
 }
