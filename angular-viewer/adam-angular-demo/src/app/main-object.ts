@@ -1,2 +1,1 @@
-export class MainObject {
-}
+export class MainObject {}

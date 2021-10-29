@@ -1,13 +1,13 @@
-.button-color{
-    background-color: #00C851;
+.button-color {
+  background-color: #00c851;
 }
 
-.button-text{
-    color:#FFFFFF;
+.button-text {
+  color: #ffffff;
 }
 
-.button-box{
-    margin: 55px 0 0 20px;
-    display: flex;
-    align-items: center;
+.button-box {
+  margin: 55px 0 0 20px;
+  display: flex;
+  align-items: center;
 }

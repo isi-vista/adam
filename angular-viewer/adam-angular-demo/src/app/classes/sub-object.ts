@@ -1,7 +1,7 @@
-import { Features } from "./features";
+import { Features } from './features';
 
 export class SubObject {
-    confidence:number;
-    text:string;
-    features:Features[];
+  confidence: number;
+  text: string;
+  features: Features[];
 }
