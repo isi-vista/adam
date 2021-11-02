@@ -7,7 +7,7 @@ from adam.language.language_utils import phase1_language_generator
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.pickle import AdamPickler, AdamUnpickler
 from adam.learner import LearningExample
-from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.object_recognizer import SHARED_WORLD_ITEMS
 from adam.perception import GROUND_PERCEPTION, LEARNER_PERCEPTION
@@ -69,7 +69,7 @@ def test_object_recognition_with_drink_perception():
     )
 
     object_recognizer = LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode]
-    learner = IntegratedTemplateLearner(object_learner=object_recognizer)
+    learner = SymbolicIntegratedTemplateLearner(object_learner=object_recognizer)
 
     for (_, linguistic_description, perceptual_representation) in curriculum.instances():
         new_perceptual_representation = _pickle_and_unpickle_object(

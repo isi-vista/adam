@@ -14,7 +14,7 @@ from adam.curriculum.phase1_curriculum import _object_with_color_template
 from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
 from adam.learner.attributes import PursuitAttributeLearner
-from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.ontology.phase1_ontology import (
     RED,
@@ -35,7 +35,7 @@ from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 def pursuit_learner_factory(language_mode: LanguageMode):
     rng = random.Random()
     rng.seed(0)
-    return IntegratedTemplateLearner(
+    return SymbolicIntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         attribute_learner=PursuitAttributeLearner(
             learning_factor=0.05,

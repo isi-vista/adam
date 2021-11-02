@@ -1,5 +1,5 @@
 import random
-from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
 from adam.learner.relations import PursuitRelationLearner
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 import pytest
@@ -42,7 +42,7 @@ from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 def pursuit_learner_factory(language_mode: LanguageMode):
     rng = random.Random()
     rng.seed(0)
-    return IntegratedTemplateLearner(
+    return SymbolicIntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         relation_learner=PursuitRelationLearner(
             learning_factor=0.05,

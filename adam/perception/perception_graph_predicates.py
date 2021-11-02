@@ -2,11 +2,13 @@ from abc import ABC, abstractmethod
 from typing import Optional, Any, Tuple
 
 from attr import attrs, attrib
-from attr.validators import optional, instance_of, in_
-from immutablecollections.converter_utils import _to_tuple
+from attr.validators import optional, instance_of, in_, deep_iterable
+from immutablecollections import ImmutableSet
+from immutablecollections.converter_utils import _to_tuple, _to_immutableset
 
 from adam.axis import GeonAxis
 from adam.geon import Geon, CrossSection
+from adam.math_3d import Point
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_spatial_relations import (
     Region,
@@ -20,10 +22,11 @@ from adam.perception.perception_graph_nodes import (
     PerceptionGraphNode,
     UnwrappedPerceptionGraphNode,
     GraphNode,
-    ObjectNode,
+    ObjectClusterNode,
     CategoricalNode,
     ContinuousNode,
     RgbColorNode,
+    ObjectStroke,
 )
 
 # Perception graph predicate nodes are defined below.
@@ -87,14 +90,14 @@ class AnyGraphNodePredicate(NodePredicate):
 @attrs(frozen=True, slots=True, eq=False)
 class AnyObjectPredicate(NodePredicate):
     """
-    Matches any node of type `ObjectNode`.
+    Matches any node of type `ObjectClusterNode`.
     """
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
-        return isinstance(graph_node, ObjectNode)
+        return isinstance(graph_node, ObjectClusterNode)
 
     def dot_label(self) -> str:
-        return "ObjectNode(*)"
+        return "ObjectClusterNode(*)"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, AnyObjectPredicate)
@@ -138,13 +141,15 @@ class ContinuousPredicate(NodePredicate):
     Matches a node where the value is within the given tolerance
     """
 
+    label: str = attrib(validator=instance_of(str))
     value: float = attrib(validator=instance_of(float))
     tolerance: float = attrib(validator=instance_of(float))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         if isinstance(graph_node, ContinuousNode):
             return (
-                self.value - self.tolerance
+                self.label == graph_node.label
+                and self.value - self.tolerance
                 <= graph_node.value
                 <= self.value + self.tolerance
             )
@@ -153,11 +158,13 @@ class ContinuousPredicate(NodePredicate):
     @staticmethod
     def from_node(node: ContinuousNode) -> "ContinuousPredicate":
         return ContinuousPredicate(
-            value=node.value, tolerance=0  # Maybe change this in the future ?
+            label=node.label,
+            value=node.value,
+            tolerance=0.25,  # Maybe change this in the future ?
         )
 
     def dot_label(self) -> str:
-        return f"ContinuousFeature(value={self.value}, tolerance={self.tolerance})"
+        return f"ContinuousFeature(label={self.label}, value={self.value}, tolerance={self.tolerance})"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, ContinuousPredicate)
@@ -165,7 +172,8 @@ class ContinuousPredicate(NodePredicate):
     def matches_predicate(self, predicate_node: NodePredicate) -> bool:
         if isinstance(predicate_node, ContinuousPredicate):
             return (
-                self.value - self.tolerance
+                self.label == predicate_node.label
+                and self.value - self.tolerance
                 <= predicate_node.value
                 <= self.value + self.tolerance
             )
@@ -191,10 +199,6 @@ class RgbColorPredicate(NodePredicate):
             )
         return False
 
-    @staticmethod
-    def from_node(node: RgbColorNode) -> "RgbColorPredicate":
-        return RgbColorPredicate(red=node.red, green=node.green, blue=node.blue)
-
     def dot_label(self) -> str:
         return f"RGBColorFeature(red={self.red}, green={self.green}, blue={self.blue})"
 
@@ -209,6 +213,39 @@ class RgbColorPredicate(NodePredicate):
                 and self.green == predicate_node.green
             )
         return False
+
+    @staticmethod
+    def from_node(node: RgbColorNode) -> "RgbColorPredicate":
+        return RgbColorPredicate(red=node.red, green=node.green, blue=node.blue)
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class ObjectStrokePredicate(NodePredicate):
+    """Matches an Object Stroke"""
+
+    stroke_normalized_coordinates: ImmutableSet[Point] = attrib(
+        validator=deep_iterable(instance_of(Point)), converter=_to_immutableset
+    )
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        # TODO: Add more strict alignment of stroke normalized values
+        # https://github.com/isi-vista/adam/issues/1051
+        return isinstance(graph_node, ObjectStroke)
+
+    def dot_label(self) -> str:
+        return f"ObjectStroke({', '.join(f'{point}' for point in self.stroke_normalized_coordinates)})"
+
+    def is_equivalent(self, other) -> bool:
+        return isinstance(other, ObjectStrokePredicate)
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return isinstance(predicate_node, ObjectStrokePredicate)
+
+    @staticmethod
+    def from_node(node: ObjectStroke) -> "ObjectStrokePredicate":
+        return ObjectStrokePredicate(
+            stroke_normalized_coordinates=node.normalized_coordinates
+        )
 
 
 # In an effort to not break previous symbolic space for ADAM graphs the previous predicates

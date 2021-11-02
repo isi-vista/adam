@@ -9,7 +9,10 @@ from vistautils.range import Range
 
 from adam.axes import AxesInfo
 from adam.ontology import OntologyNode
-from adam.perception import ObjectPerception, PerceptualRepresentationFrame
+from adam.perception import (
+    ObjectPerception,
+    PerceptualRepresentationFrame,
+)
 from adam.relation import Relation, flatten_relations
 
 

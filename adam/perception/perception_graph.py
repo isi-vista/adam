@@ -33,6 +33,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    Generic,
 )
 from uuid import uuid4
 
@@ -61,7 +62,12 @@ from adam.ontology.phase1_spatial_relations import (
     SpatialPath,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
-from adam.perception import ObjectPerception, PerceptualRepresentation, MatchMode
+from adam.perception import (
+    ObjectPerception,
+    PerceptualRepresentation,
+    MatchMode,
+    PerceptionT,
+)
 from adam.perception._matcher import GraphMatching
 from adam.perception.developmental_primitive_perception import (
     DevelopmentalPrimitivePerceptionFrame,
@@ -75,10 +81,12 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
 from adam.perception.perception_graph_nodes import (
     PerceptionGraphNode,
     UnwrappedPerceptionGraphNode,
-    ObjectNode,
+    ObjectClusterNode,
     CategoricalNode,
     ContinuousNode,
     RgbColorNode,
+    GraphNode,
+    ObjectStroke,
 )
 from adam.perception.perception_graph_predicates import (
     NodePredicate,
@@ -96,7 +104,9 @@ from adam.perception.perception_graph_predicates import (
     CategoricalPredicate,
     ContinuousPredicate,
     RgbColorPredicate,
+    ObjectStrokePredicate,
 )
+from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
 from adam.relation import Relation
 from adam.semantics import ObjectSemanticNode
@@ -282,7 +292,17 @@ HAS_PATH_OPERATOR = OntologyNode("has-path-operator")
 Edge label in a `PerceptionGraph` linking a `SpatialPath`
 to its `PathOperator`
 """
-
+HAS_STROKE_LABEL = OntologyNode("has-stroke-label")
+"""
+Edge label in a `PerceptionGraph` linking an object cluster to one
+of the `ObjectStroke`s which make up the object.
+"""
+ADJACENT_STROKE_LABEL = OntologyNode("adjacent-stroke-label")
+"""
+Edge label in a `PerceptionGraph` linking an `ObjectStroke` to another
+`ObjectStroke` to indicate the two are adjacent. The relationship is
+symmetric even though the edge is not.
+"""
 ORIENTATION_CHANGED_PROPERTY = OntologyNode("orientation-changed")
 """
 Property used in perception graphs to indicate an orientation change
@@ -342,7 +362,7 @@ class PerceptionGraph(PerceptionGraphProtocol):
         """
         Gets the `PerceptionGraph` corresponding to a `DevelopmentalPrimitivePerceptionFrame`.
         """
-        return _FrameTranslation().translate_frame(frame)
+        return _DevelopmentalPrimitivePerceptionFrameTranslation().translate_frame(frame)
 
     @staticmethod
     def from_dynamic_perceptual_representation(
@@ -350,7 +370,9 @@ class PerceptionGraph(PerceptionGraphProtocol):
             DevelopmentalPrimitivePerceptionFrame
         ],
     ) -> "PerceptionGraph":
-        return _FrameTranslation().translate_frames(perceptual_representation)
+        return _DevelopmentalPrimitivePerceptionFrameTranslation().translate_frames(
+            perceptual_representation
+        )
 
     @staticmethod
     def add_temporal_scopes_to_edges(
@@ -378,6 +400,18 @@ class PerceptionGraph(PerceptionGraphProtocol):
             digraph.edges[source, target]["label"] = temporally_scoped_label
 
         return digraph
+
+    @staticmethod
+    def from_simulated_frame(frame: VisualPerceptionFrame) -> "PerceptionGraph":
+        return _VisualPerceptionFrameTranslation().translate_frame(frame)
+
+    @staticmethod
+    def from_dynamic_simulated_perception_frame(
+        perceptual_representation: PerceptualRepresentation[VisualPerceptionFrame],
+    ) -> "PerceptionGraph":
+        return _VisualPerceptionFrameTranslation().translate_frames(
+            perceptual_representation
+        )
 
     def copy_with_temporal_scopes(
         self, temporal_scopes: Union[TemporalScope, Iterable[TemporalScope]]
@@ -892,7 +926,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                     perception_node_to_pattern_node[key] = IsPathPredicate()
                 elif isinstance(node, PathOperator):
                     perception_node_to_pattern_node[key] = PathOperatorPredicate(node)
-                elif isinstance(node, ObjectNode):
+                elif isinstance(node, ObjectClusterNode):
                     perception_node_to_pattern_node[key] = AnyObjectPredicate()
                 elif isinstance(node, CategoricalNode):
                     perception_node_to_pattern_node[key] = CategoricalPredicate.from_node(
@@ -906,6 +940,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                     perception_node_to_pattern_node[key] = RgbColorPredicate.from_node(
                         node
                     )
+                elif isinstance(node, ObjectStroke):
+                    perception_node_to_pattern_node[
+                        key
+                    ] = ObjectStrokePredicate.from_node(node)
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
@@ -1136,10 +1174,10 @@ class PatternMatching:
     graph_to_match_against: PerceptionGraphProtocol = attrib(
         validator=instance_of(PerceptionGraphProtocol)
     )
-    matching_pattern_against_pattern: bool = attrib()
     # the attrs mypy plugin complains for the below
     # "Non-default attributes not allowed after default attributes."
     # But that doesn't seem to be our situation? And it works fine?
+    matching_pattern_against_pattern: bool = attrib(validator=instance_of(bool))
     _match_mode: MatchMode = attrib(  # type: ignore
         validator=instance_of(MatchMode), kw_only=MatchMode.OBJECT
     )
@@ -2032,6 +2070,16 @@ def _translate_region(
 _PATTERN_PREDICATE_NODE_ORDER = [
     # If we have matchedObjects in the pattern we want to try and find these first.
     ObjectSemanticNodePerceptionPredicate,
+    # The graph predicate types listed here
+    AnyObjectPredicate,
+    ObjectStrokePredicate,
+    CategoricalPredicate,
+    ContinuousPredicate,
+    RgbColorPredicate,
+    ObjectStroke,
+    CategoricalNode,
+    ContinuousNode,
+    RgbColorNode,
     # Paths are rare, match them next
     IsPathPredicate,
     PathOperatorPredicate,
@@ -2058,6 +2106,11 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 # This should match _PATTERN_PREDICATE_NODE_ORDER above.
 _GRAPH_NODE_ORDER = [  # type: ignore
     ObjectSemanticNode,
+    ObjectClusterNode,
+    ObjectStroke,
+    CategoricalNode,
+    ContinuousNode,
+    RgbColorNode,
     SpatialPath,
     PathOperator,
     OntologyNode,
@@ -2231,22 +2284,78 @@ def _uniquify(
     Utility method to force object which would otherwise compare as equal
     to be distinct when used as nodes in a digraph.
     """
-    return (item, referring_node)
+    return item, referring_node
+
+
+class _FrameTranslation(ABC, Generic[PerceptionT]):
+    unique_counter: Incrementer = attrib(init=False, default=Incrementer(0))
+
+    @abstractmethod
+    def _translate_frame(self, frame: PerceptionT) -> DiGraph:
+        """Gets the `DiGraph` corresponding to the `PerceptionT` frame."""
+        raise NotImplementedError
+
+    def translate_frame(self, frame: PerceptionT) -> PerceptionGraph:
+        """Gets the `PerceptionGraph` corresponding to a the `PerceptionT` frame."""
+        return PerceptionGraph(self._translate_frame(frame))
+
+    @abstractmethod
+    def _translate_frames(
+        self, perceptual_representation: PerceptualRepresentation[PerceptionT]
+    ) -> DiGraph:
+        """Gets the dynamic `DiGraph` corresponding to the `PerceptionT` frames."""
+
+    def translate_frames(
+        self, perceptual_representation: PerceptualRepresentation[PerceptionT]
+    ) -> PerceptionGraph:
+        """Gets the dynamic `PerceptionGraph` corresponding to the `PerceptualRepresentation` with multiple frames."""
+        # The PerceptionGraph constructor always copies the graph it's passed, so to avoid copying
+        # the constructed digraph, we use this ugly hack. We construct a PerceptionGraph from an
+        # empty graph (which should be faster) and use object.__setattr__ to set its graph attribute
+        # to our constructed graph (working around the fact that PerceptionGraph is frozen).
+        dynamic_digraph = self._translate_frames(perceptual_representation)
+        new_perception_graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
+        object.__setattr__(new_perception_graph, "_graph", dynamic_digraph)
+        return new_perception_graph
+
+    @staticmethod
+    def _map_node(
+        obj: Any,
+        *,
+        referring_node_to_enforce_uniqueness: Optional[PerceptionGraphNode] = None,
+    ):
+        # If the object passed in is a GraphNode then is it already unique
+        # and we can just return it
+        if isinstance(obj, GraphNode):
+            return obj
+        # in some cases, a node will be combined with its referring node
+        # to force otherwise identical objects to be treated separately.
+        # We do this for properties, for example, so that if two things
+        # are both animate, they end up with distinct animacy nodes in the graph
+        # which could be e.g. treated differently during pattern relaxation.
+        elif referring_node_to_enforce_uniqueness:
+            return _uniquify(obj, referring_node_to_enforce_uniqueness)
+        # Regions and Geons are normally treated as value objects,
+        # but we want to maintain their distinctness in the perceptual graph
+        # for the purpose of matching patterns, so we make their corresponding
+        # graph nods compare by identity.
+        elif isinstance(obj, (Region, Geon)):
+            return obj, id(obj)
+        else:
+            return obj
+
+    @staticmethod
+    def _map_edge(label: Any) -> MutableMapping[str, Any]:
+        return {"label": label}
 
 
 @attrs
-class _FrameTranslation:
-    unique_counter: Incrementer = attrib(init=False, default=Incrementer(0))
-
+class _DevelopmentalPrimitivePerceptionFrameTranslation(
+    _FrameTranslation[DevelopmentalPrimitivePerceptionFrame]
+):
     def _translate_frame(self, frame: DevelopmentalPrimitivePerceptionFrame) -> DiGraph:
-        """
-        Gets the `DiGraph` corresponding to a
-        `DevelopmentalPrimitivePerceptionFrame`.
-        """
+        """Gets the `DiGraph` corresponding to a `DevelopmentalPrimitivePerceptionFrame`."""
         graph = DiGraph()
-
-        # see force_unique_counter in map_node above
-        property_index = 0
 
         for perceived_object in frame.perceived_objects:
             # Every perceived object is a node in the graph.
@@ -2293,7 +2402,6 @@ class _FrameTranslation:
 
         dest_node: Any
         for property_ in frame.property_assertions:
-            property_index += 1
             source_node = self._map_node(property_.perceived_object)
             if isinstance(property_, HasBinaryProperty):
                 # TODO: fix this hack for me and you https://github.com/isi-vista/adam/issues/917
@@ -2336,22 +2444,12 @@ class _FrameTranslation:
 
         return graph
 
-    def translate_frame(
-        self, frame: DevelopmentalPrimitivePerceptionFrame
-    ) -> "PerceptionGraph":
-        """
-        Gets the `PerceptionGraph` corresponding to a
-        `DevelopmentalPrimitivePerceptionFrame`.
-        """
-        graph = self._translate_frame(frame)
-        return PerceptionGraph(graph)
-
-    def translate_frames(
+    def _translate_frames(
         self,
         perceptual_representation: PerceptualRepresentation[
             DevelopmentalPrimitivePerceptionFrame
         ],
-    ) -> PerceptionGraph:
+    ) -> DiGraph:
         check_arg(
             len(perceptual_representation.frames) == 2,
             "Can only create a DynamicPerceptionGraph from exactly two frames, "
@@ -2487,13 +2585,7 @@ class _FrameTranslation:
                     temporal_scopes=_DURING_ONLY,
                 )
 
-        # The PerceptionGraph constructor always copies the graph it's passed, so to avoid copying
-        # the constructed digraph, we use this ugly hack. We construct a PerceptionGraph from an
-        # empty graph (which should be faster) and use object.__setattr__ to set its graph attribute
-        # to our constructed graph (working around the fact that PerceptionGraph is frozen).
-        new_perception_graph = PerceptionGraph(graph=DiGraph(), dynamic=True)
-        object.__setattr__(new_perception_graph, "_graph", _dynamic_digraph)
-        return new_perception_graph
+        return _dynamic_digraph
 
     def _add_path_node(
         self,
@@ -2583,31 +2675,6 @@ class _FrameTranslation:
                 ),
             )
 
-    def _map_node(
-        self,
-        obj: Any,
-        *,
-        referring_node_to_enforce_uniqueness: Optional[PerceptionGraphNode] = None,
-    ):
-        # in some cases, a node will be combined with its referring node
-        # to force otherwise identical objects to be treated separately.
-        # We do this for properties, for example, so that if two things
-        # are both animate, they end up with distinct animacy nodes in the graph
-        # which could be e.g. treated differently during pattern relaxation.
-        if referring_node_to_enforce_uniqueness:
-            return _uniquify(obj, referring_node_to_enforce_uniqueness)
-        # Regions and Geons are normally treated as value objects,
-        # but we want to maintain their distinctness in the perceptual graph
-        # for the purpose of matching patterns, so we make their corresponding
-        # graph nods compare by identity.
-        elif isinstance(obj, (Region, Geon)):
-            return (obj, id(obj))
-        else:
-            return obj
-
-    def _map_edge(self, label: Any):
-        return {"label": label}
-
     def _map_relation(
         self,
         graph: DiGraph,
@@ -2626,6 +2693,62 @@ class _FrameTranslation:
             self._map_node(relation.first_slot),
             self._map_node(relation.second_slot),
             label=label,
+        )
+
+
+@attrs
+class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]):
+    def _translate_frame(self, frame: VisualPerceptionFrame) -> DiGraph:
+        """Gets the `DiGraph` corresponding to a `VisualPerceptionFrame`."""
+        graph = DiGraph()
+
+        # This will be used in the future when linking relationships between clusters
+        cluster_perception_to_graph_node = dict()
+
+        for perceived_cluster in frame.clusters:
+            cluster_node = ObjectClusterNode(
+                cluster_id=perceived_cluster.cluster_id,
+                viewpoint_id=perceived_cluster.viewpoint_id,
+                center_x=perceived_cluster.centroid_x,
+                center_y=perceived_cluster.centroid_y,
+                weight=1.0,
+            )
+            cluster_perception_to_graph_node[perceived_cluster] = cluster_node
+            graph.add_node(cluster_node)
+
+            for obj_property in perceived_cluster.properties:
+                dest_node = self._map_node(obj_property)
+                graph.add_edge(cluster_node, dest_node, label=HAS_PROPERTY_LABEL)
+
+            for stroke in perceived_cluster.strokes:
+                graph.add_edge(cluster_node, stroke, label=HAS_STROKE_LABEL)
+
+            for source_stroke, adj_strokes in perceived_cluster.adjacent_strokes.items():
+                for dest_stroke, is_adjacent in adj_strokes.items():
+                    # We want to ensure we don't create a cycle in the DiGraph
+                    # so we check that there isn't an edge in the opposite direction
+                    # of what we are going to add
+                    if not graph.has_edge(dest_stroke, source_stroke) and is_adjacent:
+                        graph.add_edge(
+                            source_stroke, dest_stroke, label=ADJACENT_STROKE_LABEL
+                        )
+
+        return graph
+
+    def _translate_frames(
+        self,
+        perceptual_representation: PerceptualRepresentation[VisualPerceptionFrame],
+    ) -> DiGraph:
+        """Gets the dynamic `DiGraph` corresponding to a `VisualPerceptionFrame`."""
+        check_arg(
+            len(perceptual_representation.frames) == 2,
+            "Can only create a DynamicPerceptionGraph from exactly two frames, "
+            "but got %s",
+            (len(perceptual_representation.frames),),
+        )
+
+        raise NotImplementedError(
+            "Multiple frame translation is not yet supported for Visual Perception Frames."
         )
 
 

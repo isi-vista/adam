@@ -18,7 +18,7 @@ from adam.learner import LearningExample
 
 from adam.learner.verbs import SubsetVerbLearner
 from adam.learner.attributes import SubsetAttributeLearner
-from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import ObjectRecognizerAsTemplateLearner
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
@@ -27,7 +27,7 @@ from tests.learner import object_recognizer_factory
 
 
 def integrated_learner_factory(language_mode: LanguageMode):
-    return IntegratedTemplateLearner(
+    return SymbolicIntegratedTemplateLearner(
         object_learner=ObjectRecognizerAsTemplateLearner(
             object_recognizer=object_recognizer_factory(language_mode),
             language_mode=language_mode,

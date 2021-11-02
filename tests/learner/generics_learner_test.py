@@ -16,7 +16,7 @@ from adam.language.language_utils import phase2_language_generator
 from adam.learner import LearningExample
 from adam.learner.attributes import SubsetAttributeLearner
 from adam.learner.generics import SimpleGenericsLearner
-from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.plurals import SubsetPluralLearner
 from adam.learner.verbs import SubsetVerbLearner
@@ -36,7 +36,7 @@ from tests.learner import LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER
 def integrated_learner_factory(language_mode: LanguageMode):
     rng = random.Random()
     rng.seed(0)
-    return IntegratedTemplateLearner(
+    return SymbolicIntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         attribute_learner=SubsetAttributeLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode

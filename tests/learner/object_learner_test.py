@@ -22,7 +22,7 @@ from adam.learner import (
     PerceptionSemanticAlignment,
 )
 from adam.learner.alignments import LanguageConceptAlignment
-from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import (
     PursuitObjectLearner,
@@ -64,7 +64,7 @@ from adam.situation.templates.phase1_templates import (
 
 
 def integrated_learner_factory(language_mode: LanguageMode):
-    return IntegratedTemplateLearner(
+    return SymbolicIntegratedTemplateLearner(
         object_learner=SubsetObjectLearner(
             ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=10, language_mode=language_mode
         )
@@ -73,7 +73,7 @@ def integrated_learner_factory(language_mode: LanguageMode):
 
 def integrated_learner_pv_factory(langage_mode: LanguageMode):
     rng = RandomChooser.for_seed(0)
-    return IntegratedTemplateLearner(
+    return SymbolicIntegratedTemplateLearner(
         object_learner=ProposeButVerifyObjectLearner(
             rng=rng, language_mode=langage_mode, ontology=GAILA_PHASE_1_ONTOLOGY
         )
@@ -81,7 +81,7 @@ def integrated_learner_pv_factory(langage_mode: LanguageMode):
 
 
 def integrated_learner_cs_factory(langage_mode: LanguageMode):
-    return IntegratedTemplateLearner(
+    return SymbolicIntegratedTemplateLearner(
         object_learner=CrossSituationalObjectLearner(
             smoothing_parameter=0.001,
             # The expected number of meanings is the number of subtypes of THING.
@@ -355,7 +355,7 @@ def test_pursuit_object_learner(language_mode):
     # lexicalize items sufficiently because of diminishing lexicon probability through training
     rng = random.Random()
     rng.seed(0)
-    learner = IntegratedTemplateLearner(
+    learner = SymbolicIntegratedTemplateLearner(
         object_learner=PursuitObjectLearner(
             learning_factor=0.05,
             graph_match_confirmation_threshold=0.7,
@@ -448,7 +448,7 @@ def test_pursuit_object_learner_with_gaze(language_mode):
     # lexicalize items sufficiently because of diminishing lexicon probability through training
     rng = random.Random()
     rng.seed(0)
-    learner = IntegratedTemplateLearner(
+    learner = SymbolicIntegratedTemplateLearner(
         object_learner=PursuitObjectLearner(
             learning_factor=0.05,
             graph_match_confirmation_threshold=0.7,
