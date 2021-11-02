@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
-python3 app.py
+PYTHONPATH=../.. python3 app.py

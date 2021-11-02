@@ -1,3 +1,3 @@
 export class Features {
-    name:string;
+  name: string;
 }

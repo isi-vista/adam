@@ -1,18 +1,18 @@
-.button-color{
-    background-color: #CFD8DC;
+.button-color {
+  background-color: #cfd8dc;
 }
 
-.text{
-    color:#263238;
+.text {
+  color: #263238;
 }
 
 .outline {
-    border: #B0BEC5 1px solid;
-    width:fit-content;
-    padding: 10px 10px 20px 10px;
-    border-radius: 10px;
+  border: #b0bec5 1px solid;
+  width: fit-content;
+  padding: 10px 10px 20px 10px;
+  border-radius: 10px;
 }
 
-.box{
-    margin: 40px 0 0 20px;
+.box {
+  margin: 40px 0 0 20px;
 }
