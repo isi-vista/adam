@@ -1,8 +1,7 @@
-language: python
-
 jobs:
     include:
-        - python: "3.6"
+        - language: python
+          python: "3.6"
           stage: test
           install:
             - pip install --upgrade "pip<20.3" setuptools wheel
@@ -13,7 +12,23 @@ jobs:
               - make check
           cache:
             pip: true
-        - python: "pypy3.6-7.1.1"
+#       We put this node job second because we have one-job execution
+#       and we'd prefer these to fail quickly before we run all the python tests
+        - language: node_js
+          node_js: 14
+          before_install:
+            - npm i -g npm@8
+          before_script:
+            - cd angular-viewer/adam-angular-demo
+            - npm install
+          script:
+            - echo "node version $(node -v) running"
+            - echo "npm versions $(npm --version) running"
+            - make check
+          cache:
+            npm: true
+        - language: python
+          python: "pypy3.6-7.1.1"
           stage: test
           install:
             - pip install --upgrade "pip<20.3" setuptools wheel
@@ -28,4 +43,3 @@ jobs:
             pip: true
 #          after_success:
 #              - codecov -t 452b6965-c9da-4306-97d5-a5e86626af8f
-
