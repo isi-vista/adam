@@ -27,7 +27,7 @@ import random
 
 from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
-    PHASE1_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
     phase1_instances,
     standard_object,
 )
@@ -467,7 +467,7 @@ def _make_sit_on_curriculum(
                         sitter, seat, num_noise_objects, surface=False, syntax_hints=False
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 25,
                     block_multiple_of_the_same_type=True,
                 ),
@@ -476,7 +476,7 @@ def _make_sit_on_curriculum(
                         sitter, seat, num_noise_objects, surface=False, syntax_hints=False
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 25,
                     block_multiple_of_the_same_type=True,
                 ),

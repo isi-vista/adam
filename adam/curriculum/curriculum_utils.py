@@ -7,10 +7,15 @@ from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from immutablecollections import immutableset
 from adam.language.language_generator import LanguageGenerator
 from adam.language.dependency import LinearizedDependencyTree
-from adam.curriculum import InstanceGroup, GeneratedFromSituationsInstanceGroup
+from adam.curriculum import (
+    InstanceGroup,
+    GeneratedFromSituationsInstanceGroup,
+    AblatedPerceptionSituationsInstanceGroup,
+)
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_1_LANGUAGE_GENERATOR,
     GAILA_PHASE_2_LANGUAGE_GENERATOR,
+    GAILA_PHASE_3_LANGUAGE_GENERATOR,
 )
 from adam.ontology import OntologyNode
 from adam.ontology.phase1_ontology import (
@@ -24,6 +29,7 @@ from adam.ontology.phase1_ontology import (
     near,
     strictly_under,
     far,
+    PHASE_3_CONCEPT,
 )
 from adam.ontology.phase1_spatial_relations import Direction, DISTAL, PROXIMAL
 from adam.perception.developmental_primitive_perception import (
@@ -43,16 +49,23 @@ from adam.situation.templates.phase1_templates import (
     TemplateObjectVariable,
 )
 from adam.language import LinguisticDescriptionT
-from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.perception import (
+    PerceptionT,
+    PerceptualRepresentation,
+    PerceptualRepresentationFrame,
+)
 from adam.situation import SituationT
 
 GROUND_OBJECT_TEMPLATE = object_variable("ground", GROUND)
-PHASE1_CHOOSER_FACTORY = lambda: RandomChooser.for_seed(0)  # noqa: E731
-PHASE1_TEST_CHOOSER_FACTORY = lambda: RandomChooser.for_seed(1)  # noqa: E731
-Phase1InstanceGroup = InstanceGroup[  # pylint:disable=invalid-name
+CHOOSER_FACTORY = lambda: RandomChooser.for_seed(0)  # noqa: E731
+TEST_CHOOSER_FACTORY = lambda: RandomChooser.for_seed(1)  # noqa: E731
+Phase1InstanceGroup = InstanceGroup[
     HighLevelSemanticsSituation,
     LinearizedDependencyTree,
     DevelopmentalPrimitivePerceptionFrame,
+]
+Phase3InstanceGroup = InstanceGroup[
+    HighLevelSemanticsSituation, LinearizedDependencyTree, PerceptualRepresentationFrame
 ]
 
 
@@ -78,6 +91,36 @@ def standard_object(
         root_node=root_node,
         banned_properties=banned_properties_final,
         required_properties=required_properties,
+        added_properties=added_properties,
+        banned_ontology_types=banned_ontology_types,
+    )
+
+
+# Get only a Phase 3 object in the standard set
+def phase3_standard_object(
+    debug_handle: str,
+    root_node: OntologyNode = THING,
+    *,
+    required_properties: Iterable[OntologyNode] = tuple(),
+    banned_properties: Iterable[OntologyNode] = immutableset(),
+    added_properties: Iterable[
+        Union[OntologyNode, TemplatePropertyVariable]
+    ] = immutableset(),
+    banned_ontology_types: Iterable[OntologyNode] = immutableset(),
+) -> TemplateObjectVariable:
+    """
+    Preferred method of generating phase 3 template objects as this automatically limits to concepts which are
+    marked as Phase 3 and prevents liquids and body parts from object selection.
+    """
+    required_properties_final = [PHASE_3_CONCEPT]
+    required_properties_final.extend(required_properties)
+    banned_properties_final = [IS_BODY_PART, LIQUID]
+    banned_properties_final.extend(banned_properties)
+    return object_variable(
+        debug_handle=debug_handle,
+        root_node=root_node,
+        banned_properties=banned_properties_final,
+        required_properties=required_properties_final,
         added_properties=added_properties,
         banned_ontology_types=banned_ontology_types,
     )
@@ -124,7 +167,7 @@ def phase1_instances(
         situations=situations,
         language_generator=language_generator,
         perception_generator=perception_generator,
-        chooser=PHASE1_CHOOSER_FACTORY(),
+        chooser=CHOOSER_FACTORY(),
     )
 
 
@@ -145,7 +188,26 @@ def phase2_instances(
         situations=situations,
         language_generator=language_generator,
         perception_generator=perception_generator,
-        chooser=PHASE1_CHOOSER_FACTORY(),
+        chooser=CHOOSER_FACTORY(),
+    )
+
+
+def phase3_instances(
+    description: str,
+    situations: Iterable[HighLevelSemanticsSituation],
+    language_generator: LanguageGenerator[
+        HighLevelSemanticsSituation, LinearizedDependencyTree
+    ] = GAILA_PHASE_3_LANGUAGE_GENERATOR,
+) -> Phase3InstanceGroup:
+    """
+    Convenience method for more compactly creating sub-curricula for phase 3.
+    """
+
+    return AblatedPerceptionSituationsInstanceGroup(
+        description,
+        situations=situations,
+        language_generator=language_generator,
+        chooser=CHOOSER_FACTORY(),
     )
 
 

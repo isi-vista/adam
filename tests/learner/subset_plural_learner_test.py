@@ -3,7 +3,7 @@ from typing import Iterable
 import pytest
 
 from adam.axes import AxesInfo
-from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY, phase1_instances
+from adam.curriculum.curriculum_utils import CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.phase1_curriculum import _make_plural_objects_curriculum
 from adam.language.language_utils import phase1_language_generator
 from adam.learner import LearningExample
@@ -61,7 +61,7 @@ def run_plural_test(learner, language_generator, language_mode):
     train_curriculum = phase1_instances(
         "multiples of the same object",
         build_object_multiples_situations(
-            ontology=GAILA_PHASE_1_ONTOLOGY, chooser=PHASE1_CHOOSER_FACTORY()
+            ontology=GAILA_PHASE_1_ONTOLOGY, chooser=CHOOSER_FACTORY()
         ),
         language_generator=language_generator,
     )

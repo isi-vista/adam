@@ -68,7 +68,6 @@ from adam.ontology.phase1_ontology import (
 )
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.phase2_ontology import (
-    GAILA_PHASE_2_ONTOLOGY,
     CHAIR_2,
     CHAIR_3,
     CHAIR_4,
@@ -76,6 +75,7 @@ from adam.ontology.phase2_ontology import (
     CUP_2,
     CUP_3,
     CUP_4,
+    GAILA_PHASE_2_STRUCUTRAL_SCHEMATA,
 )
 
 MAWG = OntologyNode(
@@ -175,21 +175,24 @@ INTEGRATED_EXPERIMENT_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_TAIL, _WING),
 )
 
-INTEGRATED_EXPERIMENT_ONTOLOGY = Ontology(
-    "integrated_experiment_ontology",
-    _ontology_graph,
-    structural_schemata=[
-        schemata
-        for schemata in GAILA_PHASE_2_ONTOLOGY._structural_schemata.items()  # pylint: disable=protected-access
-    ]
-    + [
+# See: https://github.com/isi-vista/adam/issues/1047
+INTEGRATED_EXPERIMENT_STRUCTURAL_SCHEMATA = [
+    value for value in GAILA_PHASE_2_STRUCUTRAL_SCHEMATA
+]
+INTEGRATED_EXPERIMENT_STRUCTURAL_SCHEMATA.extend(
+    [
         (ZUP, _BALL_SCHEMA),
         (SPAD, _BALL_SCHEMA),
         (DAYGIN, _BALL_SCHEMA),
         (MAWG, _BOX_SCHEMA),
         (TOMBUR, _BOX_SCHEMA),
         (GLIM, _BOX_SCHEMA),
-    ],
+    ]
+)
+INTEGRATED_EXPERIMENT_ONTOLOGY = Ontology(
+    "integrated_experiment_ontology",
+    _ontology_graph,
+    structural_schemata=INTEGRATED_EXPERIMENT_STRUCTURAL_SCHEMATA,
     action_to_description=_ACTIONS_TO_DESCRIPTIONS,
     relations=build_size_relationships(
         INTEGRATED_EXPERIMENT_SIZE_GRADES,

@@ -9,7 +9,7 @@ from adam.curriculum.curriculum_utils import (
     Phase1InstanceGroup,
     standard_object,
     phase1_instances,
-    PHASE1_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
     make_noise_objects,
 )
 from adam.curriculum.phase1_curriculum import make_eat_template
@@ -44,7 +44,7 @@ def make_human_eat_curriculum(
             make_eat_template(human, object_to_eat, background),
             max_to_sample=num_samples if num_samples else 5,
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
@@ -69,7 +69,7 @@ def make_animal_eat_curriculum(
             make_eat_template(animal, object_to_eat, background),
             max_to_sample=num_samples if num_samples else 5,
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             block_multiple_of_the_same_type=True,
         ),
         language_generator=language_generator,
@@ -101,7 +101,7 @@ def make_german_eat_test_curriculum(
                     make_eat_template(eater, object_to_eat, background),
                     max_to_sample=num_samples if num_samples else 5,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     block_multiple_of_the_same_type=True,
                 )
             ]

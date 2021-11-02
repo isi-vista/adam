@@ -7,8 +7,8 @@ from more_itertools import flatten
 from adam.curriculum.curriculum_utils import (
     standard_object,
     phase1_instances,
-    PHASE1_CHOOSER_FACTORY,
-    PHASE1_TEST_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
+    TEST_CHOOSER_FACTORY,
 )
 from adam.curriculum.phase1_curriculum import _object_with_color_template
 from adam.language.language_utils import phase1_language_generator
@@ -91,7 +91,7 @@ def test_pursuit_color_attribute(
                     [
                         sampled(
                             template,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=n_samples,
                             block_multiple_of_the_same_type=True,
@@ -107,7 +107,7 @@ def test_pursuit_color_attribute(
         f"{color.handle} Color Test",
         situations=sampled(
             color_object_template,
-            chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+            chooser=TEST_CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,

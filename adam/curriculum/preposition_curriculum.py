@@ -8,7 +8,7 @@ from adam.situation.high_level_semantics_situation import HighLevelSemanticsSitu
 from adam.language.dependency import LinearizedDependencyTree
 from adam.axes import HorizontalAxisOfObject, FacingAddresseeAxis
 from adam.curriculum.curriculum_utils import (
-    PHASE1_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
     standard_object,
     Phase1InstanceGroup,
     phase1_instances,
@@ -304,7 +304,7 @@ def _make_on_training(
                                 make_noise_objects(noise_objects),
                                 is_training=True,
                             ),
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
@@ -351,7 +351,7 @@ def _make_beside_training(
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
@@ -396,7 +396,7 @@ def _make_under_training(
                     ),
                     block_multiple_of_the_same_type=True,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
                 )
                 for figure in figures
@@ -439,7 +439,7 @@ def _make_over_training(
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
                     block_multiple_of_the_same_type=True,
                 )
@@ -480,7 +480,7 @@ def _make_in_training(
                         is_training=True,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
                     block_multiple_of_the_same_type=True,
                 )
@@ -535,7 +535,7 @@ def _make_behind_training(
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
@@ -592,7 +592,7 @@ def _make_in_front_training(
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
@@ -640,7 +640,7 @@ def _make_near_training(
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
@@ -687,7 +687,7 @@ def _make_far_training(
                                 is_training=True,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
@@ -743,7 +743,7 @@ def _make_on_tests(
                                 make_noise_objects(noise_objects),
                                 is_training=False,
                             ),
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
@@ -796,7 +796,7 @@ def _make_beside_tests(
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
@@ -844,7 +844,7 @@ def _make_under_tests(
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
                     block_multiple_of_the_same_type=True,
                 )
@@ -895,7 +895,7 @@ def _make_over_tests(
                         syntax_hints=[USE_ABOVE_BELOW] if use_above_below else [],
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
                     block_multiple_of_the_same_type=True,
                 )
@@ -950,7 +950,7 @@ def _make_in_tests(
                         is_training=False,
                     ),
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     max_to_sample=num_samples if num_samples else 5,
                     block_multiple_of_the_same_type=True,
                 )
@@ -1009,7 +1009,7 @@ def _make_behind_tests(
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
@@ -1071,7 +1071,7 @@ def _make_in_front_tests(
                                 is_near=close,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
@@ -1123,7 +1123,7 @@ def _make_near_tests(
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )
@@ -1174,7 +1174,7 @@ def _make_far_tests(
                                 is_training=False,
                             ),
                             ontology=GAILA_PHASE_1_ONTOLOGY,
-                            chooser=PHASE1_CHOOSER_FACTORY(),
+                            chooser=CHOOSER_FACTORY(),
                             max_to_sample=num_samples if num_samples else 5,
                             block_multiple_of_the_same_type=True,
                         )

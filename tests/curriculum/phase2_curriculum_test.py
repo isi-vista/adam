@@ -1,4 +1,3 @@
-from adam.curriculum.curriculum_utils import Phase1InstanceGroup
 from adam.curriculum.phase2_curriculum import (
     _make_drink_cups_curriculum,
     _make_put_in_curriculum,
@@ -13,13 +12,7 @@ from adam.language_specific.english.english_language_generator import (
 )
 import pytest
 
-
-def curriculum_test(curriculum: Phase1InstanceGroup) -> None:
-    for _ in curriculum.instances():
-        # we don't need to do anything
-        # the curriculum may be dynamically generated
-        # so we just want to test we can instantiate it
-        pass
+from tests.curriculum.phase1_curriculum_test import curriculum_test
 
 
 @pytest.mark.parametrize(

@@ -4,8 +4,8 @@ import pytest
 
 from adam.curriculum.curriculum_utils import (
     phase1_instances,
-    PHASE1_CHOOSER_FACTORY,
-    PHASE1_TEST_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
+    TEST_CHOOSER_FACTORY,
 )
 from adam.language.language_utils import phase1_language_generator
 from adam.curriculum.imprecise_descriptions_curriculum import (
@@ -50,7 +50,7 @@ def run_imprecise_test(learner, situation_template, language_generator):
                     situation_template,
                     max_to_sample=10,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_CHOOSER_FACTORY(),
+                    chooser=CHOOSER_FACTORY(),
                     # this is a hack since our current object recognizer will throw a runtime error if there are percieved objects not in the description
                     block_multiple_of_the_same_type=False,
                 )
@@ -66,7 +66,7 @@ def run_imprecise_test(learner, situation_template, language_generator):
                     situation_template,
                     max_to_sample=1,
                     ontology=GAILA_PHASE_1_ONTOLOGY,
-                    chooser=PHASE1_TEST_CHOOSER_FACTORY(),
+                    chooser=TEST_CHOOSER_FACTORY(),
                     block_multiple_of_the_same_type=False,
                 )
             ]

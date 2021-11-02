@@ -10,7 +10,7 @@ from immutablecollections import immutableset
 from adam.curriculum.curriculum_utils import (
     standard_object,
     phase1_instances,
-    PHASE1_CHOOSER_FACTORY,
+    CHOOSER_FACTORY,
 )
 from adam.curriculum.preposition_curriculum import (
     _on_template,
@@ -67,7 +67,7 @@ def test_pursuit_preposition_on_learner(language_mode, learner):
         "Preposition Unit Train",
         situations=sampled(
             _on_template(ball, table, immutableset(), is_training=True),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
             block_multiple_of_the_same_type=True,
@@ -78,7 +78,7 @@ def test_pursuit_preposition_on_learner(language_mode, learner):
         "Preposition Unit Test",
         situations=sampled(
             _on_template(ball, table, immutableset(), is_training=False),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -122,7 +122,7 @@ def test_pursuit_preposition_beside_learner(language_mode, learner):
             _beside_template(
                 ball, table, immutableset(), is_training=True, is_right=True
             ),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
             block_multiple_of_the_same_type=True,
@@ -135,7 +135,7 @@ def test_pursuit_preposition_beside_learner(language_mode, learner):
             _beside_template(
                 ball, table, immutableset(), is_training=False, is_right=True
             ),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -179,7 +179,7 @@ def test_pursuit_preposition_under_learner(language_mode, learner):
             _under_template(
                 ball, table, immutableset(), is_training=True, is_distal=True
             ),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
             block_multiple_of_the_same_type=True,
@@ -192,7 +192,7 @@ def test_pursuit_preposition_under_learner(language_mode, learner):
             _under_template(
                 ball, table, immutableset(), is_training=False, is_distal=True
             ),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -234,7 +234,7 @@ def test_pursuit_preposition_over_learner(language_mode, learner):
         "Preposition Over Unit Train",
         situations=sampled(
             _over_template(ball, table, immutableset(), is_training=True, is_distal=True),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
             block_multiple_of_the_same_type=True,
@@ -247,7 +247,7 @@ def test_pursuit_preposition_over_learner(language_mode, learner):
             _over_template(
                 ball, table, immutableset(), is_training=False, is_distal=True
             ),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -289,7 +289,7 @@ def test_pursuit_preposition_in_learner(language_mode, learner):
         "Preposition In Unit Train",
         situations=sampled(
             _in_template(water, cup, immutableset(), is_training=True),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
             block_multiple_of_the_same_type=True,
@@ -300,7 +300,7 @@ def test_pursuit_preposition_in_learner(language_mode, learner):
         "Preposition In Unit Test",
         situations=sampled(
             _in_template(water, cup, immutableset(), is_training=False),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -343,7 +343,7 @@ def test_pursuit_preposition_behind_learner(language_mode, learner):
         "Preposition Behind Unit Train",
         situations=sampled(
             _behind_template(ball, table, [speaker], is_training=True, is_near=True),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
             block_multiple_of_the_same_type=True,
@@ -354,7 +354,7 @@ def test_pursuit_preposition_behind_learner(language_mode, learner):
         "Preposition Behind Unit Test",
         situations=sampled(
             _behind_template(ball, table, [speaker], is_training=False, is_near=True),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -397,7 +397,7 @@ def test_pursuit_preposition_in_front_learner(language_mode, learner):
         "Preposition In Front Unit Train",
         situations=sampled(
             _in_front_template(ball, table, [speaker], is_training=True, is_near=True),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=10,
             block_multiple_of_the_same_type=True,
@@ -408,7 +408,7 @@ def test_pursuit_preposition_in_front_learner(language_mode, learner):
         "Preposition In Front Unit Test",
         situations=sampled(
             _in_front_template(ball, table, [speaker], is_training=False, is_near=True),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,
@@ -457,7 +457,7 @@ def test_pursuit_preposition_has_learner(language_mode, learner):
         "Has Unit Train",
         situations=sampled(
             _x_has_y_template(person, inanimate_object),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=2,
             block_multiple_of_the_same_type=True,
@@ -469,7 +469,7 @@ def test_pursuit_preposition_has_learner(language_mode, learner):
         "Has Unit Test",
         situations=sampled(
             _x_has_y_template(person, ball),
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             ontology=GAILA_PHASE_1_ONTOLOGY,
             max_to_sample=1,
             block_multiple_of_the_same_type=True,

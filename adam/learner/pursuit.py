@@ -407,7 +407,7 @@ class AbstractPursuitLearner(AbstractTemplateLearner, ABC):
                     for hypothesis in hypotheses:
                         if GAZED_AT in [
                             node.property_value
-                            for node in hypothesis.graph_pattern.copy_as_digraph().node
+                            for node in hypothesis.graph_pattern.copy_as_digraph().nodes
                             if isinstance(node, IsOntologyNodePredicate)
                         ]:
                             gazed_at_possibilities.append(hypothesis)

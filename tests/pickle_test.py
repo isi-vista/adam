@@ -2,7 +2,7 @@ from typing import TypeVar
 from pickle import HIGHEST_PROTOCOL
 from io import BytesIO, SEEK_SET
 
-from adam.curriculum.curriculum_utils import phase1_instances, PHASE1_CHOOSER_FACTORY
+from adam.curriculum.curriculum_utils import phase1_instances, CHOOSER_FACTORY
 from adam.language.language_utils import phase1_language_generator
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from adam.pickle import AdamPickler, AdamUnpickler
@@ -62,7 +62,7 @@ def test_object_recognition_with_drink_perception():
             template,
             max_to_sample=3,
             ontology=GAILA_PHASE_1_ONTOLOGY,
-            chooser=PHASE1_CHOOSER_FACTORY(),
+            chooser=CHOOSER_FACTORY(),
             block_multiple_of_the_same_type=True,
         ),
         language_generator=phase1_language_generator(language_mode),

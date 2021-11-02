@@ -6,7 +6,7 @@ import pandas as pd
 from immutablecollections import immutableset
 from tabulate import tabulate
 
-from adam.curriculum.curriculum_utils import PHASE1_CHOOSER_FACTORY
+from adam.curriculum.curriculum_utils import CHOOSER_FACTORY
 from adam.curriculum.phase1_curriculum import (
     _make_kind_predicates_curriculum,
     _make_each_object_by_itself_curriculum,
@@ -94,7 +94,7 @@ def run_experiment(learner, curricula, experiment_id):
         ),
     )
     empty_perception = GAILA_PHASE_2_PERCEPTION_GENERATOR.generate_perception(
-        empty_situation, PHASE1_CHOOSER_FACTORY()
+        empty_situation, CHOOSER_FACTORY()
     )
     pseudoword_to_kind = {"wug": "animal", "vonk": "food", "snarp": "people"}
     print("Teaching new objects in known categories")

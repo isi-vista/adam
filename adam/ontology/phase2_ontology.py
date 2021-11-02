@@ -33,7 +33,6 @@ from adam.ontology.phase1_ontology import (
     CHAIR,
     contacts,
     above,
-    GAILA_PHASE_1_ONTOLOGY,
     SMALLER_THAN,
     BIGGER_THAN,
     PERCEIVABLE_PROPERTY,
@@ -87,6 +86,7 @@ from adam.ontology.phase1_ontology import (
     CAT,
     PAPER,
     BEEF,
+    GAILA_PHASE_1_STRUCTURAL_SCHEMATA,
 )
 from adam.ontology.phase1_size_relationships import build_size_relationships
 from adam.ontology.structural_schema import ObjectStructuralSchema
@@ -267,14 +267,9 @@ GAILA_PHASE_2_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
 )
 
 
-GAILA_PHASE_2_ONTOLOGY = Ontology(
-    "gaila-phase-2",
-    _ontology_graph,
-    structural_schemata=[
-        schemata
-        for schemata in GAILA_PHASE_1_ONTOLOGY._structural_schemata.items()  # pylint: disable=protected-access
-    ]
-    + [
+GAILA_PHASE_2_STRUCUTRAL_SCHEMATA = [value for value in GAILA_PHASE_1_STRUCTURAL_SCHEMATA]
+GAILA_PHASE_2_STRUCUTRAL_SCHEMATA.extend(
+    [
         (CHAIR_2, _CHAIR_2_SCHEMA),
         (CHAIR_3, _CHAIR_3_SCHEMA),
         (CHAIR_4, _CHAIR_4_SCHEMA),
@@ -282,7 +277,12 @@ GAILA_PHASE_2_ONTOLOGY = Ontology(
         (CUP_2, _CUP_2_SCHEMA),
         (CUP_3, _CUP_3_SCHEMA),
         (CUP_4, _CUP_4_SCHEMA),
-    ],
+    ]
+)
+GAILA_PHASE_2_ONTOLOGY = Ontology(
+    "gaila-phase-2",
+    _ontology_graph,
+    structural_schemata=GAILA_PHASE_2_STRUCUTRAL_SCHEMATA,
     action_to_description=_ACTIONS_TO_DESCRIPTIONS,
     relations=build_size_relationships(
         GAILA_PHASE_2_SIZE_GRADES, relation_type=BIGGER_THAN, opposite_type=SMALLER_THAN

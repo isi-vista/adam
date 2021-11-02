@@ -234,23 +234,78 @@ subtype(SOFT_FORCE, PROPERTY)
 INTEGRATED_EXPERIMENT_PROP = OntologyNode("integrated-experiment-selector")
 subtype(INTEGRATED_EXPERIMENT_PROP, PROPERTY)
 
+# Specific Phase Experiment Selector Property
+PHASE_1_CONCEPT = OntologyNode("phase-1-concept")
+subtype(PHASE_1_CONCEPT, PROPERTY)
+PHASE_2_CONCEPT = OntologyNode("phase-2-concept")
+subtype(PHASE_2_CONCEPT, PROPERTY)
+PHASE_3_CONCEPT = OntologyNode("phase-3-concept")
+subtype(PHASE_3_CONCEPT, PROPERTY)
+
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
-RED = OntologyNode("red", [CAN_FILL_TEMPLATE_SLOT])
-BLUE = OntologyNode("blue", [CAN_FILL_TEMPLATE_SLOT])
-GREEN = OntologyNode("green", [CAN_FILL_TEMPLATE_SLOT])
-BLACK = OntologyNode("black", [CAN_FILL_TEMPLATE_SLOT])
-WHITE = OntologyNode("white", [CAN_FILL_TEMPLATE_SLOT])
-LIGHT_BROWN = OntologyNode("light-brown", [CAN_FILL_TEMPLATE_SLOT])
-DARK_BROWN = OntologyNode("dark-brown", [CAN_FILL_TEMPLATE_SLOT])
-TRANSPARENT = OntologyNode("transparent", [CAN_FILL_TEMPLATE_SLOT])
+SHAPE_PROPERTY_DESCRIPTION = OntologyNode("shape-property-description")
+subtype(SHAPE_PROPERTY_DESCRIPTION, PERCEIVABLE_PROPERTY)
+MATERIAL = OntologyNode("material")
+subtype(MATERIAL, PERCEIVABLE_PROPERTY)
+
+RED = OntologyNode(
+    "red",
+    [CAN_FILL_TEMPLATE_SLOT],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_3_CONCEPT],
+)
 subtype(RED, COLOR)
+BLUE = OntologyNode(
+    "blue",
+    [CAN_FILL_TEMPLATE_SLOT],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_3_CONCEPT],
+)
 subtype(BLUE, COLOR)
+GREEN = OntologyNode(
+    "green",
+    [CAN_FILL_TEMPLATE_SLOT],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_3_CONCEPT],
+)
 subtype(GREEN, COLOR)
+BLACK = OntologyNode(
+    "black",
+    [CAN_FILL_TEMPLATE_SLOT],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_3_CONCEPT],
+)
 subtype(BLACK, COLOR)
+WHITE = OntologyNode(
+    "white",
+    [CAN_FILL_TEMPLATE_SLOT],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_3_CONCEPT],
+)
 subtype(WHITE, COLOR)
+LIGHT_BROWN = OntologyNode(
+    "light-brown", [CAN_FILL_TEMPLATE_SLOT], non_inheritable_properties=[PHASE_1_CONCEPT]
+)
 subtype(LIGHT_BROWN, COLOR)
+DARK_BROWN = OntologyNode(
+    "dark-brown", [CAN_FILL_TEMPLATE_SLOT], non_inheritable_properties=[PHASE_1_CONCEPT]
+)
 subtype(DARK_BROWN, COLOR)
+PURPLE = OntologyNode(
+    "purple", [CAN_FILL_TEMPLATE_SLOT], non_inheritable_properties=[PHASE_3_CONCEPT]
+)
+subtype(PURPLE, COLOR)
+ORANGE_COLOR = OntologyNode(
+    "orange-color", [CAN_FILL_TEMPLATE_SLOT], non_inheritable_properties=[PHASE_3_CONCEPT]
+)
+subtype(ORANGE_COLOR, COLOR)
+YELLOW = OntologyNode(
+    "yellow", [CAN_FILL_TEMPLATE_SLOT], non_inheritable_properties=[PHASE_3_CONCEPT]
+)
+subtype(YELLOW, COLOR)
+BROWN = OntologyNode(
+    "brown", [CAN_FILL_TEMPLATE_SLOT], non_inheritable_properties=[PHASE_3_CONCEPT]
+)
+subtype(BROWN, COLOR)
+TRANSPARENT = OntologyNode(
+    "transparent", [CAN_FILL_TEMPLATE_SLOT], non_inheritable_properties=[PHASE_1_CONCEPT]
+)
 subtype(TRANSPARENT, COLOR)
 _RED_HEX = [
     (255, 0, 0),
@@ -316,9 +371,24 @@ GROUND = OntologyNode(
 )
 subtype(GROUND, INANIMATE_OBJECT)
 
+# Category Object Types (Mostly for easier template generation e.g. "eat FRUIT" where FRUIT becomes 'apple', 'orange')
 FOOD = OntologyNode("food", inheritable_properties=[EDIBLE])
 subtype(FOOD, INANIMATE_OBJECT)
+FRUIT = OntologyNode("fruit")
+subtype(FRUIT, FOOD)
+FURNITURE = OntologyNode("furniture")
+subtype(FURNITURE, INANIMATE_OBJECT)
+CONTAINER = OntologyNode("container")
+subtype(CONTAINER, INANIMATE_OBJECT)
+STRUCTURE = OntologyNode("structure")
+subtype(STRUCTURE, INANIMATE_OBJECT)
+TOY = OntologyNode("toy")
+subtype(TOY, INANIMATE_OBJECT)
+NONHUMAN_ANIMAL = OntologyNode("animal", inheritable_properties=[ANIMATE])
+subtype(NONHUMAN_ANIMAL, THING)
 
+
+# Furniture
 TABLE = OntologyNode(
     "table",
     [
@@ -330,9 +400,13 @@ TABLE = OntologyNode(
         LIGHT_BROWN,
         DARK_BROWN,
     ],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+        PHASE_3_CONCEPT,
+    ],
 )
-subtype(TABLE, INANIMATE_OBJECT)
-
+subtype(TABLE, FURNITURE)
 BED = OntologyNode(
     "bed",
     [
@@ -347,17 +421,64 @@ BED = OntologyNode(
         LIGHT_BROWN,
         DARK_BROWN,
     ],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
 )
-subtype(BED, INANIMATE_OBJECT)
+subtype(BED, FURNITURE)
+CHAIR = OntologyNode(
+    "chair",
+    [
+        CAN_FILL_TEMPLATE_SLOT,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+        CAN_BE_SAT_ON_BY_PEOPLE,
+        LIGHT_BROWN,
+        DARK_BROWN,
+    ],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT, PHASE_3_CONCEPT],
+)
+subtype(CHAIR, FURNITURE)
+DOOR = OntologyNode(
+    "door",
+    [CAN_FILL_TEMPLATE_SLOT, LIGHT_BROWN, DARK_BROWN],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
+)
+subtype(DOOR, FURNITURE)
+
 BALL = OntologyNode(
     "ball",
     [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, RED, BLUE, GREEN, BLACK, WHITE],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT, PHASE_3_CONCEPT],
 )
-subtype(BALL, INANIMATE_OBJECT)
+subtype(BALL, TOY)
+
+# Food
+COOKIE = OntologyNode(
+    "cookie",
+    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, LIGHT_BROWN],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
+)
+subtype(COOKIE, FOOD)
+
+# Fruit
 WATERMELON = OntologyNode(
-    "watermelon", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, GREEN]
+    "watermelon",
+    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, GREEN],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
 )
-subtype(WATERMELON, FOOD)
+subtype(WATERMELON, FRUIT)
+
+
 PAPER = OntologyNode(
     "paper",
     [
@@ -381,9 +502,17 @@ BOOK = OntologyNode(
         GREEN,
         INTEGRATED_EXPERIMENT_PROP,
     ],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT, PHASE_3_CONCEPT],
 )
 subtype(BOOK, INANIMATE_OBJECT)
-HOUSE = OntologyNode("house", [HOLLOW, CAN_FILL_TEMPLATE_SLOT, RED, BLUE, WHITE])
+HOUSE = OntologyNode(
+    "house",
+    [HOLLOW, CAN_FILL_TEMPLATE_SLOT, RED, BLUE, WHITE],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
+)
 subtype(HOUSE, INANIMATE_OBJECT)
 CAR = OntologyNode(
     "car",
@@ -398,18 +527,78 @@ CAR = OntologyNode(
         BLACK,
         WHITE,
     ],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
 )
 subtype(CAR, INANIMATE_OBJECT)
+TRUCK = OntologyNode(
+    "truck",
+    [
+        BLUE,
+        RED,
+        HOLLOW,
+        CAN_FILL_TEMPLATE_SLOT,
+        SELF_MOVING,
+        CAN_HAVE_THINGS_RESTING_ON_THEM,
+    ],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
+)
+subtype(TRUCK, INANIMATE_OBJECT)
+HAT = OntologyNode(
+    "hat",
+    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, BLACK],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
+)
+subtype(HAT, INANIMATE_OBJECT)
+
+# Substances / Liquids
 WATER = OntologyNode(
     "water",
     [LIQUID],
-    non_inheritable_properties=[TRANSPARENT, CAN_FILL_TEMPLATE_SLOT, EDIBLE],
+    non_inheritable_properties=[
+        TRANSPARENT,
+        CAN_FILL_TEMPLATE_SLOT,
+        EDIBLE,
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+        PHASE_3_CONCEPT,
+    ],
 )
 subtype(WATER, SUBSTANCE)
 JUICE = OntologyNode(
-    "juice", [LIQUID], non_inheritable_properties=[RED, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
+    "juice",
+    [LIQUID],
+    non_inheritable_properties=[
+        RED,
+        CAN_FILL_TEMPLATE_SLOT,
+        EDIBLE,
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
 )
 subtype(JUICE, SUBSTANCE)
+MILK = OntologyNode(
+    "milk",
+    [LIQUID],
+    non_inheritable_properties=[
+        WHITE,
+        CAN_FILL_TEMPLATE_SLOT,
+        EDIBLE,
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
+)
+subtype(MILK, SUBSTANCE)
+
+# Containers
 CUP = OntologyNode(
     "cup",
     [
@@ -422,9 +611,9 @@ CUP = OntologyNode(
         TRANSPARENT,
         INTEGRATED_EXPERIMENT_PROP,
     ],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT, PHASE_3_CONCEPT],
 )
-subtype(CUP, INANIMATE_OBJECT)
-
+subtype(CUP, CONTAINER)
 BOX = OntologyNode(
     "box",
     [
@@ -434,19 +623,10 @@ BOX = OntologyNode(
         PERSON_CAN_HAVE,
         LIGHT_BROWN,
     ],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT, PHASE_3_CONCEPT],
 )
-subtype(BOX, INANIMATE_OBJECT)
-CHAIR = OntologyNode(
-    "chair",
-    [
-        CAN_FILL_TEMPLATE_SLOT,
-        CAN_HAVE_THINGS_RESTING_ON_THEM,
-        CAN_BE_SAT_ON_BY_PEOPLE,
-        LIGHT_BROWN,
-        DARK_BROWN,
-    ],
-)
-subtype(CHAIR, INANIMATE_OBJECT)
+subtype(BOX, CONTAINER)
+
 
 # should a HEAD be hollow? We are answering yes for now,
 # because food and liquids can enter it,
@@ -454,71 +634,93 @@ subtype(CHAIR, INANIMATE_OBJECT)
 HEAD = OntologyNode(
     "head",
     [HOLLOW, CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, IS_BODY_PART],
-)
-subtype(HEAD, THING)
-MILK = OntologyNode(
-    "milk", [LIQUID], non_inheritable_properties=[WHITE, CAN_FILL_TEMPLATE_SLOT, EDIBLE]
-)
-subtype(MILK, SUBSTANCE)
-HAND = OntologyNode(
-    "hand", [CAN_FILL_TEMPLATE_SLOT, CAN_MANIPULATE_OBJECTS, IS_BODY_PART, ANIMATE]
-)
-subtype(HAND, THING)
-TRUCK = OntologyNode(
-    "truck",
-    [
-        BLUE,
-        RED,
-        HOLLOW,
-        CAN_FILL_TEMPLATE_SLOT,
-        SELF_MOVING,
-        CAN_HAVE_THINGS_RESTING_ON_THEM,
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
     ],
 )
-subtype(TRUCK, INANIMATE_OBJECT)
-DOOR = OntologyNode("door", [CAN_FILL_TEMPLATE_SLOT, LIGHT_BROWN, DARK_BROWN])
-subtype(DOOR, INANIMATE_OBJECT)
-HAT = OntologyNode("hat", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, BLACK])
-subtype(HAT, INANIMATE_OBJECT)
-
-
-COOKIE = OntologyNode(
-    "cookie", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, LIGHT_BROWN]
+subtype(HEAD, THING)
+HAND = OntologyNode(
+    "hand",
+    [CAN_FILL_TEMPLATE_SLOT, CAN_MANIPULATE_OBJECTS, IS_BODY_PART, ANIMATE],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
 )
-subtype(COOKIE, FOOD)
-
+subtype(HAND, THING)
 PERSON = OntologyNode(
-    "person", inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP, IS_HUMAN]
+    "person",
+    inheritable_properties=[ANIMATE, SELF_MOVING, CAN_JUMP, IS_HUMAN],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
 )
 subtype(PERSON, THING)
 
 ME_HACK = OntologyNode(
-    "me", non_inheritable_properties=[IS_SPEAKER, CAN_FILL_TEMPLATE_SLOT]
+    "me",
+    non_inheritable_properties=[
+        IS_SPEAKER,
+        CAN_FILL_TEMPLATE_SLOT,
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
 )
 subtype(ME_HACK, PERSON)
 YOU_HACK = OntologyNode(
-    "you", non_inheritable_properties=[IS_ADDRESSEE, CAN_FILL_TEMPLATE_SLOT]
+    "you",
+    non_inheritable_properties=[
+        IS_ADDRESSEE,
+        CAN_FILL_TEMPLATE_SLOT,
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
 )
 subtype(YOU_HACK, PERSON)
 
 IS_MOM = OntologyNode("is-mom")
 subtype(IS_MOM, RECOGNIZED_PARTICULAR_PROPERTY)
-MOM = OntologyNode("Mom", non_inheritable_properties=[IS_MOM, CAN_FILL_TEMPLATE_SLOT])
+MOM = OntologyNode(
+    "Mom",
+    non_inheritable_properties=[
+        IS_MOM,
+        CAN_FILL_TEMPLATE_SLOT,
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
+)
 subtype(MOM, PERSON)
-
 IS_DAD = OntologyNode("is-dad")
 subtype(IS_DAD, RECOGNIZED_PARTICULAR_PROPERTY)
-DAD = OntologyNode("Dad", non_inheritable_properties=[IS_DAD, CAN_FILL_TEMPLATE_SLOT])
+DAD = OntologyNode(
+    "Dad",
+    non_inheritable_properties=[
+        IS_DAD,
+        CAN_FILL_TEMPLATE_SLOT,
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
+)
 subtype(DAD, PERSON)
-
 IS_BABY = OntologyNode("is-baby")
 subtype(IS_BABY, RECOGNIZED_PARTICULAR_PROPERTY)
-BABY = OntologyNode("baby", non_inheritable_properties=[IS_BABY, CAN_FILL_TEMPLATE_SLOT])
+BABY = OntologyNode(
+    "baby",
+    non_inheritable_properties=[
+        IS_BABY,
+        CAN_FILL_TEMPLATE_SLOT,
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+    ],
+)
 subtype(BABY, PERSON)
-
 IS_LEARNER = OntologyNode("is-learner")
 subtype(IS_LEARNER, RECOGNIZED_PARTICULAR_PROPERTY)
-LEARNER = OntologyNode("learner", [IS_LEARNER])
+LEARNER = OntologyNode(
+    "learner", [IS_LEARNER], non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT]
+)
 """
 We represent the language learner itself in the situation,
 because the size or position of objects relative to the learner itself
@@ -526,8 +728,6 @@ may be significant for learning.
 """
 subtype(LEARNER, BABY)
 
-NONHUMAN_ANIMAL = OntologyNode("animal", inheritable_properties=[ANIMATE])
-subtype(NONHUMAN_ANIMAL, THING)
 DOG = OntologyNode(
     "dog",
     [
@@ -539,6 +739,7 @@ DOG = OntologyNode(
         DARK_BROWN,
         INTEGRATED_EXPERIMENT_PROP,
     ],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT],
 )
 subtype(DOG, NONHUMAN_ANIMAL)
 CAT = OntologyNode(
@@ -552,11 +753,13 @@ CAT = OntologyNode(
         DARK_BROWN,
         INTEGRATED_EXPERIMENT_PROP,
     ],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT],
 )
 subtype(CAT, NONHUMAN_ANIMAL)
 BEAR = OntologyNode(
     "bear",
     [CAN_FILL_TEMPLATE_SLOT, CAN_JUMP, BLACK, DARK_BROWN, INTEGRATED_EXPERIMENT_PROP],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT],
 )
 subtype(BEAR, NONHUMAN_ANIMAL)
 BIRD = OntologyNode(
@@ -570,17 +773,25 @@ BIRD = OntologyNode(
         WHITE,
         INTEGRATED_EXPERIMENT_PROP,
     ],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT],
 )
 subtype(BIRD, NONHUMAN_ANIMAL)
 CHICKEN = OntologyNode(
-    "chicken", [CAN_FILL_TEMPLATE_SLOT, EDIBLE, DARK_BROWN, LIGHT_BROWN]
+    "chicken",
+    [CAN_FILL_TEMPLATE_SLOT, EDIBLE, DARK_BROWN, LIGHT_BROWN],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT],
 )
 subtype(CHICKEN, NONHUMAN_ANIMAL)
-BEEF = OntologyNode("beef", [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, DARK_BROWN])
+BEEF = OntologyNode(
+    "beef",
+    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, RED, DARK_BROWN],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT],
+)
 subtype(BEEF, FOOD)
 COW = OntologyNode(
     "cow",
     [CAN_FILL_TEMPLATE_SLOT, CAN_HAVE_THINGS_RESTING_ON_THEM, CAN_JUMP, WHITE, BLACK],
+    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT],
 )
 subtype(COW, NONHUMAN_ANIMAL)
 
@@ -3226,39 +3437,42 @@ GAILA_PHASE_1_SIZE_GRADES: Tuple[Tuple[OntologyNode, ...], ...] = (
     (_TAIL, _WING),
 )
 
+# See: https://github.com/isi-vista/adam/issues/1047
+GAILA_PHASE_1_STRUCTURAL_SCHEMATA = [
+    (BED, _BED_SCHEMA),
+    (BALL, _BALL_SCHEMA),
+    (PAPER, _PAPER_SCHEMA),
+    (BEEF, _BEEF_SCHEMA),
+    (CHICKEN, _CHICKEN_SCHEMA),
+    (COW, _COW_SCHEMA),
+    (WATERMELON, _WATERMELON_SCHEMA),
+    (BEAR, _BEAR_SCHEMA),
+    (CHAIR, _CHAIR_SCHEMA),
+    (PERSON, _PERSON_SCHEMA),
+    (TABLE, _TABLE_SCHEMA),
+    (DOG, _DOG_SCHEMA),
+    (CAT, _CAT_SCHEMA),
+    (BIRD, _BIRD_SCHEMA),
+    (BOX, _BOX_SCHEMA),
+    (DOOR, _DOOR_SCHEMA),
+    (HAT, _HAT_SCHEMA),
+    (COOKIE, _COOKIE_SCHEMA),
+    (HEAD, _HEAD_SCHEMA),
+    (CUP, _CUP_SCHEMA),
+    (BOX, _BOX_SCHEMA),
+    (BOOK, _BOOK_SCHEMA),
+    (HOUSE, _HOUSE_SCHEMA),
+    (HAND, _HAND_SCHEMA),
+    (CAR, _CAR_SCHEMA),
+    (TRUCK, _TRUCK_SCHEMA),
+    (GROUND, _GROUND_SCHEMA),
+    (LEARNER, _LEARNER_SCHEMA),
+]
+
 GAILA_PHASE_1_ONTOLOGY = Ontology(
     "gaila-phase-1",
     _ontology_graph,
-    structural_schemata=[
-        (BED, _BED_SCHEMA),
-        (BALL, _BALL_SCHEMA),
-        (PAPER, _PAPER_SCHEMA),
-        (BEEF, _BEEF_SCHEMA),
-        (CHICKEN, _CHICKEN_SCHEMA),
-        (COW, _COW_SCHEMA),
-        (WATERMELON, _WATERMELON_SCHEMA),
-        (BEAR, _BEAR_SCHEMA),
-        (CHAIR, _CHAIR_SCHEMA),
-        (PERSON, _PERSON_SCHEMA),
-        (TABLE, _TABLE_SCHEMA),
-        (DOG, _DOG_SCHEMA),
-        (CAT, _CAT_SCHEMA),
-        (BIRD, _BIRD_SCHEMA),
-        (BOX, _BOX_SCHEMA),
-        (DOOR, _DOOR_SCHEMA),
-        (HAT, _HAT_SCHEMA),
-        (COOKIE, _COOKIE_SCHEMA),
-        (HEAD, _HEAD_SCHEMA),
-        (CUP, _CUP_SCHEMA),
-        (BOX, _BOX_SCHEMA),
-        (BOOK, _BOOK_SCHEMA),
-        (HOUSE, _HOUSE_SCHEMA),
-        (HAND, _HAND_SCHEMA),
-        (CAR, _CAR_SCHEMA),
-        (TRUCK, _TRUCK_SCHEMA),
-        (GROUND, _GROUND_SCHEMA),
-        (LEARNER, _LEARNER_SCHEMA),
-    ],
+    structural_schemata=GAILA_PHASE_1_STRUCTURAL_SCHEMATA,
     action_to_description=_ACTIONS_TO_DESCRIPTIONS,
     relations=build_size_relationships(
         GAILA_PHASE_1_SIZE_GRADES, relation_type=BIGGER_THAN, opposite_type=SMALLER_THAN
