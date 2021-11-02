@@ -1,7 +1,9 @@
 import logging
+import yaml
+
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generic, Mapping, Optional, Tuple
+from typing import Any, Generic, Mapping, MutableMapping, Optional, Tuple
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
@@ -11,9 +13,13 @@ from vistautils.parameters import Parameters
 from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.language.dependency import LinearizedDependencyTree
+from adam.paths import SITUATION_DIR_NAME
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation import SituationT
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+
+GOLD_LANGUAGE = "gold_language"
+OUTPUT_LANGUAGE = "output_language"
 
 
 class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, PerceptionT], ABC):
@@ -749,6 +755,50 @@ class HTMLLoggerPostObserver(  # pragma: no cover
             self.candidate_accuracy_observer.report()
         if self.precision_recall_observer:
             self.precision_recall_observer.report()
+
+
+@attrs(slots=True)
+class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]):
+    name: str = attrib(validator=instance_of(str))
+    experiment_path: Path = attrib(validator=instance_of(Path))
+    counter: int = attrib(kw_only=True, default=0)
+
+    def observe(  # pylint:disable=unused-argument
+        self,
+        situation: Optional[SituationT],
+        true_description: LinguisticDescription,
+        perceptual_representation: PerceptualRepresentation[PerceptionT],
+        predicted_descriptions: Mapping[LinguisticDescription, float],
+    ) -> None:
+        output_dict: MutableMapping[str, Any] = dict()
+        output_dict[GOLD_LANGUAGE] = true_description.as_token_string()
+        output_dict[OUTPUT_LANGUAGE] = []
+
+        for linguistic_description, confidence in predicted_descriptions.items():
+            output_dict[OUTPUT_LANGUAGE].append(
+                {
+                    "text": linguistic_description.as_token_string(),
+                    "confidence": confidence,
+                    "features": [],
+                    "sub-objects": [],
+                }
+            )
+
+        with open(
+            (
+                self.experiment_path
+                / SITUATION_DIR_NAME.format(num=self.counter)
+                / f"{self.name}.yaml"
+            ),
+            "w",
+            encoding="utf-8",
+        ) as decode:
+            yaml.dump(output_dict, decode)
+
+        self.counter += 1
+
+    def report(self) -> None:
+        pass
 
 
 # used by TopChoiceExactMatchObserver
