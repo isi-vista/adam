@@ -56,6 +56,7 @@ export class SelectorParentComponent implements OnInit {
   selectedLearner = '';
   selectedPretrain = '';
   selectedTrain = '';
+  submitted = false;
 
   outputImage = '';
   outputObject = {};
@@ -107,28 +108,29 @@ export class SelectorParentComponent implements OnInit {
 
   selected(event: any) {
     this.selectedLevel = event.target.value;
+  }
+
+  formSubmit(f: NgForm) {
+    this.submitted = true;
+    console.log(f.value.selectLearner);
+    console.log(f.value.selectTraining);
     this.getResponseData
       .loadScene(
-        this.selectedLearner,
-        this.selectedTrain,
-        this.selectedLevel,
+        f.value.selectLearner,
+        f.value.selectTraining,
+        f.value.selectTesting,
         '1'
       )
       .subscribe((data: SceneResponse) => {
         console.log(data);
         this.outputImage = data.scene_images[0];
         this.outputObject = {
-          main: data.post_learning.output_language[0],
-          sub_objects: data.post_learning.output_language[0].sub_objects[0],
+          main: data.post_learning.output_language,
           scene_num: data.post_learning.scene_num,
         };
         this.targetImgURLs = data.scene_images;
         console.log('Image url ', this.outputImage);
         console.log('Main output object: ', this.outputObject);
       });
-  }
-
-  formSubmit(form: NgForm) {
-    const learnerVal = form.controls.selectedLearner.value;
   }
 }

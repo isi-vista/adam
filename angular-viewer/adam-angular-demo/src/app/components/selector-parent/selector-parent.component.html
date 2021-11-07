@@ -1,10 +1,11 @@
-<form class="row selector-grid" (ngSubmit)="formSubmit(f)" #f="ngForm">
+<form (ngSubmit)="formSubmit(f)" #f="ngForm" class="row selector-grid">
   <div class="select outline box">
     Choose Learner
     <select
       (change)="learner_selected($event)"
       class="form-control select"
       name="selectLearner"
+      ngModel
     >
       <option *ngFor="let i of learners" [value]="i">{{ i }}</option>
     </select>
@@ -17,6 +18,7 @@
         class="form-control select"
         aria-labelledby="dropdownMenuButton"
         name="selectPreTraining"
+        ngModel
       >
         <option href="#" *ngFor="let i of pretrainingData" [ngValue]="i">
           {{ i }}
@@ -32,6 +34,7 @@
         class="form-control select"
         aria-labelledby="dropdownMenuButton"
         name="selectTraining"
+        ngModel
       >
         <option href="#" *ngFor="let i of trainingData" [ngValue]="i">
           {{ i }}
@@ -43,12 +46,11 @@
     <div class="dropdown">
       Choose Testing Data
       <select
-        (change)="selected($event)"
         class="form-control select"
         aria-labelledby="dropdownMenuButton"
         name="selectTesting"
+        ngModel
       >
-        <option>None</option>
         <option *ngFor="let i of testData" [ngValue]="i">{{ i }}</option>
       </select>
     </div>
@@ -59,6 +61,9 @@
     (click)="onButtonClick()"
   >
     Submit data
+  </button>
+  <button type="reset" class="btn button-color button-text button-box">
+    Reset
   </button>
 </form>
 <div class="row">
