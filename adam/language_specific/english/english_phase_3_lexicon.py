@@ -36,6 +36,10 @@ from adam.ontology.phase3_ontology import (
     CUBIC,
     PLASTIC,
     WOOD,
+    PYRAMID_BLOCK,
+    SPHERICAL_BLOCK,
+    CUBE_BLOCK,
+    MUG,
 )
 
 GAILA_PHASE_3_ENGLISH_LEXICON = OntologyLexicon(
@@ -50,10 +54,14 @@ GAILA_PHASE_3_ENGLISH_LEXICON = OntologyLexicon(
         (CHAIR, LexiconEntry("chair", NOUN, plural_form="chairs")),
         (SOFA, LexiconEntry("sofa", NOUN, plural_form="sofas")),
         (BLOCK, LexiconEntry("block", NOUN, plural_form="blocks")),
+        (PYRAMID_BLOCK, LexiconEntry("pyramid", NOUN, plural_form="pyramids")),
+        (SPHERICAL_BLOCK, LexiconEntry("sphere", NOUN, plural_form="spheres")),
+        (CUBE_BLOCK, LexiconEntry("cube", NOUN, plural_form="cubes")),
         (BOX, LexiconEntry("box", NOUN, plural_form="boxes")),
         (FLOOR, LexiconEntry("floor", NOUN, plural_form="floors")),
         (WINDOW, LexiconEntry("window", NOUN, plural_form="windows")),
         (CUP, LexiconEntry("cup", NOUN, plural_form="cups")),
+        (MUG, LexiconEntry("mug", NOUN, plural_form="mugs")),
         (PAPER, LexiconEntry("paper", NOUN, plural_form="papers")),
         (DESK, LexiconEntry("desk", NOUN, plural_form="desks")),
         (TOY_TRUCK, LexiconEntry("truck", NOUN, plural_form="trucks")),

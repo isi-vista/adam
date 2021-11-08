@@ -1,7 +1,13 @@
 import pytest
 
 from adam.curriculum.curriculum_utils import Phase3InstanceGroup
-from adam.curriculum.phase3_curriculum import Phase3OneObjectsCurriculum
+from adam.curriculum.phase3_curriculum import (
+    phase_3_one_objects_curriculum,
+    phase_3_m4_stretch_eval,
+    phase_3_one_core_objects_curriculum,
+    phase_3_one_stretch_objects_curriculum,
+    phase_3_m4_core_eval,
+)
 from adam.language_specific.english.english_language_generator import (
     GAILA_PHASE_3_LANGUAGE_GENERATOR,
 )
@@ -19,6 +25,15 @@ def curriculum_phase3_test(curriculum: Phase3InstanceGroup) -> None:
     "language_generator",
     [GAILA_PHASE_3_LANGUAGE_GENERATOR],
 )
-@pytest.mark.parametrize("curriculum", [Phase3OneObjectsCurriculum()])
+@pytest.mark.parametrize(
+    "curriculum",
+    [
+        phase_3_one_objects_curriculum,
+        phase_3_m4_stretch_eval,
+        phase_3_one_core_objects_curriculum,
+        phase_3_one_stretch_objects_curriculum,
+        phase_3_m4_core_eval,
+    ],
+)
 def test_phase3_curriculum(language_generator, curriculum):
     curriculum_phase3_test(curriculum(1, 5, language_generator))
