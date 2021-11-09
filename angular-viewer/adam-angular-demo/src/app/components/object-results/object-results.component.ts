@@ -24,6 +24,7 @@ export class ObjectResultsComponent implements OnInit, OnChanges {
   subObjects;
 
   result = new MainObject();
+  resultArray = new Array<MainObject>();
   isObject = false;
 
   constructor(private getResponseData: AdamService) {}
@@ -33,35 +34,40 @@ export class ObjectResultsComponent implements OnInit, OnChanges {
     for (const propName of Object.keys(changes)) {
       const chng = changes[propName];
       const cur = JSON.parse(JSON.stringify(chng.currentValue));
-      const prev = JSON.parse(JSON.stringify(chng.previousValue));
-      console.log(cur);
       tempObject = cur;
     }
     console.log(tempObject);
-    this.result.text = tempObject.main.text;
-    this.result.confidence = tempObject.main.confidence;
-    this.result.features = new Array<Features>();
-    this.result.subObject = new Array<SubObject>();
-    tempObject.main.features.forEach((element) => {
-      const feat = new Features();
-      console.log(element);
-      feat.name = element.name;
-      this.result.features.push(feat);
-    });
-    tempObject.main.sub_objects.forEach((element) => {
-      const subobject = new SubObject();
-      subobject.confidence = element.confidence;
-      subobject.text = element.text;
-      subobject.features = new Array<Features>();
-      element.features.forEach((feature) => {
-        const feat = new Features();
-        feat.name = feature.name;
-        subobject.features.push(feat);
-      });
-      this.result.subObject.push(subobject);
-    });
 
-    console.log(this.result);
+    for (const entry of tempObject.main) {
+      const tempMain = new MainObject();
+      tempMain.text = entry.text;
+      tempMain.confidence = entry.confidence;
+      tempMain.features = new Array<Features>();
+      tempMain.subObject = new Array<SubObject>();
+      entry.features.forEach((element) => {
+        const feat = new Features();
+        feat.name = element.name;
+        tempMain.features.push(feat);
+      });
+      if (entry.hasOwnProperty('sub_objects')) {
+        entry.sub_objects.forEach((element) => {
+          const subobject = new SubObject();
+          subobject.confidence = element.confidence;
+          subobject.text = element.text;
+          subobject.features = new Array<Features>();
+          element.features.forEach((feature) => {
+            const feat = new Features();
+            feat.name = feature.name;
+            subobject.features.push(feat);
+          });
+          tempMain.subObject.push(subobject);
+        });
+      }
+      this.resultArray.push(tempMain);
+    }
+
+    console.log(this.resultArray);
+
     this.isObject = true;
   }
 
