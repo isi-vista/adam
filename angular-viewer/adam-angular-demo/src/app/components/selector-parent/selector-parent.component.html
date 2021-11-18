@@ -2,10 +2,10 @@
   <div class="select outline box">
     Choose Learner
     <select
-      (change)="learner_selected($event)"
       class="form-control select"
+      aria-labelledby="dropdownMenuButton"
       name="selectLearner"
-      ngModel
+      [(ngModel)]="selectedLearner"
     >
       <option *ngFor="let i of learners" [value]="i">{{ i }}</option>
     </select>
@@ -14,13 +14,12 @@
     <div class="dropdown">
       Choose Pre-training Data
       <select
-        (change)="pretraining_selected($event)"
         class="form-control select"
         aria-labelledby="dropdownMenuButton"
         name="selectPreTraining"
-        ngModel
+        [(ngModel)]="selectedPretrain"
       >
-        <option href="#" *ngFor="let i of pretrainingData" [ngValue]="i">
+        <option *ngFor="let i of pretrainingData" [ngValue]="i">
           {{ i }}
         </option>
       </select>
@@ -30,13 +29,12 @@
     <div class="dropdown">
       Choose Training Data
       <select
-        (change)="training_selected($event)"
         class="form-control select"
         aria-labelledby="dropdownMenuButton"
         name="selectTraining"
-        ngModel
+        [(ngModel)]="selectedTrain"
       >
-        <option href="#" *ngFor="let i of trainingData" [ngValue]="i">
+        <option *ngFor="let i of trainingData" [ngValue]="i">
           {{ i }}
         </option>
       </select>
@@ -49,7 +47,7 @@
         class="form-control select"
         aria-labelledby="dropdownMenuButton"
         name="selectTesting"
-        ngModel
+        [(ngModel)]="selectedTest"
       >
         <option *ngFor="let i of testData" [ngValue]="i">{{ i }}</option>
       </select>
@@ -58,18 +56,20 @@
   <button
     type="submit"
     class="btn button-color button-text button-box"
-    (click)="onButtonClick()"
   >
     Submit data
   </button>
-  <button type="reset" class="btn button-color button-text button-box">
+  <button 
+      type="reset" 
+      class="btn button-color button-text button-box"
+      (click)="formReset(f)">
     Reset
   </button>
 </form>
 <div class="row">
-  <app-image-output class="col" [imgSrc]="targetImgURLs"></app-image-output>
+  <app-image-output class="col" [imgSrc]="targetImgURLs" *ngIf="submitted"></app-image-output>
   <app-object-results
-    *ngIf="outputObject"
+    *ngIf="submitted"
     class="col"
     [outputObject]="outputObject"
   ></app-object-results>

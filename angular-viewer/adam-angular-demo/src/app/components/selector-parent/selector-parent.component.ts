@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { AdamService } from 'src/app/services/adam.service';
-import { NgForm } from '@angular/forms';
+import { FormGroup, NgForm } from '@angular/forms';
 import { environment } from 'src/environments/environment';
+import { TouchSequence } from 'selenium-webdriver';
 
 export interface LearnersResponse {
   learner_types: string[];
@@ -56,11 +57,14 @@ export class SelectorParentComponent implements OnInit {
   selectedLearner = '';
   selectedPretrain = '';
   selectedTrain = '';
+  selectedTest=''
   submitted = false;
 
   outputImage = '';
   outputObject = {};
   targetImgURLs: string[];
+
+  ngForm = FormGroup;
 
   constructor(private getResponseData: AdamService) {}
 
@@ -114,6 +118,7 @@ export class SelectorParentComponent implements OnInit {
     this.submitted = true;
     console.log(f.value.selectLearner);
     console.log(f.value.selectTraining);
+    console.log(f.value.selectTesting);
     this.getResponseData
       .loadScene(
         f.value.selectLearner,
@@ -132,5 +137,17 @@ export class SelectorParentComponent implements OnInit {
         console.log('Image url ', this.outputImage);
         console.log('Main output object: ', this.outputObject);
       });
+  }
+
+  formReset(f: NgForm){
+    f.reset({
+      selectLearner:this.selectedLearner[0],
+      selectTest:this.selectedTest[0],
+      selectTrain:this.selectedTrain[0],
+      selectPretrain:this.selectedPretrain[0]
+    })
+    this.submitted=false;
+    this.outputObject={}
+    this.targetImgURLs=[]
   }
 }
