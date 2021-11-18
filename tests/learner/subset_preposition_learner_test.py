@@ -88,7 +88,10 @@ def run_preposition_test(learner, situation_template, language_generator):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -256,4 +259,7 @@ def test_subset_preposition_has(language_mode, learner):
         )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]

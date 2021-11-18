@@ -30,7 +30,11 @@ from adam.language import (
     LinguisticDescriptionT,
 )
 from adam.language_specific.english import ENGLISH_BLOCK_DETERMINERS
-from adam.learner import LearningExample, TopLevelLanguageLearner
+from adam.learner import (
+    LearningExample,
+    TopLevelLanguageLearner,
+    TopLevelLanguageLearnerDescribeReturn,
+)
 from adam.learner.alignments import (
     LanguageConceptAlignment,
     LanguagePerceptionSemanticAlignment,
@@ -75,6 +79,7 @@ from adam.semantics import (
     AttributeSemanticNode,
     Concept,
     KindConcept,
+    SemanticNode,
 )
 
 
@@ -197,15 +202,19 @@ class IntegratedTemplateLearner(
 
         # Engage generics learner if the utterance is indefinite
         if self.generics_learner and not self.is_definite(current_learner_state):
+            learner_semantics = LearnerSemantics.from_nodes(
+                current_learner_state.perception_semantic_alignment.semantic_nodes,
+                concept_map=current_learner_state.perception_semantic_alignment.functional_concept_to_object_concept,
+            )
             # Lack of definiteness could be marking a generic statement
             # Check if the known descriptions match the utterance
-            descs = self._linguistic_descriptions_from_semantics(
-                current_learner_state.perception_semantic_alignment
+            description, _ = self._linguistic_descriptions_from_semantics(
+                learner_semantics
             )
             # If the statement isn't a recognized sentence, run learner
-            if not linguistic_description.as_token_sequence() in [
-                desc.as_token_sequence() for desc in descs
-            ]:
+            if linguistic_description.as_token_sequence() not in set(
+                desc.as_token_sequence() for desc in description
+            ):
                 # Pass plural markers to generics before learning from a statement
                 if isinstance(self.plural_learner, SubsetPluralLearner):
                     self.generics_learner.plural_markers = (
@@ -228,7 +237,7 @@ class IntegratedTemplateLearner(
 
     def describe_common(
         self, cur_description_state: PerceptionSemanticAlignment, is_dynamic: bool
-    ) -> Mapping[LinguisticDescription, float]:
+    ) -> TopLevelLanguageLearnerDescribeReturn:
         for sub_learner in [
             self.object_learner,
             self.attribute_learner,
@@ -249,59 +258,72 @@ class IntegratedTemplateLearner(
                 cur_description_state = self.functional_learner.enrich_during_description(
                     cur_description_state
                 )
-        return self._linguistic_descriptions_from_semantics(cur_description_state)
+
+        learner_semantics = LearnerSemantics.from_nodes(
+            cur_description_state.semantic_nodes,
+            concept_map=cur_description_state.functional_concept_to_object_concept,
+        )
+        (
+            linguistic_to_score,
+            semantic_to_linguistic,
+        ) = self._linguistic_descriptions_from_semantics(learner_semantics)
+        return TopLevelLanguageLearnerDescribeReturn(
+            semantics_to_descriptions=semantic_to_linguistic,
+            description_to_confidence=linguistic_to_score,
+            semantics_to_feature_strs=immutabledict(),
+        )
 
     @abstractmethod
     def describe(
         self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[LinguisticDescription, float]:
+    ) -> TopLevelLanguageLearnerDescribeReturn:
         raise NotImplementedError()
 
     def _linguistic_descriptions_from_semantics(
-        self, description_state: PerceptionSemanticAlignment
-    ) -> Mapping[LinguisticDescription, float]:
+        self, learner_semantics: LearnerSemantics
+    ) -> Tuple[
+        Mapping[LinguisticDescription, float],
+        Mapping[SemanticNode, LinguisticDescription],
+    ]:
 
-        learner_semantics = LearnerSemantics.from_nodes(
-            description_state.semantic_nodes,
-            concept_map=description_state.functional_concept_to_object_concept,
-        )
-        ret = []
+        semantics_to_description: List[Tuple[SemanticNode, LinguisticDescription]] = []
+        description_to_score: List[Tuple[LinguisticDescription, float]] = []
         if self.action_learner:
-            ret.extend(
-                [
-                    (action_tokens, 1.0)
-                    for action in learner_semantics.actions
+            for action in learner_semantics.actions:
+                # ensure we have some way of expressing this action
+                if self.action_learner.templates_for_concept(action.concept):
                     for action_tokens in self._instantiate_action(
                         action, learner_semantics
-                    )
-                    # ensure we have some way of expressing this action
-                    if self.action_learner.templates_for_concept(action.concept)
-                ]
-            )
+                    ):
+                        token_description = TokenSequenceLinguisticDescription(
+                            action_tokens
+                        )
+                        semantics_to_description.append((action, token_description))
+                        description_to_score.append((token_description, 1.0))
 
         if self.relation_learner:
-            ret.extend(
-                [
-                    (relation_tokens, 1.0)
-                    for relation in learner_semantics.relations
+            for relation in learner_semantics.relations:
+                # ensure we have some way of expressing this relation
+                if self.relation_learner.templates_for_concept(relation.concept):
                     for relation_tokens in self._instantiate_relation(
                         relation, learner_semantics
-                    )
-                    # ensure we have some way of expressing this relation
-                    if self.relation_learner.templates_for_concept(relation.concept)
-                ]
-            )
-        ret.extend(
-            [
-                (object_tokens, 1.0)
-                for object_ in learner_semantics.objects
-                for object_tokens in self._instantiate_object(object_, learner_semantics)
-                # ensure we have some way of expressing this object
-                if self.object_learner.templates_for_concept(object_.concept)
-            ]
-        )
-        return immutabledict(
-            (TokenSequenceLinguisticDescription(tokens), score) for (tokens, score) in ret
+                    ):
+                        token_description = TokenSequenceLinguisticDescription(
+                            relation_tokens
+                        )
+                        semantics_to_description.append((relation, token_description))
+                        description_to_score.append((token_description, 1.0))
+
+        for object_ in learner_semantics.objects:
+            # ensure we have some way of expressing this object
+            if self.object_learner.templates_for_concept(object_.concept):
+                for object_tokens in self._instantiate_object(object_, learner_semantics):
+                    token_description = TokenSequenceLinguisticDescription(object_tokens)
+                    semantics_to_description.append((object_, token_description))
+                    description_to_score.append((token_description, 1.0))
+
+        return immutabledict(description_to_score), immutabledict(
+            semantics_to_description
         )
 
     def _instantiate_object(
@@ -777,7 +799,7 @@ class SymbolicIntegratedTemplateLearner(
 
     def describe(
         self, perception: PerceptualRepresentation[DevelopmentalPrimitivePerceptionFrame]
-    ) -> Mapping[LinguisticDescription, float]:
+    ) -> TopLevelLanguageLearnerDescribeReturn:
         cur_description_state = PerceptionSemanticAlignment.create_unaligned(
             self.extract_perception_graph(perception)
         )
@@ -894,7 +916,7 @@ class SimulatedIntegratedTemplateLearner(
 
     def describe(
         self, perception: PerceptualRepresentation[VisualPerceptionFrame]
-    ) -> Mapping[LinguisticDescription, float]:
+    ) -> TopLevelLanguageLearnerDescribeReturn:
         cur_description_state = PerceptionSemanticAlignment.create_unaligned(
             self.extract_perception_graph(perception)
         )

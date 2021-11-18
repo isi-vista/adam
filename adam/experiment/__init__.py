@@ -413,7 +413,7 @@ def execute_experiment(
                 )
 
             if experiment.pre_example_training_observers:
-                learner_descriptions_before_seeing_example = learner.describe(
+                scene_description_before_seeing_example = learner.describe(
                     perceptual_representation
                 )
                 if situation:
@@ -422,7 +422,7 @@ def execute_experiment(
                             situation,
                             linguistic_description,
                             perceptual_representation,
-                            learner_descriptions_before_seeing_example,
+                            scene_description_before_seeing_example,
                         )
                         pre_example_observer.report()
                 else:

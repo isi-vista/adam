@@ -107,7 +107,10 @@ def test_pursuit_preposition_on_learner(language_mode, learner):
         )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -164,7 +167,10 @@ def test_pursuit_preposition_beside_learner(language_mode, learner):
         )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -221,7 +227,10 @@ def test_pursuit_preposition_under_learner(language_mode, learner):
         )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -276,7 +285,10 @@ def test_pursuit_preposition_over_learner(language_mode, learner):
         )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -329,7 +341,10 @@ def test_pursuit_preposition_in_learner(language_mode, learner):
         )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -383,7 +398,10 @@ def test_pursuit_preposition_behind_learner(language_mode, learner):
         )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -437,7 +455,10 @@ def test_pursuit_preposition_in_front_learner(language_mode, learner):
         )
         gold = test_linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -498,4 +519,7 @@ def test_pursuit_preposition_has_learner(language_mode, learner):
         )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]

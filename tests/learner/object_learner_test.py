@@ -169,7 +169,8 @@ def run_subset_learner_for_object(
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
             assert gold in [
-                desc.as_token_sequence() for desc in descriptions_from_learner
+                desc.as_token_sequence()
+                for desc in descriptions_from_learner.description_to_confidence
             ]
 
 
@@ -386,7 +387,8 @@ def test_pursuit_object_learner(language_mode):
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
             assert gold in [
-                desc.as_token_sequence() for desc in descriptions_from_learner
+                desc.as_token_sequence()
+                for desc in descriptions_from_learner.description_to_confidence
             ]
 
 
@@ -480,5 +482,6 @@ def test_pursuit_object_learner_with_gaze(language_mode):
             descriptions_from_learner = learner.describe(test_instance_perception)
             gold = test_instance_language.as_token_sequence()
             assert gold in [
-                desc.as_token_sequence() for desc in descriptions_from_learner
+                desc.as_token_sequence()
+                for desc in descriptions_from_learner.description_to_confidence
             ]

@@ -60,7 +60,7 @@ def test_recognizes_ontology_objects(object_type, language_mode):
     learner = SymbolicIntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode]
     )
-    descriptions = learner.describe(perception)
+    descriptions = learner.describe(perception).description_to_confidence
     assert descriptions
     if language_mode == LanguageMode.ENGLISH:
         assert object_type.handle in one(descriptions.items())[0].as_token_sequence()

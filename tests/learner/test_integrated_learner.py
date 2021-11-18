@@ -46,7 +46,9 @@ def test_with_object_recognizer(language_mode):
         frames=[perception.frames[0], perception.frames[0]]
     )
 
-    descriptions = integrated_learner.describe(dynamic_perception)
+    descriptions = integrated_learner.describe(
+        dynamic_perception
+    ).description_to_confidence
 
     assert len(descriptions) == 1
     assert (
