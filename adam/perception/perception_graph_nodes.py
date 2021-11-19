@@ -16,7 +16,7 @@ from adam.ontology.phase1_spatial_relations import (
     PathOperator,
 )
 from adam.perception import ObjectPerception
-from adam.semantics import ObjectSemanticNode
+from adam.semantics import SemanticNode
 
 
 @attrs(slots=True, frozen=True)
@@ -43,7 +43,7 @@ PerceptionGraphNode = Union[
     Tuple[Geon, int],
     GeonAxis,
     CrossSection,
-    ObjectSemanticNode,
+    SemanticNode,
     SpatialPath[ObjectPerception],
     PathOperator,
     GraphNode,
@@ -60,7 +60,7 @@ UnwrappedPerceptionGraphNode = Union[
     Geon,
     GeonAxis,
     CrossSection,
-    ObjectSemanticNode,
+    SemanticNode,
     SpatialPath[ObjectPerception],
     PathOperator,
     GraphNode,

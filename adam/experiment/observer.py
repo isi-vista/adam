@@ -780,14 +780,18 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
         output_dict[OUTPUT_LANGUAGE] = []
 
         for (
+            semantic_node,
             linguistic_description,
-            confidence,
-        ) in predicted_scene_description.description_to_confidence.items():
+        ) in predicted_scene_description.semantics_to_descriptions.items():
             output_dict[OUTPUT_LANGUAGE].append(
                 {
                     "text": linguistic_description.as_token_string(),
-                    "confidence": confidence,
-                    "features": [],
+                    "confidence": predicted_scene_description.description_to_confidence[
+                        linguistic_description
+                    ],
+                    "features": predicted_scene_description.semantics_to_feature_strs[
+                        semantic_node
+                    ],
                     "sub-objects": [],
                 }
             )

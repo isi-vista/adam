@@ -16,6 +16,7 @@ from typing import (
     Set,
     DefaultDict,
     Generic,
+    Sequence,
 )
 
 import graphviz
@@ -66,6 +67,7 @@ from adam.perception.perception_graph import (
     NodePredicate,
     AnyObjectPerception,
     ObjectSemanticNodePerceptionPredicate,
+    get_features_from_semantic_node,
 )
 from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.semantics import (
@@ -270,7 +272,9 @@ class IntegratedTemplateLearner(
         return TopLevelLanguageLearnerDescribeReturn(
             semantics_to_descriptions=semantic_to_linguistic,
             description_to_confidence=linguistic_to_score,
-            semantics_to_feature_strs=immutabledict(),
+            semantics_to_feature_strs=self._visual_features_from_semantics(
+                cur_description_state
+            ),
         )
 
     @abstractmethod
@@ -433,6 +437,20 @@ class IntegratedTemplateLearner(
                 yield action_template.instantiate(
                     immutabledict(zip(slot_order, possible_slot_filling))
                 ).as_token_sequence()
+
+    def _visual_features_from_semantics(
+        self,
+        current_description_state: PerceptionSemanticAlignment,
+    ) -> Mapping[SemanticNode, Sequence[str]]:
+        return immutabledict(
+            (
+                node,
+                get_features_from_semantic_node(
+                    node, current_description_state.perception_graph
+                ),
+            )
+            for node in current_description_state.semantic_nodes
+        )
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         for sub_learner in self._sub_learners:
