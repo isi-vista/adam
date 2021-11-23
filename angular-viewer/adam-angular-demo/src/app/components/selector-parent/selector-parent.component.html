@@ -7,6 +7,7 @@
       name="selectLearner"
       [(ngModel)]="selectedLearner"
     >
+      <option>None</option>
       <option *ngFor="let i of learners" [value]="i">{{ i }}</option>
     </select>
   </div>
@@ -19,6 +20,7 @@
         name="selectPreTraining"
         [(ngModel)]="selectedPretrain"
       >
+        <option>None</option>
         <option *ngFor="let i of pretrainingData" [ngValue]="i">
           {{ i }}
         </option>
@@ -34,6 +36,7 @@
         name="selectTraining"
         [(ngModel)]="selectedTrain"
       >
+        <option>None</option>
         <option *ngFor="let i of trainingData" [ngValue]="i">
           {{ i }}
         </option>
@@ -49,25 +52,28 @@
         name="selectTesting"
         [(ngModel)]="selectedTest"
       >
+        <option>None</option>
         <option *ngFor="let i of testData" [ngValue]="i">{{ i }}</option>
       </select>
     </div>
   </div>
-  <button
-    type="submit"
-    class="btn button-color button-text button-box"
-  >
+  <button type="submit" class="btn button-color button-text button-box">
     Submit data
   </button>
-  <button 
-      type="reset" 
-      class="btn button-color button-text button-box"
-      (click)="formReset(f)">
+  <button
+    type="reset"
+    class="btn button-color button-text button-box"
+    (click)="formReset(f)"
+  >
     Reset
   </button>
 </form>
 <div class="row">
-  <app-image-output class="col" [imgSrc]="targetImgURLs" *ngIf="submitted"></app-image-output>
+  <app-image-output
+    class="col"
+    [imgSrc]="targetImgURLs"
+    *ngIf="submitted"
+  ></app-image-output>
   <app-object-results
     *ngIf="submitted"
     class="col"

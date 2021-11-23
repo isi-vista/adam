@@ -57,8 +57,9 @@ export class SelectorParentComponent implements OnInit {
   selectedLearner = '';
   selectedPretrain = '';
   selectedTrain = '';
-  selectedTest=''
+  selectedTest = '';
   submitted = false;
+  initial = 'None';
 
   outputImage = '';
   outputObject = {};
@@ -83,6 +84,7 @@ export class SelectorParentComponent implements OnInit {
         this.pretrainingData = data.training_curriculum;
         this.trainingData = data.training_curriculum;
         this.selectedTrain = data.training_curriculum[0];
+        this.selectedPretrain = data.training_curriculum[0];
         console.log(this.trainingData);
       });
 
@@ -90,6 +92,7 @@ export class SelectorParentComponent implements OnInit {
       .getTestingData()
       .subscribe((data: TestingCurriculumResponse) => {
         this.testData = data.testing_curriculum;
+        this.selectedTest = data.testing_curriculum[0];
         console.log(this.testData);
       });
   }
@@ -139,15 +142,10 @@ export class SelectorParentComponent implements OnInit {
       });
   }
 
-  formReset(f: NgForm){
-    f.reset({
-      selectLearner:this.selectedLearner[0],
-      selectTest:this.selectedTest[0],
-      selectTrain:this.selectedTrain[0],
-      selectPretrain:this.selectedPretrain[0]
-    })
-    this.submitted=false;
-    this.outputObject={}
-    this.targetImgURLs=[]
+  formReset(f: NgForm) {
+    f.value.selectLearner = '';
+    this.submitted = false;
+    this.outputObject = {};
+    this.targetImgURLs = [];
   }
 }
