@@ -2,12 +2,12 @@ import logging
 import pickle
 import random
 from pathlib import Path
-from typing import Callable, Optional, Mapping, Iterable, Tuple, cast
+from typing import Callable, Optional, Mapping, Tuple, cast, Any
 
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
-from adam.curriculum.curriculum_utils import Phase1InstanceGroup
+from adam.curriculum.curriculum_from_files import phase3_load_from_disk
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_size_curriculum,
     make_imprecise_temporal_descriptions,
@@ -57,8 +57,6 @@ from adam.experiment.experiment_utils import (
     build_plural_learner_factory,
 )
 from adam.experiment.observer import LearningProgressHtmlLogger
-from adam.language.dependency import LinearizedDependencyTree
-from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import (
     phase2_language_generator,
     integrated_experiment_language_generator,
@@ -91,15 +89,6 @@ from adam.perception.high_level_semantics_situation_to_developmental_primitive_p
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.random_utils import RandomChooser
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-
-LANGUAGE_GEN = LanguageGenerator[  # pylint: disable=invalid-name
-    HighLevelSemanticsSituation, LinearizedDependencyTree
-]
-
-CURRICULUM_BUILDER = Callable[  # pylint: disable=invalid-name
-    [Optional[int], Optional[int], LANGUAGE_GEN], Iterable[Phase1InstanceGroup]
-]
 
 
 def log_experiment_entry_point(params: Parameters) -> None:
@@ -550,9 +539,12 @@ def learner_factory_from_params(
 def curriculum_from_params(
     params: Parameters, language_mode: LanguageMode = LanguageMode.ENGLISH
 ):
-    str_to_train_test_curriculum: Mapping[
-        str, Tuple[CURRICULUM_BUILDER, Optional[CURRICULUM_BUILDER]]
-    ] = {
+    # The typing here is marked as 'Any' because MyPy doesn't seem to be able to verify it well
+    # It's a complicated callable that should probably be a Protocol but JL spent ~1 hour
+    # trying to get typing working to minimal success so instead I've just refactored all curriculum to follow
+    # Callable[[Optional[int], Optional[int], LanguageGenerator, Parameters]], Sequence[InstanceGroup]]
+    # As best as I can. We just don't have accurate type checking here any more :(
+    str_to_train_test_curriculum: Mapping[str, Tuple[Any, Optional[Any]]] = {
         "m6-deniz": (make_m6_curriculum, None),
         "each-object-by-itself": (
             build_each_object_by_itself_curriculum_train,
@@ -595,6 +587,10 @@ def curriculum_from_params(
             integrated_pursuit_learner_experiment_curriculum,
             integrated_pursuit_learner_experiment_test,
         ),
+        "phase3": (
+            phase3_load_from_disk,
+            phase3_load_from_disk,
+        ),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
@@ -603,12 +599,6 @@ def curriculum_from_params(
         if curriculum_name == "m18-integrated-learners-experiment"
         else phase2_language_generator(language_mode)
     )
-
-    if params.has_namespace("pursuit-curriculum-params"):
-        pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")
-    else:
-        pursuit_curriculum_params = Parameters.empty()
-    use_path_instead_of_goal = params.boolean("use-path-instead-of-goal", default=False)
 
     (training_instance_groups, test_instance_groups) = str_to_train_test_curriculum[
         curriculum_name
@@ -619,21 +609,8 @@ def curriculum_from_params(
     # support specifying a range of acceptable values: https://github.com/isi-vista/vistautils/issues/142
     num_noise_objects = params.optional_integer("num_noise_objects")
 
-    if curriculum_name == "pursuit":
-        return (
-            training_instance_groups(
-                num_samples,
-                num_noise_objects,
-                language_generator,
-                pursuit_curriculum_params=pursuit_curriculum_params,
-            ),
-            test_instance_groups(num_samples, num_noise_objects, language_generator)
-            if test_instance_groups
-            else [],
-        )
-
     # optional argument to use path instead of goal
-    elif use_path_instead_of_goal and curriculum_name in [
+    if curriculum_name in [
         "m13-complete",
         "m13-shuffled",
         "m13-verbs-with-dynamic-prepositions",
@@ -643,35 +620,30 @@ def curriculum_from_params(
                 num_samples,
                 num_noise_objects,
                 language_generator,
-                use_path_instead_of_goal,
+                params.boolean("use-path-instead-of-goal", default=False),
             ),
             test_instance_groups(num_samples, num_noise_objects, language_generator)
             if test_instance_groups
             else [],
         )
-    elif curriculum_name in (
-        "m15-object-noise-experiments",
-        "m18-integrated-learners-experiment",
-    ):
-        return (
-            training_instance_groups(
-                num_samples,
-                num_noise_objects,
-                language_generator,
-                params=params.namespace_or_empty("train_curriculum"),
-            ),
-            test_instance_groups(
-                5,
-                0,
-                language_generator,
-                params=params.namespace_or_empty("test_curriculum"),
-            )
-            if test_instance_groups
-            else [],
-        )
+
     return (
-        training_instance_groups(num_samples, num_noise_objects, language_generator),
-        test_instance_groups(num_samples, num_noise_objects, language_generator)
+        training_instance_groups(
+            num_samples,
+            num_noise_objects,
+            language_generator,
+            params=params.namespace_or_empty(
+                "pursuit-curriculum-params"
+                if curriculum_name == "pursuit"
+                else "train_curriculum"
+            ),
+        ),
+        test_instance_groups(
+            num_samples,
+            num_noise_objects,
+            language_generator,
+            params=params.namespace_or_empty("test_curriculum"),
+        )
         if test_instance_groups
         else [],
     )

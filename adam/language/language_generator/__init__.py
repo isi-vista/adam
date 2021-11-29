@@ -13,6 +13,7 @@ from adam.language import LinguisticDescriptionT, TokenSequenceLinguisticDescrip
 from adam.language.ontology_dictionary import OntologyLexicon
 from adam.random_utils import SequenceChooser
 from adam.situation import LocatedObjectSituation, SituationT
+from adam.situation.phase_3_situations import SimulationSituation
 
 
 class LanguageGenerator(Generic[SituationT, LinguisticDescriptionT], ABC):
@@ -121,3 +122,17 @@ class SingleObjectLanguageGenerator(
             TokenSequenceLinguisticDescription((word.base_form,))
             for word in self._ontology_lexicon.words_for_node(lone_object.ontology_node)
         )
+
+
+@attrs(frozen=True, slots=True)
+class InSituationLanguageGenerator(
+    LanguageGenerator[SimulationSituation, TokenSequenceLinguisticDescription]
+):
+    """For situations which receive external perception processing the language is embedded in the situation."""
+
+    def generate_language(
+        self,
+        situation: SimulationSituation,
+        chooser: SequenceChooser,  # pylint:disable=unused-argument
+    ) -> ImmutableSet[TokenSequenceLinguisticDescription]:
+        return immutableset([TokenSequenceLinguisticDescription(situation.language)])

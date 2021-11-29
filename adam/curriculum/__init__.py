@@ -75,7 +75,7 @@ class ExplicitWithoutSituationInstanceGroup(
         Tuple[SituationT, LinguisticDescriptionT, PerceptualRepresentation[PerceptionT]]
     ]:
         for (linguistic_description, perception) in self._instances:
-            yield (None, linguistic_description, perception)  # type: ignore
+            yield None, linguistic_description, perception  # type: ignore
 
 
 @attrs(frozen=True, slots=True)

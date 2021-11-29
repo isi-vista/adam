@@ -12,6 +12,7 @@ from itertools import chain
 from typing import Sequence, List, Optional
 
 from more_itertools import flatten
+from vistautils.parameters import Parameters
 
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.language.language_generator import LanguageGenerator
@@ -368,12 +369,13 @@ def instantiate_subcurricula(
     ]
 
 
-def make_m6_curriculum(
+def make_m6_curriculum(  # pylint: disable=unused-argument
     num_samples: Optional[int],
     num_noise_objects: Optional[int],
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
     ],
+    params: Parameters = Parameters.empty(),
 ) -> Sequence[Phase1InstanceGroup]:
     return instantiate_subcurricula(
         M6_SUBCURRICULUM_GENERATORS, num_samples, num_noise_objects, language_generator
