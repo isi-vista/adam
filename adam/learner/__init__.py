@@ -112,6 +112,8 @@ class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT])
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
         offset: int = 0,
+        *,
+        debug_perception_graph_logger: Optional[GraphLogger] = None,
     ) -> None:
         """
         Observe a `LearningExample`, possibly updating internal state.
@@ -119,7 +121,10 @@ class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT])
 
     @abstractmethod
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
+        self,
+        perception: PerceptualRepresentation[PerceptionT],
+        *,
+        debug_perception_graph_logger: Optional[GraphLogger] = None,
     ) -> TopLevelLanguageLearnerDescribeReturn:
         r"""
         Given a `PerceptualRepresentation` of a situation, produce a `TopLevelLanguageLearnerDescribeReturn`.
@@ -156,13 +161,22 @@ class MemorizingLanguageLearner(
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
         offset: int = 0,  # pylint:disable=unused-argument
+        *,
+        debug_perception_graph_logger: Optional[  # pylint: disable=unused-argument
+            GraphLogger
+        ] = None,
     ) -> None:
         self._memorized_situations[
             learning_example.perception
         ] = learning_example.linguistic_description
 
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
+        self,
+        perception: PerceptualRepresentation[PerceptionT],
+        *,
+        debug_perception_graph_logger: Optional[  # pylint: disable=unused-argument
+            GraphLogger
+        ] = None,
     ) -> TopLevelLanguageLearnerDescribeReturn:
         memorized_description = self._memorized_situations.get(perception)
         if memorized_description:

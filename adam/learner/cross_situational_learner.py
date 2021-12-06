@@ -557,6 +557,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearner, ABC):
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
+        confidence: float,
     ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         """
         Try to match our model of the semantics to the perception graph
@@ -586,7 +587,7 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearner, ABC):
             for match in matcher.matches(use_lookahead_pruning=True):
                 found_match = True
                 semantic_node_for_match = pattern_match_to_semantic_node(
-                    concept=concept, pattern=pattern, match=match
+                    concept=concept, pattern=pattern, match=match, confidence=confidence
                 )
                 yield match, semantic_node_for_match
             # We raise an error if we find a partial match but don't manage to match it to the scene

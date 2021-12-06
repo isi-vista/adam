@@ -6,29 +6,52 @@ import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
   styleUrls: ['./image-output.component.css'],
 })
 export class ImageOutputComponent implements OnChanges {
-  @Input() imgSrc: [] = [];
+  @Input() scene_images: string[] = [];
+  @Input() stroke_images: string[] = [];
+  @Input() stroke_graph_images: string[] = [];
 
   isImg = false;
-  imageArray = [];
-  imageObject = {};
+  carouselSelection = 'rgb';
+
+  sceneImageArray = [];
+  sceneStrokeArray = [];
+  sceneStrokeGraphArray = [];
   suffix = '../../../assets';
 
   constructor() {}
 
-  ngOnChanges(changes: SimpleChanges): void {
-    this.imageArray = [];
-    let tempObject;
-    for (const propName of Object.keys(changes)) {
-      const chng = changes[propName];
-      const cur = JSON.parse(JSON.stringify(chng.currentValue));
-      tempObject = cur;
-    }
+  reset(): void {
+    this.sceneImageArray = [];
+    this.sceneStrokeArray = [];
+    this.sceneStrokeGraphArray = [];
+  }
 
-    for (const current of tempObject) {
-      this.imageArray.push(
-        this.suffix + current.split('data').pop().replace(/\\/g, '/')
+  ngOnChanges(changes: SimpleChanges): void {
+    this.reset();
+
+    for (const path_id in changes.scene_images.currentValue) {
+      this.sceneImageArray.push(
+        this.suffix +
+          changes.scene_images.currentValue[path_id].replace(/\\/g, '/')
       );
     }
+    for (const path_id in changes.stroke_images.currentValue) {
+      this.sceneStrokeArray.push(
+        this.suffix +
+          changes.stroke_images.currentValue[path_id].replace(/\\/g, '/')
+      );
+    }
+    for (const path_id in changes.stroke_graph_images.currentValue) {
+      this.sceneStrokeGraphArray.push(
+        this.suffix +
+          changes.stroke_graph_images.currentValue[path_id].replace(/\\/g, '/')
+      );
+    }
+
     this.isImg = true;
+  }
+
+  onClickCarousel(selection: string): void {
+    this.carouselSelection = selection;
   }
 }

@@ -13,7 +13,14 @@ from immutablecollections import (
 )
 from vistautils.parameters import Parameters
 
-from typing import AbstractSet, Iterable, Optional, Tuple, Dict, Mapping
+from typing import (
+    AbstractSet,
+    Iterable,
+    Optional,
+    Tuple,
+    Dict,
+    Mapping,
+)
 
 from more_itertools import first
 
@@ -146,7 +153,7 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner):
             )
             fake_pattern_graph = PerceptionGraphPattern.from_graph(fake_perception_graph)
             fake_object_semantic_node = ObjectSemanticNode(
-                concept=FunctionalObjectConcept("unknown_object")
+                concept=FunctionalObjectConcept("unknown_object"), confidence=1.0
             )
             # perception_graph_after_processing = replace_match_root_with_object_semantic_node(
             #     object_semantic_node=fake_object_semantic_node,
@@ -240,12 +247,16 @@ class SubsetObjectLearner(AbstractObjectTemplateLearner, AbstractTemplateSubsetL
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
+        confidence: float,
     ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         # In the case of the object learner,
         # A template only has to match once; we don't care about finding additional matches.
         match = first(
             super()._match_template(
-                concept=concept, pattern=pattern, perception_graph=perception_graph
+                concept=concept,
+                pattern=pattern,
+                perception_graph=perception_graph,
+                confidence=confidence,
             ),
             None,
         )
@@ -313,12 +324,16 @@ class ProposeButVerifyObjectLearner(
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
+        confidence: float = 1.0,
     ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         # In the case of the object learner,
         # A template only has to match once; we don't care about finding additional matches.
         match = first(
             super()._match_template(
-                concept=concept, pattern=pattern, perception_graph=perception_graph
+                concept=concept,
+                pattern=pattern,
+                perception_graph=perception_graph,
+                confidence=confidence,
             ),
             None,
         )
@@ -366,12 +381,16 @@ class CrossSituationalObjectLearner(
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
+        confidence: float,
     ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         # In the case of the object learner,
         # A template only has to match once; we don't care about finding additional matches.
         match_with_semantic_node = first(
             super()._match_template(
-                concept=concept, pattern=pattern, perception_graph=perception_graph
+                concept=concept,
+                pattern=pattern,
+                perception_graph=perception_graph,
+                confidence=confidence,
             ),
             None,
         )
@@ -431,7 +450,7 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         ):
             fake_pattern_graph = PerceptionGraphPattern.from_graph(candiate_object_graph)
             fake_object_semantic_node = ObjectSemanticNode(
-                concept=FunctionalObjectConcept("unknown_object")
+                concept=FunctionalObjectConcept("unknown_object"), confidence=1.0
             )
             perception_graph_after_processing = replace_match_with_object_graph_node(
                 matched_object_node=fake_object_semantic_node,
@@ -667,12 +686,16 @@ class PursuitObjectLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
+        confidence: float,
     ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         # In the case of the object learner,
         # A template only has to match once; we don't care about finding additional matches.
         match = first(
             super()._match_template(
-                concept=concept, pattern=pattern, perception_graph=perception_graph
+                concept=concept,
+                pattern=pattern,
+                perception_graph=perception_graph,
+                confidence=confidence,
             ),
             None,
         )

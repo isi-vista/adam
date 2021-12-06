@@ -88,6 +88,7 @@ from adam.perception.perception_graph_nodes import (
     RgbColorNode,
     GraphNode,
     ObjectStroke,
+    StrokeGNNRecognitionNode,
 )
 from adam.perception.perception_graph_predicates import (
     NodePredicate,
@@ -106,6 +107,7 @@ from adam.perception.perception_graph_predicates import (
     ContinuousPredicate,
     RgbColorPredicate,
     ObjectStrokePredicate,
+    StrokeGNNRecognitionPredicate,
 )
 from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
@@ -332,6 +334,15 @@ class PerceptionGraphProtocol(Protocol):
         """
         Debugging tool to render the graph to PDF using *dot*.
         """
+
+    def __len__(self) -> int:
+        """Length of the internal graph."""
+
+    def __contains__(self, item) -> bool:
+        """Check for node containment."""
+
+    def __iter__(self):
+        """Iterate over the graph nodes."""
 
     def text_dump(self) -> str:
         lines = []
@@ -571,6 +582,15 @@ class PerceptionGraph(PerceptionGraphProtocol, Sized, Iterable[PerceptionGraphNo
             label = "path"
         elif isinstance(unwrapped_perception_node, PathOperator):
             label = unwrapped_perception_node.name
+        elif isinstance(unwrapped_perception_node, ObjectClusterNode):
+            label = f"Object Cluster {unwrapped_perception_node.cluster_id} | View: {unwrapped_perception_node.viewpoint_id}"
+        elif isinstance(unwrapped_perception_node, ObjectStroke):
+            label = f"Stroke: [{', '.join(str(point) for point in unwrapped_perception_node.normalized_coordinates)}]"
+        elif isinstance(
+            unwrapped_perception_node,
+            (ContinuousNode, CategoricalNode, RgbColorNode, StrokeGNNRecognitionNode),
+        ):
+            label = str(unwrapped_perception_node)
         else:
             raise RuntimeError(
                 f"Do not know how to perception node render node "
@@ -845,6 +865,27 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             perception_graph=PerceptionGraph(perception_graph_as_digraph)
         ).perception_graph_pattern
 
+    @staticmethod
+    def phase3_pattern(node: OntologyNode) -> "PerceptionGraphPattern":
+        digraph = DiGraph()
+
+        fake_cluster = ObjectClusterNode(
+            center_y=0.0,
+            center_x=0.0,
+            cluster_id="fake_cluster",
+            std=0.0,
+            viewpoint_id=0,
+            weight=1.0,
+        )
+        fake_gnn_recognition = StrokeGNNRecognitionNode(
+            object_recognized=node.handle, confidence=1.0, weight=1.0
+        )
+        digraph.add_edge(fake_cluster, fake_gnn_recognition, label=HAS_PROPERTY_LABEL)
+
+        return PerceptionGraphPattern.from_graph(
+            perception_graph=PerceptionGraph(digraph, dynamic=False)
+        ).perception_graph_pattern
+
     def pattern_complexity(self) -> int:
         return len(self._graph) + len(self._graph.edges)
 
@@ -959,6 +1000,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                     perception_node_to_pattern_node[
                         key
                     ] = ObjectStrokePredicate.from_node(node)
+                elif isinstance(node, StrokeGNNRecognitionNode):
+                    perception_node_to_pattern_node[key] = StrokeGNNRecognitionPredicate(
+                        recognized_object=node.object_recognized
+                    )
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
             return perception_node_to_pattern_node[key]
@@ -2085,6 +2130,8 @@ def _translate_region(
 _PATTERN_PREDICATE_NODE_ORDER = [
     # If we have matchedObjects in the pattern we want to try and find these first.
     ObjectSemanticNodePerceptionPredicate,
+    # Match the Stroke GNN property next
+    StrokeGNNRecognitionPredicate,
     # The graph predicate types listed here
     AnyObjectPredicate,
     ObjectStrokePredicate,
@@ -2121,6 +2168,7 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 # This should match _PATTERN_PREDICATE_NODE_ORDER above.
 _GRAPH_NODE_ORDER = [  # type: ignore
     ObjectSemanticNode,
+    StrokeGNNRecognitionNode,
     ObjectClusterNode,
     ObjectStroke,
     CategoricalNode,
@@ -2727,6 +2775,7 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
                 center_x=perceived_cluster.centroid_x,
                 center_y=perceived_cluster.centroid_y,
                 weight=1.0,
+                std=perceived_cluster.std,
             )
             cluster_perception_to_graph_node[perceived_cluster] = cluster_node
             graph.add_node(cluster_node)
@@ -2743,7 +2792,11 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
                     # We want to ensure we don't create a cycle in the DiGraph
                     # so we check that there isn't an edge in the opposite direction
                     # of what we are going to add
-                    if not graph.has_edge(dest_stroke, source_stroke) and is_adjacent:
+                    if (
+                        not graph.has_edge(dest_stroke, source_stroke)
+                        and is_adjacent
+                        and dest_stroke != source_stroke
+                    ):
                         graph.add_edge(
                             source_stroke, dest_stroke, label=ADJACENT_STROKE_LABEL
                         )
@@ -2780,13 +2833,17 @@ def raise_graph_exception(exception_message: str, graph: PerceptionGraphProtocol
     )
 
 
-def edge_equals_ignoring_temporal_scope(edge_label: EdgeLabel, query: EdgeLabel) -> bool:
+def edge_equals_ignoring_temporal_scope(
+    edge_label: EdgeLabel, query: Union[EdgeLabel, Iterable[EdgeLabel]]
+) -> bool:
+    if not isinstance(query, Iterable):
+        query = {query}
     if (
         isinstance(edge_label, TemporallyScopedEdgeLabel)
-        and edge_label.attribute == query
+        and edge_label.attribute in query
     ):
         return True
-    return edge_label == query
+    return edge_label in query
 
 
 def get_features_from_semantic_node(
@@ -2801,6 +2858,7 @@ def get_features_from_semantic_node(
         f"{node}"
         for node in perception_graph.successors(semantic_root)
         if edge_equals_ignoring_temporal_scope(
-            digraph.get_edge_data(semantic_root, node)[LABEL], HAS_PROPERTY_LABEL
+            digraph.get_edge_data(semantic_root, node)[LABEL],
+            {HAS_PROPERTY_LABEL, HAS_STROKE_LABEL},
         )
     ]

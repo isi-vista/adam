@@ -150,6 +150,7 @@ def pattern_match_to_semantic_node(
     concept: Concept,
     pattern: PerceptionGraphTemplate,
     match: PerceptionGraphPatternMatch,
+    confidence: float,
 ) -> SemanticNode:
     template_variable_to_filler: Mapping[
         SyntaxSemanticsVariable, ObjectSemanticNode
@@ -172,7 +173,7 @@ def pattern_match_to_semantic_node(
     )
 
     return SemanticNode.for_concepts_and_arguments(
-        concept, slots_to_fillers=template_variable_to_filler
+        concept, slots_to_fillers=template_variable_to_filler, confidence=confidence
     )
 
 

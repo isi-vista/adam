@@ -1,4 +1,4 @@
-from typing import Tuple, MutableSequence
+from typing import Tuple, MutableSequence, Sequence
 
 import yaml
 from vistautils.parameters import Parameters
@@ -15,18 +15,20 @@ from adam.paths import (
     CURRICULUM_INFO_FILE,
     SITUATION_DIR_NAME,
     SITUATION_DESCRIPTION_FILE,
-    SCENE_JSON,
+    FEATURE_YAML,
 )
-from adam.perception import PerceptualRepresentationFrame
-from adam.perception.visual_perception import VisualPerceptionFrame
+from adam.perception.visual_perception import (
+    VisualPerceptionFrame,
+    VisualPerceptionRepresentation,
+)
 from adam.situation.phase_3_situations import SimulationSituation
 
 PHASE_3_TRAINING_CURRICULUM_OPTIONS = [
-    "phase3-m4-core",
-    "phase3-m4-stretch",
+    "m4_core",
+    "m4_stretch",
 ]
 
-PHASE_3_TESTING_CURRICULUM_OPTIONS = ["phase3-m4-eval"]
+PHASE_3_TESTING_CURRICULUM_OPTIONS = ["m4_core_eval", "m4_stretch_eval"]
 
 TRAINING_CUR = "training"
 TESTING_CUR = "testing"
@@ -40,10 +42,12 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
     ] = InSituationLanguageGenerator,  # type: ignore
     *,
     params: Parameters = Parameters.empty(),
-) -> InstanceGroup[
-    SimulationSituation,
-    TokenSequenceLinguisticDescription,
-    PerceptualRepresentationFrame,
+) -> Sequence[
+    InstanceGroup[
+        SimulationSituation,
+        TokenSequenceLinguisticDescription,
+        VisualPerceptionFrame,
+    ]
 ]:
     curriculum_type = params.string(
         "curriculum_type", valid_options=[TRAINING_CUR, TESTING_CUR], default=TRAINING_CUR
@@ -76,26 +80,41 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
         Tuple[
             SimulationSituation,
             TokenSequenceLinguisticDescription,
-            PerceptualRepresentationFrame,
+            VisualPerceptionRepresentation,
         ]
     ] = []
     for situation_num in range(curriculum_params["num_dirs"]):
         situation_dir = curriculum_dir / SITUATION_DIR_NAME.format(num=situation_num)
-        with open(
-            situation_dir / SITUATION_DESCRIPTION_FILE, encoding="utf-8"
-        ) as situation_description_file:
-            situation_description = yaml.safe_load(situation_description_file)
-        language_tuple = tuple(situation_description["language"].split(" "))
+        language_tuple: Tuple[str, ...] = tuple()
+        if curriculum_type == TRAINING_CUR:
+            with open(
+                situation_dir / SITUATION_DESCRIPTION_FILE, encoding="utf-8"
+            ) as situation_description_file:
+                situation_description = yaml.safe_load(situation_description_file)
+            language_tuple = tuple(situation_description["language"].split(" "))
         situation = SimulationSituation(
             language=language_tuple,
-            scene_images_png=tuple(),
-            scene_point_cloud=tuple(),
+            scene_images_png=sorted(situation_dir.glob("rgb_*")),
+            scene_point_cloud=tuple(situation_dir.glob("pdc_rgb_*")),
+            depth_pngs=sorted(situation_dir.glob("depth_*")),
+            pdc_semantic_plys=sorted(situation_dir.glob("pdc_semantic_*")),
+            semantic_pngs=sorted(situation_dir.glob("semantic_*")),
+            features=sorted(situation_dir.glob("feature_*")),
+            strokes=sorted(situation_dir.glob("stroke_[0-9]*_[0-9]*.png")),
+            stroke_graphs=sorted(situation_dir.glob("stroke_graph_*")),
         )
         language = TokenSequenceLinguisticDescription(tokens=language_tuple)
-        perception = VisualPerceptionFrame.from_json(situation_dir / SCENE_JSON)
-        instances.append((situation, language, perception))
+        perception = VisualPerceptionRepresentation.single_frame(
+            VisualPerceptionFrame.from_yaml(
+                situation_dir / FEATURE_YAML,
+                color_is_rgb=params.boolean("color_is_rgb", default=False),
+            )
+        )
+        instances.append((situation, language, perception))  # type: ignore
 
-    return ExplicitWithSituationInstanceGroup(
-        name=curriculum_to_load,
-        instances=tuple(instances),
-    )
+    return [
+        ExplicitWithSituationInstanceGroup(  # type: ignore
+            name=curriculum_to_load,
+            instances=tuple(instances),
+        )
+    ]

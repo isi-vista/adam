@@ -27,9 +27,12 @@ class ObjectStroke:
         validator=deep_iterable(instance_of(Point)), converter=_to_immutableset
     )
 
+    def __str__(self) -> str:
+        return f"Stroke[{', '.join(f'({point.x:.2f}, {point.y:.2f})' for point in self.normalized_coordinates)}]"
 
-@attrs(frozen=True, slots=True, eq=False)
+
 # Perception graph nodes
+@attrs(frozen=True, slots=True, eq=False)
 class GraphNode(ABC):
     """Super-class for all perception graph nodes, useful for types."""
 
@@ -72,10 +75,11 @@ UnwrappedPerceptionGraphNode = Union[
 class ObjectClusterNode(GraphNode):
     """A node representing a source of an object cluster perception."""
 
-    cluster_id: int = attrib(validator=instance_of(int))
+    cluster_id: str = attrib(validator=instance_of(str))
     viewpoint_id: int = attrib(validator=instance_of(int))
     center_x: Optional[float] = attrib(validator=optional(instance_of(float)))
     center_y: Optional[float] = attrib(validator=optional(instance_of(float)))
+    std: Optional[float] = attrib(validator=optional(instance_of(float)))
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -100,3 +104,17 @@ class RgbColorNode(GraphNode):
     red: int = attrib(validator=in_(range(0, 255)))
     green: int = attrib(validator=in_(range(0, 255)))
     blue: int = attrib(validator=in_(range(0, 255)))
+
+    def __str__(self) -> str:
+        return f"#{hex(self.red)[2:]}{hex(self.green)[2:]}{hex(self.blue)[2:]}"
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class StrokeGNNRecognitionNode(GraphNode):
+    """A property node indicating Stroke GNN object recognition."""
+
+    object_recognized: str = attrib(validator=instance_of(str))
+    confidence: float = attrib(validator=instance_of(float))
+
+    def __str__(self) -> str:
+        return f"StrokeGNNRecognized(recognized object={self.object_recognized} ({self.confidence:.2f}))"

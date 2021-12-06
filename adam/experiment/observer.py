@@ -1,4 +1,6 @@
 import logging
+import shutil
+
 import yaml
 
 from abc import ABC, abstractmethod
@@ -18,6 +20,7 @@ from adam.paths import SITUATION_DIR_NAME
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation import SituationT
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.situation.phase_3_situations import SimulationSituation
 
 GOLD_LANGUAGE = "gold_language"
 OUTPUT_LANGUAGE = "output_language"
@@ -767,8 +770,23 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
     name: str = attrib(validator=instance_of(str))
     experiment_path: Path = attrib(validator=instance_of(Path))
     counter: int = attrib(kw_only=True, default=0)
+    copy_curriculum: bool = attrib(kw_only=True, default=True)
+    file_name: Optional[str] = attrib(validator=optional(instance_of(str)), default=None)
 
-    def observe(  # pylint:disable=unused-argument
+    @staticmethod
+    def from_params(
+        name: str, params: Parameters
+    ) -> Optional["YAMLLogger[SituationT, LinguisticDescriptionT, PerceptionT]"]:
+        if "experiment_output_path" not in params:
+            return None
+        return YAMLLogger(
+            name=name,
+            experiment_path=params.creatable_directory("experiment_output_path"),
+            copy_curriculum=params.boolean("copy_curriculum", default=True),
+            file_name=params.optional_string("file_name"),
+        )
+
+    def observe(  # pylint: disable=unused-argument
         self,
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
@@ -778,6 +796,15 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
         output_dict: MutableMapping[str, Any] = dict()
         output_dict[GOLD_LANGUAGE] = true_description.as_token_string()
         output_dict[OUTPUT_LANGUAGE] = []
+
+        experiment_dir = self.experiment_path / SITUATION_DIR_NAME.format(
+            num=self.counter
+        )
+        experiment_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.copy_curriculum and isinstance(situation, SimulationSituation):
+            for file_path in situation.all_files():
+                shutil.copy(file_path, experiment_dir)
 
         for (
             semantic_node,
@@ -796,12 +823,25 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
                 }
             )
 
+        # If we have two concepts exactly, we want to generate the differences panel
+        if len(output_dict[OUTPUT_LANGUAGE]) == 2:
+            object_a_features = set(output_dict[OUTPUT_LANGUAGE][0]["features"])
+            object_b_features = set(output_dict[OUTPUT_LANGUAGE][1]["features"])
+            similar_features = object_b_features.intersection(object_a_features)
+            object_a_distinct = object_a_features.difference(object_b_features)
+            object_b_distinct = object_b_features.difference(object_a_features)
+            output_dict["differences_panel"] = {
+                output_dict[OUTPUT_LANGUAGE][0]["text"]: [
+                    line for line in object_a_distinct
+                ],
+                "similarities": [line for line in similar_features],
+                output_dict[OUTPUT_LANGUAGE][1]["text"]: [
+                    line for line in object_b_distinct
+                ],
+            }
+
         with open(
-            (
-                self.experiment_path
-                / SITUATION_DIR_NAME.format(num=self.counter)
-                / f"{self.name}.yaml"
-            ),
+            (experiment_dir / f"{self.file_name if self.file_name else self.name}.yaml"),
             "w",
             encoding="utf-8",
         ) as decode:

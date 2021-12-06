@@ -150,6 +150,7 @@ class AbstractTemplateLearner(TemplateLearner, ABC):
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
+        confidence: float,
     ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         """
         Try to match our model of the semantics to the perception graph,
@@ -187,6 +188,7 @@ class AbstractTemplateLearner(TemplateLearner, ABC):
                 and not pattern.graph_pattern.dynamic
                 else pattern,
                 perception_graph=preprocessed_perception_graph,
+                confidence=score,
             )
             # The template may have zero, one, or many matches, so we loop over the matches found
             # Note that, with the exception of the object learners,
@@ -245,7 +247,7 @@ class AbstractTemplateLearner(TemplateLearner, ABC):
         new_nodes: List[SemanticNode] = []
 
         for (matched_object_node, pattern_match) in matched_objects:
-            root: ObjectPerception = _get_root_object_perception(
+            root = _get_root_object_perception(
                 pattern_match.matched_sub_graph._graph,  # pylint:disable=protected-access
                 immutableset(
                     pattern_match.matched_sub_graph._graph.nodes,  # pylint:disable=protected-access

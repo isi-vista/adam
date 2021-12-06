@@ -11,6 +11,7 @@ from adam.learner.objects import (
     CrossSituationalObjectLearner,
 )
 from adam.learner.plurals import SubsetPluralLearner
+from adam.learner.pursuit import HypothesisLogger
 from adam.learner.relations import SubsetRelationLearner, PursuitRelationLearner
 from adam.learner.template_learner import TemplateLearner
 from adam.learner.verbs import SubsetVerbLearner
@@ -60,6 +61,10 @@ from adam.curriculum.phase1_curriculum import (
 )
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
+from adam.ontology.phase3_ontology import (
+    GAILA_PHASE_3_ONTOLOGY,
+    PHASE_3_CURRICULUM_OBJECTS,
+)
 from adam.random_utils import RandomChooser
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.templates.phase1_templates import sampled
@@ -162,16 +167,34 @@ ONTOLOGY_STR_TO_ONTOLOGY = immutabledict(  # type: ignore
                 INTEGRATED_EXPERIMENT_PERCEPTION_GENERATOR,
             ),
         ),
+        (
+            "phase3",
+            (
+                GAILA_PHASE_3_ONTOLOGY,
+                PHASE_3_CURRICULUM_OBJECTS,
+                None,  # Phase 3 does perception generation via external processes
+            ),
+        ),
     ]
 )
 
 
 def build_object_learner_factory(
-    params: Parameters, beam_size: int, language_mode: LanguageMode
+    params: Parameters,
+    beam_size: int,
+    language_mode: LanguageMode,
+    graph_logger: Optional[HypothesisLogger],
 ) -> TemplateLearner:
     learner_type = params.string(
         "learner_type",
-        valid_options=["subset", "pbv", "cross-situational", "pursuit", "recognizer"],
+        valid_options=[
+            "subset",
+            "pbv",
+            "cross-situational",
+            "pursuit",
+            "recognizer",
+            "stroke-gnn",
+        ],
         default="subset",
     )
     ontology, objects, perception_gen = ONTOLOGY_STR_TO_ONTOLOGY[
@@ -195,6 +218,7 @@ def build_object_learner_factory(
             rng=chooser,
             ontology=ontology,
             language_mode=language_mode,
+            graph_logger=graph_logger,
         )
     elif learner_type == "cross-situational":
         return CrossSituationalObjectLearner(
@@ -206,6 +230,7 @@ def build_object_learner_factory(
             expected_number_of_meanings=len(ontology.nodes_with_properties(THING)),
             ontology=ontology,
             language_mode=language_mode,
+            graph_logger=graph_logger,
         )
     elif learner_type == "pursuit":
         rng = random.Random()
@@ -220,6 +245,7 @@ def build_object_learner_factory(
             smoothing_parameter=params.floating_point("smoothing_parameter"),
             ontology=ontology,
             language_mode=language_mode,
+            hypothesis_logger=graph_logger,
         )
     elif learner_type == "recognizer":
         object_recognizer = ObjectRecognizer.for_ontology_types(
@@ -232,12 +258,23 @@ def build_object_learner_factory(
         return ObjectRecognizerAsTemplateLearner(
             object_recognizer=object_recognizer, language_mode=language_mode
         )
+    elif learner_type == "stroke-gnn":
+        object_recognizer = ObjectRecognizer.for_phase3_types(
+            objects, language_mode=language_mode, determiners=ENGLISH_DETERMINERS
+        )
+
+        return ObjectRecognizerAsTemplateLearner(
+            object_recognizer=object_recognizer, language_mode=language_mode
+        )
     else:
         raise RuntimeError("Object learner type invalid")
 
 
 def build_attribute_learner_factory(
-    params: Parameters, beam_size: int, language_mode: LanguageMode
+    params: Parameters,
+    beam_size: int,
+    language_mode: LanguageMode,
+    graph_logger: Optional[HypothesisLogger],
 ) -> Optional[TemplateLearner]:
     learner_type = params.string(
         "learner_type", valid_options=["subset", "pursuit", "none"], default="subset"
@@ -265,6 +302,7 @@ def build_attribute_learner_factory(
             smoothing_parameter=params.floating_point("smoothing_parameter"),
             ontology=ontology,
             language_mode=language_mode,
+            hypothesis_logger=graph_logger,
         )
     elif learner_type == "none":
         # We don't want to include this learner type.
@@ -274,7 +312,10 @@ def build_attribute_learner_factory(
 
 
 def build_relation_learner_factory(
-    params: Parameters, beam_size: int, language_mode: LanguageMode
+    params: Parameters,
+    beam_size: int,
+    language_mode: LanguageMode,
+    graph_logger: Optional[HypothesisLogger],
 ) -> Optional[TemplateLearner]:
     learner_type = params.string(
         "learner_type", valid_options=["subset", "pursuit", "none"], default="subset"
@@ -302,6 +343,7 @@ def build_relation_learner_factory(
             smoothing_parameter=params.floating_point("smoothing_parameter"),
             ontology=ontology,
             language_mode=language_mode,
+            hypothesis_logger=graph_logger,
         )
     elif learner_type == "none":
         # We don't want to include this learner type.

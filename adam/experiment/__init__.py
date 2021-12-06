@@ -38,6 +38,7 @@ from adam.experiment.observer import (
     HTMLLoggerPreObserver,
 )
 from adam.language import LinguisticDescriptionT
+from adam.perception.perception_graph import GraphLogger
 from adam.situation import SituationT
 from adam.learner import TopLevelLanguageLearner, LearningExample
 from adam.perception import PerceptionT
@@ -185,6 +186,7 @@ def execute_experiment(
     debug_learner_pickling: bool = False,
     starting_point: int = 0,
     point_to_log: int = 0,
+    perception_graph_logger: Optional[GraphLogger] = None,
 ) -> None:
     """
     Runs an `Experiment`.
@@ -433,6 +435,7 @@ def execute_experiment(
             learner.observe(
                 LearningExample(perceptual_representation, linguistic_description),
                 offset=starting_point,
+                debug_perception_graph_logger=perception_graph_logger,
             )
 
             if experiment.post_example_training_observers:
@@ -499,7 +502,10 @@ def execute_experiment(
         ) in test_instance_group.instances():
             logging.info(f"Test Description: {num_test_observations}")
             num_test_observations += 1
-            descriptions_from_learner = learner.describe(test_instance_perception)
+            descriptions_from_learner = learner.describe(
+                test_instance_perception,
+                debug_perception_graph_logger=perception_graph_logger,
+            )
             for test_observer in experiment.test_observers:
                 test_observer.observe(
                     situation,

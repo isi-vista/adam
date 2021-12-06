@@ -74,7 +74,7 @@ def get_scene() -> Any:
     learner = request.args.get("learner", default="")
     training_curriculum = request.args.get("training_curriculum", default="")
     testing_curriculum = request.args.get("testing_curriculum", default="")
-    scene_number = request.args.get("scene_number", "")
+    scene_number = int(request.args.get("scene_number", "")) - 1
     if (
         not learner
         and not training_curriculum
@@ -95,8 +95,6 @@ def get_scene() -> Any:
     if not experiment_dir.exists():
         return {"message": "Selected configuration does not exist"}
 
-    scene_images = [path for path in sorted(glob(f"{experiment_dir}/frame_[0-9]*"))]
-
     # This section below can be replaced with inference on a live model in the future
     if not (experiment_dir / POST_LEARN_FILE_NAME).exists():
         return {"message": "Learner has not decoded this scene"}
@@ -109,7 +107,18 @@ def get_scene() -> Any:
         "train_curriculum": training_curriculum,
         "test_curriculum": testing_curriculum,
         "scene_number": scene_number,
-        "scene_images": scene_images,
+        "scene_images": [
+            path.rsplit("data", maxsplit=1)[-1]
+            for path in sorted(glob(f"{experiment_dir}/rgb__[0-9]*.png"))
+        ],
+        "object_strokes": [
+            path.rsplit("data", maxsplit=1)[-1]
+            for path in sorted(glob(f"{experiment_dir}/stroke_[0-9]*_[0-9]*.png"))
+        ],
+        "stroke_graph": [
+            path.rsplit("data", maxsplit=1)[-1]
+            for path in sorted(glob(f"{experiment_dir}/stroke_graph_*.png"))
+        ],
         "post_learning": post_learn,
         # "pre_learning": {},
         "message": None,
