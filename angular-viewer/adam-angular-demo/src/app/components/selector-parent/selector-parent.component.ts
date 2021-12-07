@@ -63,6 +63,7 @@ export class SelectorParentComponent implements OnInit {
 
   outputImage = '';
   outputObject = {};
+  differencesObject = {};
   targetImgURLs: string[];
 
   ngForm = FormGroup;
@@ -137,6 +138,8 @@ export class SelectorParentComponent implements OnInit {
           scene_num: data.post_learning.scene_num,
         };
         this.targetImgURLs = data.scene_images;
+        this.differencesObject = data.post_learning["differences_panel"];
+        console.log('Differences object: ',this.differencesObject);
         console.log('Image url ', this.outputImage);
         console.log('Main output object: ', this.outputObject);
       });

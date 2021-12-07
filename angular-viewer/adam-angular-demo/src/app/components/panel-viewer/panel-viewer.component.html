@@ -1,17 +1,23 @@
-<div class="table-div">
+<div class="table-div" *ngIf="submit">
     <table class="table table-sm custom-table">
         <thead>
             <tr>
-                <th scope="col">Differences</th>
-                <th scope="col">Similarities</th>
-                <th scope="col">Unique Properties</th>
+                <th scope="col">{{objectOne}}</th>
+                <th scope="col">similarities</th>
+                <th scope="col">{{objectTwo}}</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>This is an example difference</td>
-                <td>This is an example similarity</td>
-                <td>This is an example unique property</td>
+                <td>
+                    <p *ngFor="let i of objectOneArray">{{i}}</p>
+                </td>
+                <td>
+                    <p *ngFor="let i of similarities">{{i}}</p>
+                </td>
+                <td>
+                    <p *ngFor="let i of objectTwoArray">{{i}}</p>
+                </td>
             </tr>
         </tbody>
     </table>
