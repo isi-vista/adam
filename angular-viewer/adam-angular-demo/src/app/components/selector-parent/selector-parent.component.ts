@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { AdamService } from 'src/app/services/adam.service';
-import { NgForm } from '@angular/forms';
+import { FormGroup, NgForm } from '@angular/forms';
 import { environment } from 'src/environments/environment';
+import { TouchSequence } from 'selenium-webdriver';
 
 export interface LearnersResponse {
   learner_types: string[];
@@ -56,11 +57,15 @@ export class SelectorParentComponent implements OnInit {
   selectedLearner = '';
   selectedPretrain = '';
   selectedTrain = '';
+  selectedTest = '';
   submitted = false;
+  initial = 'None';
 
   outputImage = '';
   outputObject = {};
   targetImgURLs: string[];
+
+  ngForm = FormGroup;
 
   constructor(private getResponseData: AdamService) {}
 
@@ -79,6 +84,7 @@ export class SelectorParentComponent implements OnInit {
         this.pretrainingData = data.training_curriculum;
         this.trainingData = data.training_curriculum;
         this.selectedTrain = data.training_curriculum[0];
+        this.selectedPretrain = data.training_curriculum[0];
         console.log(this.trainingData);
       });
 
@@ -86,6 +92,7 @@ export class SelectorParentComponent implements OnInit {
       .getTestingData()
       .subscribe((data: TestingCurriculumResponse) => {
         this.testData = data.testing_curriculum;
+        this.selectedTest = data.testing_curriculum[0];
         console.log(this.testData);
       });
   }
@@ -114,6 +121,7 @@ export class SelectorParentComponent implements OnInit {
     this.submitted = true;
     console.log(f.value.selectLearner);
     console.log(f.value.selectTraining);
+    console.log(f.value.selectTesting);
     this.getResponseData
       .loadScene(
         f.value.selectLearner,
@@ -132,5 +140,12 @@ export class SelectorParentComponent implements OnInit {
         console.log('Image url ', this.outputImage);
         console.log('Main output object: ', this.outputObject);
       });
+  }
+
+  formReset(f: NgForm) {
+    f.value.selectLearner = '';
+    this.submitted = false;
+    this.outputObject = {};
+    this.targetImgURLs = [];
   }
 }
