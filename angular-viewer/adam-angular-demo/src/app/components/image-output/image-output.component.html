@@ -1,3 +1,14 @@
 <div *ngIf="isImg" class="imgWrapper">
-  <img class="img" src="../../../assets/{{ finalUrl }}" />
+  <ngb-carousel>
+    <ng-template ngbSlide *ngFor="let i of imageArray">
+      <div class="picsum-img-wrapper">
+        <img
+          [src]="i"
+          alt="Random first slide"
+          class="mh-100"
+          style="width: 100%; height: 100%"
+        />
+      </div>
+    </ng-template>
+  </ngb-carousel>
 </div>
