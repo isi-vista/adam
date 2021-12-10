@@ -84,7 +84,7 @@ def get_scene() -> Any:
         return {"message": "Learner has not decoded this scene"}
 
     with open(experiment_dir / POST_LEARN_FILE_NAME, encoding="utf-8") as yaml_file:
-        post_learn = yaml.load(yaml_file)
+        post_learn = yaml.safe_load(yaml_file)
 
     return {
         "learner": learner,
