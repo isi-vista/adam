@@ -61,6 +61,7 @@ export class SelectorParentComponent implements OnInit {
   selectedTest = '';
   submitted = false;
   initial = 'None';
+  noOutput=false;
 
   outputImage = '';
   outputObject = {};
@@ -133,6 +134,9 @@ export class SelectorParentComponent implements OnInit {
       )
       .subscribe((data: SceneResponse) => {
         console.log(data);
+        if(data.message!=null){
+          alert("Selected configuration does not exist!")
+        }
         this.outputImage = data.scene_images[0];
         this.outputObject = {
           main: data.post_learning.output_language,
