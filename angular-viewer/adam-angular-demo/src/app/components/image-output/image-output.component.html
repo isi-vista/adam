@@ -1,11 +1,7 @@
-<div *ngIf="isImg" class="w-100" style="margin: auto;">
+<div *ngIf="isImg" class="w-100" style="margin: auto">
   <ngb-carousel>
     <ng-template ngbSlide *ngFor="let i of imageArray">
-        <img
-          [src]="i"
-          alt="Random first slide"
-          class="w-100"
-        />
+      <img [src]="i" alt="Random first slide" class="w-100" />
     </ng-template>
   </ngb-carousel>
 </div>
