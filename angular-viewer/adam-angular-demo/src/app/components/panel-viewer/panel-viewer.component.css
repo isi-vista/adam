@@ -2,14 +2,14 @@
     margin: 20px 40px 20px 4px;
 } */
 
-table{
-    width: 80%;
-    margin-top: 30px;
-    margin-left:20px
-    /* margin-left: auto;
+table {
+  width: 80%;
+  margin-top: 30px;
+  margin-left: 20px;
+  /* margin-left: auto;
     margin-right: auto; */
 }
 
-table-div{
-    text-align: center;
+table-div {
+  text-align: center;
 }

@@ -8,9 +8,8 @@ describe('PanelViewerComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ PanelViewerComponent ]
-    })
-    .compileComponents();
+      declarations: [PanelViewerComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {

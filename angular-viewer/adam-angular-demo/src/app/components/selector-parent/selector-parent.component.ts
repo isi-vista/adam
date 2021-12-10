@@ -30,6 +30,7 @@ export interface LanguageResponse {
 export interface DecodeResponse {
   scene_num: number;
   output_language: LanguageResponse[];
+  differences_panel: Record<string, Any>;
 }
 
 export interface SceneResponse {
@@ -63,7 +64,7 @@ export class SelectorParentComponent implements OnInit {
 
   outputImage = '';
   outputObject = {};
-  differencesObject = {};
+  differencesObject: DifferencesPanel = {};
   targetImgURLs: string[];
 
   ngForm = FormGroup;
@@ -138,8 +139,8 @@ export class SelectorParentComponent implements OnInit {
           scene_num: data.post_learning.scene_num,
         };
         this.targetImgURLs = data.scene_images;
-        this.differencesObject = data.post_learning["differences_panel"];
-        console.log('Differences object: ',this.differencesObject);
+        this.differencesObject = data.post_learning.differences_panel;
+        console.log('Differences object: ', this.differencesObject);
         console.log('Image url ', this.outputImage);
         console.log('Main output object: ', this.outputObject);
       });
