@@ -35,3 +35,7 @@
   align-items: center;
   height: fit-content;
 }
+
+h3 {
+  margin: 30px 0 0 0 20px;
+}

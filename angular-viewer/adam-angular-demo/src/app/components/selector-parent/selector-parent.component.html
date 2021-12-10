@@ -68,15 +68,16 @@
     Reset
   </button>
 </form>
-<div class="row">
+<div class="row" style="margin: 0 0 0 20px">
   <app-image-output
-    class="col"
+    class="col-3"
     [imgSrc]="targetImgURLs"
     *ngIf="submitted"
+    style="margin: 20px 0 0 0"
   ></app-image-output>
   <app-object-results
     *ngIf="submitted"
-    class="col"
+    class="col-9"
     [outputObject]="outputObject"
   ></app-object-results>
 </div>
