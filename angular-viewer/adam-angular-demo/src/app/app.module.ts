@@ -10,6 +10,7 @@ import { ButtonComponent } from './components/button/button.component';
 import { ImageOutputComponent } from './components/image-output/image-output.component';
 import { ObjectResultsComponent } from './components/object-results/object-results.component';
 import { HttpClientModule } from '@angular/common/http';
+import { PanelViewerComponent } from './components/panel-viewer/panel-viewer.component';
 
 @NgModule({
   declarations: [
@@ -20,6 +21,7 @@ import { HttpClientModule } from '@angular/common/http';
     ButtonComponent,
     ImageOutputComponent,
     ObjectResultsComponent,
+    PanelViewerComponent,
   ],
   imports: [FormsModule, BrowserModule, NgbModule, HttpClientModule],
   providers: [],

@@ -46,7 +46,7 @@ export class ObjectResultsComponent implements OnInit, OnChanges {
       tempMain.subObject = new Array<SubObject>();
       entry.features.forEach((element) => {
         const feat = new Features();
-        feat.name = element.name;
+        feat.name = element;
         tempMain.features.push(feat);
       });
       if (entry.hasOwnProperty('sub_objects')) {
@@ -57,7 +57,7 @@ export class ObjectResultsComponent implements OnInit, OnChanges {
           subobject.features = new Array<Features>();
           element.features.forEach((feature) => {
             const feat = new Features();
-            feat.name = feature.name;
+            feat.name = feature;
             subobject.features.push(feat);
           });
           tempMain.subObject.push(subobject);

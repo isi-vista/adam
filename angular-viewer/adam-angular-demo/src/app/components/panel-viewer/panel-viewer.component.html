@@ -1,0 +1,24 @@
+<div *ngIf="submit">
+  <table class="table table-sm custom-table table-bordered">
+    <thead>
+      <tr>
+        <th scope="col">{{ objectOne }}</th>
+        <th scope="col">similarities</th>
+        <th scope="col">{{ objectTwo }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <p *ngFor="let i of objectOneArray">{{ i }}</p>
+        </td>
+        <td>
+          <p *ngFor="let i of similarities">{{ i }}</p>
+        </td>
+        <td>
+          <p *ngFor="let i of objectTwoArray">{{ i }}</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
