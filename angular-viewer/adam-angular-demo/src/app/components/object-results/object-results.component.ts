@@ -19,12 +19,7 @@ import { SubObject } from 'src/app/classes/sub-object';
 export class ObjectResultsComponent implements OnInit, OnChanges {
   @Input() outputObject;
 
-  resultObject;
-  sceneNumber;
-  subObjects;
-
-  result = new MainObject();
-  resultArray = new Array<MainObject>();
+  resultArray: Array<MainObject> = [];
   isObject = false;
 
   constructor(private getResponseData: AdamService) {}
@@ -36,7 +31,8 @@ export class ObjectResultsComponent implements OnInit, OnChanges {
       const cur = JSON.parse(JSON.stringify(chng.currentValue));
       tempObject = cur;
     }
-    console.log(tempObject);
+
+    this.resultArray = [];
 
     for (const entry of tempObject.main) {
       const tempMain = new MainObject();
@@ -65,8 +61,6 @@ export class ObjectResultsComponent implements OnInit, OnChanges {
       }
       this.resultArray.push(tempMain);
     }
-
-    console.log(this.resultArray);
 
     this.isObject = true;
   }
