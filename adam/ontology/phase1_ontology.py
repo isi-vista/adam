@@ -241,6 +241,10 @@ PHASE_2_CONCEPT = OntologyNode("phase-2-concept")
 subtype(PHASE_2_CONCEPT, PROPERTY)
 PHASE_3_CONCEPT = OntologyNode("phase-3-concept")
 subtype(PHASE_3_CONCEPT, PROPERTY)
+PHASE_3_M4_CORE_CONCEPT = OntologyNode("phase-3-m4-core-concept")
+subtype(PHASE_3_M4_CORE_CONCEPT, PHASE_3_CONCEPT)
+PHASE_3_M4_STRETCH_CONCEPT = OntologyNode("phase-3-m4-stretch-concept")
+subtype(PHASE_3_M4_STRETCH_CONCEPT, PHASE_3_M4_CORE_CONCEPT)
 
 COLOR = OntologyNode("color")
 subtype(COLOR, PERCEIVABLE_PROPERTY)
@@ -452,7 +456,12 @@ subtype(DOOR, FURNITURE)
 BALL = OntologyNode(
     "ball",
     [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, ROLLABLE, RED, BLUE, GREEN, BLACK, WHITE],
-    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT, PHASE_3_CONCEPT],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+        PHASE_3_CONCEPT,
+        PHASE_3_M4_STRETCH_CONCEPT,
+    ],
 )
 subtype(BALL, TOY)
 
@@ -489,6 +498,7 @@ PAPER = OntologyNode(
         WHITE,
         TWO_DIMENSIONAL,
     ],
+    non_inheritable_properties=[PHASE_3_CONCEPT],
 )
 subtype(PAPER, INANIMATE_OBJECT)
 BOOK = OntologyNode(
@@ -502,7 +512,12 @@ BOOK = OntologyNode(
         GREEN,
         INTEGRATED_EXPERIMENT_PROP,
     ],
-    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT, PHASE_3_CONCEPT],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+        PHASE_3_CONCEPT,
+        PHASE_3_M4_STRETCH_CONCEPT,
+    ],
 )
 subtype(BOOK, INANIMATE_OBJECT)
 HOUSE = OntologyNode(
@@ -623,7 +638,12 @@ BOX = OntologyNode(
         PERSON_CAN_HAVE,
         LIGHT_BROWN,
     ],
-    non_inheritable_properties=[PHASE_1_CONCEPT, PHASE_2_CONCEPT, PHASE_3_CONCEPT],
+    non_inheritable_properties=[
+        PHASE_1_CONCEPT,
+        PHASE_2_CONCEPT,
+        PHASE_3_CONCEPT,
+        PHASE_3_M4_STRETCH_CONCEPT,
+    ],
 )
 subtype(BOX, CONTAINER)
 

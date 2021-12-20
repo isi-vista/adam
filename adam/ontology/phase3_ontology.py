@@ -34,6 +34,10 @@ from adam.ontology.phase1_ontology import (
     PERSON_CAN_HAVE,
     MATERIAL,
     SHAPE_PROPERTY_DESCRIPTION,
+    CONTAINER,
+    _PAPER_SCHEMA,
+    PHASE_3_M4_CORE_CONCEPT,
+    PHASE_3_M4_STRETCH_CONCEPT,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 
@@ -57,7 +61,7 @@ subtype(SPHERICAL, SHAPE_PROPERTY_DESCRIPTION)
 # Base Property Objects
 BLOCK = OntologyNode(
     "block",
-    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE],
+    [PERSON_CAN_HAVE],
     non_inheritable_properties=[PHASE_3_CONCEPT],
 )
 subtype(BLOCK, TOY)
@@ -114,6 +118,44 @@ TOY_SEDAN = OntologyNode(
 )
 subtype(TOY_SEDAN, TOY)
 
+CUBE_BLOCK = OntologyNode(
+    "cube",
+    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, CUBIC],
+    non_inheritable_properties=[
+        PHASE_3_CONCEPT,
+        PHASE_3_M4_CORE_CONCEPT,
+        PHASE_3_M4_STRETCH_CONCEPT,
+    ],
+)
+subtype(CUBE_BLOCK, BLOCK)
+PYRAMID_BLOCK = OntologyNode(
+    "pyramid",
+    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, TRIANGULAR],
+    non_inheritable_properties=[
+        PHASE_3_CONCEPT,
+        PHASE_3_M4_CORE_CONCEPT,
+        PHASE_3_M4_STRETCH_CONCEPT,
+    ],
+)
+subtype(PYRAMID_BLOCK, BLOCK)
+SPHERICAL_BLOCK = OntologyNode(
+    "sphere",
+    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, SPHERICAL],
+    non_inheritable_properties=[
+        PHASE_3_CONCEPT,
+        PHASE_3_M4_CORE_CONCEPT,
+        PHASE_3_M4_STRETCH_CONCEPT,
+    ],
+)
+subtype(SPHERICAL_BLOCK, BLOCK)
+
+MUG = OntologyNode(
+    "mug",
+    [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE],
+    non_inheritable_properties=[PHASE_3_CONCEPT],
+)
+subtype(MUG, CONTAINER)
+
 NULL_NODE = OntologyNode("null")
 subtype(NULL_NODE, META_PROPERTY)
 
@@ -124,7 +166,9 @@ PHASE_3_CURRICULUM_OBJECTS = immutableset(
         BANANA,
         BALL,
         BOOK,
-        BLOCK,  # This is intended to have a shape modifier (Sphere, Cube, Triangular)
+        PYRAMID_BLOCK,
+        SPHERICAL_BLOCK,
+        CUBE_BLOCK,
         TABLE,
         CHAIR,
         SOFA,
@@ -156,6 +200,7 @@ _NULL_SCHEMA = ObjectStructuralSchema(
 GAILA_PHASE_3_STRUCUTRAL_SCHEMATA = [
     value for value in INTEGRATED_EXPERIMENT_STRUCTURAL_SCHEMATA
 ]
+
 GAILA_PHASE_3_STRUCUTRAL_SCHEMATA.extend(
     [
         (APPLE, _NULL_SCHEMA),
@@ -164,14 +209,18 @@ GAILA_PHASE_3_STRUCUTRAL_SCHEMATA.extend(
         (BALL, _BALL_SCHEMA),
         (BOOK, _BOOK_SCHEMA),
         (BLOCK, _NULL_SCHEMA),
+        (PYRAMID_BLOCK, _NULL_SCHEMA),
+        (CUBE_BLOCK, _NULL_SCHEMA),
+        (SPHERICAL_BLOCK, _NULL_SCHEMA),
         (TABLE, _TABLE_SCHEMA),
         (CHAIR, _CHAIR_SCHEMA),
         (SOFA, _NULL_SCHEMA),
         (BOX, _BOX_SCHEMA),
         (CUP, _CUP_SCHEMA),
+        (MUG, _NULL_SCHEMA),
         (FLOOR, _NULL_SCHEMA),
         (WINDOW, _NULL_SCHEMA),
-        (PAPER, _NULL_SCHEMA),
+        (PAPER, _PAPER_SCHEMA),
         (DESK, _NULL_SCHEMA),
         (TOY_TRUCK, _NULL_SCHEMA),
         (TOY_SEDAN, _NULL_SCHEMA),
