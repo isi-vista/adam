@@ -7,17 +7,13 @@ from flask import Flask, abort, request
 from flask_cors import CORS
 
 from adam.paths import (
-    DATA_DIR,
     LEARNERS_DIR,
     SITUATION_DIR_NAME,
     POST_LEARN_FILE_NAME,
     EXPERIMENTS_DIR_NAME,
     EXPERIMENTS_TESTING_DIR_NAME,
-)
-from adam.experiment.experiment_data_loader import (
-    get_learners,
-    get_train_curricula,
-    get_test_curricula,
+    TRAINING_CURRICULUM_DIR,
+    TESTING_CURRICULUM_DIR,
 )
 
 app = Flask(__name__)
@@ -29,22 +25,38 @@ app.config["JSON_SORT_KEYS"] = False
 @app.route("/api/learners", methods=["GET"])
 def get_all_learners() -> Any:
     """Get all learner configurations which are prepared."""
-    learners = get_learners(DATA_DIR)
-    return {"learner_types": learners}
+
+    return {
+        "learner_types": [
+            possible_dir.name
+            for possible_dir in LEARNERS_DIR.iterdir()
+            if possible_dir.is_dir()
+        ]
+    }
 
 
 @app.route("/api/training_curriculum", methods=["GET"])
 def get_all_train_curriculum() -> Any:
     """Get all possible training curriculum."""
-    train_cur = get_train_curricula(DATA_DIR)
-    return {"training_curriculum": train_cur}
+    return {
+        "training_curriculum": [
+            possible_dir.name
+            for possible_dir in TRAINING_CURRICULUM_DIR.iterdir()
+            if possible_dir.is_dir()
+        ]
+    }
 
 
 @app.route("/api/testing_curriculum", methods=["GET"])
 def get_all_test_curriculum() -> Any:
     """Get all available test curriculum."""
-    test_cur = get_test_curricula(DATA_DIR)
-    return {"testing_curriculum": test_cur}
+    return {
+        "testing_curriculum": [
+            possible_dir.name
+            for possible_dir in TESTING_CURRICULUM_DIR.iterdir()
+            if possible_dir.is_dir()
+        ]
+    }
 
 
 @app.route("/api/load_scene", methods=["GET"])
