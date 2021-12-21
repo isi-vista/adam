@@ -51,102 +51,69 @@ export interface SceneResponse {
 })
 export class SelectorParentComponent implements OnInit {
   learners: string[];
-  pretrainingData: string[];
   trainingData: string[];
   testData: string[];
-  selectedLevel = '';
-  selectedLearner = '';
-  selectedPretrain = '';
-  selectedTrain = '';
-  selectedTest = '';
+  maxScenes: 10;
+
+  selectedLearner: string;
+  selectedTrain: string;
+  selectedTest: string;
+  selectedSceneNum: number;
+
   submitted = false;
   initial = 'None';
   noOutput = false;
 
-  outputImage = '';
   outputObject = {};
   differencesObject = {};
   targetImgURLs: string[];
 
   ngForm = FormGroup;
 
-  constructor(private getResponseData: AdamService) {}
+  constructor(private adamService: AdamService) {}
 
   ngOnInit(): void {
-    this.getResponseData
-      .getLearnerData()
-      .subscribe((data: LearnersResponse) => {
-        this.learners = data.learner_types;
-        this.selectedLearner = data.learner_types[0];
-        console.log(this.learners);
-      });
+    this.adamService.getLearnerData().subscribe((data: LearnersResponse) => {
+      this.learners = data.learner_types;
+      this.selectedLearner = data.learner_types[0];
+    });
 
-    this.getResponseData
+    this.adamService
       .getTrainingData()
       .subscribe((data: TrainingCurriculumResponse) => {
-        this.pretrainingData = data.training_curriculum;
         this.trainingData = data.training_curriculum;
         this.selectedTrain = data.training_curriculum[0];
-        this.selectedPretrain = data.training_curriculum[0];
-        console.log(this.trainingData);
       });
 
-    this.getResponseData
+    this.adamService
       .getTestingData()
       .subscribe((data: TestingCurriculumResponse) => {
         this.testData = data.testing_curriculum;
         this.selectedTest = data.testing_curriculum[0];
-        console.log(this.testData);
       });
-  }
 
-  onButtonClick() {
-    console.log('A button has been clicked');
-  }
-
-  learner_selected(event: any) {
-    this.selectedLearner = event.target.value;
-  }
-
-  pretraining_selected(event: any) {
-    this.selectedPretrain = event.target.value;
-  }
-
-  training_selected(event: any) {
-    this.selectedTrain = event.target.value;
-  }
-
-  selected(event: any) {
-    this.selectedLevel = event.target.value;
+    this.selectedSceneNum = 1;
   }
 
   formSubmit(f: NgForm) {
     this.submitted = true;
-    console.log(f.value.selectLearner);
-    console.log(f.value.selectTraining);
-    console.log(f.value.selectTesting);
-    this.getResponseData
+    this.adamService
       .loadScene(
-        f.value.selectLearner,
-        f.value.selectTraining,
-        f.value.selectTesting,
-        '1'
+        this.selectedLearner,
+        this.selectedTrain,
+        this.selectedTest,
+        this.selectedSceneNum
       )
       .subscribe((data: SceneResponse) => {
-        console.log(data);
         if (data.message != null) {
-          alert('Selected configuration does not exist!');
+          alert(data.message);
         }
-        this.outputImage = data.scene_images[0];
         this.outputObject = {
           main: data.post_learning.output_language,
           scene_num: data.post_learning.scene_num,
         };
         this.targetImgURLs = data.scene_images;
         this.differencesObject = data.post_learning.differences_panel;
-        console.log('Differences object: ', this.differencesObject);
-        console.log('Image url ', this.outputImage);
-        console.log('Main output object: ', this.outputObject);
       });
   }
 

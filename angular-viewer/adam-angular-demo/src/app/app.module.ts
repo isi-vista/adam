@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { AppComponent } from './app.component';
 import { HeaderComponent } from './components/header/header.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { SelectorsComponent } from './components/selectors/selectors.component';
 import { SelectorParentComponent } from './components/selector-parent/selector-parent.component';
 import { ButtonComponent } from './components/button/button.component';
 import { ImageOutputComponent } from './components/image-output/image-output.component';
@@ -16,7 +15,6 @@ import { PanelViewerComponent } from './components/panel-viewer/panel-viewer.com
   declarations: [
     AppComponent,
     HeaderComponent,
-    SelectorsComponent,
     SelectorParentComponent,
     ButtonComponent,
     ImageOutputComponent,

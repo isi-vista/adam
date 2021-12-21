@@ -10,12 +10,6 @@ import { environment } from 'src/environments/environment';
 export class AdamService {
   constructor(private http: HttpClient) {}
 
-  public fetchYaml(fileName) {
-    return this.http
-      .get(fileName, { responseType: 'text' })
-      .pipe(map((yamlString) => load(yamlString)));
-  }
-
   public getLearnerData() {
     return this.http.get(environment.API_URL + '/api/learners');
   }
@@ -32,13 +26,13 @@ export class AdamService {
     learnerType: string,
     trainingCurriculum: string,
     testingCurriculum: string,
-    sceneNum: string
+    sceneNum: number
   ) {
     const params = {
       learner: learnerType,
       training_curriculum: trainingCurriculum,
       testing_curriculum: testingCurriculum,
-      scene_number: sceneNum,
+      scene_number: sceneNum.toString(),
     };
     return this.http.get(environment.API_URL + '/api/load_scene?', { params });
   }
