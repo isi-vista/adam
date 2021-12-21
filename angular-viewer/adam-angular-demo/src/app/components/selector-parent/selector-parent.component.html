@@ -1,4 +1,4 @@
-<form (ngSubmit)="formSubmit(f)" #f="ngForm" class="row selector-grid">
+<form (ngSubmit)="formSubmit()" #f="ngForm" class="row selector-grid">
   <div class="select outline box">
     Choose Learner
     <select
@@ -48,7 +48,7 @@
         type="number"
         name="num"
         min="1"
-        [attr.max]="maxScenes"
+        max="100"
         class="form-control input"
         aria-labelledby="inputSceneNum"
         name="selectSceneNumber"

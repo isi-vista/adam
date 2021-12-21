@@ -1,8 +1,8 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
-import { AdamService } from 'src/app/services/adam.service';
 import { FormGroup, NgForm } from '@angular/forms';
-import { environment } from 'src/environments/environment';
-import { TouchSequence } from 'selenium-webdriver';
+import { ToastrService } from 'ngx-toastr';
+import { environment } from '../../../environments/environment';
 
 export interface LearnersResponse {
   learner_types: string[];
@@ -53,7 +53,6 @@ export class SelectorParentComponent implements OnInit {
   learners: string[];
   trainingData: string[];
   testData: string[];
-  maxScenes: 10;
 
   selectedLearner: string;
   selectedTrain: string;
@@ -70,54 +69,86 @@ export class SelectorParentComponent implements OnInit {
 
   ngForm = FormGroup;
 
-  constructor(private adamService: AdamService) {}
+  private apiURL = environment.API_URL;
+
+  constructor(private http: HttpClient, public toastr: ToastrService) {}
 
   ngOnInit(): void {
-    this.adamService.getLearnerData().subscribe((data: LearnersResponse) => {
-      this.learners = data.learner_types;
-      this.selectedLearner = data.learner_types[0];
-    });
-
-    this.adamService
-      .getTrainingData()
-      .subscribe((data: TrainingCurriculumResponse) => {
-        this.trainingData = data.training_curriculum;
-        this.selectedTrain = data.training_curriculum[0];
+    this.http
+      .get(this.apiURL + '/api/learners')
+      .toPromise()
+      .then((data: LearnersResponse) => {
+        this.learners = data.learner_types;
+        this.selectedLearner = data.learner_types[0]
+          ? data.learner_types[0]
+          : this.initial;
       });
 
-    this.adamService
-      .getTestingData()
-      .subscribe((data: TestingCurriculumResponse) => {
+    this.http
+      .get(this.apiURL + '/api/training_curriculum')
+      .toPromise()
+      .then((data: TrainingCurriculumResponse) => {
+        this.trainingData = data.training_curriculum;
+        this.selectedTrain = data.training_curriculum[0]
+          ? data.training_curriculum[0]
+          : this.initial;
+      });
+
+    this.http
+      .get(this.apiURL + '/api/testing_curriculum')
+      .toPromise()
+      .then((data: TestingCurriculumResponse) => {
         this.testData = data.testing_curriculum;
-        this.selectedTest = data.testing_curriculum[0];
+        this.selectedTest = data.testing_curriculum[0]
+          ? data.testing_curriculum[0]
+          : this.initial;
       });
 
     this.selectedSceneNum = 1;
   }
 
-  formSubmit(f: NgForm) {
-    this.submitted = true;
-    this.adamService
-      .loadScene(
-        this.selectedLearner,
-        this.selectedTrain,
-        this.selectedTest,
-        this.selectedSceneNum
-      )
-      .subscribe((data: SceneResponse) => {
+  formSubmit(): number {
+    if (this.selectedLearner === this.initial) {
+      this.toastr.error('Invalid learner selected.');
+      return 0;
+    }
+    if (this.selectedTest === this.initial) {
+      this.toastr.error('Invalid testing curriculum selected.');
+      return 0;
+    }
+    if (this.selectedTrain === this.initial) {
+      this.toastr.error('Invalid training curriculum selected.');
+      return 0;
+    }
+    const params = {
+      learner: this.selectedLearner,
+      training_curriculum: this.selectedTrain,
+      testing_curriculum: this.selectedTest,
+      scene_number: this.selectedSceneNum.toString(),
+    };
+    this.http
+      .get(this.apiURL + '/api/load_scene?', { params })
+      .toPromise()
+      .then((data: SceneResponse) => {
         if (data.message != null) {
-          alert(data.message);
+          this.toastr.error(data.message);
+          return 0;
         }
+
         this.outputObject = {
           main: data.post_learning.output_language,
           scene_num: data.post_learning.scene_num,
         };
         this.targetImgURLs = data.scene_images;
         this.differencesObject = data.post_learning.differences_panel;
+
+        return 0;
       });
+    this.submitted = true;
+    return 0;
   }
 
-  formReset(f: NgForm) {
+  formReset(f: NgForm): void {
     f.value.selectLearner = '';
     this.submitted = false;
     this.outputObject = {};

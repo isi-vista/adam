@@ -27,11 +27,13 @@ def get_all_learners() -> Any:
     """Get all learner configurations which are prepared."""
 
     return {
-        "learner_types": [
-            possible_dir.name
-            for possible_dir in LEARNERS_DIR.iterdir()
-            if possible_dir.is_dir()
-        ]
+        "learner_types": sorted(
+            [
+                possible_dir.name
+                for possible_dir in LEARNERS_DIR.iterdir()
+                if possible_dir.is_dir()
+            ]
+        )
     }
 
 
@@ -39,11 +41,13 @@ def get_all_learners() -> Any:
 def get_all_train_curriculum() -> Any:
     """Get all possible training curriculum."""
     return {
-        "training_curriculum": [
-            possible_dir.name
-            for possible_dir in TRAINING_CURRICULUM_DIR.iterdir()
-            if possible_dir.is_dir()
-        ]
+        "training_curriculum": sorted(
+            [
+                possible_dir.name
+                for possible_dir in TRAINING_CURRICULUM_DIR.iterdir()
+                if possible_dir.is_dir()
+            ]
+        ),
     }
 
 
@@ -51,11 +55,13 @@ def get_all_train_curriculum() -> Any:
 def get_all_test_curriculum() -> Any:
     """Get all available test curriculum."""
     return {
-        "testing_curriculum": [
-            possible_dir.name
-            for possible_dir in TESTING_CURRICULUM_DIR.iterdir()
-            if possible_dir.is_dir()
-        ]
+        "testing_curriculum": sorted(
+            [
+                possible_dir.name
+                for possible_dir in TESTING_CURRICULUM_DIR.iterdir()
+                if possible_dir.is_dir()
+            ]
+        )
     }
 
 

@@ -1,4 +1,3 @@
-import { subscribeOn } from 'rxjs/operators';
 import { Features } from './features';
 import { SubObject } from './sub-object';
 
