@@ -1,29 +1,36 @@
-import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AppComponent } from './app.component';
-import { HeaderComponent } from './components/header/header.component';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { SelectorsComponent } from './components/selectors/selectors.component';
-import { SelectorParentComponent } from './components/selector-parent/selector-parent.component';
+import { ToastrModule } from 'ngx-toastr';
+import { AppComponent } from './app.component';
 import { ButtonComponent } from './components/button/button.component';
+import { HeaderComponent } from './components/header/header.component';
 import { ImageOutputComponent } from './components/image-output/image-output.component';
 import { ObjectResultsComponent } from './components/object-results/object-results.component';
-import { HttpClientModule } from '@angular/common/http';
 import { PanelViewerComponent } from './components/panel-viewer/panel-viewer.component';
+import { SelectorParentComponent } from './components/selector-parent/selector-parent.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     HeaderComponent,
-    SelectorsComponent,
     SelectorParentComponent,
     ButtonComponent,
     ImageOutputComponent,
     ObjectResultsComponent,
     PanelViewerComponent,
   ],
-  imports: [FormsModule, BrowserModule, NgbModule, HttpClientModule],
+  imports: [
+    FormsModule,
+    BrowserModule,
+    NgbModule,
+    HttpClientModule,
+    ToastrModule.forRoot(),
+    BrowserAnimationsModule,
+  ],
   providers: [],
   bootstrap: [AppComponent],
 })

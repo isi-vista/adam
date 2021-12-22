@@ -1,30 +1,22 @@
-import {
-  Component,
-  OnInit,
-  Input,
-  SimpleChange,
-  SimpleChanges,
-  OnChanges,
-} from '@angular/core';
-import { AdamService } from 'src/app/services/adam.service';
-import { MainObject } from 'src/app/classes/main-object';
-import { Features } from 'src/app/classes/features';
-import { SubObject } from 'src/app/classes/sub-object';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Features } from '../../classes/features';
+import { MainObject } from '../../classes/main-object';
+import { SubObject } from '../../classes/sub-object';
 
 @Component({
   selector: 'app-object-results',
   templateUrl: './object-results.component.html',
   styleUrls: ['./object-results.component.css'],
 })
-export class ObjectResultsComponent implements OnInit, OnChanges {
+export class ObjectResultsComponent implements OnChanges {
   @Input() outputObject;
 
   resultArray: Array<MainObject> = [];
   isObject = false;
 
-  constructor(private getResponseData: AdamService) {}
+  constructor() {}
 
-  ngOnChanges(changes: SimpleChanges) {
+  ngOnChanges(changes: SimpleChanges): void {
     let tempObject;
     for (const propName of Object.keys(changes)) {
       const chng = changes[propName];
@@ -45,7 +37,7 @@ export class ObjectResultsComponent implements OnInit, OnChanges {
         feat.name = element;
         tempMain.features.push(feat);
       });
-      if (entry.hasOwnProperty('sub_objects')) {
+      if (entry.sub_objects) {
         entry.sub_objects.forEach((element) => {
           const subobject = new SubObject();
           subobject.confidence = element.confidence;
@@ -64,6 +56,4 @@ export class ObjectResultsComponent implements OnInit, OnChanges {
 
     this.isObject = true;
   }
-
-  ngOnInit(): void {}
 }

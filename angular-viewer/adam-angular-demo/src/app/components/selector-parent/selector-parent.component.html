@@ -1,4 +1,4 @@
-<form (ngSubmit)="formSubmit(f)" #f="ngForm" class="row selector-grid">
+<form (ngSubmit)="formSubmit()" #f="ngForm" class="row selector-grid">
   <div class="select outline box">
     Choose Learner
     <select
@@ -10,22 +10,6 @@
       <option>None</option>
       <option *ngFor="let i of learners" [value]="i">{{ i }}</option>
     </select>
-  </div>
-  <div class="outline box">
-    <div class="dropdown">
-      Choose Pre-training Data
-      <select
-        class="form-control select"
-        aria-labelledby="dropdownMenuButton"
-        name="selectPreTraining"
-        [(ngModel)]="selectedPretrain"
-      >
-        <option>None</option>
-        <option *ngFor="let i of pretrainingData" [ngValue]="i">
-          {{ i }}
-        </option>
-      </select>
-    </div>
   </div>
   <div class="outline box">
     <div class="dropdown">
@@ -55,6 +39,21 @@
         <option>None</option>
         <option *ngFor="let i of testData" [ngValue]="i">{{ i }}</option>
       </select>
+    </div>
+  </div>
+  <div class="outline box">
+    <div class="number">
+      Select Scene Number
+      <input
+        type="number"
+        name="num"
+        min="1"
+        max="100"
+        class="form-control input"
+        aria-labelledby="inputSceneNum"
+        name="selectSceneNumber"
+        [(ngModel)]="selectedSceneNum"
+      />
     </div>
   </div>
   <button type="submit" class="btn button-color button-text button-box">

@@ -1,17 +1,11 @@
-import {
-  Component,
-  Input,
-  OnInit,
-  SimpleChanges,
-  OnChanges,
-} from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 
 @Component({
   selector: 'app-image-output',
   templateUrl: './image-output.component.html',
   styleUrls: ['./image-output.component.css'],
 })
-export class ImageOutputComponent implements OnInit, OnChanges {
+export class ImageOutputComponent implements OnChanges {
   @Input() imgSrc: [] = [];
 
   isImg = false;
@@ -21,7 +15,7 @@ export class ImageOutputComponent implements OnInit, OnChanges {
 
   constructor() {}
 
-  ngOnChanges(changes: SimpleChanges) {
+  ngOnChanges(changes: SimpleChanges): void {
     this.imageArray = [];
     let tempObject;
     for (const propName of Object.keys(changes)) {
@@ -37,6 +31,4 @@ export class ImageOutputComponent implements OnInit, OnChanges {
     }
     this.isImg = true;
   }
-
-  ngOnInit(): void {}
 }
