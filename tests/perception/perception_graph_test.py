@@ -67,7 +67,7 @@ from adam.situation.templates.phase1_templates import (
 from adam_test_utils import all_possible_test
 from immutablecollections import immutableset, immutablesetmultidict
 
-from tests.perception import ONE_OBJECT_TEST_SCENE_JSON
+from tests.perception import ONE_OBJECT_TEST_SCENE_YAML
 
 r.seed(0)
 
@@ -859,7 +859,7 @@ def test_copy_with_temporal_scope_pattern_content():
 
 def test_simulated_one_object_graph():
     representation = PerceptualRepresentation.single_frame(
-        VisualPerceptionFrame.from_json_str(ONE_OBJECT_TEST_SCENE_JSON)
+        VisualPerceptionFrame.from_yaml_str(ONE_OBJECT_TEST_SCENE_YAML)
     )
 
     perception_graph = PerceptionGraph.from_simulated_frame(representation.frames[0])

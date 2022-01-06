@@ -189,6 +189,14 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
         )
 
     @staticmethod
+    def from_yaml_str(
+        yaml_str: str, *, color_is_rgb: bool = False
+    ) -> "VisualPerceptionFrame":
+        return VisualPerceptionFrame.from_mapping(
+            yaml.safe_load(yaml_str), color_is_rgb=color_is_rgb
+        )
+
+    @staticmethod
     def from_yaml(
         yaml_path: Path, *, color_is_rgb: bool = False
     ) -> "VisualPerceptionFrame":
