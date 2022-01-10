@@ -2,12 +2,12 @@ import logging
 import pickle
 import random
 from pathlib import Path
-from typing import Callable, Optional, Mapping, Iterable, Tuple, cast
+from typing import Callable, Optional, Mapping, Tuple, cast, Any
 
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
-from adam.curriculum.curriculum_utils import Phase1InstanceGroup
+from adam.curriculum.curriculum_from_files import phase3_load_from_disk
 from adam.curriculum.imprecise_descriptions_curriculum import (
     make_imprecise_size_curriculum,
     make_imprecise_temporal_descriptions,
@@ -37,7 +37,6 @@ from adam.curriculum.verbs_with_dynamic_prepositions_curriculum import (
 )
 from adam.experiment import Experiment, execute_experiment
 from adam.experiment.curriculum_repository import (
-    read_p3_experiment_curriculum,
     read_experiment_curriculum,
 )
 from adam.experiment.experiment_utils import (
@@ -56,9 +55,7 @@ from adam.experiment.experiment_utils import (
     build_action_learner_factory,
     build_plural_learner_factory,
 )
-from adam.experiment.observer import LearningProgressHtmlLogger
-from adam.language.dependency import LinearizedDependencyTree
-from adam.language.language_generator import LanguageGenerator
+from adam.experiment.observer import LearningProgressHtmlLogger, YAMLLogger
 from adam.language.language_utils import (
     phase2_language_generator,
     integrated_experiment_language_generator,
@@ -90,16 +87,11 @@ from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
+from adam.perception.perception_graph import GraphLogger
 from adam.random_utils import RandomChooser
-from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 
-LANGUAGE_GEN = LanguageGenerator[  # pylint: disable=invalid-name
-    HighLevelSemanticsSituation, LinearizedDependencyTree
-]
-
-CURRICULUM_BUILDER = Callable[  # pylint: disable=invalid-name
-    [Optional[int], Optional[int], LANGUAGE_GEN], Iterable[Phase1InstanceGroup]
-]
+SYMBOLIC = "symbolic"
+SIMULATED = "simulated"
 
 
 def log_experiment_entry_point(params: Parameters) -> None:
@@ -113,85 +105,130 @@ def log_experiment_entry_point(params: Parameters) -> None:
     else:
         graph_logger = None
 
-    logger = LearningProgressHtmlLogger.create_logger(params)
+    debug_perception_log_dir = params.optional_creatable_directory(
+        "debug_perception_log_dir"
+    )
+    perception_graph_logger: Optional[GraphLogger]
+    if debug_perception_log_dir:
+        logging.info(
+            "Debug perception graphs will be written to %s", debug_perception_log_dir
+        )
+        perception_graph_logger = GraphLogger(
+            debug_perception_log_dir, enable_graph_rendering=True
+        )
+    else:
+        perception_graph_logger = None
 
     language_mode = params.enum(
         "language_mode", LanguageMode, default=LanguageMode.ENGLISH
     )
-
-    curriculum_phase3_path = params.optional_existing_directory(
-        "phase3_curriculum_repository"
-    )
-
-    curriculum_repository_path = params.optional_existing_directory(
-        "load_from_curriculum_repository"
-    )
-    if curriculum_phase3_path:
-        curriculum = read_p3_experiment_curriculum(curriculum_phase3_path, params)
-        (training_instance_groups, test_instance_groups) = (
-            curriculum.train_curriculum,
-            curriculum.test_curriculum,
-        )
-    elif curriculum_repository_path:
-        curriculum = read_experiment_curriculum(
-            curriculum_repository_path, params, language_mode
-        )
-        (training_instance_groups, test_instance_groups) = (
-            curriculum.train_curriculum,
-            curriculum.test_curriculum,
-        )
-    else:
-        (training_instance_groups, test_instance_groups) = curriculum_from_params(
-            params, language_mode
-        )
-
     experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
-
     resume_from_last_logged_state = params.boolean(
         "resume_from_latest_logged_state", default=False
     )
 
-    # Check if we have explicit observer states to load
-    observers_state = params.optional_existing_file("observers_state_path")
-
     test_observer = []  # type: ignore
     pre_observer = []  # type: ignore
     post_observer = []  # type: ignore
+    experiment_type = params.string(
+        "experiment_type", valid_options=[SYMBOLIC, SIMULATED], default=SYMBOLIC
+    )
+    if experiment_type == SYMBOLIC:
+        logging.info("Symbolic Experiment Section")
+        logger = LearningProgressHtmlLogger.create_logger(params)
 
-    if resume_from_last_logged_state and observers_state:
-        raise RuntimeError(
-            "Can not resume from last logged state and provide explicit observer state paths"
+        curriculum_repository_path = params.optional_existing_directory(
+            "load_from_curriculum_repository"
         )
 
-    if resume_from_last_logged_state:
-        if not experiment_group_dir:
-            raise RuntimeError(
-                "experiment_group_dir must be specified when resume_from_last_logged_state is true."
+        if curriculum_repository_path:
+            curriculum = read_experiment_curriculum(
+                curriculum_repository_path, params, language_mode
+            )
+            (training_instance_groups, test_instance_groups) = (
+                curriculum.train_curriculum,
+                curriculum.test_curriculum,
+            )
+        else:
+            (training_instance_groups, test_instance_groups) = curriculum_from_params(
+                params, language_mode
             )
 
-        # Try to Load Observers
-        for _, observers_state_path in observer_states_by_most_recent(
-            cast(Path, experiment_group_dir) / "observer_state", "observers_state_at_"
-        ):
+        # Check if we have explicit observer states to load
+        observers_state = params.optional_existing_file("observers_state_path")
+
+        if resume_from_last_logged_state and observers_state:
+            raise RuntimeError(
+                "Can not resume from last logged state and provide explicit observer state paths"
+            )
+
+        if resume_from_last_logged_state:
+            if not experiment_group_dir:
+                raise RuntimeError(
+                    "experiment_group_dir must be specified when resume_from_last_logged_state is true."
+                )
+
+            # Try to Load Observers
+            for _, observers_state_path in observer_states_by_most_recent(
+                cast(Path, experiment_group_dir) / "observer_state", "observers_state_at_"
+            ):
+                try:
+                    with observers_state_path.open("rb") as f:
+                        observers_holder = pickle.load(f)
+                        pre_observer = observers_holder.pre_observers
+                        post_observer = observers_holder.post_observers
+                        test_observer = observers_holder.test_observers
+                except OSError:
+                    logging.warning(
+                        "Unable to open observer state at %s; skipping.",
+                        str(observers_state_path),
+                    )
+                except pickle.UnpicklingError:
+                    logging.warning(
+                        "Couldn't unpickle observer state at %s; skipping.",
+                        str(observers_state_path),
+                    )
+
+            if not pre_observer and not post_observer and not test_observer:
+                logging.warning("Reverting to default observers.")
+                pre_observer = [
+                    logger.pre_observer(  # type: ignore
+                        params=params.namespace_or_empty("pre_observer"),
+                        experiment_group_dir=experiment_group_dir,
+                    )
+                ]
+
+                post_observer = [
+                    logger.post_observer(  # type: ignore
+                        params=params.namespace_or_empty("post_observer"),
+                        experiment_group_dir=experiment_group_dir,
+                    )
+                ]
+
+                test_observer = [
+                    logger.test_observer(  # type: ignore
+                        params=params.namespace_or_empty("post_observer"),
+                        experiment_group_dir=experiment_group_dir,
+                    )
+                ]
+
+        elif observers_state:
             try:
-                with observers_state_path.open("rb") as f:
+                with observers_state.open("rb") as f:
                     observers_holder = pickle.load(f)
                     pre_observer = observers_holder.pre_observers
                     post_observer = observers_holder.post_observers
                     test_observer = observers_holder.test_observers
             except OSError:
                 logging.warning(
-                    "Unable to open observer state at %s; skipping.",
-                    str(observers_state_path),
+                    "Unable to open observer state at %s; skipping.", str(observers_state)
                 )
             except pickle.UnpicklingError:
                 logging.warning(
                     "Couldn't unpickle observer state at %s; skipping.",
-                    str(observers_state_path),
+                    str(observers_state),
                 )
-
-        if not pre_observer and not post_observer and not test_observer:
-            logging.warning("Reverting to default observers.")
+        else:
             pre_observer = [
                 logger.pre_observer(  # type: ignore
                     params=params.namespace_or_empty("pre_observer"),
@@ -212,43 +249,28 @@ def log_experiment_entry_point(params: Parameters) -> None:
                     experiment_group_dir=experiment_group_dir,
                 )
             ]
-
-    elif observers_state:
-        try:
-            with observers_state.open("rb") as f:
-                observers_holder = pickle.load(f)
-                pre_observer = observers_holder.pre_observers
-                post_observer = observers_holder.post_observers
-                test_observer = observers_holder.test_observers
-        except OSError:
-            logging.warning(
-                "Unable to open observer state at %s; skipping.", str(observers_state)
-            )
-        except pickle.UnpicklingError:
-            logging.warning(
-                "Couldn't unpickle observer state at %s; skipping.", str(observers_state)
-            )
     else:
-        pre_observer = [
-            logger.pre_observer(  # type: ignore
-                params=params.namespace_or_empty("pre_observer"),
-                experiment_group_dir=experiment_group_dir,
-            )
-        ]
+        logging.info("Simulated Experiment Section")
+        (training_instance_groups, test_instance_groups) = curriculum_from_params(
+            params, language_mode
+        )
+        yaml_observer_pre = YAMLLogger.from_params(  # type: ignore
+            "pre_observer", params.namespace_or_empty("pre_observer")
+        )
+        if yaml_observer_pre:
+            pre_observer.append(yaml_observer_pre)
 
-        post_observer = [
-            logger.post_observer(  # type: ignore
-                params=params.namespace_or_empty("post_observer"),
-                experiment_group_dir=experiment_group_dir,
-            )
-        ]
+        yaml_observer_post = YAMLLogger.from_params(  # type: ignore
+            "post_observer", params.namespace_or_empty("post_observer")
+        )
+        if yaml_observer_post:
+            post_observer.append(yaml_observer_post)
 
-        test_observer = [
-            logger.test_observer(  # type: ignore
-                params=params.namespace_or_empty("test_observer"),
-                experiment_group_dir=experiment_group_dir,
-            )
-        ]
+        yaml_observer_test = YAMLLogger.from_params(  # type: ignore
+            "test_observer", params.namespace_or_empty("test_observer")
+        )
+        if yaml_observer_test:
+            test_observer.append(yaml_observer_test)
 
     execute_experiment(
         Experiment(
@@ -261,7 +283,9 @@ def log_experiment_entry_point(params: Parameters) -> None:
             post_example_training_observers=post_observer,
             test_instance_groups=test_instance_groups,
             test_observers=test_observer,
-            sequence_chooser=RandomChooser.for_seed(0),
+            sequence_chooser=RandomChooser.for_seed(
+                params.integer("sequence_chooser_seed", default=0)
+            ),
         ),
         log_path=params.optional_creatable_directory("hypothesis_log_dir"),
         log_hypotheses_every_n_examples=params.integer(
@@ -274,6 +298,7 @@ def log_experiment_entry_point(params: Parameters) -> None:
         load_learner_state=params.optional_existing_file("learner_state_path"),
         resume_from_latest_logged_state=resume_from_last_logged_state,
         debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
+        perception_graph_logger=perception_graph_logger,
     )
 
 
@@ -469,13 +494,22 @@ def learner_factory_from_params(
         )
     elif learner_type == "integrated-learner-params":
         object_learner = build_object_learner_factory(  # type:ignore
-            params.namespace_or_empty("object_learner"), beam_size, language_mode
+            params.namespace_or_empty("object_learner"),
+            beam_size,
+            language_mode,
+            graph_logger,
         )
         attribute_learner = build_attribute_learner_factory(  # type:ignore
-            params.namespace_or_empty("attribute_learner"), beam_size, language_mode
+            params.namespace_or_empty("attribute_learner"),
+            beam_size,
+            language_mode,
+            graph_logger,
         )
         relation_learner = build_relation_learner_factory(  # type:ignore
-            params.namespace_or_empty("relation_learner"), beam_size, language_mode
+            params.namespace_or_empty("relation_learner"),
+            beam_size,
+            language_mode,
+            graph_logger,
         )
         action_learner = build_action_learner_factory(  # type:ignore
             params.namespace_or_empty("action_learner"), beam_size, language_mode
@@ -515,13 +549,22 @@ def learner_factory_from_params(
         )
     elif learner_type == "simulated-integrated-learner-params":
         object_learner = build_object_learner_factory(  # type:ignore
-            params.namespace_or_empty("object_learner"), beam_size, language_mode
+            params.namespace_or_empty("object_learner"),
+            beam_size,
+            language_mode,
+            graph_logger,
         )
         attribute_learner = build_attribute_learner_factory(  # type:ignore
-            params.namespace_or_empty("attribute_learner"), beam_size, language_mode
+            params.namespace_or_empty("attribute_learner"),
+            beam_size,
+            language_mode,
+            graph_logger,
         )
         relation_learner = build_relation_learner_factory(  # type:ignore
-            params.namespace_or_empty("relation_learner"), beam_size, language_mode
+            params.namespace_or_empty("relation_learner"),
+            beam_size,
+            language_mode,
+            graph_logger,
         )
         action_learner = build_action_learner_factory(  # type:ignore
             params.namespace_or_empty("action_learner"), beam_size, language_mode
@@ -550,9 +593,12 @@ def learner_factory_from_params(
 def curriculum_from_params(
     params: Parameters, language_mode: LanguageMode = LanguageMode.ENGLISH
 ):
-    str_to_train_test_curriculum: Mapping[
-        str, Tuple[CURRICULUM_BUILDER, Optional[CURRICULUM_BUILDER]]
-    ] = {
+    # The typing here is marked as 'Any' because MyPy doesn't seem to be able to verify it well
+    # It's a complicated callable that should probably be a Protocol but JL spent ~1 hour
+    # trying to get typing working to minimal success so instead I've just refactored all curriculum to follow
+    # Callable[[Optional[int], Optional[int], LanguageGenerator, Parameters]], Sequence[InstanceGroup]]
+    # As best as I can. We just don't have accurate type checking here any more :(
+    str_to_train_test_curriculum: Mapping[str, Tuple[Any, Optional[Any]]] = {
         "m6-deniz": (make_m6_curriculum, None),
         "each-object-by-itself": (
             build_each_object_by_itself_curriculum_train,
@@ -595,6 +641,10 @@ def curriculum_from_params(
             integrated_pursuit_learner_experiment_curriculum,
             integrated_pursuit_learner_experiment_test,
         ),
+        "phase3": (
+            phase3_load_from_disk,
+            phase3_load_from_disk,
+        ),
     }
 
     curriculum_name = params.string("curriculum", str_to_train_test_curriculum.keys())
@@ -603,12 +653,6 @@ def curriculum_from_params(
         if curriculum_name == "m18-integrated-learners-experiment"
         else phase2_language_generator(language_mode)
     )
-
-    if params.has_namespace("pursuit-curriculum-params"):
-        pursuit_curriculum_params = params.namespace("pursuit-curriculum-params")
-    else:
-        pursuit_curriculum_params = Parameters.empty()
-    use_path_instead_of_goal = params.boolean("use-path-instead-of-goal", default=False)
 
     (training_instance_groups, test_instance_groups) = str_to_train_test_curriculum[
         curriculum_name
@@ -619,21 +663,8 @@ def curriculum_from_params(
     # support specifying a range of acceptable values: https://github.com/isi-vista/vistautils/issues/142
     num_noise_objects = params.optional_integer("num_noise_objects")
 
-    if curriculum_name == "pursuit":
-        return (
-            training_instance_groups(
-                num_samples,
-                num_noise_objects,
-                language_generator,
-                pursuit_curriculum_params=pursuit_curriculum_params,
-            ),
-            test_instance_groups(num_samples, num_noise_objects, language_generator)
-            if test_instance_groups
-            else [],
-        )
-
     # optional argument to use path instead of goal
-    elif use_path_instead_of_goal and curriculum_name in [
+    if curriculum_name in [
         "m13-complete",
         "m13-shuffled",
         "m13-verbs-with-dynamic-prepositions",
@@ -643,35 +674,30 @@ def curriculum_from_params(
                 num_samples,
                 num_noise_objects,
                 language_generator,
-                use_path_instead_of_goal,
+                params.boolean("use-path-instead-of-goal", default=False),
             ),
             test_instance_groups(num_samples, num_noise_objects, language_generator)
             if test_instance_groups
             else [],
         )
-    elif curriculum_name in (
-        "m15-object-noise-experiments",
-        "m18-integrated-learners-experiment",
-    ):
-        return (
-            training_instance_groups(
-                num_samples,
-                num_noise_objects,
-                language_generator,
-                params=params.namespace_or_empty("train_curriculum"),
-            ),
-            test_instance_groups(
-                5,
-                0,
-                language_generator,
-                params=params.namespace_or_empty("test_curriculum"),
-            )
-            if test_instance_groups
-            else [],
-        )
+
     return (
-        training_instance_groups(num_samples, num_noise_objects, language_generator),
-        test_instance_groups(num_samples, num_noise_objects, language_generator)
+        training_instance_groups(
+            num_samples,
+            num_noise_objects,
+            language_generator,
+            params=params.namespace_or_empty(
+                "pursuit-curriculum-params"
+                if curriculum_name == "pursuit"
+                else "train_curriculum"
+            ),
+        ),
+        test_instance_groups(
+            num_samples,
+            num_noise_objects,
+            language_generator,
+            params=params.namespace_or_empty("test_curriculum"),
+        )
         if test_instance_groups
         else [],
     )

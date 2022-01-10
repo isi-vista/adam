@@ -43,4 +43,7 @@ def test_functional_learner(language_mode: LanguageMode):
         descriptions_from_learner = learner.describe(perceptual_representation)
         gold = linguistic_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]

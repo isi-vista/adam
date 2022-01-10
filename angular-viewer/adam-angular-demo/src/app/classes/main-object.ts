@@ -6,4 +6,5 @@ export class MainObject {
   text: string;
   features: Features[];
   subObject: SubObject[];
+  id: number;
 }

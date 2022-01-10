@@ -2,7 +2,7 @@ default:
 	@echo "an explicit target is required"
 
 # easier to test python2 vs. python3
-PYTHON=pypy3
+PYTHON=python3
 
 SHELL=bash
 SOURCE_DIR_NAME=adam

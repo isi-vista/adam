@@ -276,9 +276,13 @@ class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearn
         concept: Concept,
         pattern: PerceptionGraphTemplate,
         perception_graph: PerceptionGraph,
+        confidence: float,
     ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
         """
         Try to match our model of the semantics to the perception graph
+
+        Args:
+            confidence:
         """
         matcher = pattern.graph_pattern.matcher(
             perception_graph,
@@ -288,6 +292,6 @@ class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearn
         for match in matcher.matches(use_lookahead_pruning=True):
             # if there is a match, use that match to describe the situation.
             semantic_node_for_match = pattern_match_to_semantic_node(
-                concept=concept, pattern=pattern, match=match
+                concept=concept, pattern=pattern, match=match, confidence=confidence
             )
             yield match, semantic_node_for_match

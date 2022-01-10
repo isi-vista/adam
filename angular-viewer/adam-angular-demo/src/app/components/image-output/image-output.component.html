@@ -1,7 +1,46 @@
 <div *ngIf="isImg" class="w-100" style="margin: auto">
-  <ngb-carousel>
-    <ng-template ngbSlide *ngFor="let i of imageArray">
-      <img [src]="i" alt="Random first slide" class="w-100" />
+  <div class="row">
+    <div class="col-4">
+      <button
+        (click)="onClickCarousel('rgb')"
+        type="button"
+        class="btn btn-secondary btn-sm"
+      >
+        RGB Scene
+      </button>
+    </div>
+    <div class="col-4">
+      <button
+        (click)="onClickCarousel('stroke')"
+        type="button"
+        class="btn btn-secondary btn-sm"
+      >
+        Object Strokes
+      </button>
+    </div>
+    <div class="col-4">
+      <button
+        (click)="onClickCarousel('stroke_graph')"
+        type="button"
+        class="btn btn-secondary btn-sm"
+      >
+        Stroke Graph
+      </button>
+    </div>
+  </div>
+  <ngb-carousel *ngIf="carouselSelection === 'rgb'">
+    <ng-template ngbSlide *ngFor="let i of sceneImageArray">
+      <img [src]="i" alt="RGB Scene Image" class="w-100" />
+    </ng-template>
+  </ngb-carousel>
+  <ngb-carousel *ngIf="carouselSelection === 'stroke'">
+    <ng-template ngbSlide *ngFor="let i of sceneStrokeArray">
+      <img [src]="i" alt="Object Stroke Images" class="w-100" />
+    </ng-template>
+  </ngb-carousel>
+  <ngb-carousel *ngIf="carouselSelection === 'stroke_graph'">
+    <ng-template ngbSlide *ngFor="let i of sceneStrokeGraphArray">
+      <img [src]="i" alt="Object Stroke Graph Images" class="w-100" />
     </ng-template>
   </ngb-carousel>
 </div>

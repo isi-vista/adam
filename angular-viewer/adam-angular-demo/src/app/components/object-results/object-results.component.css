@@ -10,3 +10,8 @@
   padding: 20px;
   overflow: scroll;
 }
+
+.feature-list {
+  margin-left: 0;
+  padding-left: 40px;
+}

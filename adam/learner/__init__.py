@@ -3,10 +3,10 @@ Interfaces for language learning code.
 """
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Generic, Mapping, Optional, Callable, Any
+from typing import Dict, Generic, Mapping, Optional, Callable, Any, Sequence, List, Tuple
 
 from attr import Factory, attrib, attrs
-from attr.validators import instance_of
+from attr.validators import instance_of, deep_mapping, deep_iterable
 from immutablecollections import (
     immutabledict,
     ImmutableSetMultiDict,
@@ -41,7 +41,7 @@ from adam.perception.perception_graph import (
     DebugCallableType,
     GraphLogger,
 )
-from adam.semantics import Concept
+from adam.semantics import Concept, SemanticNode
 
 
 @attrs(frozen=True)
@@ -66,6 +66,38 @@ class LearningExample(Generic[PerceptionT, LinguisticDescriptionT]):
     """
 
 
+@attrs(slots=True)
+class TopLevelLanguageLearnerDescribeReturn:
+    """
+    The descriptions are returned as a mapping from linguistic descriptions to their scores.
+    The scores are not defined other than "higher is better."
+
+    It is possible that the learner cannot produce a description, in which case an empty
+    mapping is returned.
+
+    Features may not exist for all semantic nodes this is not guaranteed.
+    """
+
+    semantics_to_descriptions: Mapping[SemanticNode, LinguisticDescription] = attrib(
+        validator=deep_mapping(
+            instance_of(SemanticNode), instance_of(LinguisticDescription)
+        )
+    )
+    description_to_confidence: Mapping[LinguisticDescription, float] = attrib(
+        validator=deep_mapping(
+            instance_of(LinguisticDescription),
+            instance_of(float),
+        ),
+        kw_only=True,
+    )
+    semantics_to_feature_strs: Mapping[SemanticNode, Sequence[str]] = attrib(
+        validator=deep_mapping(
+            instance_of(SemanticNode), deep_iterable(instance_of(str))
+        ),
+        kw_only=True,
+    )
+
+
 class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
     r"""
     Models an infant learning language.
@@ -80,6 +112,8 @@ class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT])
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
         offset: int = 0,
+        *,
+        debug_perception_graph_logger: Optional[GraphLogger] = None,
     ) -> None:
         """
         Observe a `LearningExample`, possibly updating internal state.
@@ -87,17 +121,13 @@ class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT])
 
     @abstractmethod
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[LinguisticDescription, float]:
+        self,
+        perception: PerceptualRepresentation[PerceptionT],
+        *,
+        debug_perception_graph_logger: Optional[GraphLogger] = None,
+    ) -> TopLevelLanguageLearnerDescribeReturn:
         r"""
-        Given a `PerceptualRepresentation` of a situation, produce one or more
-        `LinguisticDescription`\ s of it.
-
-        The descriptions are returned as a mapping from linguistic descriptions to their scores.
-        The scores are not defined other than "higher is better."
-
-        It is possible that the learner cannot produce a description, in which case an empty
-        mapping is returned.
+        Given a `PerceptualRepresentation` of a situation, produce a `TopLevelLanguageLearnerDescribeReturn`.
         """
 
     @abstractmethod
@@ -131,19 +161,36 @@ class MemorizingLanguageLearner(
         self,
         learning_example: LearningExample[PerceptionT, LinguisticDescription],
         offset: int = 0,  # pylint:disable=unused-argument
+        *,
+        debug_perception_graph_logger: Optional[  # pylint: disable=unused-argument
+            GraphLogger
+        ] = None,
     ) -> None:
         self._memorized_situations[
             learning_example.perception
         ] = learning_example.linguistic_description
 
     def describe(
-        self, perception: PerceptualRepresentation[PerceptionT]
-    ) -> Mapping[LinguisticDescription, float]:
+        self,
+        perception: PerceptualRepresentation[PerceptionT],
+        *,
+        debug_perception_graph_logger: Optional[  # pylint: disable=unused-argument
+            GraphLogger
+        ] = None,
+    ) -> TopLevelLanguageLearnerDescribeReturn:
         memorized_description = self._memorized_situations.get(perception)
         if memorized_description:
-            return immutabledict(((memorized_description, 1.0),))
+            descriptions_to_confidence: Mapping[
+                LinguisticDescription, float
+            ] = immutabledict({memorized_description: 1.0})
         else:
-            return immutabledict()
+            descriptions_to_confidence = immutabledict()
+
+        return TopLevelLanguageLearnerDescribeReturn(
+            description_to_confidence=descriptions_to_confidence,
+            semantics_to_descriptions=immutabledict(),
+            semantics_to_feature_strs=immutabledict(),
+        )
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         pass

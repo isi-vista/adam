@@ -1,4 +1,6 @@
 import logging
+import shutil
+
 import yaml
 
 from abc import ABC, abstractmethod
@@ -13,10 +15,12 @@ from vistautils.parameters import Parameters
 from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.language.dependency import LinearizedDependencyTree
+from adam.learner import TopLevelLanguageLearnerDescribeReturn
 from adam.paths import SITUATION_DIR_NAME
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation import SituationT
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
+from adam.situation.phase_3_situations import SimulationSituation
 
 GOLD_LANGUAGE = "gold_language"
 OUTPUT_LANGUAGE = "output_language"
@@ -36,7 +40,7 @@ class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, Perception
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescription, float],
+        predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
     ) -> None:
         r"""
         Observe a description provided by a `TopLevelLanguageLearner`.
@@ -46,8 +50,7 @@ class DescriptionObserver(Generic[SituationT, LinguisticDescriptionT, Perception
             true_description: The "gold-standard" description of the situation.
             perceptual_representation: The `PerceptualRepresentation` of the situation received by
                                        the `TopLevelLanguageLearner`.
-            predicted_descriptions:  The scored `LinguisticDescription`\ s produced by
-                                     the `TopLevelLanguageLearner`.
+            predicted_scene_description:  `TopLevelLanguageLearnerDescribeReturn`
         """
 
     @abstractmethod
@@ -79,12 +82,15 @@ class TopChoiceExactMatchObserver(
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescription, float],
+        predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
     ) -> None:
         self._num_observations += 1
 
-        if predicted_descriptions:
-            top_choice = max(predicted_descriptions.items(), key=_by_score)
+        if predicted_scene_description:
+            top_choice = max(
+                predicted_scene_description.description_to_confidence.items(),
+                key=_by_score,
+            )
 
             if top_choice == true_description:
                 self._num_top_choice_matches += 1
@@ -119,12 +125,13 @@ class CandidateAccuracyObserver(
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescription, float],
+        predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
     ) -> None:
         self._num_predictions += 1
 
         descriptions_as_token_sequences = [
-            desc.as_token_sequence() for desc in predicted_descriptions
+            desc.as_token_sequence()
+            for desc in predicted_scene_description.description_to_confidence
         ]
         if true_description.as_token_sequence() in descriptions_as_token_sequences:
             self._num_predictions_with_gold_in_candidates += 1
@@ -193,12 +200,13 @@ class PrecisionRecallObserver(
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescription, float],
+        predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
     ) -> None:
         self._num_predictions += 1
 
         descriptions_as_token_sequences = [
-            desc.as_token_sequence() for desc in predicted_descriptions
+            desc.as_token_sequence()
+            for desc in predicted_scene_description.description_to_confidence
         ]
 
         if (
@@ -473,7 +481,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
 
     def pre_observer_log(
         self,
-        predicted_descriptions: Mapping[LinguisticDescription, float],
+        predicted_descriptions: TopLevelLanguageLearnerDescribeReturn,
         accuracy: Optional[float] = None,
         precision: Optional[float] = None,
         recall: Optional[float] = None,
@@ -487,7 +495,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
             append_str += f"\nRecall: {recall:2.2f}"
         self.pre_observed_description = (
             pretty_descriptions(
-                predicted_descriptions,
+                predicted_descriptions.description_to_confidence,
                 self._num_pretty_descriptions,
                 sort_by_length=self._sort_by_length,
             )
@@ -502,7 +510,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescription, float],
+        predicted_descriptions: TopLevelLanguageLearnerDescribeReturn,
         test_mode: bool,
         accuracy: Optional[float] = None,
         precision: Optional[float] = None,
@@ -512,7 +520,7 @@ class LearningProgressHtmlLogger:  # pragma: no cover
         self.pre_observed_description = None
 
         learner_description = pretty_descriptions(
-            predicted_descriptions,
+            predicted_descriptions.description_to_confidence,
             self._num_pretty_descriptions,
             sort_by_length=self._sort_by_length,
         )
@@ -657,24 +665,24 @@ class HTMLLoggerPreObserver(  # pragma: no cover
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescription, float],
+        predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
     ) -> None:
         if self.candidate_accuracy_observer:
             self.candidate_accuracy_observer.observe(
                 situation,
                 true_description,
                 perceptual_representation,
-                predicted_descriptions,
+                predicted_scene_description,
             )
         if self.precision_recall_observer:
             self.precision_recall_observer.observe(
                 situation,
                 true_description,
                 perceptual_representation,
-                predicted_descriptions,
+                predicted_scene_description,
             )
         self.html_logger.pre_observer_log(
-            predicted_descriptions,
+            predicted_scene_description,
             accuracy=self.candidate_accuracy_observer.accuracy()
             if self.candidate_accuracy_observer
             else None,
@@ -714,21 +722,21 @@ class HTMLLoggerPostObserver(  # pragma: no cover
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescription, float],
+        predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
     ) -> None:
         if self.candidate_accuracy_observer:
             self.candidate_accuracy_observer.observe(
                 situation,
                 true_description,
                 perceptual_representation,
-                predicted_descriptions,
+                predicted_scene_description,
             )
         if self.precision_recall_observer:
             self.precision_recall_observer.observe(
                 situation,
                 true_description,
                 perceptual_representation,
-                predicted_descriptions,
+                predicted_scene_description,
             )
         self.html_logger.post_observer_log(
             observer_name=self.name,
@@ -736,7 +744,7 @@ class HTMLLoggerPostObserver(  # pragma: no cover
             situation=situation,
             true_description=true_description,
             perceptual_representation=perceptual_representation,
-            predicted_descriptions=predicted_descriptions,
+            predicted_descriptions=predicted_scene_description,
             test_mode=self.test_mode,
             accuracy=self.candidate_accuracy_observer.accuracy()
             if self.candidate_accuracy_observer
@@ -762,34 +770,80 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
     name: str = attrib(validator=instance_of(str))
     experiment_path: Path = attrib(validator=instance_of(Path))
     counter: int = attrib(kw_only=True, default=0)
+    copy_curriculum: bool = attrib(kw_only=True, default=True)
+    file_name: Optional[str] = attrib(validator=optional(instance_of(str)), default=None)
 
-    def observe(  # pylint:disable=unused-argument
+    @staticmethod
+    def from_params(
+        name: str, params: Parameters
+    ) -> Optional["YAMLLogger[SituationT, LinguisticDescriptionT, PerceptionT]"]:
+        if "experiment_output_path" not in params:
+            return None
+        return YAMLLogger(
+            name=name,
+            experiment_path=params.creatable_directory("experiment_output_path"),
+            copy_curriculum=params.boolean("copy_curriculum", default=True),
+            file_name=params.optional_string("file_name"),
+        )
+
+    def observe(  # pylint: disable=unused-argument
         self,
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
         perceptual_representation: PerceptualRepresentation[PerceptionT],
-        predicted_descriptions: Mapping[LinguisticDescription, float],
+        predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
     ) -> None:
         output_dict: MutableMapping[str, Any] = dict()
         output_dict[GOLD_LANGUAGE] = true_description.as_token_string()
         output_dict[OUTPUT_LANGUAGE] = []
 
-        for linguistic_description, confidence in predicted_descriptions.items():
+        experiment_dir = self.experiment_path / SITUATION_DIR_NAME.format(
+            num=self.counter
+        )
+        experiment_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.copy_curriculum and isinstance(situation, SimulationSituation):
+            for file_path in situation.all_files():
+                shutil.copy(file_path, experiment_dir)
+
+        for (
+            idx,
+            semantic_to_description,
+        ) in enumerate(predicted_scene_description.semantics_to_descriptions.items()):
+            semantic_node, linguistic_description = semantic_to_description
             output_dict[OUTPUT_LANGUAGE].append(
                 {
+                    "id": idx,
                     "text": linguistic_description.as_token_string(),
-                    "confidence": confidence,
-                    "features": [],
+                    "confidence": f"{predicted_scene_description.description_to_confidence[linguistic_description]:.2f}",
+                    "features": sorted(
+                        predicted_scene_description.semantics_to_feature_strs[
+                            semantic_node
+                        ]
+                    ),
                     "sub-objects": [],
                 }
             )
 
+        # If we have two concepts exactly, we want to generate the differences panel
+        if len(output_dict[OUTPUT_LANGUAGE]) == 2:
+            object_a_features = set(output_dict[OUTPUT_LANGUAGE][0]["features"])
+            object_b_features = set(output_dict[OUTPUT_LANGUAGE][1]["features"])
+            similar_features = sorted(object_b_features.intersection(object_a_features))
+            object_a_distinct = sorted(object_a_features.difference(object_b_features))
+            object_b_distinct = sorted(object_b_features.difference(object_a_features))
+            output_dict["differences_panel"] = {
+                f'{output_dict[OUTPUT_LANGUAGE][0]["text"]}_{output_dict[OUTPUT_LANGUAGE][0]["id"]}': [
+                    line for line in object_a_distinct
+                ],
+                "similarities": [line for line in similar_features],
+                f'{output_dict[OUTPUT_LANGUAGE][1]["text"]}_{output_dict[OUTPUT_LANGUAGE][1]["id"]}': [
+                    line for line in object_b_distinct
+                ],
+            }
+
         with open(
-            (
-                self.experiment_path
-                / SITUATION_DIR_NAME.format(num=self.counter)
-                / f"{self.name}.yaml"
-            ),
+            (experiment_dir / f"{self.file_name if self.file_name else self.name}.yaml"),
             "w",
             encoding="utf-8",
         ) as decode:

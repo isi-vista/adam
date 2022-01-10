@@ -138,7 +138,10 @@ def test_subset_color_attribute(
         )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 # hack: wo de and ni de are currently considered to be one word. This won't work for third person possession
@@ -213,7 +216,10 @@ def test_subset_my_attribute_learner_integrated(language_mode, learner):
         )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
@@ -292,4 +298,7 @@ def test_your_attribute_learner(language_mode, learner):
         )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]

@@ -136,4 +136,7 @@ def test_pursuit_color_attribute(
         )
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]

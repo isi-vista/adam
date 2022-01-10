@@ -23,7 +23,6 @@ from networkx import DiGraph
 from adam.axes import GRAVITATIONAL_DOWN_TO_UP_AXIS, LEARNER_AXES, WORLD_AXES
 from adam.language import LinguisticDescription
 from adam.learner.alignments import (
-    LanguageConceptAlignment,
     LanguagePerceptionSemanticAlignment,
     PerceptionSemanticAlignment,
 )
@@ -45,7 +44,6 @@ from adam.perception import (
     ObjectPerception,
     MatchMode,
 )
-from adam.perception.deprecated import LanguageAlignedPerception
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
     HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
@@ -62,6 +60,11 @@ from adam.perception.perception_graph import (
     TemporallyScopedEdgeLabel,
     edge_equals_ignoring_temporal_scope,
     raise_graph_exception,
+)
+from adam.perception.perception_graph_nodes import (
+    ObjectClusterNode,
+    GraphNode,
+    StrokeGNNRecognitionNode,
 )
 from adam.semantics import (
     Concept,
@@ -243,16 +246,34 @@ class ObjectRecognizer:
             language_mode=language_mode,
         )
 
-    def match_objects_old(
-        self, perception_graph: PerceptionGraph
-    ) -> PerceptionGraphFromObjectRecognizer:
-        new_style_input = PerceptionSemanticAlignment(
-            perception_graph=perception_graph, semantic_nodes=[]
-        )
-        new_style_output = self.match_objects(new_style_input)
-        return PerceptionGraphFromObjectRecognizer(
-            perception_graph=new_style_output[0].perception_graph,
-            description_to_matched_object_node=new_style_output[1],
+    @staticmethod
+    def for_phase3_types(
+        ontology_types: Sequence[OntologyNode],
+        determiners: Sequence[str],
+        language_mode: LanguageMode,
+    ) -> "ObjectRecognizer":
+        ontology_types_to_concepts = {
+            obj_type: ObjectConcept(obj_type.handle) for obj_type in ontology_types
+        }
+
+        return ObjectRecognizer(
+            concepts_to_static_patterns=_sort_mapping_by_pattern_complexity(
+                immutabledict(
+                    (
+                        concept,
+                        PerceptionGraphPattern.phase3_pattern(
+                            obj_type,
+                        ),
+                    )
+                    for (obj_type, concept) in ontology_types_to_concepts.items()
+                )
+            ),
+            determiners=determiners,
+            concepts_to_names={
+                concept: obj_type.handle
+                for obj_type, concept in ontology_types_to_concepts.items()
+            },
+            language_mode=language_mode,
         )
 
     def match_objects(
@@ -295,7 +316,9 @@ class ObjectRecognizer:
         graph_to_return = perception_graph
         for node in graph_to_return._graph.nodes:  # pylint:disable=protected-access
             if node == GROUND_PERCEPTION:
-                matched_object_node = ObjectSemanticNode(GROUND_OBJECT_CONCEPT)
+                matched_object_node = ObjectSemanticNode(
+                    GROUND_OBJECT_CONCEPT, confidence=1.0
+                )
                 if LanguageMode.ENGLISH == self._language_mode:
                     object_nodes.append(
                         ((f"{GROUND_OBJECT_CONCEPT.debug_string}",), matched_object_node)
@@ -345,10 +368,16 @@ class ObjectRecognizer:
                     )
                 if pattern_match:
                     cumulative_millis_in_successful_matches_ms += t.elapsed
-                    matched_object_node = ObjectSemanticNode(concept)
+                    confidence = 1.0
+                    for graph_node in pattern_match.matched_sub_graph:
+                        if isinstance(graph_node, StrokeGNNRecognitionNode):
+                            confidence = graph_node.confidence
 
-                    # We wrap the concept in a tuple because it could in theory be multiple
-                    # tokens,
+                    matched_object_node = ObjectSemanticNode(
+                        concept, confidence=confidence
+                    )
+
+                    # We wrap the concept in a tuple because it could in theory be multiple tokens,
                     # even though currently it never is.
                     if self._language_mode == LanguageMode.ENGLISH:
                         object_nodes.append(
@@ -400,29 +429,6 @@ class ObjectRecognizer:
             immutabledict(object_nodes),
         )
 
-    def match_objects_with_language_old(
-        self, language_aligned_perception: LanguageAlignedPerception
-    ) -> LanguageAlignedPerception:
-        if language_aligned_perception.node_to_language_span:
-            raise RuntimeError(
-                "Don't know how to handle a non-empty node-to-language-span"
-            )
-        new_style_input = LanguagePerceptionSemanticAlignment(
-            language_concept_alignment=LanguageConceptAlignment(
-                language_aligned_perception.language, node_to_language_span=[]
-            ),
-            perception_semantic_alignment=PerceptionSemanticAlignment(
-                perception_graph=language_aligned_perception.perception_graph,
-                semantic_nodes=[],
-            ),
-        )
-        new_style_output = self.match_objects_with_language(new_style_input)
-        return LanguageAlignedPerception(
-            language=new_style_output.language_concept_alignment.language,
-            perception_graph=new_style_output.perception_semantic_alignment.perception_graph,
-            node_to_language_span=new_style_output.language_concept_alignment.node_to_language_span,
-        )
-
     def match_objects_with_language(
         self,
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
@@ -449,7 +455,7 @@ class ObjectRecognizer:
             language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
         ):
             raise RuntimeError(
-                "We assume ObjectRecognizer is run first, with no previous " "alignments"
+                "We assume ObjectRecognizer is run first, with no previous alignments"
             )
 
         (
@@ -560,7 +566,7 @@ def extract_candidate_objects(
     # We first identify root object nodes, which are object nodes with no part-of
     # relationship with other object nodes.
     def is_root_object_node(node) -> bool:
-        if isinstance(node, ObjectPerception):
+        if isinstance(node, (ObjectPerception, ObjectClusterNode)):
             for (_, _, edge_label) in scene_digraph.out_edges(node, data="label"):
                 if is_part_of_label(edge_label):
                     # This object node is part of another object and cannot be a root.
@@ -660,9 +666,11 @@ def _get_edge_label(
 
 def _get_root_object_perception(
     graph: DiGraph, matched_subgraph_nodes: AbstractSet[PerceptionGraphNode]
-) -> ObjectPerception:
+) -> Union[ObjectPerception, ObjectClusterNode]:
     matched_object_perceptions = immutableset(
-        node for node in matched_subgraph_nodes if isinstance(node, ObjectPerception)
+        node
+        for node in matched_subgraph_nodes
+        if isinstance(node, (ObjectPerception, ObjectClusterNode))
     )
     roots = [
         node
@@ -812,7 +820,13 @@ def replace_match_with_object_graph_node(
     # Multiple sub-objects of a matched object may link to the same property
     # (for example, to a color shared by all the parts).
     # In this case, we want the shared object node to link to this property only once.
-    external_properties: Set[Union[OntologyNode, ObjectSemanticNode]] = set()
+    external_properties: Set[
+        Union[
+            OntologyNode,
+            ObjectSemanticNode,
+            GraphNode,
+        ]
+    ] = set()
     duplicate_nodes_to_remove: List[PerceptionGraphNode] = []
 
     for matched_subgraph_node in matched_subgraph_nodes:
@@ -844,9 +858,14 @@ def replace_match_with_object_graph_node(
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
                     # Also prevent size relations from being inherited on root object.
-                    if matched_subgraph_node_successor[
-                        0
-                    ] in external_properties or matched_subgraph_node_successor[0] in {
+                    if isinstance(
+                        matched_subgraph_node_successor,
+                        (GraphNode, OntologyNode),
+                    ):
+                        property_value = matched_subgraph_node_successor
+                    else:
+                        property_value = matched_subgraph_node_successor[0]
+                    if property_value in external_properties or property_value in {
                         SMALLER_THAN,
                         BIGGER_THAN,
                         ABOUT_THE_SAME_SIZE_AS_LEARNER,
@@ -864,7 +883,7 @@ def replace_match_with_object_graph_node(
                         duplicate_nodes_to_remove.append(matched_subgraph_node_successor)
                         continue
                     else:
-                        external_properties.add(matched_subgraph_node_successor[0])
+                        external_properties.add(property_value)
 
                 perception_digraph.add_edge(
                     matched_object_node, matched_subgraph_node_successor, label=edge_label
@@ -886,7 +905,10 @@ def replace_match_with_object_graph_node(
                 if edge_equals_ignoring_temporal_scope(edge_label, HAS_PROPERTY_LABEL):
                     # Prevent multiple `has-property` assertions to the same color node
                     # On a recognized object
-                    if isinstance(matched_subgraph_node_predecessor, ObjectSemanticNode):
+                    if isinstance(
+                        matched_subgraph_node_predecessor,
+                        (ObjectSemanticNode, ObjectClusterNode),
+                    ):
                         prop = matched_subgraph_node_predecessor
                     else:
                         prop = matched_subgraph_node_predecessor[0]

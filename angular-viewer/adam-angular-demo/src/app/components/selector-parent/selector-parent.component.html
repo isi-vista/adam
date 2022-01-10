@@ -70,7 +70,9 @@
 <div class="row" style="margin: 0 0 0 20px">
   <app-image-output
     class="col-3"
-    [imgSrc]="targetImgURLs"
+    [scene_images]="targetImgURLs"
+    [stroke_images]="targetStrokeImages"
+    [stroke_graph_images]="targetStrokeGraphImages"
     *ngIf="submitted"
     style="margin: 20px 0 0 0"
   ></app-image-output>

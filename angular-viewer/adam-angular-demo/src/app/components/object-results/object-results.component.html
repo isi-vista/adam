@@ -1,9 +1,11 @@
 <div *ngIf="isObject" class="result-wrapper">
   <div *ngFor="let res of resultArray">
-    {{ res.text }} ({{ res.confidence }})
-    <div *ngFor="let feat of res.features">
-      &nbsp;&nbsp;&nbsp;* {{ feat.name }}
-    </div>
+    "{{ res.text }}" (Confidence: {{ res.confidence }}) [ID: {{ res.id }}]
+    <ul class="feature-list">
+      <li *ngFor="let feat of res.features">
+        {{ feat.name }}
+      </li>
+    </ul>
     <div *ngIf="res.subObject?.length > 0">
       <div *ngFor="let obj of res.subObject">
         &nbsp;&nbsp;&nbsp;{{ obj.text }} ({{ obj.confidence }})

@@ -32,6 +32,7 @@ export class ObjectResultsComponent implements OnChanges {
       tempMain.confidence = entry.confidence;
       tempMain.features = new Array<Features>();
       tempMain.subObject = new Array<SubObject>();
+      tempMain.id = entry.id;
       entry.features.forEach((element) => {
         const feat = new Features();
         feat.name = element;

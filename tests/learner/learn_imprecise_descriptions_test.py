@@ -91,44 +91,21 @@ def run_imprecise_test(learner, situation_template, language_generator):
         descriptions_from_learner = learner.describe(test_perceptual_representation)
         gold = test_lingustics_description.as_token_sequence()
         assert descriptions_from_learner
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("learner", [integrated_learner_factory])
 @pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-def test_tall(learner, language):
+@pytest.mark.parametrize(
+    "curriculum",
+    [_tall_x_template, _short_x_template, _little_x_template, _big_x_template],
+)
+def test_imprecise_descriptions(learner, language, curriculum):
     run_imprecise_test(
         learner(language),
-        _tall_x_template(background=[]),
-        language_generator=phase1_language_generator(language),
-    )
-
-
-@pytest.mark.parametrize("learner", [integrated_learner_factory])
-@pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-def test_short(learner, language):
-    run_imprecise_test(
-        learner(language),
-        _short_x_template(background=[]),
-        language_generator=phase1_language_generator(language),
-    )
-
-
-@pytest.mark.parametrize("learner", [integrated_learner_factory])
-@pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-def test_small(learner, language):
-    run_imprecise_test(
-        learner(language),
-        _little_x_template(background=[]),
-        language_generator=phase1_language_generator(language),
-    )
-
-
-@pytest.mark.parametrize("learner", [integrated_learner_factory])
-@pytest.mark.parametrize("language", [LanguageMode.ENGLISH, LanguageMode.CHINESE])
-def test_big(learner, language):
-    run_imprecise_test(
-        learner(language),
-        _big_x_template(background=[]),
+        curriculum(background=[]),
         language_generator=phase1_language_generator(language),
     )

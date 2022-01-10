@@ -39,6 +39,8 @@ export interface SceneResponse {
   test_curriculum: string;
   scene_number: string;
   scene_images: string[];
+  object_strokes: string[];
+  stroke_graph: string[];
   post_learning: DecodeResponse;
   pre_learning: DecodeResponse;
   message?: string;
@@ -66,6 +68,8 @@ export class SelectorParentComponent implements OnInit {
   outputObject = {};
   differencesObject = {};
   targetImgURLs: string[];
+  targetStrokeImages: string[];
+  targetStrokeGraphImages: string[];
 
   ngForm = FormGroup;
 
@@ -140,6 +144,8 @@ export class SelectorParentComponent implements OnInit {
           scene_num: data.post_learning.scene_num,
         };
         this.targetImgURLs = data.scene_images;
+        this.targetStrokeImages = data.object_strokes;
+        this.targetStrokeGraphImages = data.stroke_graph;
         this.differencesObject = data.post_learning.differences_panel;
 
         return 0;

@@ -90,7 +90,10 @@ def run_plural_test(learner, language_generator, language_mode):
         # Skip "two" in Chinese for now - there are too many counting classifiers that make it hard to learn
         if language_mode == LanguageMode.CHINESE and "lyang3" in gold:
             continue
-        assert gold in [desc.as_token_sequence() for desc in descriptions_from_learner]
+        assert gold in [
+            desc.as_token_sequence()
+            for desc in descriptions_from_learner.description_to_confidence
+        ]
 
 
 @pytest.mark.parametrize("language_mode", [LanguageMode.ENGLISH, LanguageMode.CHINESE])

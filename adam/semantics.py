@@ -77,11 +77,13 @@ GROUND_OBJECT_CONCEPT = ObjectConcept("ground")
 class SemanticNode(Protocol):
     concept: Concept
     slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"]
+    confidence: float
 
     @staticmethod
     def for_concepts_and_arguments(
         concept: Concept,
         slots_to_fillers: Mapping[SyntaxSemanticsVariable, "ObjectSemanticNode"],
+        confidence: float,
     ):
         if isinstance(concept, ObjectConcept):
             if slots_to_fillers:
@@ -89,13 +91,13 @@ class SemanticNode(Protocol):
                     f"Objects should not have arguments, but got concept "
                     f"{concept} with arguments {slots_to_fillers}"
                 )
-            return ObjectSemanticNode(concept)
+            return ObjectSemanticNode(concept, confidence=confidence)
         elif isinstance(concept, AttributeConcept):
-            return AttributeSemanticNode(concept, slots_to_fillers)
+            return AttributeSemanticNode(concept, slots_to_fillers, confidence=confidence)
         elif isinstance(concept, RelationConcept):
-            return RelationSemanticNode(concept, slots_to_fillers)
+            return RelationSemanticNode(concept, slots_to_fillers, confidence=confidence)
         elif isinstance(concept, ActionConcept):
-            return ActionSemanticNode(concept, slots_to_fillers)
+            return ActionSemanticNode(concept, slots_to_fillers, confidence=confidence)
         else:
             raise RuntimeError(
                 f"Don't know how to make a semantic node from concept " f"{concept}"
@@ -108,6 +110,7 @@ class ObjectSemanticNode(SemanticNode):
     slot_fillings: ImmutableDict[SyntaxSemanticsVariable, "ObjectSemanticNode"] = attrib(
         init=False, default=immutabledict()
     )
+    confidence: float = attrib(validator=instance_of(float))
 
     # def __attrs_post_init__(self) -> None:
     #     for template in self.templates:
@@ -123,6 +126,7 @@ class AttributeSemanticNode(SemanticNode):
             instance_of(SyntaxSemanticsVariable), instance_of(ObjectSemanticNode)
         ),
     )
+    confidence: float = attrib(validator=instance_of(float))
 
     # def __attrs_post_init__(self) -> None:
     #     for template in self.templates:
@@ -138,6 +142,7 @@ class RelationSemanticNode(SemanticNode):
             instance_of(SyntaxSemanticsVariable), instance_of(ObjectSemanticNode)
         ),
     )
+    confidence: float = attrib(validator=instance_of(float))
 
     # def __attrs_post_init__(self) -> None:
     #     for template in self.templates:
@@ -153,6 +158,7 @@ class ActionSemanticNode(SemanticNode):
             instance_of(SyntaxSemanticsVariable), instance_of(ObjectSemanticNode)
         ),
     )
+    confidence: float = attrib(validator=instance_of(float))
 
     # def __attrs_post_init__(self) -> None:
     #     for template in self.templates:
