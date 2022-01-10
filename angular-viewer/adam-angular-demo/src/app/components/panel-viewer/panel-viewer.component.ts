@@ -25,6 +25,7 @@ export class PanelViewerComponent implements OnChanges {
       tempObject = cur;
     }
 
+    this.objectsArray = [];
     for (const key in tempObject) {
       if (key === 'similarities') {
         continue;

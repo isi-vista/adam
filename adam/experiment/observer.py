@@ -807,18 +807,20 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
                 shutil.copy(file_path, experiment_dir)
 
         for (
-            semantic_node,
-            linguistic_description,
-        ) in predicted_scene_description.semantics_to_descriptions.items():
+            idx,
+            semantic_to_description,
+        ) in enumerate(predicted_scene_description.semantics_to_descriptions.items()):
+            semantic_node, linguistic_description = semantic_to_description
             output_dict[OUTPUT_LANGUAGE].append(
                 {
+                    "id": idx,
                     "text": linguistic_description.as_token_string(),
-                    "confidence": predicted_scene_description.description_to_confidence[
-                        linguistic_description
-                    ],
-                    "features": predicted_scene_description.semantics_to_feature_strs[
-                        semantic_node
-                    ],
+                    "confidence": f"{predicted_scene_description.description_to_confidence[linguistic_description]:.2f}",
+                    "features": sorted(
+                        predicted_scene_description.semantics_to_feature_strs[
+                            semantic_node
+                        ]
+                    ),
                     "sub-objects": [],
                 }
             )
@@ -827,15 +829,15 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
         if len(output_dict[OUTPUT_LANGUAGE]) == 2:
             object_a_features = set(output_dict[OUTPUT_LANGUAGE][0]["features"])
             object_b_features = set(output_dict[OUTPUT_LANGUAGE][1]["features"])
-            similar_features = object_b_features.intersection(object_a_features)
-            object_a_distinct = object_a_features.difference(object_b_features)
-            object_b_distinct = object_b_features.difference(object_a_features)
+            similar_features = sorted(object_b_features.intersection(object_a_features))
+            object_a_distinct = sorted(object_a_features.difference(object_b_features))
+            object_b_distinct = sorted(object_b_features.difference(object_a_features))
             output_dict["differences_panel"] = {
-                output_dict[OUTPUT_LANGUAGE][0]["text"]: [
+                f'{output_dict[OUTPUT_LANGUAGE][0]["text"]}_{output_dict[OUTPUT_LANGUAGE][0]["id"]}': [
                     line for line in object_a_distinct
                 ],
                 "similarities": [line for line in similar_features],
-                output_dict[OUTPUT_LANGUAGE][1]["text"]: [
+                f'{output_dict[OUTPUT_LANGUAGE][1]["text"]}_{output_dict[OUTPUT_LANGUAGE][1]["id"]}': [
                     line for line in object_b_distinct
                 ],
             }
