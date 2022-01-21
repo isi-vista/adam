@@ -3,12 +3,12 @@
     "{{ res.text }}" (Confidence: {{ res.confidence }}) [ID: {{ res.id }}]
     <ul class="feature-list">
       <li *ngFor="let feat of res.features">
-        
-        <div *ngIf="feat.isColor; then colorFeat else regFeat"></div>
-        <ng-template  #regFeat>{{ feat.name }} </ng-template >
-        <ng-template  #colorFeat>  {{ feat.name }} 
-          <span style="color: {{ feat.name }}; font-size: 20px;">  ██</span> 
-         </ng-template >
+        <div *ngIf="feat.isColor; then colorFeat; else regFeat"></div>
+        <ng-template #regFeat>{{ feat.name }} </ng-template>
+        <ng-template #colorFeat>
+          {{ feat.name }}
+          <span style="color: {{ feat.name }}; font-size: 20px;"> ██</span>
+        </ng-template>
       </li>
     </ul>
     <div *ngIf="res.subObject?.length > 0">

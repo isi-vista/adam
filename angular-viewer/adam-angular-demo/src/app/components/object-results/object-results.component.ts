@@ -27,7 +27,6 @@ export class ObjectResultsComponent implements OnChanges {
     this.resultArray = [];
 
     for (const entry of tempObject.main) {
-      //regex for color code
       const re = /#[0-9a-fA-F]{6}/;
       const tempMain = new MainObject();
       tempMain.text = entry.text;
