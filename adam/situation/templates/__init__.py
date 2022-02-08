@@ -7,7 +7,7 @@ Note that we provide convenience functions like `random_situation_templates` and
 """
 import sys
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, List, Sequence, Tuple, TypeVar
+from typing import Generic, Iterable, List, Sequence, Tuple, TypeVar, Optional
 
 from adam.ontology.phase1_ontology import GAILA_PHASE_1_ONTOLOGY
 from attr import Factory, attrib, attrs
@@ -54,7 +54,10 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT, SituationT]):
         self,
         template: _SituationTemplateT,
         *,
+        num_instantiations: int = 1,
         chooser: SequenceChooser = Factory(RandomChooser.for_seed),
+        include_ground: bool = True,
+        default_addressee_node: Optional[OntologyNode] = None,
     ) -> Iterable[SituationT]:
         r"""
         Generates one or more `Situation`\ s from a `SituationTemplate`\ .
@@ -63,9 +66,11 @@ class SituationTemplateProcessor(ABC, Generic[_SituationTemplateT, SituationT]):
         an identically initialized and deterministic `SequenceChooser` being supplied.
 
         Args:
-            template: the template to instantiate
-            num_instantiations: the number of instantiations requested
+            template: the template to instantiate.
+            default_addressee_node: The ontology node to use as the default addressee in the scene.
+            num_instantiations: the number of instantiations requested.
             chooser: the means of making any random selections the generator may need.
+            include_ground: If true, include the ground in the scene.
 
         Returns:
             A set of instantiated `Situation`\ s with size at most *num_instantiations*.
@@ -185,6 +190,10 @@ class SimpleSituationTemplateProcessor(
         *,
         num_instantiations: int = 1,
         chooser: SequenceChooser = Factory(RandomChooser.for_seed),
+        include_ground: bool = True,  # pylint: disable=unused-argument
+        default_addressee_node: Optional[  # pylint: disable=unused-argument
+            OntologyNode
+        ] = None,
     ) -> ImmutableSet[LocatedObjectSituation]:
         assert num_instantiations >= 1
 
