@@ -1,7 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { Features } from '../../classes/features';
-import { MainObject } from '../../classes/main-object';
-import { SubObject } from '../../classes/sub-object';
+import { LinguisticOutput } from '../../classes/linguistic-output';
 
 @Component({
   selector: 'app-object-results',
@@ -11,10 +10,39 @@ import { SubObject } from '../../classes/sub-object';
 export class ObjectResultsComponent implements OnChanges {
   @Input() outputObject;
 
-  resultArray: Array<MainObject> = [];
+  resultArray: Array<LinguisticOutput> = [];
   isObject = false;
 
   constructor() {}
+
+  private makeLinguisticObject(entry): LinguisticOutput {
+    const is_color_re = /#[0-9a-fA-F]{6}/;
+    const features: Features[] = [];
+    entry.features.forEach((element) => {
+      const feat = {
+        name: element,
+        isColor: is_color_re.test(element),
+      };
+      features.push(feat);
+    });
+
+    const sub_objects: LinguisticOutput[] = [];
+
+    if (entry.sub_objects) {
+      entry.sub_objects.forEach((element) => {
+        sub_objects.push(this.makeLinguisticObject(element));
+      });
+    }
+
+    return {
+      id: entry.id,
+      text: entry.text,
+      confidence: entry.confidence,
+      type: entry.type,
+      features: features,
+      sub_objects: sub_objects,
+    };
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     let tempObject;
@@ -27,35 +55,7 @@ export class ObjectResultsComponent implements OnChanges {
     this.resultArray = [];
 
     for (const entry of tempObject.main) {
-      const re = /#[0-9a-fA-F]{6}/;
-      const tempMain = new MainObject();
-      tempMain.text = entry.text;
-      tempMain.confidence = entry.confidence;
-      tempMain.features = new Array<Features>();
-      tempMain.subObject = new Array<SubObject>();
-      tempMain.id = entry.id;
-      entry.features.forEach((element) => {
-        const feat = new Features();
-        feat.name = element;
-        feat.isColor = re.test(feat.name);
-        tempMain.features.push(feat);
-      });
-      if (entry.sub_objects) {
-        entry.sub_objects.forEach((element) => {
-          const subobject = new SubObject();
-          subobject.confidence = element.confidence;
-          subobject.text = element.text;
-          subobject.features = new Array<Features>();
-          element.features.forEach((feature) => {
-            const feat = new Features();
-            feat.name = feature;
-            feat.isColor = re.test(feat.name);
-            subobject.features.push(feat);
-          });
-          tempMain.subObject.push(subobject);
-        });
-      }
-      this.resultArray.push(tempMain);
+      this.resultArray.push(this.makeLinguisticObject(entry));
     }
 
     this.isObject = true;

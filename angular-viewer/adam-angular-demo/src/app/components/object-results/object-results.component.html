@@ -11,13 +11,20 @@
         </ng-template>
       </li>
     </ul>
-    <div *ngIf="res.subObject?.length > 0">
-      <div *ngFor="let obj of res.subObject">
-        &nbsp;&nbsp;&nbsp;{{ obj.text }} ({{ obj.confidence }})
-        <div *ngFor="let f of obj.features">
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* {{ f.name }}
-        </div>
-      </div>
-    </div>
+    <ul *ngIf="res.subObject?.length > 0">
+      <li *ngFor="let obj of res.subObject">
+        "{{ obj.text }}" (Confidence: {{ obj.confidence }}) [ID: {{ obj.id }}]
+        <ul class="feature-list">
+          <li *ngFor="let feat of obj.features">
+            <div *ngIf="feat.isColor; then colorFeat; else regFeat"></div>
+            <ng-template #regFeat>{{ feat.name }} </ng-template>
+            <ng-template #colorFeat>
+              {{ feat.name }}
+              <span style="color: {{ feat.name }}; font-size: 20px;"> ██</span>
+            </ng-template>
+          </li>
+        </ul>
+      </li>
+    </ul>
   </div>
 </div>
