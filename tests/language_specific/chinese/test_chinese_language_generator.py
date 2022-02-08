@@ -2202,94 +2202,79 @@ def test_in_region_as_goal():
 def test_beside_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     # Beside
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=True,
-                        relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            ),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_ge4", "syang1 dz", "pang2 byan1")
-    )
+    ) == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_ge4", "syang1 dz", "pang2 byan1")
 
 
 # this tests going behind a region
 def test_behind_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     # Behind
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_ge4", "syang1 dz", "hou4 myan4")
-    )
+    ) == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_ge4", "syang1 dz", "hou4 myan4")
 
 
 # this tests going in front of a region
 def test_in_front_of_region_as_goal():
     # In front of
     goal_object = situation_object(BOX, properties=[HOLLOW])
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_ge4", "syang1 dz", "chyan2 myan4")
-    )
+    ) == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_ge4", "syang1 dz", "chyan2 myan4")
 
 
 # this tests going over a region
 def test_over_region_as_goal():
     goal_object = situation_object(TABLE)
     # Over
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
-                goal_object,
-            )
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_jang1", "jwo1 dz", "shang4 myan4")
-    )
+    ) == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_jang1", "jwo1 dz", "shang4 myan4")
 
 
 # this tests going under a region
 def test_under_region_as_goal():
     goal_object = situation_object(TABLE)
     # Over
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
-                goal_object,
-            )
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_jang1", "jwo1 dz", "sya4 myan4")
-    )
+    ) == ("yi1_jr1", "gou3", "chyu4", "dau4", "yi1_jang1", "jwo1 dz", "sya4 myan4")
 
 
 """COME WITH GOAL-- CHECKED BY NATIVE SPEAKER"""
@@ -2315,94 +2300,79 @@ def test_in_region_as_goal_come():
 def test_beside_region_as_goal_come():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     # Beside
-    assert (
-        generated_tokens(
-            region_as_goal_situation_come(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=True,
-                        relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            ),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_ge4", "syang1 dz", "pang2 byan1")
-    )
+    ) == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_ge4", "syang1 dz", "pang2 byan1")
 
 
 # this tests going behind a region
 def test_behind_region_as_goal_come():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     # Behind
-    assert (
-        generated_tokens(
-            region_as_goal_situation_come(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_ge4", "syang1 dz", "hou4 myan4")
-    )
+    ) == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_ge4", "syang1 dz", "hou4 myan4")
 
 
 # this tests going in front of a region
 def test_in_front_of_region_as_goal_come():
     # In front of
     goal_object = situation_object(BOX, properties=[HOLLOW])
-    assert (
-        generated_tokens(
-            region_as_goal_situation_come(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_ge4", "syang1 dz", "chyan2 myan4")
-    )
+    ) == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_ge4", "syang1 dz", "chyan2 myan4")
 
 
 # this tests going over a region
 def test_over_region_as_goal_come():
     goal_object = situation_object(TABLE)
     # Over
-    assert (
-        generated_tokens(
-            region_as_goal_situation_come(
-                Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
-                goal_object,
-            )
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_jang1", "jwo1 dz", "shang4 myan4")
-    )
+    ) == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_jang1", "jwo1 dz", "shang4 myan4")
 
 
 # this tests going under a region
 def test_under_region_as_goal_come():
     goal_object = situation_object(TABLE)
     # Over
-    assert (
-        generated_tokens(
-            region_as_goal_situation_come(
-                Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
-                goal_object,
-            )
+    assert generated_tokens(
+        region_as_goal_situation_come(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
+            goal_object,
         )
-        == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_jang1", "jwo1 dz", "sya4 myan4")
-    )
+    ) == ("yi1_jr1", "gou3", "lai2", "dau4", "yi1_jang1", "jwo1 dz", "sya4 myan4")
 
 
 """MISC TESTS REPLICATED FROM ENGLISH TESTING FILE -- CHECKED BY NATIVE SPEAKER"""
