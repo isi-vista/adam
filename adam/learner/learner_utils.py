@@ -65,7 +65,6 @@ from adam.semantics import (
     SemanticNode,
     SyntaxSemanticsVariable,
 )
-from adam.utils import networkx_utils
 
 
 def get_classifier_for_string(input_string: str) -> Optional[str]:
@@ -747,8 +746,8 @@ def get_objects_from_perception(
                 if not isinstance(neighbor, ObjectPerception):
                     other_nodes.append(neighbor)
 
-        generated_subgraph = networkx_utils.subgraph(
-            perception_as_digraph, all_object_perception_nodes + other_nodes
+        generated_subgraph = perception_as_digraph.subgraph(
+            all_object_perception_nodes + other_nodes
         )
         meanings.append(PerceptionGraph(generated_subgraph))
 

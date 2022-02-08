@@ -1280,7 +1280,7 @@ class PatternMatching:
         # and pattern-pattern matches.
         # It can be made a PerceptionGraph or PerceptionGraphPattern pending
         # https://github.com/isi-vista/adam/issues/489
-        largest_match_graph_subgraph: DiGraph = attrib()
+        largest_match_graph_subgraph: DiGraph = attrib(validator=instance_of(DiGraph))
 
         def __attrs_post_init__(self) -> None:
             if (
@@ -1313,17 +1313,13 @@ class PatternMatching:
             return PerceptionGraphPattern(
                 self.pattern._graph.subgraph(  # pylint:disable=protected-access
                     self.pattern_node_to_graph_node_for_largest_match.keys()
-                ),
+                )
             )
 
         @largest_match_graph_subgraph.default  # noqa: F821
         def _matched_graph_subgraph_default(self) -> DiGraph:
-            return (
-                self.graph._graph.subgraph(  # pylint:disable=protected-access
-                    immutableset(
-                        self.pattern_node_to_graph_node_for_largest_match.values()
-                    )
-                ),
+            return self.graph._graph.subgraph(  # pylint:disable=protected-access
+                immutableset(self.pattern_node_to_graph_node_for_largest_match.values())
             )
 
     def matches(

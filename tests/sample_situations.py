@@ -6,7 +6,7 @@ from adam.ontology.phase1_spatial_relations import DISTAL, Direction, Region
 from adam.relation import Relation
 from adam.situation import Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam_test_utils import situation_object
+from tests.adam_test_utils import situation_object
 
 
 def make_bird_flies_over_a_house():

@@ -117,9 +117,7 @@ from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation, flatten_relations
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam_test_utils import situation_object
-from tests.sample_situations import make_bird_flies_over_a_house
-from tests.situation.situation_test import make_mom_put_ball_on_table
+from tests.adam_test_utils import situation_object
 
 _SIMPLE_GENERATOR = SimpleRuleBasedChineseLanguageGenerator(
     ontology_lexicon=GAILA_PHASE_1_CHINESE_LEXICON
@@ -2268,7 +2266,7 @@ def test_over_region_as_goal():
 # this tests going under a region
 def test_under_region_as_goal():
     goal_object = situation_object(TABLE)
-    # Over
+    # Under
     assert generated_tokens(
         region_as_goal_situation(
             Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),

@@ -21,7 +21,7 @@ You can check out our papers to read more about the system and to cite our work:
 
 # Project Setup
 
-1. Create a Python 3.6 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam python=3.6` followed by `conda activate adam`.
+1. Create a Python 3.7 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam python=3.7` followed by `conda activate adam`.
 2. `pip install -r requirements.txt`
 3. Make a file under `parameters` called `root.params` which contains:
 
@@ -36,8 +36,8 @@ You can check out our papers to read more about the system and to cite our work:
 ## Using PyPy
 
 1. Complete the project setup as above.
-2. Install PyPy 3.6: `conda install -c conda-forge pypy3.6`.
-3. To run tests using PyPy3.6: `make test`.
+2. Install PyPy 3.7: `conda install -c conda-forge pypy3.7`.
+3. To run tests using PyPy3.7: `make test`.
 
 # Documentation
 
@@ -104,6 +104,7 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 
 # Contributors
 
+- Gayatri Atale
 - Deniz Beser
 - Joe Cecil
 - Marjorie Freedman
@@ -114,6 +115,7 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 - Jacob Lichtefeld
 - Mitch Marcus
 - Justin Martin
+- Grace McClurg
 - Sarah Payne
 - Ralph Weischedel
 - Charles Yang
@@ -123,6 +125,7 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 Deniz Beser (`beser@isi.edu`)
 Joe Cecil (`jcecil@isi.edu`)
 Ryan Gabbard (`ryan.gabbard@gmail.com`)
+Jacob Lichtefeld (`jacobl@isi.edu`)
 
 # Suggested Reading
 

@@ -14,7 +14,7 @@ from adam.math_3d import Point
 from adam.ontology.phase1_ontology import BALL
 from adam.random_utils import FixedIndexChooser, RandomChooser, SequenceChooser
 from adam.situation import LocatedObjectSituation, Situation
-from adam_test_utils import situation_object
+from tests.adam_test_utils import situation_object
 
 
 def test_single_object_generator():

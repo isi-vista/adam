@@ -143,10 +143,8 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner):
         new_nodes = []
         perception_graph_after_processing = perception_graph_after_matching
         for object_root_node in object_root_nodes:
-            fake_subgraph = (
-                perception_graph_after_matching._graph.subgraph(  # pylint:disable=protected-access
-                    [object_root_node]
-                ),
+            fake_subgraph = perception_graph_after_matching._graph.subgraph(  # pylint:disable=protected-access
+                [object_root_node]
             )
             fake_perception_graph = PerceptionGraph(
                 graph=fake_subgraph, dynamic=perception_graph_after_matching.dynamic
