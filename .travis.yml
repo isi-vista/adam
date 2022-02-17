@@ -5,7 +5,7 @@ jobs:
           python: "3.7"
           stage: test
           install:
-            - pip install --upgrade "pip<20.3" setuptools wheel
+            - pip install setuptools wheel
             - pip install -r requirements_lock.txt
           script:
               - echo "python version $(python --version) running"
