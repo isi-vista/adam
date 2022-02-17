@@ -392,12 +392,14 @@ class _Phase1SituationTemplateGenerator(
         self,
         template: Phase1SituationTemplate,
         *,
-        chooser: SequenceChooser = Factory(
-            RandomChooser.for_seed
-        ),  # pylint:disable=unused-argument
-        default_addressee_node: OntologyNode = LEARNER,
+        num_instantiations: int = 1,  # pylint: disable=unused-argument
+        chooser: SequenceChooser = Factory(RandomChooser.for_seed),
+        include_ground: bool = True,  # pylint: disable=unused-argument
+        default_addressee_node: Optional[OntologyNode] = LEARNER,
     ) -> Iterable[HighLevelSemanticsSituation]:
         check_arg(isinstance(template, Phase1SituationTemplate))
+        if default_addressee_node is None:
+            default_addressee_node = LEARNER
         try:
             # gather property variables from object variables
             property_variables = immutableset(

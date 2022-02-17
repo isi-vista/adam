@@ -185,7 +185,7 @@ class HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator(
     def _gaze_strategy_default(self) -> GazePerceptionStrategy:
         return GazePerceivedPerfectly()
 
-    def generate_perception(
+    def generate_perception(  # pylint: disable=arguments-differ
         self,
         situation: HighLevelSemanticsSituation,
         chooser: SequenceChooser,

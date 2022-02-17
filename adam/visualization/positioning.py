@@ -408,22 +408,19 @@ class AxisAlignedBoundingBox:
         )
 
     def get_corners(self) -> torch.Tensor:
-        return (
-            self.center.expand(8, 3)
-            + torch.tensor(  # pylint: disable=not-callable
-                [
-                    [-1, -1, -1],
-                    [1, -1, -1],
-                    [-1, 1, -1],
-                    [1, 1, -1],
-                    [-1, -1, 1],
-                    [1, -1, 1],
-                    [-1, 1, 1],
-                    [1, 1, 1],
-                ],
-                dtype=torch.float,
-            ).matmul(self.scale)
-        )
+        return self.center.expand(8, 3) + torch.tensor(  # pylint: disable=not-callable
+            [
+                [-1, -1, -1],
+                [1, -1, -1],
+                [-1, 1, -1],
+                [1, 1, -1],
+                [-1, -1, 1],
+                [1, -1, 1],
+                [-1, 1, 1],
+                [1, 1, 1],
+            ],
+            dtype=torch.float,
+        ).matmul(self.scale)
         # see https://github.com/pytorch/pytorch/issues/24807 re: pylint issue
 
     def get_face_centers(self) -> torch.Tensor:

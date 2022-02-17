@@ -95,7 +95,7 @@ from adam.random_utils import FixedIndexChooser
 from adam.relation import Relation, flatten_relations
 from adam.situation import Action, SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam_test_utils import situation_object
+from tests.adam_test_utils import situation_object
 from tests.sample_situations import make_bird_flies_over_a_house
 from tests.situation.situation_test import make_mom_put_ball_on_table
 
@@ -1148,108 +1148,90 @@ def test_in_region_as_goal():
 def test_beside_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     # Beside
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=True,
-                        relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            ),
+            goal_object,
         )
-        == ("a", "dog", "goes", "beside", "a", "box")
-    )
+    ) == ("a", "dog", "goes", "beside", "a", "box")
 
     # Beside
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=False,
-                        relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False,
+                    relative_to_axis=HorizontalAxisOfObject(goal_object, index=0),
+                ),
+            ),
+            goal_object,
         )
-        == ("a", "dog", "goes", "beside", "a", "box")
-    )
+    ) == ("a", "dog", "goes", "beside", "a", "box")
 
 
 def test_behind_region_as_goal():
     goal_object = situation_object(BOX, properties=[HOLLOW])
     # Behind
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=False, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
         )
-        == ("a", "dog", "goes", "behind", "a", "box")
-    )
+    ) == ("a", "dog", "goes", "behind", "a", "box")
 
 
 def test_in_front_of_region_as_goal():
     # In front of
     goal_object = situation_object(BOX, properties=[HOLLOW])
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(
-                    goal_object,
-                    distance=PROXIMAL,
-                    direction=Direction(
-                        positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
-                    ),
-                ),
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(
                 goal_object,
-            )
+                distance=PROXIMAL,
+                direction=Direction(
+                    positive=True, relative_to_axis=FacingAddresseeAxis(goal_object)
+                ),
+            ),
+            goal_object,
         )
-        == ("a", "dog", "goes", "in front of", "a", "box")
-    )
+    ) == ("a", "dog", "goes", "in front of", "a", "box")
 
 
 def test_over_region_as_goal():
     goal_object = situation_object(TABLE)
     # Over
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
-                goal_object,
-            )
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_UP),
+            goal_object,
         )
-        == ("a", "dog", "goes", "over", "a", "table")
-    )
+    ) == ("a", "dog", "goes", "over", "a", "table")
 
 
 def test_under_region_as_goal():
     goal_object = situation_object(TABLE)
-    # Over
-    assert (
-        generated_tokens(
-            region_as_goal_situation(
-                Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
-                goal_object,
-            )
+    # Under
+    assert generated_tokens(
+        region_as_goal_situation(
+            Region(goal_object, distance=PROXIMAL, direction=GRAVITATIONAL_DOWN),
+            goal_object,
         )
-        == ("a", "dog", "goes", "under", "a", "table")
-    )
+    ) == ("a", "dog", "goes", "under", "a", "table")
 
 
 def test_region_with_out_addressee():

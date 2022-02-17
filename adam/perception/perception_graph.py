@@ -116,7 +116,7 @@ from adam.semantics import ObjectSemanticNode, SemanticNode
 from adam.situation import SituationObject
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.utilities import sign
-from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by, subgraph
+from adam.utils.networkx_utils import copy_digraph, digraph_with_nodes_sorted_by
 from attr import attrib, attrs
 from attr.validators import deep_iterable, instance_of
 from immutablecollections import (
@@ -451,7 +451,7 @@ class PerceptionGraph(PerceptionGraphProtocol, Sized, Iterable[PerceptionGraphNo
     def subgraph_by_nodes(
         self, nodes_to_keep: AbstractSet[PerceptionGraphNode]
     ) -> "PerceptionGraph":
-        return PerceptionGraph(subgraph(self._graph, nodes_to_keep), dynamic=self.dynamic)
+        return PerceptionGraph(self._graph.subgraph(nodes_to_keep), dynamic=self.dynamic)
 
     def count_nodes_matching(
         self, node_predicate: Callable[["PerceptionGraphNode"], bool]
@@ -1280,7 +1280,7 @@ class PatternMatching:
         # and pattern-pattern matches.
         # It can be made a PerceptionGraph or PerceptionGraphPattern pending
         # https://github.com/isi-vista/adam/issues/489
-        largest_match_graph_subgraph: DiGraph = attrib()
+        largest_match_graph_subgraph: DiGraph = attrib(validator=instance_of(DiGraph))
 
         def __attrs_post_init__(self) -> None:
             if (
@@ -1311,17 +1311,15 @@ class PatternMatching:
         @largest_match_pattern_subgraph.default  # noqa: F821
         def _matched_pattern_subgraph_default(self) -> DiGraph:
             return PerceptionGraphPattern(
-                subgraph(
-                    self.pattern._graph,  # pylint:disable=protected-access
-                    self.pattern_node_to_graph_node_for_largest_match.keys(),
+                self.pattern._graph.subgraph(  # pylint:disable=protected-access
+                    self.pattern_node_to_graph_node_for_largest_match.keys()
                 )
             )
 
         @largest_match_graph_subgraph.default  # noqa: F821
         def _matched_graph_subgraph_default(self) -> DiGraph:
-            return subgraph(
-                self.graph._graph,  # pylint:disable=protected-access
-                immutableset(self.pattern_node_to_graph_node_for_largest_match.values()),
+            return self.graph._graph.subgraph(  # pylint:disable=protected-access
+                immutableset(self.pattern_node_to_graph_node_for_largest_match.values())
             )
 
     def matches(
@@ -1549,8 +1547,8 @@ class PatternMatching:
                 ):
                     got_a_match = True
 
-                    matched_subgraph_digraph = subgraph(
-                        matching.graph, graph_node_to_matching_pattern_node.keys()
+                    matched_subgraph_digraph = matching.graph.subgraph(
+                        graph_node_to_matching_pattern_node.keys()
                     ).copy()
                     matched_subgraph_dynamic = graph_to_match_against.dynamic
 

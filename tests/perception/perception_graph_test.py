@@ -64,7 +64,7 @@ from adam.situation.templates.phase1_templates import (
     color_variable,
     object_variable,
 )
-from adam_test_utils import all_possible_test
+from tests.adam_test_utils import all_possible_test
 from immutablecollections import immutableset, immutablesetmultidict
 
 from tests.perception import ONE_OBJECT_TEST_SCENE_YAML

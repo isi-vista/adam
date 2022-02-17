@@ -20,7 +20,7 @@ from adam.ontology.phase1_spatial_relations import (
 )
 from adam.situation import Action
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
-from adam_test_utils import situation_object
+from tests.adam_test_utils import situation_object
 
 
 def test_mom_put_ball_on_the_table():

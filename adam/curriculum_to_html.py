@@ -184,7 +184,7 @@ def main(params: Parameters) -> None:
             num_samples,
             num_noise_objects,
             integrated_experiment_language_generator(language_mode),
-            params=params.namespace_or_empty("curriculum_params"),
+            params.namespace_or_empty("curriculum_params"),
         )
     elif curriculum_string == "phase2":
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
@@ -194,7 +194,9 @@ def main(params: Parameters) -> None:
         )
     else:
         curriculum_to_render = STR_TO_CURRICULUM[curriculum_string](
-            num_samples, num_noise_objects, phase2_language_generator(language_mode)
+            num_samples,
+            num_noise_objects,
+            phase2_language_generator(language_mode),
         )
     sort_by_utterance_length_flag = params.boolean("sort_by_utterance", default=False)
     if sort_by_utterance_length_flag:
@@ -270,7 +272,7 @@ class CurriculumToHtmlDumper:
                     )
                 ):
                     raise RuntimeError(
-                        f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
+                        f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "  # type: ignore
                         f"{type(perception.frames)}"
                     )
                 (_, speaker) = self.situation_text(situation)
@@ -458,7 +460,7 @@ class CurriculumToHtmlDumper:
                 )
             ):
                 raise RuntimeError(
-                    f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "
+                    f"Expected the Perceptual Representation to contain DevelopmentalPrimitivePerceptionFrame got "  # type: ignore
                     f"{type(perception.frames)}"
                 )
             (situation_text, speaker) = self.situation_text(situation)

@@ -42,7 +42,7 @@ _ObjectT = TypeVar("_ObjectT")
 _ObjectToT = TypeVar("_ObjectToT")
 
 
-@attrs(frozen=True, cache_hash=True)
+@attrs(frozen=True, cache_hash=True)  # pylint: disable=inherit-non-class
 class AxesInfo(Generic[_ObjectT], CanRemapObjects[_ObjectT]):
     addressee: Optional[_ObjectT] = attrib(default=None)
     axes_facing: ImmutableSetMultiDict[_ObjectT, GeonAxis] = attrib(
@@ -91,7 +91,7 @@ class AxisFunction(Protocol, Generic[_ObjectT]):
         """Accumulate referenced objects"""  # type: ignore
 
 
-@attrs(frozen=True, repr=False)
+@attrs(frozen=True, repr=False)  # pylint: disable=inherit-non-class
 class PrimaryAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
 
@@ -115,7 +115,7 @@ class PrimaryAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
         return f"PrimaryAxisOfObject(_object={handle})"
 
 
-@attrs(frozen=True, repr=False)
+@attrs(frozen=True, repr=False)  # pylint: disable=inherit-non-class
 class HorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
     _index: int = attrib(validator=in_(Range.closed(0, 1)))
@@ -145,7 +145,7 @@ class HorizontalAxisOfObject(Generic[_ObjectT], AxisFunction[_ObjectT]):
         return f"HorizontalAxisOfObject(_object={handle}, _index={str(self._index)})"
 
 
-@attrs(frozen=True, repr=False)
+@attrs(frozen=True, repr=False)  # pylint: disable=inherit-non-class
 class FacingAddresseeAxis(Generic[_ObjectT], AxisFunction[_ObjectT]):
     _object: _ObjectT = attrib()
 
