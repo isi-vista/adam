@@ -109,7 +109,7 @@ def get_scene() -> Any:
         "scene_number": scene_number,
         "scene_images": [
             path.rsplit("data", maxsplit=1)[-1]
-            for path in sorted(glob(f"{experiment_dir}/rgb__[0-9]*.png"))
+            for path in sorted(glob(f"{experiment_dir}/id_rgb_[0-9]*.png"))
         ],
         "object_strokes": [
             path.rsplit("data", maxsplit=1)[-1]

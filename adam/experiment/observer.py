@@ -3,6 +3,7 @@ import shutil
 
 import yaml
 
+from PIL import Image, ImageFont, ImageDraw 
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Mapping, MutableMapping, Optional, Tuple
@@ -10,6 +11,7 @@ from typing import Any, Generic, Mapping, MutableMapping, Optional, Tuple
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from more_itertools import only, take
+from adam.perception.visual_perception import VisualPerceptionRepresentation
 from vistautils.parameters import Parameters
 
 from adam.curriculum_to_html import CurriculumToHtmlDumper
@@ -790,6 +792,12 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
         self,
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
+        #check is instance to make sure same type expected,
+        #extract center x and y from here
+        #add modified files as a list in the output directory
+        #check with simulation 
+        #account for multiple scene images (in a list, iterate through)
+        #grace
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
     ) -> None:
@@ -803,8 +811,61 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
         experiment_dir.mkdir(parents=True, exist_ok=True)
 
         if self.copy_curriculum and isinstance(situation, SimulationSituation):
+
+            #use zip, because you have one frame per one scene image
+            #zip frames and image files, will return a tuple so you can iterate
+            #through both lists tupled together
+            #.clusters iterate through clusters for multiple objects and get
+            #x and y with each, have both for the moment
+            #construct a new path w/ edited images and then save to experiment_dir
+            cnt = 0
+            wentInIf = False
+            if isinstance(perceptual_representation,VisualPerceptionRepresentation):
+                wentInIf = True
+                frames = perceptual_representation.frames
+                imagesFiles = situation.scene_images_png
+                
+                for index, imageFrame in enumerate(zip(frames,imagesFiles)):
+                    cnt+=1
+                    imageFile = Image.open(imageFrame[0])
+                    #image_editable = ImageDraw.Draw(imageFile)
+                    #frameClusters = imageFrame[0].clusters
+                    #for cluster in frameClusters:
+                     #   xCoord = cluster.centroid_x
+                      #  yCoord = cluster.centroid_y
+                       # id = cluster.cluster_id
+                        #image_editable.text((xCoord,yCoord), "test", (237, 230, 211))
+                    fileName ="id_rgb_"+str(index)+".png"
+                    imageFile.save(experiment_dir/fileName)
+                    shutil.copy(fileName,experiment_dir)
+                    
+                        
+            print("HERE "+str(cnt))
+            if(wentInIf):
+                print("Entered If Statement")
+            #cant use shutil w/ image themselves
+            #use .save to save them (works like saving to regular desk)
+            #dont worry about array, just put images to directory directly
+            #file path pointing to array pointing to images?
+            # should images within array also be their paths
+
             for file_path in situation.all_files():
                 shutil.copy(file_path, experiment_dir)
+                
+
+                        
+
+
+
+
+            
+                    
+
+            
+        #do additions inside this if block, look for images in output directory
+        #iterate through list, make additions with text. Extract center x and y
+        # from perceptual_representation, has a list of object cluster objects.
+        #class makes said structure clear.
 
         for (
             idx,
