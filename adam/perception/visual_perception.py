@@ -213,3 +213,19 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
 @attrs(slots=True, frozen=True)
 class VisualPerceptionRepresentation(PerceptualRepresentation[VisualPerceptionFrame]):
     """A class to hold a representation for Phase 3 visual perception systems."""
+
+    @staticmethod
+    def single_frame(
+        perception_frame: VisualPerceptionFrame,
+    ) -> "VisualPerceptionRepresentation[VisualPerceptionFrame]":
+        """
+        Convenience method for generating a `PerceptualRepresentation` which is a single frame.
+
+        Args:
+            perception_frame: a `PerceptualRepresentationFrame`
+
+        Returns:
+            A `PerceptualRepresentation` wrapping the provided frame.
+
+        """
+        return VisualPerceptionRepresentation((perception_frame,))
