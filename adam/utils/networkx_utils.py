@@ -1,9 +1,9 @@
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
 from attr import attrs, attrib
-from immutablecollections import immutableset, ImmutableSet
+from immutablecollections import ImmutableSet
 from immutablecollections.converter_utils import _to_immutableset
-from networkx import DiGraph, nx
+from networkx import DiGraph
 
 
 def digraph_with_nodes_sorted_by(
@@ -30,28 +30,6 @@ def digraph_with_nodes_sorted_by(
         new_graph.add_edge(source, dest, **data)
 
     return new_graph
-
-
-def subgraph(graph: DiGraph, nodes: Iterable[Any]) -> DiGraph:
-    """
-    Get a Subgraph view of a a Digraph with node iteration order in a deterministic fashion
-
-    This code originally comes from
-    https://github.com/networkx/networkx/blob/master/networkx/classes/graph.py#L1614
-    We made our own version as the method used in the original implementation got
-    induced_nodes as a set, which loses the determinism in iteration order over the set.
-    To fix this issue, we use an immutableset to cast the nodes into. This was necessary
-    as the lack of determinism was causing inconsistent failure/success states in our
-    pattern matching code.
-    """
-    induced_nodes = ShowNodes(nodes=immutableset(graph.nbunch_iter(nodes)))
-    # if already a subgraph, don't make a chain
-    subgraph_builder = nx.graphviews.subgraph_view
-    if hasattr(graph, "_NODE_OK"):
-        return subgraph_builder(
-            graph, induced_nodes, graph._EDGE_OK  # pylint:disable=protected-access
-        )
-    return subgraph_builder(graph, induced_nodes)
 
 
 @attrs

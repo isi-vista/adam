@@ -65,8 +65,6 @@ from adam.semantics import (
     SemanticNode,
     SyntaxSemanticsVariable,
 )
-from adam.utils import networkx_utils
-from adam.utils.networkx_utils import subgraph
 
 
 def get_classifier_for_string(input_string: str) -> Optional[str]:
@@ -238,11 +236,11 @@ def pattern_remove_incomplete_region_or_spatial_path(
         components = [
             component
             for component in [
-                subgraph(graph, comp) for comp in weakly_connected_components(graph)
+                graph.subgraph(comp) for comp in weakly_connected_components(graph)
             ]
         ]
         components.sort(key=sort_by_num_nodes, reverse=True)
-        computed_graph = subgraph(graph, components[0].nodes)
+        computed_graph = graph.subgraph(components[0].nodes)
         removed_nodes: List[NodePredicate] = []
         for i in range(1, len(components)):
             removed_nodes.extend(components[i].nodes)
@@ -748,8 +746,8 @@ def get_objects_from_perception(
                 if not isinstance(neighbor, ObjectPerception):
                     other_nodes.append(neighbor)
 
-        generated_subgraph = networkx_utils.subgraph(
-            perception_as_digraph, all_object_perception_nodes + other_nodes
+        generated_subgraph = perception_as_digraph.subgraph(
+            all_object_perception_nodes + other_nodes
         )
         meanings.append(PerceptionGraph(generated_subgraph))
 

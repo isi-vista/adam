@@ -10,13 +10,13 @@ with open(join(dirname(abspath(__file__)), 'adam', 'version.py')) as version_fil
 
 setup(name='adam',
       version=version,
-      author='Marjorie Freedman, Ryan Gabbard, Mitch Marcus, Ralph Weischedel, and Charles Yang',
-      author_email='gabbard@isi.edu',
+      author='Marjorie Freedman, Ryan Gabbard, Jacob Lichtefeld, Mitch Marcus, Ralph Weischedel, and Charles Yang',
+      author_email='jacobl@isi.edu',
       description="ADAM",
       url='https://github.com/isi-vista/adam',
       packages=[],
-      # 3.6 and up, but not Python 4
-      python_requires='~=3.6',
+      # 3.7 and up, but not Python 4
+      python_requires='~=3.7',
       install_requires=[
           "attrs>=18.2.0",
           "vistautils>=0.12.0",

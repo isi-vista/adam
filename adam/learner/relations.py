@@ -1,5 +1,5 @@
 import logging
-from adam.utils.networkx_utils import digraph_with_nodes_sorted_by, subgraph
+from adam.utils.networkx_utils import digraph_with_nodes_sorted_by
 
 from attr.validators import instance_of, optional
 from pathlib import Path
@@ -364,7 +364,7 @@ def _extract_candidate_relations(
         output_graphs.append(
             PerceptionGraph(
                 digraph_with_nodes_sorted_by(
-                    subgraph(perception_digraph, hypothesis_nodes), _graph_node_order
+                    perception_digraph.subgraph(hypothesis_nodes), _graph_node_order
                 )
             )
         )

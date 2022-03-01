@@ -73,7 +73,6 @@ from adam.semantics import (
     GROUND_OBJECT_CONCEPT,
     SemanticNode,
 )
-from adam.utils.networkx_utils import subgraph
 from attr import attrib, attrs
 from attr.validators import deep_iterable, deep_mapping, instance_of
 from immutablecollections import ImmutableDict, ImmutableSet, immutabledict, immutableset
@@ -328,7 +327,7 @@ class ObjectRecognizer:
                 else:
                     raise RuntimeError("Invalid language_generator")
                 # We construct a fake match which is only the ground perception node
-                subgraph_of_root = subgraph(perception_graph.copy_as_digraph(), [node])
+                subgraph_of_root = perception_graph.copy_as_digraph().subgraph([node])
                 pattern_match = PerceptionGraphPatternMatch(
                     matched_pattern=PerceptionGraphPattern(
                         graph=subgraph_of_root, dynamic=perception_graph.dynamic
