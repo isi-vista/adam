@@ -18,6 +18,7 @@ from adam.language.dependency import LinearizedDependencyTree
 from adam.learner import TopLevelLanguageLearnerDescribeReturn
 from adam.paths import SITUATION_DIR_NAME
 from adam.perception import PerceptionT, PerceptualRepresentation
+from adam.semantics import SemanticNode, ActionSemanticNode, RelationSemanticNode
 from adam.situation import SituationT
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
 from adam.situation.phase_3_situations import SimulationSituation
@@ -786,6 +787,28 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
             file_name=params.optional_string("file_name"),
         )
 
+    def _convert_to_output_format(
+        self,
+        idx: int,
+        semantic_node: SemanticNode,
+        linguistic_description: LinguisticDescription,
+        predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
+    ) -> Mapping[str, Any]:
+        return {
+            "id": idx,
+            "text": linguistic_description.as_token_string(),
+            "confidence": f"{predicted_scene_description.description_to_confidence[linguistic_description]:.2f}",
+            "type": "complex"
+            if isinstance(semantic_node, (ActionSemanticNode, RelationSemanticNode))
+            else "object",
+            "features": sorted(
+                predicted_scene_description.semantics_to_feature_strs[semantic_node]
+            ),
+            "sub-objects": [],
+            "raw_text": None,
+            "slot_alignment_to_confidence": None,
+        }
+
     def observe(  # pylint: disable=unused-argument
         self,
         situation: Optional[SituationT],
@@ -812,17 +835,12 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
         ) in enumerate(predicted_scene_description.semantics_to_descriptions.items()):
             semantic_node, linguistic_description = semantic_to_description
             output_dict[OUTPUT_LANGUAGE].append(
-                {
-                    "id": idx,
-                    "text": linguistic_description.as_token_string(),
-                    "confidence": f"{predicted_scene_description.description_to_confidence[linguistic_description]:.2f}",
-                    "features": sorted(
-                        predicted_scene_description.semantics_to_feature_strs[
-                            semantic_node
-                        ]
-                    ),
-                    "sub-objects": [],
-                }
+                self._convert_to_output_format(
+                    idx,
+                    semantic_node,
+                    linguistic_description,
+                    predicted_scene_description,
+                )
             )
 
         # If we have two concepts exactly, we want to generate the differences panel
