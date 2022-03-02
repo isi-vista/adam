@@ -59,6 +59,7 @@ from adam.perception.perception_graph import (
     DebugCallableType,
     GraphLogger,
 )
+from adam.perception.perception_graph_nodes import PerceptionGraphNode, ObjectClusterNode
 from adam.semantics import (
     Concept,
     ObjectSemanticNode,
@@ -170,8 +171,16 @@ def pattern_match_to_semantic_node(
         and pattern_node in pattern.pattern_node_to_template_variable
     )
 
+    potential_root_node = get_root_object_cluster_perception(
+        match.graph_matched_against._graph,  # pylint: disable=protected-access
+        set(match.matched_sub_graph),
+    )
+
     return SemanticNode.for_concepts_and_arguments(
-        concept, slots_to_fillers=template_variable_to_filler, confidence=confidence
+        concept,
+        slots_to_fillers=template_variable_to_filler,
+        confidence=confidence,
+        node_id=potential_root_node.cluster_id if potential_root_node else None,
     )
 
 
@@ -781,3 +790,31 @@ def get_slot_from_semantic_node(
         if object_node.concept == object_concept:
             return slot_var.name
     return slot
+
+
+def get_root_object_cluster_perception(
+    graph: DiGraph, matched_subgraph_nodes: AbstractSet[PerceptionGraphNode]
+) -> Optional[ObjectClusterNode]:
+    """Get the root object cluster node from a graph given a subset of nodes which represent the object.
+
+    Args:
+        graph: A DiGraph of scene perception to process
+        matched_subgraph_nodes: The set of nodes of interest in graph
+
+    Returns:
+        The single root of an object perception or None if no or multiple roots exist.
+    """
+    matched_object_perceptions = immutableset(
+        node for node in matched_subgraph_nodes if isinstance(node, ObjectClusterNode)
+    )
+    roots = [
+        node
+        for node in matched_object_perceptions
+        if not (
+            any(succ in matched_object_perceptions for succ in graph.successors(node))
+        )
+    ]
+    if len(roots) == 1:
+        return roots[0]
+
+    return None

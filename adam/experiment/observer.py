@@ -874,7 +874,7 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
             semantic_node, linguistic_description = semantic_to_description
             output_dict[OUTPUT_LANGUAGE].append(
                 self._convert_to_output_format(
-                    idx,
+                    semantic_node.original_node_id if semantic_node.original_node_id is not None else idx + len(predicted_scene_description.semantics_to_descriptions),  # type: ignore
                     semantic_node,
                     linguistic_description,
                     predicted_scene_description,
