@@ -3,6 +3,8 @@ from http import HTTPStatus
 from typing import Any
 
 import yaml
+
+from itertools import chain
 from flask import Flask, abort, request
 from flask_cors import CORS
 
@@ -109,7 +111,7 @@ def get_scene() -> Any:
         "scene_number": scene_number,
         "scene_images": [
             path.rsplit("data", maxsplit=1)[-1]
-            for path in sorted(glob(f"{experiment_dir}/id_rgb_[0-9]*.png"))
+            for path in sorted(chain(glob(f"{experiment_dir}/rgb__[0-9]*.png"),glob(f"{experiment_dir}/id_rgb_[0-9]*.png")))
         ],
         "object_strokes": [
             path.rsplit("data", maxsplit=1)[-1]

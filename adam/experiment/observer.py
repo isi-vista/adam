@@ -1,6 +1,6 @@
 import logging
 import shutil
-
+import os
 import yaml
 
 from PIL import Image, ImageFont, ImageDraw 
@@ -792,12 +792,6 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
         self,
         situation: Optional[SituationT],
         true_description: LinguisticDescription,
-        #check is instance to make sure same type expected,
-        #extract center x and y from here
-        #add modified files as a list in the output directory
-        #check with simulation 
-        #account for multiple scene images (in a list, iterate through)
-        #grace
         perceptual_representation: PerceptualRepresentation[PerceptionT],
         predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
     ) -> None:
@@ -812,61 +806,30 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
 
         if self.copy_curriculum and isinstance(situation, SimulationSituation):
 
-            #use zip, because you have one frame per one scene image
-            #zip frames and image files, will return a tuple so you can iterate
-            #through both lists tupled together
-            #.clusters iterate through clusters for multiple objects and get
-            #x and y with each, have both for the moment
-            #construct a new path w/ edited images and then save to experiment_dir
-            cnt = 0
-            wentInIf = False
             if isinstance(perceptual_representation,VisualPerceptionRepresentation):
-                wentInIf = True
                 frames = perceptual_representation.frames
                 imagesFiles = situation.scene_images_png
-                
                 for index, imageFrame in enumerate(zip(frames,imagesFiles)):
-                    cnt+=1
-                    imageFile = Image.open(imageFrame[0])
-                    #image_editable = ImageDraw.Draw(imageFile)
-                    #frameClusters = imageFrame[0].clusters
-                    #for cluster in frameClusters:
-                     #   xCoord = cluster.centroid_x
-                      #  yCoord = cluster.centroid_y
-                       # id = cluster.cluster_id
-                        #image_editable.text((xCoord,yCoord), "test", (237, 230, 211))
+                    imageFile = Image.open(imageFrame[1])
+                    image_editable = ImageDraw.Draw(imageFile)
+                    frameClusters = imageFrame[0].clusters
+                    for cluster in frameClusters:
+                        x = cluster.centroid_x
+                        y = cluster.centroid_y
+                        id = cluster.cluster_id
+                        font = ImageFont.truetype( os.path.join(experiment_path, "fonts", "Roboto-normal-400.ttf"),14)
+                        IDLabel =  "ID: "+ id[len(id)-1]
+                        w, h = font.getsize(IDLabel)
+                        #create black highlight via a rectangle for text to ensure readability
+                        image_editable.rectangle((x-w/2, y-h, x + w/2, y), fill='black')
+                        image_editable.text((x,y), IDLabel, fill='white', font = font,anchor="ms")
                     fileName ="id_rgb_"+str(index)+".png"
-                    imageFile.save(experiment_dir/fileName)
+                    imageFile.save(fileName)
                     shutil.copy(fileName,experiment_dir)
-                    
-                        
-            print("HERE "+str(cnt))
-            if(wentInIf):
-                print("Entered If Statement")
-            #cant use shutil w/ image themselves
-            #use .save to save them (works like saving to regular desk)
-            #dont worry about array, just put images to directory directly
-            #file path pointing to array pointing to images?
-            # should images within array also be their paths
-
+        
             for file_path in situation.all_files():
                 shutil.copy(file_path, experiment_dir)
                 
-
-                        
-
-
-
-
-            
-                    
-
-            
-        #do additions inside this if block, look for images in output directory
-        #iterate through list, make additions with text. Extract center x and y
-        # from perceptual_representation, has a list of object cluster objects.
-        #class makes said structure clear.
-
         for (
             idx,
             semantic_to_description,
