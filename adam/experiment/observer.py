@@ -3,7 +3,7 @@ import shutil
 import os
 import yaml
 
-from PIL import Image, ImageFont, ImageDraw 
+from PIL import Image, ImageFont, ImageDraw
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Mapping, MutableMapping, Optional, Tuple
@@ -18,7 +18,7 @@ from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.language.dependency import LinearizedDependencyTree
 from adam.learner import TopLevelLanguageLearnerDescribeReturn
-from adam.paths import SITUATION_DIR_NAME
+from adam.paths import SITUATION_DIR_NAME, ROBOTO_FILE
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.situation import SituationT
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -806,30 +806,36 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
 
         if self.copy_curriculum and isinstance(situation, SimulationSituation):
 
-            if isinstance(perceptual_representation,VisualPerceptionRepresentation):
-                frames = perceptual_representation.frames
-                imagesFiles = situation.scene_images_png
-                for index, imageFrame in enumerate(zip(frames,imagesFiles)):
-                    imageFile = Image.open(imageFrame[1])
-                    image_editable = ImageDraw.Draw(imageFile)
-                    frameClusters = imageFrame[0].clusters
-                    for cluster in frameClusters:
+            if isinstance(perceptual_representation, VisualPerceptionRepresentation):
+                for index, image_frame in enumerate(
+                    zip(perceptual_representation.frames, situation.scene_images_png)
+                ):
+                    image_file = Image.open(image_frame[1])
+                    image_editable = ImageDraw.Draw(image_file)
+                    frame_clusters = image_frame[0].clusters
+                    for cluster in frame_clusters:
                         x = cluster.centroid_x
                         y = cluster.centroid_y
                         id = cluster.cluster_id
-                        font = ImageFont.truetype( os.path.join(experiment_path, "fonts", "Roboto-normal-400.ttf"),14)
-                        IDLabel =  "ID: "+ id[len(id)-1]
-                        w, h = font.getsize(IDLabel)
-                        #create black highlight via a rectangle for text to ensure readability
-                        image_editable.rectangle((x-w/2, y-h, x + w/2, y), fill='black')
-                        image_editable.text((x,y), IDLabel, fill='white', font = font,anchor="ms")
-                    fileName ="id_rgb_"+str(index)+".png"
-                    imageFile.save(fileName)
-                    shutil.copy(fileName,experiment_dir)
-        
+                        font = ImageFont.truetype(
+                            ROBOTO_FILE,
+                            14,
+                        )
+                        id_label = "ID: " + id[len(id) - 1]
+                        w, h = font.getsize(id_label)
+                        # create black highlight via a rectangle for text to ensure readability
+                        image_editable.rectangle(
+                            (x - w / 2, y - h, x + w / 2, y), fill="black"
+                        )
+                        image_editable.text(
+                            (x, y), id_label, fill="white", font=font, anchor="ms"
+                        )
+                    file_name = f"id_rgb_{index}.png"
+                    image_file.save(os.path.join(experiment_dir, file_name))
+
             for file_path in situation.all_files():
                 shutil.copy(file_path, experiment_dir)
-                
+
         for (
             idx,
             semantic_to_description,

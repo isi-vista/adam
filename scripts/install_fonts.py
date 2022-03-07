@@ -1,10 +1,10 @@
 import os
 import re
 import requests
-from adam.paths import FONTS_DIR
+from adam.paths import ROBOTO_FILE
 
 def main():
-    install_font("Roboto", FONTS_DIR)
+    install_font("Roboto", ROBOTO_FILE)
 
 def parse_stylesheet(stylesheet):
     families = re.findall(r"\@font-face\s*\{([^\}]*)\}", stylesheet)
@@ -21,9 +21,9 @@ def parse_stylesheet(stylesheet):
         family["filename"] = "-".join([family["font-family"], family["font-style"], family["font-weight"]]) + "." + family["ext"]
     return families
 
-def install_font(family, dest):
+def install_font(target, dest):
     os.makedirs(dest, exist_ok=True)
-    url = fr"https://fonts.googleapis.com/css2?family={family}"
+    url = fr"https://fonts.googleapis.com/css2?family={target}"
     response = requests.get(url)
     if response.status_code == 200:
         content = str(response.content)
@@ -33,9 +33,8 @@ def install_font(family, dest):
             print(f"downloading: {url}")
             response = requests.get(url)
             if response.status_code == 200:
-                filename = family["filename"]
-                with open(os.path.join(dest, filename), "wb") as file:
-                    print(f"creating file: {filename}")
+                with open(dest, "wb") as file:
+                    print(f"creating file: {dest}")
                     file.write(response.content)
             else:
                 print(f"error: couldn't download font from '{url}'")
