@@ -222,7 +222,7 @@ class VisualPerceptionRepresentation(PerceptualRepresentation[VisualPerceptionFr
         Convenience method for generating a `PerceptualRepresentation` which is a single frame.
 
         Args:
-            perception_frame: a `PerceptualRepresentationFrame`
+            perception_frame: a `PerceptualRepresentationFrame`.
 
         Returns:
             A `PerceptualRepresentation` wrapping the provided frame.
