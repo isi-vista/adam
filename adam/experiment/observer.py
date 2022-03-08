@@ -1,6 +1,5 @@
 import logging
 import shutil
-import os
 import yaml
 
 from PIL import Image, ImageFont, ImageDraw
@@ -814,24 +813,33 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
                     image_editable = ImageDraw.Draw(image_file)
                     frame_clusters = image_frame[0].clusters
                     for cluster in frame_clusters:
-                        x = cluster.centroid_x
-                        y = cluster.centroid_y
-                        id = cluster.cluster_id
                         font = ImageFont.truetype(
-                            ROBOTO_FILE,
+                            str(ROBOTO_FILE),
                             14,
                         )
-                        id_label = "ID: " + id[len(id) - 1]
-                        w, h = font.getsize(id_label)
+                        id_label = (
+                            "ID: " + cluster.cluster_id[len(cluster.cluster_id) - 1]
+                        )
+                        font_width, font_height = font.getsize(id_label)
                         # create black highlight via a rectangle for text to ensure readability
                         image_editable.rectangle(
-                            (x - w / 2, y - h, x + w / 2, y), fill="black"
+                            (
+                                cluster.centroid_x - font_width / 2,
+                                cluster.centroid_y - font_height,
+                                cluster.centroid_x + font_width / 2,
+                                cluster.centroid_y,
+                            ),
+                            fill="black",
                         )
                         image_editable.text(
-                            (x, y), id_label, fill="white", font=font, anchor="ms"
+                            (cluster.centroid_x, cluster.centroid_y),
+                            id_label,
+                            fill="white",
+                            font=font,
+                            anchor="ms",
                         )
                     file_name = f"id_rgb_{index}.png"
-                    image_file.save(os.path.join(experiment_dir, file_name))
+                    image_file.save(str(experiment_dir / file_name))
 
             for file_path in situation.all_files():
                 shutil.copy(file_path, experiment_dir)
