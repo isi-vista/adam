@@ -12,6 +12,7 @@ git+https://github.com/isi-vista/saga-tools.git@master#egg=saga-tools
 # for visualization within UI
 Flask
 Flask-Cors
+pillow>=9.0.1
 
 # for visualizing perception graphs and patterns
 graphviz>=0.13
