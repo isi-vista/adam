@@ -80,7 +80,7 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
         Tuple[
             SimulationSituation,
             TokenSequenceLinguisticDescription,
-            VisualPerceptionRepresentation,
+            VisualPerceptionRepresentation[VisualPerceptionFrame],
         ]
     ] = []
     for situation_num in range(curriculum_params["num_dirs"]):
