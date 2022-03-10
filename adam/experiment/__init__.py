@@ -187,7 +187,7 @@ def execute_experiment(
     starting_point: int = 0,
     point_to_log: int = 0,
     perception_graph_logger: Optional[GraphLogger] = None,
-) -> None:
+) -> TopLevelLanguageLearner[PerceptionT, LinguisticDescriptionT]:
     """
     Runs an `Experiment`.
     """
@@ -553,3 +553,5 @@ def execute_experiment(
             test_observer.report()
 
     logging.info("Experiment %s complete", experiment.name)
+
+    return learner
