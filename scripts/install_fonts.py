@@ -21,8 +21,8 @@ def parse_stylesheet(stylesheet):
         family["filename"] = "-".join([family["font-family"], family["font-style"], family["font-weight"]]) + "." + family["ext"]
     return families
 
-def install_font(target, dest):
-    os.makedirs(dest, exist_ok=True)
+def install_font(target, destination):
+    os.makedirs(destination.parent, exist_ok=True)
     url = fr"https://fonts.googleapis.com/css2?family={target}"
     response = requests.get(url)
     if response.status_code == 200:
@@ -33,8 +33,8 @@ def install_font(target, dest):
             print(f"downloading: {url}")
             response = requests.get(url)
             if response.status_code == 200:
-                with open(dest, "wb") as file:
-                    print(f"creating file: {dest}")
+                with open(destination, "wb") as file:
+                    print(f"creating file: {destination}")
                     file.write(response.content)
             else:
                 print(f"error: couldn't download font from '{url}'")
