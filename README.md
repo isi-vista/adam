@@ -73,6 +73,13 @@ ng serve --open
 npm install -g npm
 ```
 
+# To install font dependancies on your machine
+
+```
+cd {adam_root}
+PYTHONPATH=. python scripts/install_fonts.py
+```
+
 For more detailed information including how to check npm versions on your machine, please refer: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 
 # Languages
