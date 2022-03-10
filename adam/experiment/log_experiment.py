@@ -57,6 +57,7 @@ from adam.experiment.experiment_utils import (
     build_affordance_learner_factory,
 )
 from adam.experiment.observer import LearningProgressHtmlLogger, YAMLLogger
+from adam.language import LinguisticDescriptionT
 from adam.language.language_utils import (
     phase2_language_generator,
     integrated_experiment_language_generator,
@@ -85,27 +86,19 @@ from adam.ontology.phase1_ontology import (
     PHASE_1_CURRICULUM_OBJECTS,
 )
 from adam.ontology.phase2_ontology import GAILA_PHASE_2_ONTOLOGY
+from adam.perception import PerceptionT
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
 )
 from adam.perception.perception_graph import GraphLogger
 from adam.random_utils import RandomChooser
+from adam.situation import SituationT
 
 SYMBOLIC = "symbolic"
 SIMULATED = "simulated"
 
 
 def log_experiment_entry_point(params: Parameters) -> None:
-    experiment_name = params.string("experiment")
-    debug_log_dir = params.optional_creatable_directory("debug_log_directory")
-
-    graph_logger: Optional[HypothesisLogger]
-    if debug_log_dir:
-        logging.info("Debug graphs will be written to %s", debug_log_dir)
-        graph_logger = HypothesisLogger(debug_log_dir, enable_graph_rendering=True)
-    else:
-        graph_logger = None
-
     debug_perception_log_dir = params.optional_creatable_directory(
         "debug_perception_log_dir"
     )
@@ -119,6 +112,38 @@ def log_experiment_entry_point(params: Parameters) -> None:
         )
     else:
         perception_graph_logger = None
+
+    execute_experiment(
+        experiment=experiment_from_params(params),
+        log_path=params.optional_creatable_directory("hypothesis_log_dir"),
+        log_hypotheses_every_n_examples=params.integer(
+            "log_hypothesis_every_n_steps", default=250
+        ),
+        log_learner_state=params.boolean("log_learner_state", default=True),
+        learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
+        starting_point=params.integer("starting_point", default=0),
+        point_to_log=params.integer("point_to_log", default=0),
+        load_learner_state=params.optional_existing_file("learner_state_path"),
+        resume_from_latest_logged_state=params.boolean(
+            "resume_from_latest_logged_state", default=False
+        ),
+        debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
+        perception_graph_logger=perception_graph_logger,
+    )
+
+
+def experiment_from_params(
+    params: Parameters,
+) -> Experiment[SituationT, LinguisticDescriptionT, PerceptionT]:
+    experiment_name = params.string("experiment")
+    debug_log_dir = params.optional_creatable_directory("debug_log_directory")
+
+    graph_logger: Optional[HypothesisLogger]
+    if debug_log_dir:
+        logging.info("Debug graphs will be written to %s", debug_log_dir)
+        graph_logger = HypothesisLogger(debug_log_dir, enable_graph_rendering=True)
+    else:
+        graph_logger = None
 
     language_mode = params.enum(
         "language_mode", LanguageMode, default=LanguageMode.ENGLISH
@@ -273,33 +298,17 @@ def log_experiment_entry_point(params: Parameters) -> None:
         if yaml_observer_test:
             test_observer.append(yaml_observer_test)
 
-    execute_experiment(
-        Experiment(
-            name=experiment_name,
-            training_stages=training_instance_groups,
-            learner_factory=learner_factory_from_params(
-                params, graph_logger, language_mode
-            ),
-            pre_example_training_observers=pre_observer,
-            post_example_training_observers=post_observer,
-            test_instance_groups=test_instance_groups,
-            test_observers=test_observer,
-            sequence_chooser=RandomChooser.for_seed(
-                params.integer("sequence_chooser_seed", default=0)
-            ),
+    return Experiment(
+        name=experiment_name,
+        training_stages=training_instance_groups,
+        learner_factory=learner_factory_from_params(params, graph_logger, language_mode),
+        pre_example_training_observers=pre_observer,
+        post_example_training_observers=post_observer,
+        test_instance_groups=test_instance_groups,
+        test_observers=test_observer,
+        sequence_chooser=RandomChooser.for_seed(
+            params.integer("sequence_chooser_seed", default=0)
         ),
-        log_path=params.optional_creatable_directory("hypothesis_log_dir"),
-        log_hypotheses_every_n_examples=params.integer(
-            "log_hypothesis_every_n_steps", default=250
-        ),
-        log_learner_state=params.boolean("log_learner_state", default=True),
-        learner_logging_path=experiment_group_dir,
-        starting_point=params.integer("starting_point", default=0),
-        point_to_log=params.integer("point_to_log", default=0),
-        load_learner_state=params.optional_existing_file("learner_state_path"),
-        resume_from_latest_logged_state=resume_from_last_logged_state,
-        debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
-        perception_graph_logger=perception_graph_logger,
     )
 
 
