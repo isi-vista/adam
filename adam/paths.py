@@ -3,8 +3,6 @@ from pathlib import Path
 
 TOP_LEVEL_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = TOP_LEVEL_DIR / "data"
-FONTS_DIR = DATA_DIR / "fonts"
-ROBOTO_FILE = FONTS_DIR / "Roboto.ttf"
 CURRICULUM_DIR = DATA_DIR / "curriculum"
 TRAINING_CURRICULUM_DIR = CURRICULUM_DIR / "train"
 TESTING_CURRICULUM_DIR = CURRICULUM_DIR / "test"
@@ -12,7 +10,6 @@ LEARNERS_DIR = DATA_DIR / "learners"
 
 dirs = [
     DATA_DIR,
-    FONTS_DIR,
     CURRICULUM_DIR,
     TRAINING_CURRICULUM_DIR,
     TESTING_CURRICULUM_DIR,
@@ -31,3 +28,5 @@ CURRICULUM_INFO_FILE = "info.yaml"
 SITUATION_DESCRIPTION_FILE = "description.yaml"
 SCENE_JSON = "scene.json"
 FEATURE_YAML = "feature.yaml"
+FONTS_DIR = DATA_DIR / "fonts"
+ROBOTO_FILE = FONTS_DIR / "Roboto.ttf"
