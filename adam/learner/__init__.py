@@ -3,7 +3,18 @@ Interfaces for language learning code.
 """
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Generic, Mapping, Optional, Callable, Any, Sequence, List, Tuple
+from typing import (
+    Dict,
+    Generic,
+    Mapping,
+    Optional,
+    Callable,
+    Any,
+    Sequence,
+    List,
+    Tuple,
+    Protocol,
+)
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of, deep_mapping, deep_iterable
@@ -295,4 +306,26 @@ class ComposableLearner(ABC):
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
         """
         Return a dictionary of learner's current hypothesized semantics for words/phrases
+        """
+
+
+class ApprenticeLearner(Protocol):
+    """
+    A learner that can learn from other learners.
+    """
+
+    @abstractmethod
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        """
+        Return a dictionary of learner's current hypothesized semantics for words/phrases
+        """
+
+    @abstractmethod
+    def propose_updated_hypotheses(
+        self, concept_to_updated_patterns: Dict[Concept, PerceptionGraphPattern]
+    ) -> None:
+        """
+        Propose new/updated hypotheses to the learner.
+
+        The learner may do with these as it will.
         """
