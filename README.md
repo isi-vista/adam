@@ -73,7 +73,7 @@ ng serve --open
 npm install -g npm
 ```
 
-# To install font dependancies on your machine
+# To install font dependencies on your machine
 
 ```
 cd {adam_root}
