@@ -1,42 +1,26 @@
+from collections import defaultdict
 import logging
-import pickle
-from pathlib import Path
-from typing import Optional, cast
+from random import Random
+from typing import Optional, Mapping, MutableSequence, Tuple, Sequence, Iterable, TypeVar
 
-# TODO I can probably delete a lot of this stuff as legacy
+from attr import evolve
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
-from adam.experiment import Experiment, execute_experiment
-from adam.experiment.curriculum_repository import (
-    read_experiment_curriculum,
-)
-from adam.experiment.log_experiment import (
-    learner_factory_from_params,
-    curriculum_from_params,
-)
-from adam.experiment.experiment_utils import observer_states_by_most_recent
-from adam.experiment.observer import LearningProgressHtmlLogger, YAMLLogger
-from adam.learner.language_mode import LanguageMode
-from adam.learner.pursuit import HypothesisLogger
+from adam.curriculum import ExplicitWithSituationInstanceGroup, InstanceGroup
+from adam.experiment import execute_experiment
+from adam.experiment.log_experiment import experiment_from_params
+from adam.language import LinguisticDescriptionT
+from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.perception.perception_graph import GraphLogger
-from adam.random_utils import RandomChooser
+from adam.situation import SituationT
 
 SYMBOLIC = "symbolic"
 SIMULATED = "simulated"
+T = TypeVar("T")
 
 
 def contrastive_learning_entry_point(params: Parameters) -> None:
-    experiment_name = params.string("experiment")
-    debug_log_dir = params.optional_creatable_directory("debug_log_directory")
-
-    graph_logger: Optional[HypothesisLogger]
-    if debug_log_dir:
-        logging.info("Debug graphs will be written to %s", debug_log_dir)
-        graph_logger = HypothesisLogger(debug_log_dir, enable_graph_rendering=True)
-    else:
-        graph_logger = None
-
     debug_perception_log_dir = params.optional_creatable_directory(
         "debug_perception_log_dir"
     )
@@ -51,187 +35,161 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
     else:
         perception_graph_logger = None
 
-    language_mode = params.enum(
-        "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+    base_experiment = experiment_from_params(params)
+    apprentice_train_instance_groups, contrastive_pairs = make_curriculum(
+        [
+            instance
+            for group in base_experiment.training_stages
+            for instance in group.instances()
+        ],
+        random_seed=params.integer("curriculum_creation_seed"),
     )
-    experiment_group_dir = params.optional_creatable_directory("experiment_group_dir")
-    resume_from_last_logged_state = params.boolean(
-        "resume_from_latest_logged_state", default=False
+
+    experiment = evolve(
+        base_experiment, training_stages=apprentice_train_instance_groups
     )
-
-    test_observer = []  # type: ignore
-    pre_observer = []  # type: ignore
-    post_observer = []  # type: ignore
-    experiment_type = params.string(
-        "experiment_type", valid_options=[SYMBOLIC, SIMULATED], default=SYMBOLIC
-    )
-    if experiment_type == SYMBOLIC:
-        logging.info("Symbolic Experiment Section")
-        logger = LearningProgressHtmlLogger.create_logger(params)
-
-        curriculum_repository_path = params.optional_existing_directory(
-            "load_from_curriculum_repository"
-        )
-
-        if curriculum_repository_path:
-            curriculum = read_experiment_curriculum(
-                curriculum_repository_path, params, language_mode
-            )
-            (training_instance_groups, test_instance_groups) = (
-                curriculum.train_curriculum,
-                curriculum.test_curriculum,
-            )
-        else:
-            (training_instance_groups, test_instance_groups) = curriculum_from_params(
-                params, language_mode
-            )
-
-        # Check if we have explicit observer states to load
-        observers_state = params.optional_existing_file("observers_state_path")
-
-        if resume_from_last_logged_state and observers_state:
-            raise RuntimeError(
-                "Can not resume from last logged state and provide explicit observer state paths"
-            )
-
-        if resume_from_last_logged_state:
-            if not experiment_group_dir:
-                raise RuntimeError(
-                    "experiment_group_dir must be specified when resume_from_last_logged_state is true."
-                )
-
-            # Try to Load Observers
-            for _, observers_state_path in observer_states_by_most_recent(
-                cast(Path, experiment_group_dir) / "observer_state", "observers_state_at_"
-            ):
-                try:
-                    with observers_state_path.open("rb") as f:
-                        observers_holder = pickle.load(f)
-                        pre_observer = observers_holder.pre_observers
-                        post_observer = observers_holder.post_observers
-                        test_observer = observers_holder.test_observers
-                except OSError:
-                    logging.warning(
-                        "Unable to open observer state at %s; skipping.",
-                        str(observers_state_path),
-                    )
-                except pickle.UnpicklingError:
-                    logging.warning(
-                        "Couldn't unpickle observer state at %s; skipping.",
-                        str(observers_state_path),
-                    )
-
-            if not pre_observer and not post_observer and not test_observer:
-                logging.warning("Reverting to default observers.")
-                pre_observer = [
-                    logger.pre_observer(  # type: ignore
-                        params=params.namespace_or_empty("pre_observer"),
-                        experiment_group_dir=experiment_group_dir,
-                    )
-                ]
-
-                post_observer = [
-                    logger.post_observer(  # type: ignore
-                        params=params.namespace_or_empty("post_observer"),
-                        experiment_group_dir=experiment_group_dir,
-                    )
-                ]
-
-                test_observer = [
-                    logger.test_observer(  # type: ignore
-                        params=params.namespace_or_empty("post_observer"),
-                        experiment_group_dir=experiment_group_dir,
-                    )
-                ]
-
-        elif observers_state:
-            try:
-                with observers_state.open("rb") as f:
-                    observers_holder = pickle.load(f)
-                    pre_observer = observers_holder.pre_observers
-                    post_observer = observers_holder.post_observers
-                    test_observer = observers_holder.test_observers
-            except OSError:
-                logging.warning(
-                    "Unable to open observer state at %s; skipping.", str(observers_state)
-                )
-            except pickle.UnpicklingError:
-                logging.warning(
-                    "Couldn't unpickle observer state at %s; skipping.",
-                    str(observers_state),
-                )
-        else:
-            pre_observer = [
-                logger.pre_observer(  # type: ignore
-                    params=params.namespace_or_empty("pre_observer"),
-                    experiment_group_dir=experiment_group_dir,
-                )
-            ]
-
-            post_observer = [
-                logger.post_observer(  # type: ignore
-                    params=params.namespace_or_empty("post_observer"),
-                    experiment_group_dir=experiment_group_dir,
-                )
-            ]
-
-            test_observer = [
-                logger.test_observer(  # type: ignore
-                    params=params.namespace_or_empty("test_observer"),
-                    experiment_group_dir=experiment_group_dir,
-                )
-            ]
-    else:
-        logging.info("Simulated Experiment Section")
-        (training_instance_groups, test_instance_groups) = curriculum_from_params(
-            params, language_mode
-        )
-        yaml_observer_pre = YAMLLogger.from_params(  # type: ignore
-            "pre_observer", params.namespace_or_empty("pre_observer")
-        )
-        if yaml_observer_pre:
-            pre_observer.append(yaml_observer_pre)
-
-        yaml_observer_post = YAMLLogger.from_params(  # type: ignore
-            "post_observer", params.namespace_or_empty("post_observer")
-        )
-        if yaml_observer_post:
-            post_observer.append(yaml_observer_post)
-
-        yaml_observer_test = YAMLLogger.from_params(  # type: ignore
-            "test_observer", params.namespace_or_empty("test_observer")
-        )
-        if yaml_observer_test:
-            test_observer.append(yaml_observer_test)
-
     execute_experiment(
-        Experiment(
-            name=experiment_name,
-            training_stages=training_instance_groups,
-            learner_factory=learner_factory_from_params(
-                params, graph_logger, language_mode
-            ),
-            pre_example_training_observers=pre_observer,
-            post_example_training_observers=post_observer,
-            test_instance_groups=test_instance_groups,
-            test_observers=test_observer,
-            sequence_chooser=RandomChooser.for_seed(
-                params.integer("sequence_chooser_seed", default=0)
-            ),
-        ),
+        experiment=experiment,
         log_path=params.optional_creatable_directory("hypothesis_log_dir"),
         log_hypotheses_every_n_examples=params.integer(
             "log_hypothesis_every_n_steps", default=250
         ),
         log_learner_state=params.boolean("log_learner_state", default=True),
-        learner_logging_path=experiment_group_dir,
+        learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
         starting_point=params.integer("starting_point", default=0),
         point_to_log=params.integer("point_to_log", default=0),
         load_learner_state=params.optional_existing_file("learner_state_path"),
-        resume_from_latest_logged_state=resume_from_last_logged_state,
+        resume_from_latest_logged_state=params.boolean(
+            "resume_from_latest_logged_state", default=False
+        ),
         debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
         perception_graph_logger=perception_graph_logger,
     )
+
+
+Instance = Tuple[
+    Optional[SituationT],
+    LinguisticDescriptionT,
+    PerceptualRepresentation[PerceptionT],
+]
+ContrastiveInstance = Tuple[Instance, Instance]
+
+
+def make_curriculum(
+    instances: Sequence[Instance], *, random_seed: int
+) -> Tuple[Sequence[InstanceGroup], Sequence[ContrastiveInstance]]:
+    """
+    Create a curriculum of (1) instances used to train the apprentice and (2) contrastive pairs for
+    the contrastive learner.
+    """
+    rng = Random(random_seed)
+    apprentice_train_instances, contrastive_instances = split_instances(
+        instances, rng=rng
+    )
+    train_instance_groups = [
+        ExplicitWithSituationInstanceGroup(
+            name=description.as_token_string(), instances=instances  # type: ignore
+        )
+        for description, instances in group_by_description(
+            apprentice_train_instances
+        ).items()
+    ]
+    contrastive_pairs = make_contrastive_pairs(contrastive_instances, rng=rng)
+    return train_instance_groups, contrastive_pairs
+
+
+def split_instances(
+    instances: Sequence[Instance], *, rng: Random
+) -> Tuple[Sequence[Instance], Sequence[Instance]]:
+    """
+    Randomly split all the given instances into two disjoint samples, returning the splits.
+    """
+    by_description = group_by_description(instances)
+
+    split1 = []
+    split2 = []
+    for group in by_description.values():
+        rng.shuffle(group)
+        split1.extend(group[len(group) // 2 :])
+        split2.extend(group[: len(group) // 2])
+
+    return split1, split2
+
+
+def make_contrastive_pairs(
+    instances: Sequence[Instance], *, rng: Random
+) -> Sequence[ContrastiveInstance]:
+    """
+    Given a sequence of instances,
+
+    We assume that
+
+    - there are at least two different concepts represented among the instances
+    - all concepts have the same number of samples
+    - two instances teach the same concept if and only if they have the same description
+        - subject to change when we implement this for actions :)
+    """
+    by_description = group_by_description(instances)
+    check_descriptions_have_same_num_of_instances(
+        by_description,  # type: ignore
+        msg_when_check_fails="Expected all concepts to have the same number of samples.",
+    )
+
+    result = []
+    for description1, description2 in unique_pairs(by_description.keys()):
+        description1_samples = list(by_description[description1])
+        description2_samples = list(by_description[description2])
+
+        # Shuffle the samples so we can sample by popping from the end
+        rng.shuffle(description1_samples)
+        rng.shuffle(description2_samples)
+        while description1_samples and description2_samples:
+            sample1 = description1_samples.pop()
+            sample2 = description2_samples.pop()
+            result.append((sample1, sample2))
+
+    return result
+
+
+def check_descriptions_have_same_num_of_instances(
+    by_description: Mapping[LinguisticDescriptionT, Instance],
+    *,
+    msg_when_check_fails: str,
+) -> None:
+    """
+    Given a grouping of instances by description, make sure each group is the same size.
+
+    This works by raising an with the given message when the check fails.
+    """
+    num_samples = None
+    for description in by_description:
+        if num_samples is None:
+            num_samples = len(by_description[description])
+        if len(by_description[description]) != num_samples:
+            raise ValueError(msg_when_check_fails)
+
+
+def group_by_description(
+    instances: Sequence[Instance],
+) -> Mapping[LinguisticDescriptionT, MutableSequence[Instance]]:
+    """
+    Group the given instances by their descriptions.
+    """
+    result = defaultdict(list)
+    for instance in instances:
+        _situation, description, _perception = instance
+        result[description].append(instance)
+    return dict(result)
+
+
+def unique_pairs(it: Iterable[T]) -> Iterable[Tuple[T, T]]:
+    """
+    Return a generator over the unique pairs in the given iterable.
+    """
+    seq = tuple(it)
+    for idx, item in enumerate(seq):
+        for other_item in seq[idx + 1 :]:
+            yield item, other_item
 
 
 if __name__ == "__main__":
