@@ -45,6 +45,8 @@ class NodePredicate(ABC):
     (if the are *attrs* classes, set *eq=False*).
     """
 
+    weight: float = attrib(validator=instance_of(float), default=1.0)
+
     @abstractmethod
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         """
