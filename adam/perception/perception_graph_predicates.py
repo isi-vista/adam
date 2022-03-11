@@ -48,6 +48,15 @@ class NodePredicate(ABC):
     (if the are *attrs* classes, set *eq=False*).
     """
 
+    @property
+    @abstractmethod
+    def weight(self) -> float:
+        """
+        The weight of this node.
+
+        This may be used to improve graph matching or for other things.
+        """
+
     @abstractmethod
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         """
@@ -83,8 +92,16 @@ class AnyGraphNodePredicate(NodePredicate):
     Matches any node of type `GraphNode`.
     """
 
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
+
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         return isinstance(graph_node, GraphNode)
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return "GraphNode(*)"
@@ -102,8 +119,16 @@ class AnyObjectPredicate(NodePredicate):
     Matches any node of type `ObjectClusterNode`.
     """
 
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
+
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         return isinstance(graph_node, ObjectClusterNode)
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return "ObjectClusterNode(*)"
@@ -123,11 +148,18 @@ class CategoricalPredicate(NodePredicate):
 
     label: str = attrib(validator=instance_of(str))
     value: str = attrib(validator=instance_of(str))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         if isinstance(graph_node, CategoricalNode):
             return self.label == graph_node.label and self.value == graph_node.value
         return False
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     @staticmethod
     def from_node(categorical_node: CategoricalNode) -> "CategoricalPredicate":
@@ -166,6 +198,9 @@ class ContinuousPredicate(NodePredicate):
     label: str = attrib(validator=instance_of(str))
     value: float = attrib(validator=instance_of(float))
     tolerance: float = attrib(validator=instance_of(float))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         if isinstance(graph_node, ContinuousNode):
@@ -176,6 +211,10 @@ class ContinuousPredicate(NodePredicate):
                 <= self.value + self.tolerance
             )
         return False
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     @staticmethod
     def from_node(node: ContinuousNode) -> "ContinuousPredicate":
@@ -217,6 +256,13 @@ class DistributionalContinuousPredicate(NodePredicate):
     _fallback_tolerance: float = attrib(validator=instance_of(float))
     _min: float = attrib(validator=instance_of(float))
     _max: float = attrib(validator=instance_of(float))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     @staticmethod
     def from_node(
@@ -230,6 +276,7 @@ class DistributionalContinuousPredicate(NodePredicate):
             fallback_tolerance=fallback_tolerance,
             min=node.value,
             max=node.value,
+            weight=1.0,
         )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
@@ -326,6 +373,9 @@ class RgbColorPredicate(NodePredicate):
     red: int = attrib(validator=in_(range(0, 255)))
     green: int = attrib(validator=in_(range(0, 255)))
     blue: int = attrib(validator=in_(range(0, 255)))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         if isinstance(graph_node, RgbColorNode):
@@ -335,6 +385,10 @@ class RgbColorPredicate(NodePredicate):
                 and self.green == graph_node.green
             )
         return False
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return f"RGBColorFeature(red={self.red}, green={self.green}, blue={self.blue})"
@@ -363,11 +417,18 @@ class ObjectStrokePredicate(NodePredicate):
     stroke_normalized_coordinates: ImmutableSet[Point] = attrib(
         validator=deep_iterable(instance_of(Point)), converter=_to_immutableset
     )
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         # TODO: Add more strict alignment of stroke normalized values
         # https://github.com/isi-vista/adam/issues/1051
         return isinstance(graph_node, ObjectStroke)
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return f"ObjectStroke({', '.join(f'{point}' for point in self.stroke_normalized_coordinates)})"
@@ -390,6 +451,9 @@ class StrokeGNNRecognitionPredicate(NodePredicate):
     """Matches a Stroke GNN recognition."""
 
     recognized_object: str = attrib(validator=instance_of(str))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         return (
@@ -397,6 +461,10 @@ class StrokeGNNRecognitionPredicate(NodePredicate):
             if isinstance(graph_node, StrokeGNNRecognitionNode)
             else False
         )
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return f"StrokeGNNRecognition(object={self.recognized_object})"
@@ -477,8 +545,16 @@ class AnyNodePredicate(NodePredicate):
     Matches any node whatsoever.
     """
 
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
+
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         return True
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return "*"
@@ -497,9 +573,16 @@ class AnyObjectPerception(NodePredicate):
     """
 
     debug_handle: Optional[str] = attrib(validator=optional(instance_of(str)))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         return isinstance(graph_node, ObjectPerception)
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         if self.debug_handle is not None:
@@ -540,6 +623,9 @@ class AxisPredicate(NodePredicate):
     aligned_to_gravitational: Optional[bool] = attrib(
         validator=optional(instance_of(bool))
     )
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         unwrapped_graph_node = unwrap_if_necessary(graph_node)
@@ -561,6 +647,10 @@ class AxisPredicate(NodePredicate):
             return True
         else:
             return False
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     @staticmethod
     def from_axis(axis_to_match: GeonAxis) -> "AxisPredicate":
@@ -612,6 +702,9 @@ class GeonPredicate(NodePredicate):
     """
 
     template_geon: Geon = attrib(validator=instance_of(Geon))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         # geons might be wrapped in tuples with their id()
@@ -626,6 +719,10 @@ class GeonPredicate(NodePredicate):
             )
         else:
             return False
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return f"geon({self.template_geon})"
@@ -679,6 +776,9 @@ class CrossSectionPredicate(NodePredicate):
     """
 
     cross_section: CrossSection = attrib(validator=instance_of(CrossSection))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
 
@@ -688,6 +788,10 @@ class CrossSectionPredicate(NodePredicate):
             return self.cross_section == unwrapped_graph_node
         else:
             return False
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return f"cross-section({self.cross_section})"
@@ -721,6 +825,9 @@ class RegionPredicate(NodePredicate):
     """
 
     distance: Optional[Distance] = attrib(validator=optional(instance_of(Distance)))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         # regions might be wrapped in tuples with their id()
@@ -730,6 +837,10 @@ class RegionPredicate(NodePredicate):
             isinstance(unwrapped_graph_node, Region)
             and self.distance == unwrapped_graph_node.distance
         )
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return f"dist({self.distance})"
@@ -756,10 +867,17 @@ class RegionPredicate(NodePredicate):
 @attrs(frozen=True, slots=True, eq=False)
 class IsOntologyNodePredicate(NodePredicate):
     property_value: OntologyNode = attrib(validator=instance_of(OntologyNode))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         unwrapped_graph_node = unwrap_if_necessary(graph_node)
         return self.property_value == unwrapped_graph_node
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return f"{self.property_value.handle}"
@@ -778,6 +896,9 @@ class IsOntologyNodePredicate(NodePredicate):
 @attrs(frozen=True, slots=True, eq=False)
 class IsColorNodePredicate(NodePredicate):
     color: RgbColorPerception = attrib(validator=instance_of(RgbColorPerception))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         unwrapped_graph_node = unwrap_if_necessary(graph_node)
@@ -788,6 +909,10 @@ class IsColorNodePredicate(NodePredicate):
                 and (unwrapped_graph_node.green == self.color.green)
             )
         return False
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         if isinstance(predicate_node, IsColorNodePredicate):
@@ -814,9 +939,16 @@ class AndNodePredicate(NodePredicate):
     """
 
     sub_predicates: Tuple[NodePredicate, ...] = attrib(converter=_to_tuple)
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         return all(sub_predicate(graph_node) for sub_predicate in self.sub_predicates)
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return " & ".join(sub_pred.dot_label() for sub_pred in self.sub_predicates)
@@ -843,8 +975,16 @@ class ObjectSemanticNodePerceptionPredicate(NodePredicate):
     `NodePredicate` which matches if the node is of this type
     """
 
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
+
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         return isinstance(graph_node, ObjectSemanticNode)
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return "*[matched-obj]"
@@ -862,8 +1002,16 @@ class IsPathPredicate(NodePredicate):
     Matches any `SpatialPath` node.
     """
 
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
+
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         return isinstance(graph_node, SpatialPath)
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return "* [path]"
@@ -881,10 +1029,17 @@ class PathOperatorPredicate(NodePredicate):
     Predicate to match against `PathOperator`\ s
     """
     reference_path_operator: PathOperator = attrib(validator=instance_of(PathOperator))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
 
         return unwrap_if_necessary(graph_node) == self.reference_path_operator
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return self.reference_path_operator.name
