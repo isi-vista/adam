@@ -42,7 +42,7 @@ class ContrastiveLearner(Protocol):
 
 
 @attrs
-class ContrastiveObjectLearner(Protocol):
+class TeachingContrastiveObjectLearner(Protocol):
     """
     A learner that learns contrasts between objects.
 
