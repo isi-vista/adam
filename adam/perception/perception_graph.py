@@ -1415,6 +1415,35 @@ class PatternMatching:
         If a matching relaxed `PerceptionGraphPattern` can be found, it is returned.
         Otherwise, *None* is returned.
         """
+        match = self.relax_pattern_until_it_matches_getting_match(
+            graph_logger=graph_logger,
+            ontology=ontology,
+            min_ratio=min_ratio,
+            trim_after_match=trim_after_match,
+        )
+        return (
+            match.matched_pattern
+            if isinstance(match, PerceptionGraphPatternMatch)
+            else None
+        )
+
+    def relax_pattern_until_it_matches_getting_match(
+        self,
+        *,
+        graph_logger: Optional["GraphLogger"] = None,
+        ontology: Ontology,
+        min_ratio: Optional[float] = None,
+        trim_after_match: Optional[
+            Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
+        ],
+    ) -> Optional["PerceptionGraphPatternMatch"]:
+        """
+        Prunes or relaxes the *pattern* for this matching until it successfully matches
+        using heuristic rules.
+
+        If a matching relaxed `PerceptionGraphPattern` can be found, the corresponding
+        `PerceptionGraphPatternMatch` is returned. Otherwise, *None* is returned.
+        """
 
         min_num_nodes_to_continue = 1
         if min_ratio:
@@ -1444,7 +1473,7 @@ class PatternMatching:
                 )
             )
             if isinstance(match_attempt, PerceptionGraphPatternMatch):
-                return cur_pattern
+                return match_attempt
             else:
                 relaxation_step += 1
                 # If we couldn't successfully match the current part of the pattern,
