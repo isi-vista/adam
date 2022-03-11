@@ -1,9 +1,26 @@
+"""
+Script to implement the contrastive learning experiment.
+
+For now this only supports
+"""
 from collections import defaultdict
 import logging
 from random import Random
-from typing import Optional, Mapping, MutableSequence, Tuple, Sequence, Iterable, TypeVar
+from typing import (
+    Optional,
+    Mapping,
+    MutableSequence,
+    Tuple,
+    Sequence,
+    Iterable,
+    TypeVar,
+    cast,
+    NamedTuple,
+    Generic,
+)
 
 from attr import evolve
+from immutablecollections import immutableset
 from vistautils.parameters import Parameters
 from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
@@ -11,8 +28,20 @@ from adam.curriculum import ExplicitWithSituationInstanceGroup, InstanceGroup
 from adam.experiment import execute_experiment
 from adam.experiment.log_experiment import experiment_from_params
 from adam.language import LinguisticDescriptionT
+from adam.learner import (
+    LanguagePerceptionSemanticAlignment,
+    ComposableLearner,
+    LanguageConceptAlignment,
+    PerceptionSemanticAlignment,
+)
+from adam.learner.contrastive_learner import (
+    TeachingContrastiveObjectLearner,
+    LanguagePerceptionSemanticContrast,
+)
+from adam.learner.integrated_learner import IntegratedTemplateLearner
+from adam.learner.objects import SubsetObjectLearner
 from adam.perception import PerceptionT, PerceptualRepresentation
-from adam.perception.perception_graph import GraphLogger
+from adam.perception.perception_graph import GraphLogger, PerceptionGraph
 from adam.situation import SituationT
 
 SYMBOLIC = "symbolic"
@@ -21,6 +50,17 @@ T = TypeVar("T")
 
 
 def contrastive_learning_entry_point(params: Parameters) -> None:
+    if params.namespace("object_learner").string("learner_type") != "subset":
+        raise NotImplementedError(
+            "Contrastive learning only implemented for *subset* object learners."
+        )
+    if params.namespace_or_empty("attribute_learner"):
+        raise NotImplementedError("Contrastive learning not implemented for attributes.")
+    if params.namespace_or_empty("relation_learner"):
+        raise NotImplementedError("Contrastive learning not implemented for relations.")
+    if params.namespace_or_empty("action_learner"):
+        raise NotImplementedError("Contrastive learning not implemented for actions.")
+
     debug_perception_log_dir = params.optional_creatable_directory(
         "debug_perception_log_dir"
     )
@@ -36,6 +76,7 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
         perception_graph_logger = None
 
     base_experiment = experiment_from_params(params)
+    logging.info("Setting up curriculum.")
     apprentice_train_instance_groups, contrastive_pairs = make_curriculum(
         [
             instance
@@ -45,26 +86,58 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
         random_seed=params.integer("curriculum_creation_seed"),
     )
 
-    experiment = evolve(
-        base_experiment, training_stages=apprentice_train_instance_groups
-    )
-    execute_experiment(
-        experiment=experiment,
-        log_path=params.optional_creatable_directory("hypothesis_log_dir"),
-        log_hypotheses_every_n_examples=params.integer(
-            "log_hypothesis_every_n_steps", default=250
+    experiment = evolve(base_experiment, training_stages=apprentice_train_instance_groups)
+    logging.info("Training apprentice.")
+    # We no longer support any non-integrated learners, but that hasn't made it into the type system
+    # yet, so we need a cast here to tell MyPy we know what we're doing.
+    learner = cast(
+        IntegratedTemplateLearner[PerceptionT, LinguisticDescriptionT],
+        execute_experiment(
+            experiment=experiment,
+            log_path=params.optional_creatable_directory("hypothesis_log_dir"),
+            log_hypotheses_every_n_examples=params.integer(
+                "log_hypothesis_every_n_steps", default=250
+            ),
+            log_learner_state=params.boolean("log_learner_state", default=True),
+            learner_logging_path=params.optional_creatable_directory(
+                "experiment_group_dir"
+            ),
+            starting_point=params.integer("starting_point", default=0),
+            point_to_log=params.integer("point_to_log", default=0),
+            load_learner_state=params.optional_existing_file("learner_state_path"),
+            resume_from_latest_logged_state=params.boolean(
+                "resume_from_latest_logged_state", default=False
+            ),
+            debug_learner_pickling=params.boolean(
+                "debug_learner_pickling", default=False
+            ),
+            perception_graph_logger=perception_graph_logger,
         ),
-        log_learner_state=params.boolean("log_learner_state", default=True),
-        learner_logging_path=params.optional_creatable_directory("experiment_group_dir"),
-        starting_point=params.integer("starting_point", default=0),
-        point_to_log=params.integer("point_to_log", default=0),
-        load_learner_state=params.optional_existing_file("learner_state_path"),
-        resume_from_latest_logged_state=params.boolean(
-            "resume_from_latest_logged_state", default=False
-        ),
-        debug_learner_pickling=params.boolean("debug_learner_pickling", default=False),
-        perception_graph_logger=perception_graph_logger,
     )
+    learner.log_hypotheses(
+        params.creatable_directory("before_contrastive_hypothesis_log_dir")
+    )
+    logging.info("Starting contrastive learning.")
+    object_learner = cast(SubsetObjectLearner, learner.object_learner)
+    contrastive_learner = TeachingContrastiveObjectLearner(apprentice=object_learner)
+    for (_situation1, description1, perception1), (
+        _situation2,
+        description2,
+        perception2,
+    ) in contrastive_pairs:
+        contrastive_learner.learn_from(
+            make_contrast(
+                (
+                    AlignableExample(description1, learner.extract_perception_graph(perception1)),
+                    AlignableExample(description2, learner.extract_perception_graph(perception2)),
+                ),
+                learners=[object_learner],
+            )
+        )
+    learner.log_hypotheses(
+        params.creatable_directory("after_contrastive_hypothesis_log_dir")
+    )
+    logging.info("Contrastive learning finished.")
 
 
 Instance = Tuple[
@@ -73,6 +146,61 @@ Instance = Tuple[
     PerceptualRepresentation[PerceptionT],
 ]
 ContrastiveInstance = Tuple[Instance, Instance]
+LearningInstance = Tuple[LinguisticDescriptionT, PerceptionGraph]
+ContrastiveLearningInstance = Tuple[LearningInstance, LearningInstance]
+
+
+class AlignableExample(NamedTuple, Generic[LinguisticDescriptionT]):
+    """
+    An example that can be processed by some composable learners to produce a
+    `LanguagePerceptionSemanticAlignment`.
+    """
+
+    linguistic_description: LinguisticDescriptionT
+    perception_graph: PerceptionGraph
+
+
+def make_contrast(
+    pair: Tuple[AlignableExample, AlignableExample],
+    *,
+    learners: Sequence[ComposableLearner],
+) -> LanguagePerceptionSemanticContrast:
+    """
+    Create a `LanguagePerceptionSemanticContrast` by processing the pair with the learners.
+    """
+    # Many of these samples may be repeated. It's probably a good idea to process each sample
+    # just once if we can do that. For now with only three concepts I doubt it'll be a major
+    # problem.
+    return LanguagePerceptionSemanticContrast(
+        process_with_learners(
+            pair[0].linguistic_description, pair[0].perception_graph, learners
+        ),
+        process_with_learners(
+            pair[1].linguistic_description, pair[1].perception_graph, learners
+        ),
+    )
+
+
+def process_with_learners(
+    linguistic_description: LinguisticDescriptionT,
+    perception_graph: PerceptionGraph,
+    learners: Sequence[ComposableLearner],
+) -> LanguagePerceptionSemanticAlignment:
+    """
+    Process an instance using the given sub-learners, producing their alignment for the situation.
+    """
+    result = LanguagePerceptionSemanticAlignment(
+        language_concept_alignment=LanguageConceptAlignment.create_unaligned(
+            language=linguistic_description
+        ),
+        perception_semantic_alignment=PerceptionSemanticAlignment(
+            perception_graph=perception_graph,
+            semantic_nodes=immutableset(),
+        ),
+    )
+    for learner in learners:
+        result = learner.enrich_during_learning(result)
+    return result
 
 
 def make_curriculum(
