@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Sequence, Union, List, Mapping, Dict, Optional, Any
+from typing import Sequence, Union, List, Mapping, Dict, Optional, Any, Tuple
 
 import yaml
 from attr import attrs, attrib
@@ -10,10 +10,14 @@ from immutablecollections.converter_utils import _to_immutableset, _to_immutable
 
 from adam.math_3d import Point
 from adam.ontology import OntologyNode
+from adam.ontology.during import DuringAction
 from adam.ontology.phase1_ontology import WHITE, BLACK, RED, GREEN, BLUE
 from adam.perception import (
     PerceptualRepresentationFrame,
     PerceptualRepresentation,
+    PerceptionT,
+    _PerceptionT2,
+    ObjectPerception,
 )
 from adam.perception.perception_graph_nodes import (
     GraphNode,
@@ -211,5 +215,33 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
 # A new class is used as I know I'll need to handle dynamic scenes differently in the future than we did in Phases 1-2
 # and I don't want to have to fix the class names in the future.
 @attrs(slots=True, frozen=True)
-class VisualPerceptionRepresentation(PerceptualRepresentation[VisualPerceptionFrame]):
+class VisualPerceptionRepresentation(PerceptualRepresentation[PerceptionT]):
     """A class to hold a representation for Phase 3 visual perception systems."""
+
+    frames: Tuple[PerceptionT, ...] = attrib(converter=tuple)
+    """
+    The frames making up the description of a situation.
+
+    Usually for a static situation, this will be a single frame,
+    but there could be two or three for complex actions.
+    """
+    # mypy is confused by the instance_of with a generic class
+    during: Optional[DuringAction[ObjectPerception]] = attrib(  # type: ignore
+        validator=optional(instance_of(DuringAction)), default=None, kw_only=True
+    )
+
+    @staticmethod
+    def single_frame(
+        perception_frame: _PerceptionT2,
+    ) -> "VisualPerceptionRepresentation[_PerceptionT2]":
+        """
+        Convenience method for generating a `PerceptualRepresentation` which is a single frame.
+
+        Args:
+            perception_frame: a `PerceptualRepresentationFrame`.
+
+        Returns:
+            A `PerceptualRepresentation` wrapping the provided frame.
+
+        """
+        return VisualPerceptionRepresentation((perception_frame,))

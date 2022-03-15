@@ -1,8 +1,8 @@
 import logging
 import shutil
-
 import yaml
 
+from PIL import Image, ImageFont, ImageDraw
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Mapping, MutableMapping, Optional, Tuple
@@ -10,13 +10,14 @@ from typing import Any, Generic, Mapping, MutableMapping, Optional, Tuple
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
 from more_itertools import only, take
+from adam.perception.visual_perception import VisualPerceptionRepresentation
 from vistautils.parameters import Parameters
 
 from adam.curriculum_to_html import CurriculumToHtmlDumper
 from adam.language import LinguisticDescription, LinguisticDescriptionT
 from adam.language.dependency import LinearizedDependencyTree
 from adam.learner import TopLevelLanguageLearnerDescribeReturn
-from adam.paths import SITUATION_DIR_NAME
+from adam.paths import SITUATION_DIR_NAME, ROBOTO_FILE
 from adam.perception import PerceptionT, PerceptualRepresentation
 from adam.semantics import SemanticNode, ActionSemanticNode, RelationSemanticNode
 from adam.situation import SituationT
@@ -826,6 +827,43 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
         experiment_dir.mkdir(parents=True, exist_ok=True)
 
         if self.copy_curriculum and isinstance(situation, SimulationSituation):
+
+            if isinstance(perceptual_representation, VisualPerceptionRepresentation):
+                for index, image_frame in enumerate(
+                    zip(perceptual_representation.frames, situation.scene_images_png)
+                ):
+                    image_file = Image.open(image_frame[1])
+                    image_editable = ImageDraw.Draw(image_file)
+                    frame_clusters = image_frame[0].clusters
+                    for cluster in frame_clusters:
+                        font = ImageFont.truetype(
+                            str(ROBOTO_FILE),
+                            14,
+                        )
+                        id_label = (
+                            "ID: " + cluster.cluster_id[len(cluster.cluster_id) - 1]
+                        )
+                        font_width, font_height = font.getsize(id_label)
+                        # create black highlight via a rectangle for text to ensure readability
+                        image_editable.rectangle(
+                            (
+                                cluster.centroid_x - font_width / 2,
+                                cluster.centroid_y - font_height,
+                                cluster.centroid_x + font_width / 2,
+                                cluster.centroid_y,
+                            ),
+                            fill="black",
+                        )
+                        image_editable.text(
+                            (cluster.centroid_x, cluster.centroid_y),
+                            id_label,
+                            fill="white",
+                            font=font,
+                            anchor="ms",
+                        )
+                    file_name = f"id_rgb_{index}.png"
+                    image_file.save(str(experiment_dir / file_name))
+
             for file_path in situation.all_files():
                 shutil.copy(file_path, experiment_dir)
 
