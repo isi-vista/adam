@@ -47,6 +47,12 @@ class LanguagePerceptionSemanticContrast(NamedTuple):
     first_alignment: LanguagePerceptionSemanticAlignment
     second_alignment: LanguagePerceptionSemanticAlignment
 
+    def perception_graphs(self) -> Tuple[PerceptionGraph, PerceptionGraph]:
+        return (
+            self.first_alignment.perception_semantic_alignment.perception_graph,
+            self.second_alignment.perception_semantic_alignment.perception_graph,
+        )
+
 
 class ContrastiveLearner(Protocol):
     """
@@ -116,10 +122,12 @@ class TeachingContrastiveObjectLearner(Protocol):
         graph1_difference_nodes, graph2_difference_nodes = _get_difference_nodes(
             matching, ontology=self._ontology
         )
-        for concept, difference_nodes in zip(
-            [concept1, concept2], [graph1_difference_nodes, graph2_difference_nodes]
+        for concept, graph, difference_nodes in zip(
+            [concept1, concept2],
+            matching.perception_graphs(),
+            [graph1_difference_nodes, graph2_difference_nodes],
         ):
-            pattern_to_graph_match = self._match_concept_pattern_to_graph(concept)
+            pattern_to_graph_match = self._match_concept_pattern_to_graph(concept, graph)
             self._update_counts(concept, pattern_to_graph_match, difference_nodes)
 
         for concept in [concept1, concept2]:
