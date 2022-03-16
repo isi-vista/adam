@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Counter, NamedTuple, Protocol, Tuple, Type, TypeVar
+from typing import Counter, NamedTuple, Tuple, Type, TypeVar
+from typing_extensions import Protocol
 
 from attr import attrs, attrib, evolve
 from attr.validators import instance_of
