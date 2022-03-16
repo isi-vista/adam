@@ -13,8 +13,8 @@ from typing import (
     Sequence,
     List,
     Tuple,
-    Protocol,
 )
+from typing_extensions import Protocol
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of, deep_mapping, deep_iterable
