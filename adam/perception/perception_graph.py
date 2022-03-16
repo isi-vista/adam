@@ -1408,7 +1408,11 @@ class PatternMatching:
             min_ratio=min_ratio,
             trim_after_match=trim_after_match,
         )
-        return match.matched_pattern if isinstance(match, PerceptionGraphPatternMatch) else None
+        return (
+            match.matched_pattern
+            if isinstance(match, PerceptionGraphPatternMatch)
+            else None
+        )
 
     def relax_pattern_until_it_matches_getting_match(
         self,
