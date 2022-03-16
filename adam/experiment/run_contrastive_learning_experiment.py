@@ -46,7 +46,7 @@ from adam.situation import SituationT
 
 SYMBOLIC = "symbolic"
 SIMULATED = "simulated"
-T = TypeVar("T")
+T = TypeVar("T")  # pylint:disable=invalid-name
 
 
 def contrastive_learning_entry_point(params: Parameters) -> None:
