@@ -151,7 +151,7 @@ class TeachingContrastiveObjectLearner(Protocol):
         new_pattern_digraph = DiGraph()
 
         for node, data in old_pattern_digraph.nodes(data=True):
-            old_to_new_node[node] = evolve(node, weight=self._calculate_weight_for(concept, node))
+            old_to_new_node[node] = self._re_weighted_node(concept, node)
             new_pattern_digraph.add_node(node, **data)
 
         for old_u, old_v, data in old_pattern_digraph.edges(data=True):
@@ -159,24 +159,35 @@ class TeachingContrastiveObjectLearner(Protocol):
                 old_to_new_node[old_u], old_to_new_node[old_v], **data
             )
 
+    def _re_weighted_node(self, concept: Concept, node: NodePredicate) -> NodePredicate:
+        """
+        Return a re-weighted version of the given node assuming its weight changed, or the node
+        itself otherwise.
+        """
+        new_weight = self._calculate_weight_for(concept, node)
+        return evolve(node, weight=new_weight) if node.weight != new_weight else node  # type: ignore
+
     def _calculate_weight_for(self, concept: Concept, node: NodePredicate) -> float:
-        present_count = 1
-        in_difference_count = 1
+        if isinstance(node, (IsOntologyNodePredicate, CategoricalPredicate)):
+            present_count = 1
+            in_difference_count = 1
 
-        # If it involves an ontology node, count that way
-        if isinstance(node, IsOntologyNodePredicate):
-            present_count = self._ontology_node_present.get((concept, node.property_value), 1)
-            in_difference_count = self._ontology_node_present_in_difference.get(
-                (concept, node.property_value), 1
-            )
-        # Otherwise, if it's categorical, count the value observed
-        elif isinstance(node, CategoricalPredicate):
-            present_count = self._categorical_values_present.get((concept, node.value), 1)
-            in_difference_count = self._categorical_values_present_in_difference.get(
-                (concept, node.value), 1
-            )
+            # If it involves an ontology node, count that way
+            if isinstance(node, IsOntologyNodePredicate):
+                present_count = self._ontology_node_present.get((concept, node.property_value), 1)
+                in_difference_count = self._ontology_node_present_in_difference.get(
+                    (concept, node.property_value), 1
+                )
+            # Otherwise, if it's categorical, count the value observed
+            elif isinstance(node, CategoricalPredicate):
+                present_count = self._categorical_values_present.get((concept, node.value), 1)
+                in_difference_count = self._categorical_values_present_in_difference.get(
+                    (concept, node.value), 1
+                )
 
-        return in_difference_count / present_count
+            return in_difference_count / present_count
+        else:
+            return node.weight
 
     def _get_apprentice_pattern(self, concept: Concept) -> PerceptionGraphPattern:
         concepts_to_patterns = self.apprentice.concepts_to_patterns()
