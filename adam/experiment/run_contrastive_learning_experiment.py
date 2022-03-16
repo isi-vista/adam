@@ -128,8 +128,12 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
         contrastive_learner.learn_from(
             make_contrast(
                 (
-                    AlignableExample(description1, learner.extract_perception_graph(perception1)),
-                    AlignableExample(description2, learner.extract_perception_graph(perception2)),
+                    AlignableExample(
+                        description1, learner.extract_perception_graph(perception1)
+                    ),
+                    AlignableExample(
+                        description2, learner.extract_perception_graph(perception2)
+                    ),
                 ),
                 learners=[object_learner],
             )
