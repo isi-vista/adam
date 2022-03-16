@@ -26,6 +26,7 @@ from vistautils.parameters_only_entrypoint import parameters_only_entry_point
 
 from adam.curriculum import ExplicitWithSituationInstanceGroup, InstanceGroup
 from adam.experiment import execute_experiment
+from adam.experiment.experiment_utils import ONTOLOGY_STR_TO_ONTOLOGY
 from adam.experiment.log_experiment import experiment_from_params
 from adam.language import LinguisticDescriptionT
 from adam.learner import (
@@ -46,7 +47,7 @@ from adam.situation import SituationT
 
 SYMBOLIC = "symbolic"
 SIMULATED = "simulated"
-T = TypeVar("T")  # pylint:disable=invalid-name,bad-option-value
+T = TypeVar("T")  # pylint:disable=invalid-name
 
 
 def contrastive_learning_entry_point(params: Parameters) -> None:
@@ -122,7 +123,12 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
     )
     logging.info("Starting contrastive learning.")
     object_learner = cast(SubsetObjectLearner, learner.object_learner)
-    contrastive_learner = TeachingContrastiveObjectLearner(apprentice=object_learner)
+    ontology, _objects, _perception_gen = ONTOLOGY_STR_TO_ONTOLOGY[
+        params.string(
+            "contrastive_object_learner.ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
+        )
+    ]
+    contrastive_learner = TeachingContrastiveObjectLearner(apprentice=object_learner, ontology=ontology)
     for (_situation1, description1, perception1), (
         _situation2,
         description2,
