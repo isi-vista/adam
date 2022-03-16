@@ -71,14 +71,11 @@ class TeachingContrastiveObjectLearner(Protocol):
     (The difference here is the difference of node "sets" N(A) - N(B) where A is the perception
     graph the concept is present in and B is the other one.)
 
-    We match the relevant patterns to each graph and we match the perceptions
-    TODO fix this docstring it's unfinished
-    Any time we observe a pattern node that matches to a graph node in the
-    TODO fix this docstring it's unfinished
+    We weight only nodes with ontology nodes, and categoricals. We calculate weights for these in
+    similar ways: Counting by the assoicated ontology node (nodes with ontology nodes), and counting
+    by value (categoricals). The weight for each node is
 
-    We calculate weights for a semantic node as follows. First, count the number of times we've seen
-    a
-    TODO fix this docstring it's unfinished
+        #(times we've seen this in the difference) / #(times we've seen this)
     """
 
     apprentice: ApprenticeLearner = attrib(validator=instance_of(SubsetObjectLearner))
