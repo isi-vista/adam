@@ -1,7 +1,7 @@
 """
 Script to implement the contrastive learning experiment.
 
-For now this only supports
+For now this only supports contrastive object learning with a subset object learner.
 """
 from collections import defaultdict
 import logging
