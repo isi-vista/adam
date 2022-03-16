@@ -216,9 +216,9 @@ class RgbColorPredicate(NodePredicate):
     Matches a node where the RGB value matches exactly.
     """
 
-    red: int = attrib(validator=in_(range(0, 255)))
-    green: int = attrib(validator=in_(range(0, 255)))
-    blue: int = attrib(validator=in_(range(0, 255)))
+    red: int = attrib(validator=in_(range(0, 256)))
+    green: int = attrib(validator=in_(range(0, 256)))
+    blue: int = attrib(validator=in_(range(0, 256)))
     _weight: float = attrib(default=1.0, validator=instance_of(float), eq=False)
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
