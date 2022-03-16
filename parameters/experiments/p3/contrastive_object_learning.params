@@ -30,6 +30,8 @@ plural_learner:
    learner_type: "none"
 include_functional_learner: false
 include_generics_learner: false
+contrastive_object_learner:
+   ontology: "phase3"
 suppress_error: false
 
 # Curriculum
