@@ -58,11 +58,11 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
         raise NotImplementedError(
             "Contrastive learning only implemented for *subset* object learners."
         )
-    if params.namespace_or_empty("attribute_learner"):
+    if params.string("attribute_learner.learner_type") != "none":
         raise NotImplementedError("Contrastive learning not implemented for attributes.")
-    if params.namespace_or_empty("relation_learner"):
+    if params.string("relation_learner.learner_type") != "none":
         raise NotImplementedError("Contrastive learning not implemented for relations.")
-    if params.namespace_or_empty("action_learner"):
+    if params.string("action_learner.learner_type") != "none":
         raise NotImplementedError("Contrastive learning not implemented for actions.")
 
     debug_perception_log_dir = params.optional_creatable_directory(
