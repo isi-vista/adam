@@ -163,7 +163,6 @@ class TeachingContrastiveObjectLearner(Protocol):
         present_count = 1
         in_difference_count = 1
 
-        # TODO make sure to ignore slot nodes
         # If it involves an ontology node, count that way
         if isinstance(node, IsOntologyNodePredicate):
             present_count = self._ontology_node_present.get((concept, node.property_value), 1)
