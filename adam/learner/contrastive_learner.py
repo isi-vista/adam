@@ -18,7 +18,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPattern, PerceptionGraphPatternFromGraph, PerceptionGraphPatternMatch, PerceptionGraph,
 )
 from adam.perception.perception_graph_nodes import PerceptionGraphNode
-from adam.perception.perception_graph_predicates import CategoricalPredicate, NodePredicate
+from adam.perception.perception_graph_predicates import CategoricalPredicate, IsOntologyNodePredicate, NodePredicate
 from adam.semantics import ObjectSemanticNode, Concept, SemanticNode
 
 
@@ -132,14 +132,11 @@ class TeachingContrastiveObjectLearner(Protocol):
     ) -> None:
         for pattern_node in pattern_to_graph_match.matched_pattern:
             # If it has an ontology node, do X
-            # TODO figure out which things have ontology nodes
-            if isinstance(pattern_node, ...):
-                ontology_node = ...
-
-                self._ontology_node_present[concept, ontology_node] += 1
+            if isinstance(pattern_node, IsOntologyNodePredicate):
+                self._ontology_node_present[concept, pattern_node.property_value] += 1
 
                 if pattern_to_graph_match.pattern_node_to_matched_graph_node[pattern_node] in difference_nodes:
-                    self._ontology_node_present_in_difference[concept, ontology_node] += 1
+                    self._ontology_node_present_in_difference[concept, pattern_node.property_value] += 1
             # Otherwise, if it's categorical, count the value observed
             elif isinstance(pattern_node, CategoricalPredicate):
                 self._categorical_values_present[concept, pattern_node.value] += 1
@@ -168,12 +165,10 @@ class TeachingContrastiveObjectLearner(Protocol):
 
         # TODO make sure to ignore slot nodes
         # If it involves an ontology node, count that way
-        # TODO implement
-        if isinstance(node, ...):
-            ontology_node = ...
-            present_count = self._ontology_node_present.get((concept, ontology_node), 1)
+        if isinstance(node, IsOntologyNodePredicate):
+            present_count = self._ontology_node_present.get((concept, node.property_value), 1)
             in_difference_count = self._ontology_node_present_in_difference.get(
-                (concept, ontology_node), 1
+                (concept, node.property_value), 1
             )
         # Otherwise, if it's categorical, count the value observed
         elif isinstance(node, CategoricalPredicate):
