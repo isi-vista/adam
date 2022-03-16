@@ -64,9 +64,12 @@ class TeachingContrastiveObjectLearner(Protocol):
     alignments produced by its apprenticed object learner. It learns in the sense that it pushes its
     understanding down into the apprentice.
 
-    This implementation works as follows. First, we get the apprentice's concept for the relevant
-    concept in each scene. Second, we get the
-    TODO fix this docstring it's unfinished
+    This implementation works by matching the perception graphs to the graphs and the graphs to each
+    other, and counting (for each concept separately) the number of times we observe various nodes
+    in a difference of two graphs vs. overall.
+
+    (The difference here is the difference of node "sets" N(A) - N(B) where A is the perception
+    graph the concept is present in and B is the other one.)
 
     We match the relevant patterns to each graph and we match the perceptions
     TODO fix this docstring it's unfinished
