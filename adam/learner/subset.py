@@ -3,10 +3,12 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import AbstractSet, Dict, Iterable, Optional, Set, Tuple
 
-from attr import Factory, attrib, attrs
+from attr import Factory, attrib, attrs, evolve
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
+from vistautils.iter_utils import only
 
+from adam.learner import ApprenticeLearner
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
 from adam.learner.learner_utils import pattern_match_to_semantic_node
 from adam.learner.perception_graph_template import PerceptionGraphTemplate
@@ -23,11 +25,14 @@ from adam.perception.perception_graph import (
     PerceptionGraphPatternMatch,
     PerceptionGraphPattern,
 )
+from adam.perception.perception_graph_predicates import (
+    ObjectSemanticNodePerceptionPredicate,
+)
 from adam.semantics import Concept, SemanticNode
 
 
 @attrs
-class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
+class AbstractSubsetLearner(AbstractTemplateLearner, ApprenticeLearner, ABC):
     _beam_size: int = attrib(validator=instance_of(int), kw_only=True)
     _concept_to_hypotheses: Dict[Concept, ImmutableSet[PerceptionGraphTemplate]] = attrib(
         init=False, default=Factory(dict)
@@ -254,6 +259,57 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ABC):
 
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
         return {k: v.graph_pattern for k, v, _ in self._primary_templates()}
+
+    def propose_updated_hypotheses(
+        self, concept_to_updated_patterns: Dict[Concept, PerceptionGraphPattern]
+    ) -> None:
+        for concept, pattern_update in concept_to_updated_patterns.items():
+            if concept in self.concept_to_surface_template:
+                if len(self._concept_to_hypotheses[concept]) == 1:
+                    hypothesis = only(self._concept_to_hypotheses[concept])
+
+                    # Make sure the expected pattern nodes are present
+                    for (
+                        slot,
+                        node,
+                    ) in hypothesis.template_variable_to_pattern_node.items():
+                        if node not in pattern_update:
+                            raise ValueError(
+                                f"Node {node} for slot variable {slot} not present in updated "
+                                f"hypothesis pattern for concept {concept}."
+                            )
+
+                    # Make sure there are no extra slot nodes
+                    for node in pattern_update:
+                        if (
+                            isinstance(node, ObjectSemanticNodePerceptionPredicate)
+                            and node not in hypothesis.pattern_node_to_template_variable
+                        ):
+                            raise ValueError(
+                                f"Extra slot pattern node {node} present in updated hypothesis "
+                                f"pattern for concept {concept}."
+                            )
+
+                    self._concept_to_hypotheses[concept] = immutableset(
+                        [evolve(hypothesis, graph_pattern=pattern_update)]
+                    )
+                else:
+                    if len(self._concept_to_hypotheses[concept]) > 1:
+                        logging.debug(
+                            "Ignoring hypothesis update for concept %s with multiple hypotheses.",
+                            concept,
+                        )
+                    else:
+                        logging.debug(
+                            "Ignoring hypothesis update for concept %s with no hypotheses. (No way "
+                            "to align nodes to surface template.",
+                            concept,
+                        )
+            else:
+                logging.debug(
+                    "No surface template for concept %s in proposed hypothesis updates.",
+                    concept,
+                )
 
 
 class AbstractTemplateSubsetLearner(AbstractSubsetLearner, AbstractTemplateLearner, ABC):
