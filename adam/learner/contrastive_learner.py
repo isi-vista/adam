@@ -9,16 +9,27 @@ from networkx import DiGraph
 
 from vistautils.iter_utils import only
 
-from adam.learner import ApprenticeLearner, LanguagePerceptionSemanticAlignment, LanguageConceptAlignment
+from adam.learner import (
+    ApprenticeLearner,
+    LanguagePerceptionSemanticAlignment,
+    LanguageConceptAlignment,
+)
 from adam.learner.objects import SubsetObjectLearner
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.perception import MatchMode
 from adam.perception.perception_graph import (
-    PerceptionGraphPattern, PerceptionGraphPatternFromGraph, PerceptionGraphPatternMatch, PerceptionGraph,
+    PerceptionGraphPattern,
+    PerceptionGraphPatternFromGraph,
+    PerceptionGraphPatternMatch,
+    PerceptionGraph,
 )
 from adam.perception.perception_graph_nodes import PerceptionGraphNode
-from adam.perception.perception_graph_predicates import CategoricalPredicate, IsOntologyNodePredicate, NodePredicate
+from adam.perception.perception_graph_predicates import (
+    CategoricalPredicate,
+    IsOntologyNodePredicate,
+    NodePredicate,
+)
 from adam.semantics import ObjectSemanticNode, Concept, SemanticNode
 
 
@@ -81,16 +92,26 @@ class TeachingContrastiveObjectLearner(Protocol):
     apprentice: ApprenticeLearner = attrib(validator=instance_of(SubsetObjectLearner))
     _ontology: Ontology = attrib(validator=instance_of(Ontology))
     # These count the number of
-    _ontology_node_present: Counter[Tuple[Concept, OntologyNode]] = attrib(validator=instance_of(Counter))
-    _ontology_node_present_in_difference: Counter[Tuple[Concept, OntologyNode]] = attrib(validator=instance_of(Counter))
-    _categorical_values_present: Counter[Tuple[Concept, str]] = attrib(validator=instance_of(Counter))
-    _categorical_values_present_in_difference: Counter[Tuple[Concept, str]] = attrib(validator=instance_of(Counter))
+    _ontology_node_present: Counter[Tuple[Concept, OntologyNode]] = attrib(
+        validator=instance_of(Counter)
+    )
+    _ontology_node_present_in_difference: Counter[Tuple[Concept, OntologyNode]] = attrib(
+        validator=instance_of(Counter)
+    )
+    _categorical_values_present: Counter[Tuple[Concept, str]] = attrib(
+        validator=instance_of(Counter)
+    )
+    _categorical_values_present_in_difference: Counter[Tuple[Concept, str]] = attrib(
+        validator=instance_of(Counter)
+    )
 
     def learn_from(self, matching: LanguagePerceptionSemanticContrast) -> None:
         """
         Learn from the given pair of semantically-aligned inputs.
         """
-        concept1, concept2 = _get_relevant_concepts(matching, node_type=ObjectSemanticNode)
+        concept1, concept2 = _get_relevant_concepts(
+            matching, node_type=ObjectSemanticNode
+        )
         graph1_difference_nodes, graph2_difference_nodes = _get_difference_nodes(
             matching, ontology=self._ontology
         )
@@ -112,10 +133,12 @@ class TeachingContrastiveObjectLearner(Protocol):
         # general. We would like to do something smarter. See the GitHub issue:
         # TODO issue
         return first(
-            self._get_apprentice_pattern(concept).matcher(
+            self._get_apprentice_pattern(concept)
+            .matcher(
                 graph,
                 match_mode=MatchMode.OBJECT,
-            ).matches(use_lookahead_pruning=True)
+            )
+            .matches(use_lookahead_pruning=True)
         )
 
     def log_hypotheses(self, log_output_path: Path) -> None:
@@ -135,14 +158,28 @@ class TeachingContrastiveObjectLearner(Protocol):
             if isinstance(pattern_node, IsOntologyNodePredicate):
                 self._ontology_node_present[concept, pattern_node.property_value] += 1
 
-                if pattern_to_graph_match.pattern_node_to_matched_graph_node[pattern_node] in difference_nodes:
-                    self._ontology_node_present_in_difference[concept, pattern_node.property_value] += 1
+                if (
+                    pattern_to_graph_match.pattern_node_to_matched_graph_node[
+                        pattern_node
+                    ]
+                    in difference_nodes
+                ):
+                    self._ontology_node_present_in_difference[
+                        concept, pattern_node.property_value
+                    ] += 1
             # Otherwise, if it's categorical, count the value observed
             elif isinstance(pattern_node, CategoricalPredicate):
                 self._categorical_values_present[concept, pattern_node.value] += 1
 
-                if pattern_to_graph_match.pattern_node_to_matched_graph_node[pattern_node] in difference_nodes:
-                    self._categorical_values_present_in_difference[concept, pattern_node.value] += 1
+                if (
+                    pattern_to_graph_match.pattern_node_to_matched_graph_node[
+                        pattern_node
+                    ]
+                    in difference_nodes
+                ):
+                    self._categorical_values_present_in_difference[
+                        concept, pattern_node.value
+                    ] += 1
 
     def _propose_updated_hypothesis_to_apprentice(self, concept: Concept) -> None:
         pattern = self._get_apprentice_pattern(concept)
@@ -174,13 +211,17 @@ class TeachingContrastiveObjectLearner(Protocol):
 
             # If it involves an ontology node, count that way
             if isinstance(node, IsOntologyNodePredicate):
-                present_count = self._ontology_node_present.get((concept, node.property_value), 1)
+                present_count = self._ontology_node_present.get(
+                    (concept, node.property_value), 1
+                )
                 in_difference_count = self._ontology_node_present_in_difference.get(
                     (concept, node.property_value), 1
                 )
             # Otherwise, if it's categorical, count the value observed
             elif isinstance(node, CategoricalPredicate):
-                present_count = self._categorical_values_present.get((concept, node.value), 1)
+                present_count = self._categorical_values_present.get(
+                    (concept, node.value), 1
+                )
                 in_difference_count = self._categorical_values_present_in_difference.get(
                     (concept, node.value), 1
                 )
@@ -205,11 +246,13 @@ def _get_relevant_concepts(
     return (
         # TODO these might be incorrect if they come from the learner. 🙃
         _get_only_semantic_node(
-            contrastive_pair.first_alignment.language_concept_alignment, node_type=node_type
+            contrastive_pair.first_alignment.language_concept_alignment,
+            node_type=node_type,
         ).concept,
         _get_only_semantic_node(
-            contrastive_pair.second_alignment.language_concept_alignment, node_type=node_type
-        ).concept
+            contrastive_pair.second_alignment.language_concept_alignment,
+            node_type=node_type,
+        ).concept,
     )
 
 
@@ -217,7 +260,8 @@ def _get_only_semantic_node(
     alignment: LanguageConceptAlignment, *, node_type: Type[NodeType]
 ) -> NodeType:
     return only(
-        aligned_node for aligned_node in iter(alignment.aligned_nodes)
+        aligned_node
+        for aligned_node in iter(alignment.aligned_nodes)
         if isinstance(aligned_node, node_type)
     )
 
@@ -228,22 +272,28 @@ def _get_difference_nodes(
     """
     Get the set of perception nodes in graph 1 but not graph 2, and the set in graph 2 but not 1.
     """
-    graph1_as_pattern, perception_graph_match = _match_graphs_to_each_other(matching, ontology=ontology)
+    graph1_as_pattern, perception_graph_match = _match_graphs_to_each_other(
+        matching, ontology=ontology
+    )
 
     return (
-        immutableset([
-            graph1_node
-            for graph1_node in matching.first_alignment.perception_semantic_alignment.perception_graph
-            if (
-                graph1_as_pattern.perception_graph_node_to_pattern_node[graph1_node]
-                not in perception_graph_match.matched_pattern
-            )
-        ]),
-        immutableset([
-            graph2_node
-            for graph2_node in matching.second_alignment.perception_semantic_alignment.perception_graph
-            if graph2_node not in perception_graph_match.matched_sub_graph
-        ]),
+        immutableset(
+            [
+                graph1_node
+                for graph1_node in matching.first_alignment.perception_semantic_alignment.perception_graph
+                if (
+                    graph1_as_pattern.perception_graph_node_to_pattern_node[graph1_node]
+                    not in perception_graph_match.matched_pattern
+                )
+            ]
+        ),
+        immutableset(
+            [
+                graph2_node
+                for graph2_node in matching.second_alignment.perception_semantic_alignment.perception_graph
+                if graph2_node not in perception_graph_match.matched_sub_graph
+            ]
+        ),
     )
 
 
@@ -254,6 +304,9 @@ def _match_graphs_to_each_other(
         matching.first_alignment.perception_semantic_alignment.perception_graph
     )
     perception_graph_match = graph1_as_pattern.perception_graph_pattern.matcher(
-        matching.second_alignment.perception_semantic_alignment.perception_graph, match_mode=MatchMode.OBJECT
-    ).relax_pattern_until_it_matches_getting_match(ontology=ontology, trim_after_match=None)
+        matching.second_alignment.perception_semantic_alignment.perception_graph,
+        match_mode=MatchMode.OBJECT,
+    ).relax_pattern_until_it_matches_getting_match(
+        ontology=ontology, trim_after_match=None
+    )
     return graph1_as_pattern, perception_graph_match
