@@ -125,10 +125,14 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
     object_learner = cast(SubsetObjectLearner, learner.object_learner)
     ontology, _objects, _perception_gen = ONTOLOGY_STR_TO_ONTOLOGY[
         params.string(
-            "contrastive_object_learner.ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
+            "contrastive_object_learner.ontology",
+            valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(),
+            default="phase2",
         )
     ]
-    contrastive_learner = TeachingContrastiveObjectLearner(apprentice=object_learner, ontology=ontology)
+    contrastive_learner = TeachingContrastiveObjectLearner(
+        apprentice=object_learner, ontology=ontology
+    )
     for (_situation1, description1, perception1), (
         _situation2,
         description2,
