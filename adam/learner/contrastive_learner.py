@@ -100,16 +100,16 @@ class TeachingContrastiveObjectLearner(Protocol):
     _ontology: Ontology = attrib(validator=instance_of(Ontology))
     # These count the number of
     _ontology_node_present: Counter[Tuple[Concept, OntologyNode]] = attrib(
-        validator=instance_of(Counter)
+        validator=instance_of(Counter), factory=Counter, init=False
     )
     _ontology_node_present_in_difference: Counter[Tuple[Concept, OntologyNode]] = attrib(
-        validator=instance_of(Counter)
+        validator=instance_of(Counter), factory=Counter, init=False
     )
     _categorical_values_present: Counter[Tuple[Concept, str]] = attrib(
-        validator=instance_of(Counter)
+        validator=instance_of(Counter), factory=Counter, init=False
     )
     _categorical_values_present_in_difference: Counter[Tuple[Concept, str]] = attrib(
-        validator=instance_of(Counter)
+        validator=instance_of(Counter), factory=Counter, init=False
     )
 
     def learn_from(self, matching: LanguagePerceptionSemanticContrast) -> None:
