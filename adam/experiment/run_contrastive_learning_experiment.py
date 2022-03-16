@@ -50,7 +50,7 @@ T = TypeVar("T")  # pylint:disable=invalid-name,bad-option-value
 
 
 def contrastive_learning_entry_point(params: Parameters) -> None:
-    if params.namespace("object_learner").string("learner_type") != "subset":
+    if params.namespace("object_learner") and params.string("object_learner.learner_type") != "subset":
         raise NotImplementedError(
             "Contrastive learning only implemented for *subset* object learners."
         )
