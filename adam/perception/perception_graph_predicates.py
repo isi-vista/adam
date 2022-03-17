@@ -104,7 +104,7 @@ class AnyGraphNodePredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return "GraphNode(*)"
+        return f"GraphNode(*) <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, AnyGraphNodePredicate)
@@ -131,7 +131,7 @@ class AnyObjectPredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return "ObjectClusterNode(*)"
+        return f"ObjectClusterNode(*) <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, AnyObjectPredicate)
@@ -176,7 +176,7 @@ class CategoricalPredicate(NodePredicate):
         )
 
     def dot_label(self) -> str:
-        return f"CategoryFeature(label={self.label}, value={self.value})"
+        return f"CategoryFeature(label={self.label}, value={self.value}) <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, CategoricalPredicate)
@@ -225,7 +225,7 @@ class ContinuousPredicate(NodePredicate):
         )
 
     def dot_label(self) -> str:
-        return f"ContinuousFeature(label={self.label}, value={self.value}, tolerance={self.tolerance})"
+        return f"ContinuousFeature(label={self.label}, value={self.value}, tolerance={self.tolerance}) <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, ContinuousPredicate)
@@ -300,7 +300,8 @@ class DistributionalContinuousPredicate(NodePredicate):
     def dot_label(self) -> str:
         return (
             f"DistributionalContinuousPredicate(label={self.label}, matcher={self.matcher}, "
-            f"min_match_score={self.min_match_score}, min={self._min}, max={self._max})"
+            f"min_match_score={self.min_match_score}, min={self._min}, max={self._max}, "
+            f"weight={self._weight})"
         )
 
     def is_equivalent(self, other) -> bool:
@@ -391,7 +392,7 @@ class RgbColorPredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return f"RGBColorFeature(red={self.red}, green={self.green}, blue={self.blue})"
+        return f"RGBColorFeature(red={self.red}, green={self.green}, blue={self.blue}) <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, RgbColorPredicate)
@@ -431,7 +432,7 @@ class ObjectStrokePredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return f"ObjectStroke({', '.join(f'{point}' for point in self.stroke_normalized_coordinates)})"
+        return f"ObjectStroke({', '.join(f'{point}' for point in self.stroke_normalized_coordinates)}) <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, ObjectStrokePredicate)
@@ -467,7 +468,7 @@ class StrokeGNNRecognitionPredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return f"StrokeGNNRecognition(object={self.recognized_object})"
+        return f"StrokeGNNRecognition(object={self.recognized_object}) <{self._weight}>"
 
     def is_equivalent(self, other: "NodePredicate") -> bool:
         return isinstance(other, StrokeGNNRecognitionPredicate)
@@ -557,7 +558,7 @@ class AnyNodePredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return "*"
+        return f"* <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, AndNodePredicate)
@@ -589,7 +590,7 @@ class AnyObjectPerception(NodePredicate):
             debug_handle_str = f"[{self.debug_handle}]"
         else:
             debug_handle_str = ""
-        return f"*obj{debug_handle_str}"
+        return f"*obj{debug_handle_str} <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, AnyObjectPerception) or isinstance(
@@ -670,7 +671,7 @@ class AxisPredicate(NodePredicate):
         if self.aligned_to_gravitational is not None:
             constraints.append(f"{sign(self.aligned_to_gravitational)}grav_aligned")
 
-        return f"axis({', '.join(constraints)})"
+        return f"axis({', '.join(constraints)}) <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, AxisPredicate):
@@ -725,7 +726,7 @@ class GeonPredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return f"geon({self.template_geon})"
+        return f"geon({self.template_geon}) <{self._weight}>"
 
     @staticmethod
     def exactly_matching(geon: Geon) -> "GeonPredicate":
@@ -794,7 +795,7 @@ class CrossSectionPredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return f"cross-section({self.cross_section})"
+        return f"cross-section({self.cross_section}) <{self._weight}>"
 
     @staticmethod
     def exactly_matching(cs: CrossSection) -> "CrossSectionPredicate":
@@ -843,7 +844,7 @@ class RegionPredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return f"dist({self.distance})"
+        return f"dist({self.distance}) <{self._weight}>"
 
     @staticmethod
     def matching_distance(region: Region[Any]) -> "RegionPredicate":
@@ -880,7 +881,7 @@ class IsOntologyNodePredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return f"{self.property_value.handle}"
+        return f"{self.property_value.handle} <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, IsOntologyNodePredicate):
@@ -924,7 +925,7 @@ class IsColorNodePredicate(NodePredicate):
         return False
 
     def dot_label(self) -> str:
-        return f"{self.color.hex}"
+        return f"{self.color.hex} <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, IsColorNodePredicate):
@@ -951,7 +952,10 @@ class AndNodePredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return " & ".join(sub_pred.dot_label() for sub_pred in self.sub_predicates)
+        return (
+            " & ".join(sub_pred.dot_label() for sub_pred in self.sub_predicates)
+            + f" <{self._weight}>"
+        )
 
     def is_equivalent(self, other) -> bool:
         if isinstance(other, AndNodePredicate) and len(self.sub_predicates) == len(
@@ -987,7 +991,7 @@ class ObjectSemanticNodePerceptionPredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return "*[matched-obj]"
+        return f"*[matched-obj] <{self._weight}>"
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
         return isinstance(predicate_node, ObjectSemanticNodePerceptionPredicate)
@@ -1014,7 +1018,7 @@ class IsPathPredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return "* [path]"
+        return f"* [path] <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, IsPathPredicate)
@@ -1042,7 +1046,7 @@ class PathOperatorPredicate(NodePredicate):
         return self._weight
 
     def dot_label(self) -> str:
-        return self.reference_path_operator.name
+        return self.reference_path_operator.name + f" <{self._weight}>"
 
     def is_equivalent(self, other) -> bool:
         return (
