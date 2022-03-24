@@ -560,7 +560,7 @@ class _Phase1SituationTemplateGenerator(
                 object_var_to_instantiations[obj_var]
                 for obj_var in template.salient_object_variables
             ],
-            other_objects=[
+            other_objects=[  # type: ignore
                 object_var_to_instantiations[obj_var]  # type: ignore
                 for obj_var in (
                     immutableset(object_var_to_instantiations.keys()).difference(

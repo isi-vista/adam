@@ -3,15 +3,51 @@ from immutablecollections import immutableset
 from adam.axes import Axes, directed, straight_up
 from adam.geon import Geon, IRREGULAR, CONSTANT
 from adam.ontology import (
+    ACTION,
     OntologyNode,
     CAN_FILL_TEMPLATE_SLOT,
     META_PROPERTY,
+)
+from adam.ontology.action_description import (
+    ActionDescription,
+    ActionDescriptionFrame,
+    ActionDescriptionVariable,
 )
 from adam.ontology.integrated_learner_experiement_ontology import (
     INTEGRATED_EXPERIMENT_STRUCTURAL_SCHEMATA,
 )
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
+    _EAT_ACTION_DESCRIPTION,
+    _FALL_ACTION_DESCRIPTION,
+    _GIVE_ACTION_DESCRIPTION,
+    _PUT_ACTION_DESCRIPTION,
+    _TAKE_ACTION_DESCRIPTION,
+    _WALK_ACTION_DESCRIPTION,
+    AGENT,
+    DRINK,
+    EAT,
+    FALL,
+    GIVE,
+    GO,
+    GOAL,
+    JUMP,
+    PUT,
+    RUN,
+    SHOVE,
+    SIT,
+    SPIN,
+    TAKE,
+    THEME,
+    THROW,
+    WALK,
+    _make_drink_description,
+    _make_go_description,
+    _make_jump_description,
+    _make_push_descriptions,
+    _make_sit_action_descriptions,
+    _make_spin_descriptions,
+    _make_throw_descriptions,
     subtype,
     _ontology_graph,
     FRUIT,
@@ -159,6 +195,7 @@ subtype(MUG, CONTAINER)
 NULL_NODE = OntologyNode("null")
 subtype(NULL_NODE, META_PROPERTY)
 
+
 PHASE_3_CURRICULUM_OBJECTS = immutableset(
     [
         APPLE,
@@ -197,6 +234,7 @@ _NULL_SCHEMA = ObjectStructuralSchema(
     ),
 )
 
+
 GAILA_PHASE_3_STRUCUTRAL_SCHEMATA = [
     value for value in INTEGRATED_EXPERIMENT_STRUCTURAL_SCHEMATA
 ]
@@ -227,8 +265,89 @@ GAILA_PHASE_3_STRUCUTRAL_SCHEMATA.extend(
     ]
 )
 
+
+OPEN = OntologyNode("open")
+subtype(OPEN, ACTION)
+CLOSE = OntologyNode("close")
+subtype(CLOSE, ACTION)
+WRITING = OntologyNode("writing")
+subtype(WRITING, ACTION)
+STACK = OntologyNode("stack")
+subtype(STACK, ACTION)
+SHAKE = OntologyNode("shake")
+subtype(SHAKE, ACTION)
+SPILL = OntologyNode("spill")
+subtype(SPILL, ACTION)
+
+
+PHASE_3_CURRICULUM_ACTIONS = immutableset(
+    [
+        TAKE,
+        SIT,
+        RUN,
+        EAT,
+        PUT,
+        OPEN,
+        JUMP,
+        DRINK,
+        GO,
+        CLOSE,
+        FALL,
+        WRITING,
+        STACK,
+        THROW,
+        SHAKE,
+        GIVE,
+        SPIN,
+        WALK,
+        SPILL,
+        SHOVE,
+    ]
+)
+
+_NULL_ACTION_VARIABLE = ActionDescriptionVariable(NULL_NODE)
+_NULL_ACTION_DESCRIPTION = ActionDescription(
+    frame=ActionDescriptionFrame(
+        {
+            AGENT: _NULL_ACTION_VARIABLE,
+            THEME: _NULL_ACTION_VARIABLE,
+            GOAL: _NULL_ACTION_VARIABLE,
+        }
+    ),
+    enduring_conditions=[],
+    preconditions=[],
+    postconditions=[],
+    asserted_properties=[],
+)
+
+_ACTIONS_TO_DESCRIPTIONS = [
+    (TAKE, _TAKE_ACTION_DESCRIPTION),
+    (PUT, _PUT_ACTION_DESCRIPTION),
+    (GIVE, _GIVE_ACTION_DESCRIPTION),
+    (EAT, _EAT_ACTION_DESCRIPTION),
+    (FALL, _FALL_ACTION_DESCRIPTION),
+    (WALK, _WALK_ACTION_DESCRIPTION),
+    (RUN, _WALK_ACTION_DESCRIPTION),
+    (OPEN, _NULL_ACTION_DESCRIPTION),
+    (CLOSE, _NULL_ACTION_DESCRIPTION),
+    (WRITING, _NULL_ACTION_DESCRIPTION),
+    (STACK, _NULL_ACTION_DESCRIPTION),
+    (SHAKE, _NULL_ACTION_DESCRIPTION),
+    (SPILL, _NULL_ACTION_DESCRIPTION),
+    (SHOVE, list(_make_push_descriptions())[0][1]),
+]
+
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_jump_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_drink_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_sit_action_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_spin_descriptions())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_go_description())
+_ACTIONS_TO_DESCRIPTIONS.extend(_make_throw_descriptions())
+
+
 GAILA_PHASE_3_ONTOLOGY = Ontology(
     "gaila-phase-3",
     _ontology_graph,
     structural_schemata=GAILA_PHASE_3_STRUCUTRAL_SCHEMATA,
+    action_to_description=_ACTIONS_TO_DESCRIPTIONS,
 )
