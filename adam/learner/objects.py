@@ -1,4 +1,5 @@
 import logging
+from abc import ABC
 from itertools import chain
 from pathlib import Path
 
@@ -75,13 +76,12 @@ from adam.semantics import (
 )
 
 
-class AbstractObjectTemplateLearner(AbstractTemplateLearner):
-    # pylint:disable=abstract-method
+class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> bool:
         # We can try to learn objects from anything, as long as the scene isn't already
-        # completely understood.
+        # completely understod.
         return (
             not language_perception_semantic_alignment.language_concept_alignment.is_entirely_aligned
         )
@@ -135,7 +135,7 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner):
         perception_graph_after_matching: PerceptionGraph,
         immutable_new_nodes: AbstractSet[SemanticNode],
     ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
-        object_root_nodes = immutableset(  # pylint:disable=protected-access
+        object_root_nodes = immutableset(
             node
             for node in perception_graph_after_matching._graph.nodes  # pylint:disable=protected-access
             if isinstance(node, ObjectPerception)
