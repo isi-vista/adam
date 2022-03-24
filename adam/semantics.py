@@ -70,6 +70,11 @@ class GenericConcept(Concept):
     debug_string: str = attrib(validator=instance_of(str))
 
 
+@attrs(frozen=True, eq=False)
+class AffordanceConcept(Concept):
+    debug_string: str = attrib(validator=instance_of(str))
+
+
 GROUND_OBJECT_CONCEPT = ObjectConcept("ground")
 
 
@@ -108,6 +113,10 @@ class SemanticNode(Protocol):
         elif isinstance(concept, ActionConcept):
             return ActionSemanticNode(
                 concept, slots_to_fillers, confidence=confidence, original_node_id=node_id
+            )
+        elif isinstance(concept, AffordanceConcept):
+            return AffordanceSemanticNode(
+                concept, slots_to_fillers, confidence=confidence
             )
         else:
             raise RuntimeError(
@@ -183,6 +192,18 @@ class ActionSemanticNode(SemanticNode):
     # def __attrs_post_init__(self) -> None:
     #     for template in self.templates:
     #         check_arg(template.num_slots >= 1)
+
+
+@attrs(frozen=True)
+class AffordanceSemanticNode(SemanticNode):
+    concept: AffordanceConcept = attrib(validator=instance_of(AffordanceConcept))
+    slot_fillings: ImmutableDict[SyntaxSemanticsVariable, ObjectSemanticNode] = attrib(
+        converter=_to_immutabledict,
+        validator=deep_mapping(
+            instance_of(SyntaxSemanticsVariable), instance_of(ObjectSemanticNode)
+        ),
+    )
+    confidence: float = attrib(validator=instance_of(float))
 
 
 @attrs(frozen=True)

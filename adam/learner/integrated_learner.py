@@ -117,6 +117,9 @@ class IntegratedTemplateLearner(
     generics_learner: Optional[SimpleGenericsLearner] = attrib(
         validator=optional(instance_of(SimpleGenericsLearner)), default=None
     )
+    affordance_learner: Optional[TemplateLearner] = attrib(
+        validator=optional(instance_of(TemplateLearner)), default=None
+    )
 
     _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
 
@@ -160,6 +163,15 @@ class IntegratedTemplateLearner(
             )
 
         self._observation_num += 1
+
+        # The affordance learner 'learns' unnamed features that correspond to the ability of an object to participate
+        # in an action. As this learner doesn't produce verbalized semantics but instead augments the perception
+        # graph with features it recognizes we need these additional features at the start of the scene to enhance
+        # the other learners.
+        if self.affordance_learner:
+            current_learner_state = self.affordance_learner.enrich_during_learning(
+                current_learner_state
+            )
 
         # We iteratively let each "layer" of semantic analysis attempt
         # to learn from the perception,
@@ -214,6 +226,9 @@ class IntegratedTemplateLearner(
             if self.functional_learner:
                 self.functional_learner.learn_from(current_learner_state, offset=offset)
 
+            if self.affordance_learner:
+                self.affordance_learner.learn_from(current_learner_state)
+
         # Engage generics learner if the utterance is indefinite
         if self.generics_learner and not self.is_definite(current_learner_state):
             learner_semantics = LearnerSemantics.from_nodes(
@@ -265,6 +280,13 @@ class IntegratedTemplateLearner(
                 logging.DEBUG,
                 f"Logging perception graph from describe: {graph_name}",
                 graph_name=graph_name,
+            )
+
+        # The affordance learner, if we have one, runs decode first as it adds additional features we want the
+        # other learners to be able to learn from
+        if self.affordance_learner:
+            cur_description_state = self.affordance_learner.enrich_during_description(
+                cur_description_state
             )
 
         for sub_learner in [
