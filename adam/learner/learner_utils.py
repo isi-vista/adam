@@ -171,7 +171,7 @@ def pattern_match_to_semantic_node(
         and pattern_node in pattern.pattern_node_to_template_variable
     )
 
-    potential_root_node = get_root_object_cluster_perception(
+    potential_root_node = get_root_if_perception_is_object_cluster(
         match.graph_matched_against._graph,  # pylint: disable=protected-access
         set(match.matched_sub_graph),
     )
@@ -792,10 +792,12 @@ def get_slot_from_semantic_node(
     return slot
 
 
-def get_root_object_cluster_perception(
+def get_root_if_perception_is_object_cluster(
     graph: DiGraph, matched_subgraph_nodes: AbstractSet[PerceptionGraphNode]
 ) -> Optional[ObjectClusterNode]:
     """Get the root object cluster node from a graph given a subset of nodes which represent the object.
+
+    If the root object cluster does not exist this function will return none.
 
     Args:
         graph: A DiGraph of scene perception to process
