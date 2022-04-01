@@ -880,9 +880,9 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
                     # to ensure the ID is unique, so we assume all semantic nodes in the scene could have an original ID
                     # and 'count' from there. This uniqueness guarantee could be improved, but it's not a problem
                     # to potentially have non-linear unique IDs.
-                    semantic_node.original_node_id
+                    semantic_node.original_node_id  # type: ignore
                     if semantic_node.original_node_id is not None
-                    else idx + len(predicted_scene_description.semantics_to_descriptions),  # type: ignore
+                    else idx + len(predicted_scene_description.semantics_to_descriptions),
                     semantic_node,
                     linguistic_description,
                     predicted_scene_description,

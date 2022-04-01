@@ -797,7 +797,9 @@ def get_root_if_perception_is_object_cluster(
 ) -> Optional[ObjectClusterNode]:
     """Get the root object cluster node from a graph given a subset of nodes which represent the object.
 
-    If the root object cluster does not exist this function will return none.
+        If a root object cluster node does not exist this function will return none. For example, this
+        happens when the passed nodes represent an action and not an object. It could also happen
+        if the nodes represent two separate objects.
 
     Args:
         graph: A DiGraph of scene perception to process
