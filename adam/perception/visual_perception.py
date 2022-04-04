@@ -156,9 +156,13 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
                         weight=strokes_map["confidence_score"],
                     )
                 )
+
+            # Cluster ID is cleaned so that only the digit ID is displayed and not 'object'
             clusters.append(
                 ClusterPerception(
-                    cluster_id=cluster_map["object_name"],
+                    cluster_id="".join(
+                        char for char in cluster_map["object_name"] if char.isdigit()
+                    ),
                     viewpoint_id=cluster_map["viewpoint_id"],
                     sub_object_id=cluster_map.get("subobject_id", 0),
                     strokes=strokes,

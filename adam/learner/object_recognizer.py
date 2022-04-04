@@ -367,13 +367,17 @@ class ObjectRecognizer:
                     )
                 if pattern_match:
                     cumulative_millis_in_successful_matches_ms += t.elapsed
-                    confidence = 1.0
+                    confidence, cluster_id = None, None
                     for graph_node in pattern_match.matched_sub_graph:
                         if isinstance(graph_node, StrokeGNNRecognitionNode):
                             confidence = graph_node.confidence
+                        if isinstance(graph_node, ObjectClusterNode):
+                            cluster_id = graph_node.cluster_id
 
                     matched_object_node = ObjectSemanticNode(
-                        concept, confidence=confidence
+                        concept,
+                        confidence=confidence if confidence else 1.0,
+                        original_node_id=cluster_id if cluster_id else None,
                     )
 
                     # We wrap the concept in a tuple because it could in theory be multiple tokens,

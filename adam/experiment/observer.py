@@ -874,7 +874,15 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
             semantic_node, linguistic_description = semantic_to_description
             output_dict[OUTPUT_LANGUAGE].append(
                 self._convert_to_output_format(
-                    idx,
+                    # If the semantic node has an alignment to an original perception node in the graph (e.g. an object
+                    # perception root) we want to use the original ID value to enable a matching between the produced
+                    # linguistic utterance and the identified object cluster. In the case no original ID exists we want
+                    # to ensure the ID is unique, so we assume all semantic nodes in the scene could have an original ID
+                    # and 'count' from there. This uniqueness guarantee could be improved, but it's not a problem
+                    # to potentially have non-linear unique IDs.
+                    semantic_node.original_node_id  # type: ignore
+                    if semantic_node.original_node_id is not None
+                    else idx + len(predicted_scene_description.semantics_to_descriptions),
                     semantic_node,
                     linguistic_description,
                     predicted_scene_description,
