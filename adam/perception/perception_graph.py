@@ -1822,6 +1822,20 @@ class PerceptionGraphPatternMatch:
         for node in self.matched_pattern:
             node.confirm_match(self.pattern_node_to_matched_graph_node[node])
 
+    def confirm_graph_match(self) -> None:
+        """
+        Update the graph nodes by confirming a match for all matched nodes.
+
+        This method does nothing when the graph is an actual perception graph. When the graph is a
+        pattern graph, this mutates the graph nodes.
+        """
+        if isinstance(self.graph_matched_against, PerceptionGraphPattern):
+            for node in self.matched_pattern:
+                graph_node = cast(
+                    NodePredicate, self.pattern_node_to_matched_graph_node[node]
+                )
+                graph_node.confirm_match(node)
+
 
 class EdgePredicate(ABC):
     r"""
