@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Any, Tuple
+from typing import Optional, Any, Tuple, Union
 
 from attr import attrs, attrib
 from attr.validators import optional, instance_of, in_, deep_iterable
@@ -64,6 +64,11 @@ class NodePredicate(ABC):
         """
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        """
+        Determines whether a NodePredicate matches another Node Predicate
+        """
+
+    def confirm_match(self, node: Union[PerceptionGraphNode, "NodePredicate"]) -> None:
         """
         Determines whether a NodePredicate matches another Node Predicate
         """
