@@ -1813,6 +1813,15 @@ class PerceptionGraphPatternMatch:
     in `matched_sub_graph` they were aligned to.
     """
 
+    def confirm_pattern_match(self) -> None:
+        """
+        Update the pattern graph nodes by confirming a match for all matched nodes.
+
+        This mutates the pattern graph nodes.
+        """
+        for node in self.matched_pattern:
+            node.confirm_match(self.pattern_node_to_matched_graph_node[node])
+
 
 class EdgePredicate(ABC):
     r"""
