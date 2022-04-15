@@ -169,7 +169,14 @@ class AbstractCrossSituationalLearner(AbstractTemplateLearner, ABC):
         meanings_to_pattern_template: Mapping[
             PerceptionGraph, PerceptionGraphTemplate
         ] = immutabledict(
-            (meaning, PerceptionGraphTemplate.from_graph(meaning, immutabledict()))
+            (
+                meaning,
+                PerceptionGraphTemplate.from_graph(
+                    meaning,
+                    immutabledict(),
+                    min_continuous_feature_match_score=self._min_continuous_feature_match_score,
+                ),
+            )
             for meaning in meanings_from_perception
         )
 

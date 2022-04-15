@@ -737,6 +737,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         object_schema: ObjectStructuralSchema,
         *,
         perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+        min_continuous_feature_match_score: float,
     ) -> "PerceptionGraphPattern":
         """
         Creates a pattern for recognizing an object based on its *object_schema*.
@@ -776,12 +777,13 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
         # Finally, we convert the PerceptionGraph DiGraph representation to a PerceptionGraphPattern
         return PerceptionGraphPattern.from_graph(
-            perception_graph=PerceptionGraph(perception_graph_as_digraph)
+            perception_graph=PerceptionGraph(perception_graph_as_digraph),
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         ).perception_graph_pattern
 
     @staticmethod
     def from_graph(
-        perception_graph: PerceptionGraph,
+        perception_graph: PerceptionGraph, *, min_continuous_feature_match_score: float
     ) -> "PerceptionGraphPatternFromGraph":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
@@ -806,6 +808,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         ontology: Ontology,
         *,
         perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+        min_continuous_feature_match_score: float,
     ) -> "PerceptionGraphPattern":
         """
         Creates a pattern for recognizing an obect based on its *ontology_node*
@@ -825,6 +828,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             return PerceptionGraphPattern.from_schema(
                 first(ontology.structural_schemata(node)),
                 perception_generator=perception_generator,
+                min_continuous_feature_match_score=min_continuous_feature_match_score,
             )
         # If the node doesn't have a corresponding structural schemata we see if it can be
         # created as a single object scene
@@ -862,11 +866,14 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
         # We then turn this DiGraph representation into a PerceptionGraphPattern
         return PerceptionGraphPattern.from_graph(
-            perception_graph=PerceptionGraph(perception_graph_as_digraph)
+            perception_graph=PerceptionGraph(perception_graph_as_digraph),
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         ).perception_graph_pattern
 
     @staticmethod
-    def phase3_pattern(node: OntologyNode) -> "PerceptionGraphPattern":
+    def phase3_pattern(
+        node: OntologyNode, *, min_continuous_feature_match_score: float
+    ) -> "PerceptionGraphPattern":
         digraph = DiGraph()
 
         fake_cluster = ObjectClusterNode(
@@ -883,7 +890,8 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         digraph.add_edge(fake_cluster, fake_gnn_recognition, label=HAS_PROPERTY_LABEL)
 
         return PerceptionGraphPattern.from_graph(
-            perception_graph=PerceptionGraph(digraph, dynamic=False)
+            perception_graph=PerceptionGraph(digraph, dynamic=False),
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         ).perception_graph_pattern
 
     def pattern_complexity(self) -> int:

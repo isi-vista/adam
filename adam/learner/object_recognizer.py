@@ -85,6 +85,9 @@ _LIST_OF_PERCEIVED_PATTERNS = immutableset(
         PerceptionGraphPattern.from_schema(
             first(GAILA_PHASE_1_ONTOLOGY.structural_schemata(node)),
             perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,
+            # Use an arbitrary threshold -- it doesn't matter because the object recognizer
+            # does not currently take advantage of score-based continuous feature matching
+            min_continuous_feature_match_score=0.3,
         ),
     )
     for node in PHASE_1_CURRICULUM_OBJECTS
@@ -231,7 +234,12 @@ class ObjectRecognizer:
                     (
                         concept,
                         PerceptionGraphPattern.from_ontology_node(
-                            obj_type, ontology, perception_generator=perception_generator
+                            obj_type,
+                            ontology,
+                            perception_generator=perception_generator,
+                            # Use an arbitrary threshold -- it doesn't matter because the object recognizer
+                            # does not currently take advantage of score-based continuous feature matching
+                            min_continuous_feature_match_score=0.3,
                         ),
                     )
                     for (obj_type, concept) in ontology_types_to_concepts.items()
@@ -262,6 +270,10 @@ class ObjectRecognizer:
                         concept,
                         PerceptionGraphPattern.phase3_pattern(
                             obj_type,
+                            # Use an arbitrary threshold -- it doesn't matter because the object
+                            # recognizer does not currently take advantage of score-based continuous
+                            # feature matching
+                            min_continuous_feature_match_score=0.3,
                         ),
                     )
                     for (obj_type, concept) in ontology_types_to_concepts.items()

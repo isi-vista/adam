@@ -123,6 +123,7 @@ class SubsetPluralLearner(AbstractTemplateSubsetLearner, AbstractPluralTemplateL
                 PerceptionGraphTemplate.from_graph(
                     learning_state.perception_semantic_alignment.perception_graph,
                     template_variable_to_matched_object_node=bound_surface_template.slot_to_semantic_node,
+                    min_continuous_feature_match_score=self._min_continuous_feature_match_score,
                 )
             ]
         )

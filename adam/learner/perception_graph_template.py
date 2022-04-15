@@ -53,12 +53,17 @@ class PerceptionGraphTemplate:
         template_variable_to_matched_object_node: Mapping[
             SyntaxSemanticsVariable, ObjectSemanticNode
         ],
+        *,
+        min_continuous_feature_match_score: float,
     ) -> "PerceptionGraphTemplate":
         # It is possible the perception graph has additional recognized objects
         # which are not aligned to surface template slots.
         # We assume these are not arguments of the verb and remove them from the perception
         # before creating a pattern.
-        pattern_from_graph = PerceptionGraphPattern.from_graph(perception_graph)
+        pattern_from_graph = PerceptionGraphPattern.from_graph(
+            perception_graph,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
+        )
         pattern_graph = pattern_from_graph.perception_graph_pattern
         matched_object_to_matched_predicate = (
             pattern_from_graph.perception_graph_node_to_pattern_node

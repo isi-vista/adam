@@ -162,7 +162,11 @@ def do_object_on_table_test(
 
     # We test that a perceptual pattern for "object_to_match" matches in all four cases.
     object_to_match_pattern = PerceptionGraphPattern.from_schema(
-        object_schema, perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR
+        object_schema,
+        perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     )
 
     situations_with_object_to_match = chain(
@@ -258,7 +262,10 @@ def test_last_failed_pattern_node():
 
         # Original perception pattern
         whole_perception_pattern = PerceptionGraphPattern.from_graph(
-            perception
+            perception,
+            # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+            # score-based continuous feature matching here
+            min_continuous_feature_match_score=0.3,
         ).perception_graph_pattern
         # Create an altered perception graph we replace the color node
         altered_perception_digraph = perception.copy_as_digraph()
@@ -325,7 +332,10 @@ def test_successfully_extending_partial_match():
     # Create a perception pattern for the whole thing
     # and also a perception pattern for a subset of the whole pattern
     whole_perception_pattern = PerceptionGraphPattern.from_graph(
-        perception
+        perception,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     partial_digraph = whole_perception_pattern.copy_as_digraph()
@@ -382,7 +392,10 @@ def test_semantically_infeasible_partial_match():
         PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     whole_perception_pattern = PerceptionGraphPattern.from_graph(
-        perception
+        perception,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     # Create an altered perception graph we remove the color node
@@ -416,7 +429,10 @@ def test_semantically_infeasible_partial_match():
             altered_perception_digraph[edge[0]][edge[1]][k] = v
 
     altered_perception_pattern = PerceptionGraphPattern.from_graph(
-        PerceptionGraph(altered_perception_digraph)
+        PerceptionGraph(altered_perception_digraph),
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     partial_digraph = altered_perception_pattern.copy_as_digraph()
@@ -488,7 +504,10 @@ def test_syntactically_infeasible_partial_match():
 
     altered_perception_perception_graph = PerceptionGraph(altered_perception_digraph)
     altered_perception_pattern = PerceptionGraphPattern.from_graph(
-        altered_perception_perception_graph
+        altered_perception_perception_graph,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     # Start the matching process, get a partial match
@@ -542,7 +561,10 @@ def test_allowed_matches_with_bad_partial_match():
                 for node in perception._graph.nodes  # pylint: disable=protected-access
                 if getattr(node, "debug_handle", None) == "box_0"
             }
-        )
+        ),
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     pattern2: PerceptionGraphPattern = PerceptionGraphPattern.from_graph(
@@ -552,7 +574,10 @@ def test_allowed_matches_with_bad_partial_match():
                 for node in perception._graph.nodes  # pylint: disable=protected-access
                 if getattr(node, "debug_handle", None) in {"box_0", "the ground"}
             }
-        )
+        ),
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     pattern1_box: AnyObjectPerception = cast(
@@ -745,7 +770,10 @@ def test_matching_static_vs_dynamic_graphs():
     )
 
     perception_pattern = PerceptionGraphPattern.from_graph(
-        perception_graph
+        perception_graph,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     temporal_perception_pattern = perception_pattern.copy_with_temporal_scopes(
@@ -790,7 +818,10 @@ def test_copy_with_temporal_scope_pattern_content():
     )
 
     perception_pattern = PerceptionGraphPattern.from_graph(
-        perception_graph
+        perception_graph,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
@@ -864,7 +895,10 @@ def test_simulated_one_object_graph():
 
     perception_graph = PerceptionGraph.from_simulated_frame(representation.frames[0])
     perception_graph_pattern = PerceptionGraphPattern.from_graph(
-        perception_graph
+        perception_graph,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     matcher = perception_graph_pattern.matcher(
