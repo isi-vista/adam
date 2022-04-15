@@ -33,10 +33,16 @@ def integrated_learner_factory(language_mode: LanguageMode):
             language_mode=language_mode,
         ),
         attribute_learner=SubsetAttributeLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            beam_size=5,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         ),
         action_learner=SubsetVerbLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            beam_size=5,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         ),
     )
 

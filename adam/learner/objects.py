@@ -289,6 +289,9 @@ class ProposeButVerifyObjectLearner(
             language_mode=params.enum(
                 "language_mode", LanguageMode, default=LanguageMode.ENGLISH
             ),
+            min_continuous_feature_match_score=params.floating_point(
+                "min_continuous_feature_match_score", default=0.3
+            ),
         )
 
     def log_hypotheses(self, log_output_path: Path) -> None:
@@ -367,6 +370,9 @@ class CrossSituationalObjectLearner(
             ontology=ontology if ontology else GAILA_PHASE_1_ONTOLOGY,
             language_mode=params.enum(
                 "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+            ),
+            min_continuous_feature_match_score=params.floating_point(
+                "min_continuous_feature_match_score", default=0.3
             ),
         )
 

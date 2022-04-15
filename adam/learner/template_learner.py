@@ -56,6 +56,9 @@ class AbstractTemplateLearner(TemplateLearner, ABC):
 
     _observation_num: int = attrib(init=False, default=0)
     _language_mode: LanguageMode = attrib(validator=instance_of(LanguageMode))
+    _min_continuous_feature_match_score: float = attrib(
+        validator=instance_of(float), kw_only=True
+    )
 
     def learn_from(
         self,

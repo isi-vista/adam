@@ -16,7 +16,10 @@ def integrated_learner_factory(language_mode: LanguageMode):
     return SymbolicIntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         action_learner=SubsetVerbLearner(
-            ontology=GAILA_PHASE_2_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_2_ONTOLOGY,
+            beam_size=5,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         ),
         functional_learner=FunctionalLearner(language_mode=language_mode),
     )

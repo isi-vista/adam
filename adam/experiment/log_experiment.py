@@ -348,22 +348,26 @@ def learner_factory_from_params(
                 smoothing_parameter=0.002,
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
                 rank_gaze_higher=True,
             ),
             attribute_learner=SubsetAttributeLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             relation_learner=SubsetRelationLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             action_learner=SubsetVerbLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
         )
     elif learner_type == "integrated-learner":
@@ -372,21 +376,25 @@ def learner_factory_from_params(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             attribute_learner=SubsetAttributeLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             relation_learner=SubsetRelationLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             action_learner=SubsetVerbLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             functional_learner=FunctionalLearner(language_mode=language_mode),
         )
@@ -399,16 +407,19 @@ def learner_factory_from_params(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             relation_learner=SubsetRelationLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             action_learner=SubsetVerbLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             functional_learner=FunctionalLearner(language_mode=language_mode),
             generics_learner=SimpleGenericsLearner(),
@@ -422,16 +433,19 @@ def learner_factory_from_params(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             relation_learner=SubsetRelationLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             action_learner=SubsetVerbLearner(
                 ontology=GAILA_PHASE_2_ONTOLOGY,
                 beam_size=beam_size,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
             functional_learner=FunctionalLearner(language_mode=language_mode),
         )
@@ -545,6 +559,7 @@ def learner_factory_from_params(
                 rank_gaze_higher=False,
                 ontology=GAILA_PHASE_1_ONTOLOGY,
                 language_mode=language_mode,
+                min_continuous_feature_match_score=0.7,
             ),
         )
     elif learner_type == "simulated-integrated-learner-params":

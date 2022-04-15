@@ -50,16 +50,28 @@ def integrated_learner_factory(language_mode: LanguageMode):
     rng.seed(0)
     return SymbolicIntegratedTemplateLearner(
         object_learner=SubsetObjectLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            beam_size=5,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         ),
         attribute_learner=SubsetAttributeLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            beam_size=5,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         ),
         plural_learner=SubsetPluralLearner(
-            ontology=GAILA_PHASE_2_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_2_ONTOLOGY,
+            beam_size=5,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         ),
         action_learner=SubsetVerbLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            beam_size=5,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         ),
         generics_learner=SimpleGenericsLearner(),
     )

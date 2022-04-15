@@ -66,7 +66,10 @@ from adam.situation.templates.phase1_templates import (
 def integrated_learner_factory(language_mode: LanguageMode):
     return SymbolicIntegratedTemplateLearner(
         object_learner=SubsetObjectLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=10, language_mode=language_mode
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            beam_size=10,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         )
     )
 
@@ -75,7 +78,10 @@ def integrated_learner_pv_factory(langage_mode: LanguageMode):
     rng = RandomChooser.for_seed(0)
     return SymbolicIntegratedTemplateLearner(
         object_learner=ProposeButVerifyObjectLearner(
-            rng=rng, language_mode=langage_mode, ontology=GAILA_PHASE_1_ONTOLOGY
+            rng=rng,
+            language_mode=langage_mode,
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            min_continuous_feature_match_score=0.3,
         )
     )
 
@@ -91,6 +97,7 @@ def integrated_learner_cs_factory(langage_mode: LanguageMode):
             ),
             language_mode=langage_mode,
             ontology=GAILA_PHASE_1_ONTOLOGY,
+            min_continuous_feature_match_score=0.3,
         )
     )
 
@@ -248,7 +255,10 @@ def test_subset_learner_subobject():
     )
 
     object_learner = SubsetObjectLearner(
-        ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=LanguageMode.ENGLISH
+        ontology=GAILA_PHASE_1_ONTOLOGY,
+        beam_size=5,
+        language_mode=LanguageMode.ENGLISH,
+        min_continuous_feature_match_score=0.3,
     )
 
     for situation in [
@@ -365,6 +375,7 @@ def test_pursuit_object_learner(language_mode):
             smoothing_parameter=0.002,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         )
     )
     for training_stage in [train_curriculum]:
@@ -459,6 +470,7 @@ def test_pursuit_object_learner_with_gaze(language_mode):
             smoothing_parameter=0.002,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
             rank_gaze_higher=True,
         )
     )
