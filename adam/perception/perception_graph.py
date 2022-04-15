@@ -108,6 +108,7 @@ from adam.perception.perception_graph_predicates import (
     RgbColorPredicate,
     ObjectStrokePredicate,
     StrokeGNNRecognitionPredicate,
+    DistributionalContinuousPredicate,
 )
 from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
@@ -794,6 +795,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             perception_graph=perception_graph.copy_as_digraph(),
             pattern_graph=pattern_graph,
             perception_node_to_pattern_node=perception_node_to_pattern_node,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         )
         return PerceptionGraphPatternFromGraph(
             perception_graph_pattern=PerceptionGraphPattern(
@@ -950,6 +952,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         pattern_graph: DiGraph,
         *,
         perception_node_to_pattern_node: Dict[Any, "NodePredicate"],
+        min_continuous_feature_match_score: float,
     ) -> None:
         # Two mapping methods that map nodes and edges from the source PerceptionGraph onto the corresponding
         # node and edge representations on the PerceptionGraphPattern.
@@ -997,8 +1000,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                         node
                     )
                 elif isinstance(node, ContinuousNode):
-                    perception_node_to_pattern_node[key] = ContinuousPredicate.from_node(
-                        node
+                    perception_node_to_pattern_node[
+                        key
+                    ] = DistributionalContinuousPredicate.from_node(
+                        node, min_match_score=min_continuous_feature_match_score
                     )
                 elif isinstance(node, RgbColorNode):
                     perception_node_to_pattern_node[key] = RgbColorPredicate.from_node(
