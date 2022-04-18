@@ -371,7 +371,7 @@ def _extract_candidate_attributes(
     # and it's unlikely to converge on the correct hypothesis
     # in any reasonable amount of time or number of examples.
     candidate_attribute_subgraph_node_sets = [
-        immutableset([object_with_attribute, property]) for property in properties
+        immutableset([object_with_attribute, property_]) for property_ in properties
     ]
     return immutableset(
         [
