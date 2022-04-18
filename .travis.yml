@@ -5,7 +5,7 @@ jobs:
           python: "3.7"
           stage: test
           install:
-            - pip install setuptools wheel
+            - pip install --upgrade pip setuptools wheel
             - pip install -r requirements_lock.txt
           script:
               - echo "python version $(python --version) running"
@@ -32,7 +32,7 @@ jobs:
           python: "pypy3.7-7.3.5"
           stage: test
           install:
-            - pip install --upgrade "pip<20.3" setuptools wheel
+            - pip install --upgrade pip setuptools wheel
             - pip install -r requirements_pypy.txt
 #           - pip install codecov
           script:
