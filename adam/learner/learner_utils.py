@@ -37,6 +37,7 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
+from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import PerceptualRepresentation, MatchMode, ObjectPerception
@@ -58,6 +59,9 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     DebugCallableType,
     GraphLogger,
+    HAS_PROPERTY_LABEL,
+    TemporalScope,
+    TemporallyScopedEdgeLabel,
 )
 from adam.perception.perception_graph_nodes import PerceptionGraphNode, ObjectClusterNode
 from adam.semantics import (
@@ -825,3 +829,30 @@ def get_root_if_perception_is_object_cluster(
         return roots[0]
 
     return None
+
+
+def add_node_connected_to_perception_graph(
+    original_graph: PerceptionGraph,
+    root_node: PerceptionGraphNode,
+    new_node: PerceptionGraphNode,
+    edge_label: OntologyNode = HAS_PROPERTY_LABEL,
+    *,
+    temporal_scope: Optional[Union[TemporalScope, Iterable[TemporalScope]]] = None,
+) -> PerceptionGraph:
+    """Adds a node to a perception graph with the given `edge_label` and optional temporal scope(s)."""
+
+    # Allow the user to pass in a single TemporalScope for convenience
+    if temporal_scope is not None and isinstance(temporal_scope, TemporalScope):
+        temporal_scope = [temporal_scope]
+
+    perception_digraph = original_graph.copy_as_digraph()
+    perception_digraph.add_edge(
+        root_node,
+        new_node,
+        label=TemporallyScopedEdgeLabel.for_dynamic_perception(
+            edge_label, when=temporal_scope
+        )
+        if temporal_scope is not None
+        else edge_label,
+    )
+    return PerceptionGraph(graph=perception_digraph, dynamic=original_graph.dynamic)
