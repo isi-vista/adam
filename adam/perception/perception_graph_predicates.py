@@ -119,16 +119,19 @@ class CategoricalPredicate(NodePredicate):
     Matches a node where the Categorical value is the same.
     """
 
+    label: str = attrib(validator=instance_of(str))
     value: str = attrib(validator=instance_of(str))
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         if isinstance(graph_node, CategoricalNode):
-            return self.value == graph_node.value
+            return self.label == graph_node.label and self.value == graph_node.value
         return False
 
     @staticmethod
     def from_node(categorical_node: CategoricalNode) -> "CategoricalPredicate":
-        return CategoricalPredicate(value=categorical_node.value)
+        return CategoricalPredicate(
+            label=categorical_node.label, value=categorical_node.value
+        )
 
     def dot_label(self) -> str:
         return f"CategoryFeature(value={self.value})"
@@ -138,7 +141,9 @@ class CategoricalPredicate(NodePredicate):
 
     def matches_predicate(self, predicate_node: NodePredicate) -> bool:
         if isinstance(predicate_node, CategoricalPredicate):
-            return predicate_node.value == self.value
+            return (
+                predicate_node.label == self.label and predicate_node.value == self.value
+            )
         return False
 
 

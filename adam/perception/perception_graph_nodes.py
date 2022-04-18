@@ -93,6 +93,7 @@ class ObjectClusterNode(GraphNode):
 class CategoricalNode(GraphNode):
     """A node representing a categorical value feature"""
 
+    label: str = attrib(validator=instance_of(str))
     value: str = attrib(validator=instance_of(str))
 
     def dot_label(self):
