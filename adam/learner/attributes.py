@@ -176,7 +176,7 @@ class SubsetAttributeLearner(
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
     ) -> Optional[PerceptionGraphTemplate]:
-        return previous_pattern_hypothesis.intersection(
+        match = previous_pattern_hypothesis.intersection_getting_match(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
@@ -190,6 +190,11 @@ class SubsetAttributeLearner(
             ),
             trim_after_match=pattern_remove_incomplete_region_or_spatial_path,
         )
+        if match:
+            match.confirm_match()
+            return match.intersection
+        # We don't need this, but Mypy wants it.
+        return None
 
 
 @attrs
