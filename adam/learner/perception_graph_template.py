@@ -278,3 +278,8 @@ class PerceptionGraphTemplateIntersectionResult:
     intersection: PerceptionGraphTemplate = attrib(
         validator=instance_of(PerceptionGraphTemplate)
     )
+
+    def confirm_match(self):
+        # Assumes that when we do the intersection in the template learner, we call
+        # the intersection_getting_match() method on self, not the argument.
+        self.match.confirm_pattern_match()
