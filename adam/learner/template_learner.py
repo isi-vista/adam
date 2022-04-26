@@ -225,6 +225,15 @@ class AbstractTemplateLearner(TemplateLearner, ABC):
                     pattern=graph_pattern.copy_with_temporal_scopes(ENTIRE_SCENE),
                     score=score,
                 )
+            elif (
+                not preprocessed_perception_graph.dynamic
+                and graph_pattern.graph_pattern.dynamic
+            ):
+                match_template(
+                    concept=concept,
+                    pattern=graph_pattern.copy_remove_temporal_scopes(),
+                    score=score,
+                )
             else:
                 logging.debug(
                     f"Unable to try and match {concept} to {preprocessed_perception_graph} "

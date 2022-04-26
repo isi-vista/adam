@@ -941,6 +941,22 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
         return PerceptionGraphPattern(dynamic=True, graph=wrapped_graph)
 
+    def copy_remove_temporal_scopes(self) -> "PerceptionGraphPattern":
+        """Produces a copy of this perception graph pattern
+        where all edge predicates have their temporal scope removed.
+
+        The new pattern will be static and MAY be nonsensical."""
+
+        unwrapped_graph = self.copy_as_digraph()
+
+        for (source, target) in unwrapped_graph.edges():
+            wrapped_predicate = unwrapped_graph.edges[source, target]["predicate"]
+            unwrapped_graph.edges[source, target][
+                "predicate"
+            ] = wrapped_predicate.wrapped_edge_predicate
+
+        return PerceptionGraphPattern(dynamic=False, graph=unwrapped_graph)
+
     def count_nodes_matching(
         self, node_predicate: Callable[[NodePredicate], bool]
     ) -> int:
