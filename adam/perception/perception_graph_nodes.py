@@ -81,12 +81,22 @@ class ObjectClusterNode(GraphNode):
     center_y: Optional[float] = attrib(validator=optional(instance_of(float)))
     std: Optional[float] = attrib(validator=optional(instance_of(float)))
 
+    def dot_label(self):
+        return (
+            f"ObjectClusterNode(cluster_id={self.cluster_id!r})\n"
+            f"(viewpoint_id={self.viewpoint_id}, "
+            f"center=({self.center_x:.2g}, {self.center_y:.2g}), std={self.std:.2g})"
+        )
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class CategoricalNode(GraphNode):
     """A node representing a categorical value feature"""
 
     value: str = attrib(validator=instance_of(str))
+
+    def dot_label(self):
+        return f"CategoricalNode(label=?, value={self.value})"
 
 
 @attrs(frozen=True, slots=True, eq=False)
@@ -96,6 +106,9 @@ class ContinuousNode(GraphNode):
     label: str = attrib(validator=instance_of(str))
     value: float = attrib(validator=instance_of(float))
 
+    def dot_label(self):
+        return f"ContinuousNode(label={self.label}, value={self.value})"
+
 
 @attrs(frozen=True, slots=True, eq=False)
 class RgbColorNode(GraphNode):
@@ -104,6 +117,9 @@ class RgbColorNode(GraphNode):
     red: int = attrib(validator=in_(range(0, 255)))
     green: int = attrib(validator=in_(range(0, 255)))
     blue: int = attrib(validator=in_(range(0, 255)))
+
+    def dot_label(self):
+        return f"RgbColorNode({self})"
 
     def __str__(self) -> str:
         return f"#{hex(self.red)[2:]}{hex(self.green)[2:]}{hex(self.blue)[2:]}"
@@ -115,6 +131,12 @@ class StrokeGNNRecognitionNode(GraphNode):
 
     object_recognized: str = attrib(validator=instance_of(str))
     confidence: float = attrib(validator=instance_of(float))
+
+    def dot_label(self):
+        return (
+            f"StrokeGNNRecognitionNode(object_recognized={self.object_recognized}, "
+            f"confidence={self.confidence})"
+        )
 
     def __str__(self) -> str:
         return f"StrokeGNNRecognized(recognized object={self.object_recognized} ({self.confidence:.2f}))"
