@@ -1,14 +1,17 @@
 import logging
+from platform import python_implementation
 import random
-from typing import Iterable
+from typing import Any, Iterable, Sequence, Tuple
 
 import pytest
-from immutablecollections import immutableset
+from immutablecollections import immutabledict, immutableset
 from more_itertools import flatten
 
+from adam.curriculum import InstanceGroup, ExplicitWithoutSituationInstanceGroup
 from adam.curriculum.curriculum_utils import TEST_CHOOSER_FACTORY
 from adam.curriculum.phase1_curriculum import CHOOSER_FACTORY, phase1_instances
 from adam.curriculum.pursuit_curriculum import make_simple_pursuit_curriculum
+from adam.language import TokenSequenceLinguisticDescription
 from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.language.language_utils import phase1_language_generator
@@ -22,7 +25,10 @@ from adam.learner import (
     PerceptionSemanticAlignment,
 )
 from adam.learner.alignments import LanguageConceptAlignment
-from adam.learner.integrated_learner import SymbolicIntegratedTemplateLearner
+from adam.learner.integrated_learner import (
+    SymbolicIntegratedTemplateLearner,
+    SimulatedIntegratedTemplateLearner,
+)
 from adam.learner.language_mode import LanguageMode
 from adam.learner.objects import (
     PursuitObjectLearner,
@@ -33,9 +39,12 @@ from adam.learner.objects import (
 from adam.ontology import OntologyNode, THING
 from adam.ontology.phase1_ontology import (
     BALL,
+    BLACK,
+    BLUE,
     BOX,
     DOG,
     GAILA_PHASE_1_ONTOLOGY,
+    GREEN,
     GROUND,
     HAND,
     HEAD,
@@ -43,6 +52,16 @@ from adam.ontology.phase1_ontology import (
     MOM,
     on,
     PHASE_1_CONCEPT,
+    RED,
+)
+from adam.perception.perception_graph_nodes import (
+    ContinuousNode,
+    StrokeGNNRecognitionNode,
+)
+from adam.perception.visual_perception import (
+    ClusterPerception,
+    VisualPerceptionRepresentation,
+    VisualPerceptionFrame,
 )
 from adam.perception.high_level_semantics_situation_to_developmental_primitive_perception import (
     GAILA_PHASE_1_PERCEPTION_GENERATOR,
@@ -70,6 +89,17 @@ def integrated_learner_factory(language_mode: LanguageMode):
             beam_size=10,
             language_mode=language_mode,
             min_continuous_feature_match_score=0.3,
+        )
+    )
+
+
+def integrated_learner_sim_factory(language_mode: LanguageMode):
+    return SimulatedIntegratedTemplateLearner(
+        object_learner=SubsetObjectLearner(
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            beam_size=10,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.1,
         )
     )
 
@@ -108,7 +138,7 @@ def run_subset_learner_for_object(
     learner,
     language_generator: LanguageGenerator[
         HighLevelSemanticsSituation, LinearizedDependencyTree
-    ]
+    ],
 ):
     colored_obj_objects = [
         object_variable(
@@ -485,6 +515,242 @@ def test_pursuit_object_learner_with_gaze(language_mode):
             )
 
     for test_instance_group in [test_obj_curriculum]:
+        for (
+            _,
+            test_instance_language,
+            test_instance_perception,
+        ) in test_instance_group.instances():
+            logging.info("lang: %s", test_instance_language)
+            descriptions_from_learner = learner.describe(test_instance_perception)
+            gold = test_instance_language.as_token_sequence()
+            assert gold in [
+                desc.as_token_sequence()
+                for desc in descriptions_from_learner.description_to_confidence
+            ]
+
+
+def _make_fake_simulated_curriculum_with_continuous_features(
+    cube_language: TokenSequenceLinguisticDescription,
+) -> Tuple[
+    Sequence[
+        InstanceGroup[
+            Any,
+            TokenSequenceLinguisticDescription,
+            VisualPerceptionFrame,
+        ]
+    ],
+    Sequence[
+        InstanceGroup[
+            Any,
+            TokenSequenceLinguisticDescription,
+            VisualPerceptionFrame,
+        ]
+    ],
+]:
+    """
+    Create and return a fake simulated curriculum in English, both train and test, with continuous
+    features.
+
+    This is based on samples from the real simulated curriciulum, but with continuous features
+    added (for testing) and stroke information removed (for space).
+
+    Arguments:
+        cube_language:
+            The linguistic description (in your langauge mode) for a scene with just a cube in it.
+    """
+
+    def one_cube_perception(
+        *,
+        viewpoint_id: int,
+        color: OntologyNode,
+        cromulence: float,
+        centroid_x: float = 164.0,
+        centroid_y: float = 138.6,
+        std: float = 21.3,
+    ) -> VisualPerceptionRepresentation[VisualPerceptionFrame]:
+        properties = immutableset(
+            [
+                color,
+                StrokeGNNRecognitionNode(
+                    weight=1.0, object_recognized="cube", confidence=1.0
+                ),
+                ContinuousNode(
+                    weight=1.0,
+                    label="cromulence",
+                    value=cromulence,
+                ),
+            ]
+        )
+        return VisualPerceptionRepresentation.single_frame(
+            VisualPerceptionFrame(
+                (
+                    ClusterPerception(
+                        cluster_id="0",
+                        viewpoint_id=viewpoint_id,
+                        sub_object_id=0,
+                        strokes=immutableset(),
+                        adjacent_strokes=immutabledict(),
+                        properties=immutableset(properties),
+                        centroid_x=centroid_x,
+                        centroid_y=centroid_y,
+                        std=std,
+                    ),
+                )
+            )
+        )
+
+    train_percepta = [
+        one_cube_perception(
+            viewpoint_id=2,
+            color=RED,
+            cromulence=-1.0399841062404955,
+            centroid_x=164.07928309927087,
+            centroid_y=138.6924419756045,
+            std=21.348674694574363,
+        ),
+        one_cube_perception(
+            viewpoint_id=3,
+            color=BLACK,
+            cromulence=0.7504511958064572,
+            centroid_x=104.08874672175489,
+            centroid_y=100.66993528901608,
+            std=21.548431197312045,
+        ),
+        one_cube_perception(
+            viewpoint_id=4,
+            color=BLACK,
+            cromulence=0.9405647163912139,
+            centroid_x=204.40925978830117,
+            centroid_y=103.65682960241853,
+            std=55.46661855606659,
+        ),
+        one_cube_perception(
+            viewpoint_id=5,
+            color=BLUE,
+            cromulence=-1.9510351886538364,
+            centroid_x=141.6972104005249,
+            centroid_y=113.18199826684022,
+            std=21.523024137061366,
+        ),
+        one_cube_perception(
+            viewpoint_id=6,
+            color=GREEN,
+            cromulence=-1.302179506862318,
+            centroid_x=170.38334628069387,
+            centroid_y=127.90266211342467,
+            std=25.465418718680052,
+        ),
+        one_cube_perception(
+            viewpoint_id=7,
+            color=GREEN,
+            cromulence=0.12784040316728537,
+            centroid_x=119.79480966188844,
+            centroid_y=122.07781463475229,
+            std=7.079007701857896,
+        ),
+        one_cube_perception(
+            viewpoint_id=8,
+            color=GREEN,
+            cromulence=-0.3162425923435822,
+            centroid_x=141.31220346026583,
+            centroid_y=113.29999423125005,
+            std=18.953288075496648,
+        ),
+        one_cube_perception(
+            viewpoint_id=9,
+            color=RED,
+            cromulence=-0.016801157504288795,
+            centroid_x=123.77352738856209,
+            centroid_y=124.60147261143791,
+            std=19.208465499613734,
+        ),
+        one_cube_perception(
+            viewpoint_id=10,
+            color=RED,
+            cromulence=-0.85304392757358,
+            centroid_x=110.72804171091398,
+            centroid_y=123.13186108624421,
+            std=14.572257903195126,
+        ),
+    ]
+
+    test_percepta = [
+        one_cube_perception(
+            viewpoint_id=10,
+            color=RED,
+            cromulence=0.30471707975443135,
+            centroid_x=110.72804171091398,
+            centroid_y=123.13186108624421,
+            std=14.572257903195126,
+        ),
+        one_cube_perception(
+            viewpoint_id=11,
+            color=RED,
+            cromulence=-1.0399841062404955,
+            centroid_x=120.66285987033817,
+            centroid_y=131.2268791382163,
+            std=16.18104373599222,
+        ),
+        one_cube_perception(
+            viewpoint_id=12,
+            color=BLUE,
+            cromulence=0.7504511958064572,
+            centroid_x=121.98681538377386,
+            centroid_y=114.41089059914648,
+            std=23.613332528818297,
+        ),
+        one_cube_perception(
+            viewpoint_id=13,
+            color=GREEN,
+            cromulence=0.9405647163912139,
+            centroid_x=140.52336809242834,
+            centroid_y=136.72839927405838,
+            std=20.640603170394897,
+        ),
+    ]
+
+    return (
+        [
+            ExplicitWithoutSituationInstanceGroup(
+                name="cubes_train",
+                instances=tuple(
+                    (cube_language, perception) for perception in train_percepta
+                ),
+            )
+        ],
+        [
+            ExplicitWithoutSituationInstanceGroup(
+                name="cubes_test",
+                instances=tuple(
+                    (cube_language, perception) for perception in test_percepta
+                ),
+            )
+        ],
+    )
+
+
+# It doesn't make sense to parameterize this test since we only support English at the moment.
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
+def test_subset_learner_learns_continuous_feature():
+    learner = integrated_learner_sim_factory(LanguageMode.ENGLISH)
+    (
+        train_curriculum,
+        test_curriculum,
+    ) = _make_fake_simulated_curriculum_with_continuous_features(
+        TokenSequenceLinguisticDescription(("a", "cube"))
+    )
+
+    for training_stage in train_curriculum:
+        for (
+            _,
+            linguistic_description,
+            perceptual_representation,
+        ) in training_stage.instances():
+            learner.observe(
+                LearningExample(perceptual_representation, linguistic_description)
+            )
+
+    for test_instance_group in test_curriculum:
         for (
             _,
             test_instance_language,
