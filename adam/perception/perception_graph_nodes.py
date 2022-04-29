@@ -97,7 +97,7 @@ class CategoricalNode(GraphNode):
     value: str = attrib(validator=instance_of(str))
 
     def dot_label(self):
-        return f"CategoricalNode(label=?, value={self.value})"
+        return f"CategoricalNode(label={self.label}, value={self.value})"
 
 
 @attrs(frozen=True, slots=True, eq=False)

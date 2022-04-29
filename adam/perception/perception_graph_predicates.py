@@ -142,7 +142,7 @@ class CategoricalPredicate(NodePredicate):
         )
 
     def dot_label(self) -> str:
-        return f"CategoryFeature(value={self.value})"
+        return f"CategoryFeature(label={self.label}, value={self.value})"
 
     def is_equivalent(self, other) -> bool:
         return isinstance(other, CategoricalPredicate)
