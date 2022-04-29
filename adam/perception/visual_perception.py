@@ -132,7 +132,7 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
                 else color_as_category(color_property)
             ]
             properties.extend(
-                CategoricalNode(value=cluster_map[entry], weight=1.0)
+                CategoricalNode(label=entry, value=cluster_map[entry], weight=1.0)
                 for entry in CATEGORY_PROPERTY_KEYS
                 if cluster_map[entry]
             )

@@ -1,6 +1,7 @@
 import logging
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import LanguageMode
+from adam.learner.affordances import SubsetAffordanceLearner
 from adam.learner.attributes import SubsetAttributeLearner, PursuitAttributeLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.objects import (
@@ -433,6 +434,35 @@ def build_plural_learner_factory(
         return None
     else:
         raise RuntimeError("Plural learner type invalid ")
+
+
+def build_affordance_learner_factory(
+    params: Parameters, beam_size: int, language_mode: LanguageMode
+) -> Optional[TemplateLearner]:
+    learner_type = params.string(
+        "learner_type", valid_options=["subset", "none"], default="subset"
+    )
+    ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
+        params.string(
+            "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase3"
+        )
+    ]
+    min_continuous_feature_match_score = params.floating_point(
+        "min_continuous_feature_match_score",
+        default=DEFAULT_MIN_CONTINUOUS_FEATURE_MATCH_SCORE,
+    )
+
+    if learner_type == "subset":
+        return SubsetAffordanceLearner(
+            ontology=ontology,
+            beam_size=beam_size,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
+        )
+    elif learner_type == "none":
+        return None
+    else:
+        raise RuntimeError("Affordance learner type invalid")
 
 
 # Curriculum Construction

@@ -941,10 +941,43 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
         return PerceptionGraphPattern(dynamic=True, graph=wrapped_graph)
 
+    def copy_removing_temporal_scopes(self) -> "PerceptionGraphPattern":
+        """Produces a copy of this perception graph pattern
+        where all edge predicates have their temporal scope removed.
+
+        The new pattern will be static and MAY be nonsensical."""
+
+        unwrapped_graph = self.copy_as_digraph()
+
+        for (source, target) in unwrapped_graph.edges():
+            wrapped_predicate = unwrapped_graph.edges[source, target]["predicate"]
+            unwrapped_graph.edges[source, target][
+                "predicate"
+            ] = wrapped_predicate.wrapped_edge_predicate
+
+        return PerceptionGraphPattern(dynamic=False, graph=unwrapped_graph)
+
     def count_nodes_matching(
-        self, node_predicate: Callable[["NodePredicate"], bool]
+        self, node_predicate: Callable[[NodePredicate], bool]
     ) -> int:
         return ilen(filter(node_predicate, self._graph.nodes))  # type: ignore
+
+    def copy_replacing_nodes(
+        self, current_to_new_node: Mapping[NodePredicate, NodePredicate]
+    ) -> "PerceptionGraphPattern":
+        digraph = DiGraph()
+        digraph.add_nodes_from(
+            current_to_new_node[node] if node in current_to_new_node else node
+            for node in self._graph.nodes
+        )
+        for u, v, data in self._graph.edges.data():
+            digraph.add_edge(
+                current_to_new_node[u] if u in current_to_new_node else u,
+                current_to_new_node[v] if v in current_to_new_node else v,
+                **data,
+            )
+
+        return PerceptionGraphPattern(graph=digraph, dynamic=self.dynamic)
 
     @staticmethod
     def _translate_graph(

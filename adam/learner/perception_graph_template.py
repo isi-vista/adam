@@ -269,6 +269,27 @@ class PerceptionGraphTemplate:
             template_variable_to_pattern_node=self.template_variable_to_pattern_node,
         )
 
+    def copy_replacing_nodes(
+        self, current_to_new_node: Mapping[NodePredicate, NodePredicate]
+    ) -> "PerceptionGraphTemplate":
+        """
+        Creates a copy of the perception graph template with the pattern updated to align to the new
+        nodes passed in via the mapping.
+        """
+        return PerceptionGraphTemplate(
+            graph_pattern=self.graph_pattern.copy_replacing_nodes(current_to_new_node),
+            template_variable_to_pattern_node=self.template_variable_to_pattern_node,
+        )
+
+    def copy_removing_temporal_scopes(self) -> "PerceptionGraphTemplate":
+        if not self.graph_pattern.dynamic:
+            return self
+
+        return PerceptionGraphTemplate(
+            graph_pattern=self.graph_pattern.copy_removing_temporal_scopes(),
+            template_variable_to_pattern_node=self.template_variable_to_pattern_node,
+        )
+
 
 @attrs(frozen=True, slots=True)
 class PerceptionGraphTemplateIntersectionResult:

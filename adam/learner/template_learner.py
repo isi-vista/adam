@@ -37,6 +37,7 @@ from adam.semantics import (
     ObjectSemanticNode,
     SemanticNode,
     FunctionalObjectConcept,
+    AffordanceSemanticNode,
 )
 
 
@@ -46,6 +47,13 @@ class TemplateLearner(ComposableLearner, ABC):
     @abstractmethod
     def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
         pass
+
+    def process_affordance(
+        self, concept: Concept, affordance_node: AffordanceSemanticNode
+    ) -> None:
+        raise NotImplementedError(
+            f"{type(self)} does not implement processing affordance."
+        )
 
 
 @attrs
@@ -223,6 +231,15 @@ class AbstractTemplateLearner(TemplateLearner, ABC):
                 match_template(
                     concept=concept,
                     pattern=graph_pattern.copy_with_temporal_scopes(ENTIRE_SCENE),
+                    score=score,
+                )
+            elif (
+                not preprocessed_perception_graph.dynamic
+                and graph_pattern.graph_pattern.dynamic
+            ):
+                match_template(
+                    concept=concept,
+                    pattern=graph_pattern.copy_removing_temporal_scopes(),
                     score=score,
                 )
             else:

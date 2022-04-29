@@ -37,6 +37,7 @@ from adam.learner.surface_templates import (
     SurfaceTemplate,
     SurfaceTemplateBoundToSemanticNodes,
 )
+from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_spatial_relations import Region
 from adam.perception import PerceptualRepresentation, MatchMode, ObjectPerception
@@ -58,8 +59,14 @@ from adam.perception.perception_graph import (
     PerceptionGraph,
     DebugCallableType,
     GraphLogger,
+    HAS_PROPERTY_LABEL,
+    TemporalScope,
+    TemporallyScopedEdgeLabel,
+    EdgePredicate,
+    HoldsAtTemporalScopePredicate,
 )
 from adam.perception.perception_graph_nodes import PerceptionGraphNode, ObjectClusterNode
+from adam.perception.perception_graph_predicates import AnyObjectPredicate
 from adam.semantics import (
     Concept,
     ObjectSemanticNode,
@@ -825,3 +832,98 @@ def get_root_if_perception_is_object_cluster(
         return roots[0]
 
     return None
+
+
+def add_node_connected_to_perception_graph(
+    original_graph: PerceptionGraph,
+    root_node: PerceptionGraphNode,
+    new_node: PerceptionGraphNode,
+    edge_label: OntologyNode = HAS_PROPERTY_LABEL,
+    *,
+    temporal_scope: Optional[Union[TemporalScope, Iterable[TemporalScope]]] = None,
+) -> PerceptionGraph:
+    """Adds a node to a perception graph with the given `edge_label` and optional temporal scope(s)."""
+
+    # Allow the user to pass in a single TemporalScope for convenience
+    if temporal_scope is not None and isinstance(temporal_scope, TemporalScope):
+        temporal_scope = [temporal_scope]
+
+    perception_digraph = original_graph.copy_as_digraph()
+    perception_digraph.add_edge(
+        root_node,
+        new_node,
+        label=TemporallyScopedEdgeLabel.for_dynamic_perception(
+            edge_label, when=temporal_scope
+        )
+        if temporal_scope is not None
+        else edge_label,
+    )
+    return PerceptionGraph(graph=perception_digraph, dynamic=original_graph.dynamic)
+
+
+def add_predicate_to_pattern_graph(
+    original_pattern: PerceptionGraphPattern,
+    root_node: NodePredicate,
+    new_node: NodePredicate,
+    edge_predicate: EdgePredicate = RelationTypeIsPredicate(
+        relation_type=HAS_PROPERTY_LABEL
+    ),
+    *,
+    temporal_scope: Optional[Union[TemporalScope, Iterable[TemporalScope]]] = None,
+) -> PerceptionGraphPattern:
+    """Add a predicate note to a perception graph pattern with the given `edge_label` and optional temporal scope(s)."""
+
+    # Allow the user to pass in a single TemporalScope for convenience
+    if temporal_scope is not None and isinstance(temporal_scope, TemporalScope):
+        temporal_scope = [temporal_scope]
+
+    pattern_digraph = original_pattern.copy_as_digraph()
+    pattern_digraph.add_edge(
+        root_node,
+        new_node,
+        predicate=HoldsAtTemporalScopePredicate(
+            wrapped_edge_predicate=edge_predicate,
+            temporal_scopes=immutableset(temporal_scope),
+        )
+        if temporal_scope is not None
+        else edge_predicate,
+    )
+    return PerceptionGraphPattern(graph=pattern_digraph, dynamic=original_pattern.dynamic)
+
+
+def add_predicate_node_to_object_template(
+    original_template: PerceptionGraphTemplate, predicate_node_to_add: NodePredicate
+) -> PerceptionGraphTemplate:
+    """Add a new predicate node to object perception graph template.
+
+    Returns:
+        `original_template` if the node to add is a duplicate or there is no object root node.
+        Otherwise, returns a new perception graph template with the node added
+    """
+
+    root_node = None
+
+    for node in original_template.graph_pattern:
+        if isinstance(node, type(predicate_node_to_add)) and node.matches_predicate(
+            predicate_node_to_add
+        ):
+            return original_template  # We are trying to add a duplicate predicate which will do nothing
+
+        if isinstance(node, AnyObjectPredicate):
+            root_node = node
+
+    if root_node is None:
+        raise ValueError(
+            f"Given graph pattern {original_template.graph_pattern} did not have an object root node."
+        )
+
+    return PerceptionGraphTemplate(
+        graph_pattern=add_predicate_to_pattern_graph(
+            original_template.graph_pattern,
+            root_node,
+            predicate_node_to_add,
+            temporal_scope=TemporalScope.BEFORE
+            if original_template.graph_pattern.dynamic
+            else None,
+        )
+    )

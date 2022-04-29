@@ -1,4 +1,5 @@
 import logging
+from abc import ABC
 from itertools import chain
 from pathlib import Path
 
@@ -39,6 +40,7 @@ from adam.learner.learner_utils import (
     candidate_object_hypotheses,
     covers_entire_utterance,
     get_objects_from_perception,
+    add_predicate_node_to_object_template,
 )
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
@@ -63,6 +65,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPatternMatch,
     GraphLogger,
 )
+from adam.perception.perception_graph_predicates import CategoricalPredicate
 from adam.random_utils import RandomChooser
 from adam.semantics import (
     Concept,
@@ -72,11 +75,11 @@ from adam.semantics import (
     ObjectSemanticNode,
     FunctionalObjectConcept,
     SyntaxSemanticsVariable,
+    AffordanceSemanticNode,
 )
 
 
-class AbstractObjectTemplateLearner(AbstractTemplateLearner):
-    # pylint:disable=abstract-method
+class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
     def _can_learn_from(
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> bool:
@@ -135,7 +138,7 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner):
         perception_graph_after_matching: PerceptionGraph,
         immutable_new_nodes: AbstractSet[SemanticNode],
     ) -> Tuple[PerceptionGraph, AbstractSet[SemanticNode]]:
-        object_root_nodes = immutableset(  # pylint:disable=protected-access
+        object_root_nodes = immutableset(
             node
             for node in perception_graph_after_matching._graph.nodes  # pylint:disable=protected-access
             if isinstance(node, ObjectPerception)
@@ -269,6 +272,16 @@ class SubsetObjectLearner(AbstractObjectTemplateLearner, AbstractTemplateSubsetL
         )
         if match is not None:
             yield match
+
+    def process_affordance(
+        self, concept: Concept, affordance_node: AffordanceSemanticNode
+    ) -> None:
+        self._concept_to_hypotheses[concept] = immutableset(
+            add_predicate_node_to_object_template(
+                template, CategoricalPredicate.from_affordance_semantics(affordance_node)
+            )
+            for template in self._concept_to_hypotheses[concept]
+        )
 
 
 @attrs(slots=True)
