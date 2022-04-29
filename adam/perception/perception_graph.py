@@ -2134,6 +2134,7 @@ _PATTERN_PREDICATE_NODE_ORDER = [
     AnyObjectPredicate,
     ObjectStrokePredicate,
     CategoricalPredicate,
+    DistributionalContinuousPredicate,
     ContinuousPredicate,
     RgbColorPredicate,
     ObjectStroke,
