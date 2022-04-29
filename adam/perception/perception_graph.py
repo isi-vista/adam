@@ -1148,6 +1148,30 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         The algorithm used is approximate and is not guaranteed to return the largest
         possible match.
         """
+        attempted_match = self.intersection_getting_match(
+            graph_pattern,
+            debug_callback=debug_callback,
+            graph_logger=graph_logger,
+            ontology=ontology,
+            allowed_matches=allowed_matches,
+            match_mode=match_mode,
+            trim_after_match=trim_after_match,
+        )
+        return attempted_match.matched_pattern if attempted_match else None
+
+    def intersection_getting_match(
+        self,
+        graph_pattern,
+        *,
+        debug_callback: Optional[DebugCallableType] = None,
+        graph_logger: Optional["GraphLogger"] = None,
+        ontology: Ontology,
+        allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
+        match_mode: MatchMode,
+        trim_after_match: Optional[
+            Callable[["PerceptionGraphPattern"], "PerceptionGraphPattern"]
+        ] = None,
+    ) -> Optional["PerceptionGraphPatternMatch"]:
         matcher = PatternMatching(
             pattern=graph_pattern,
             graph_to_match_against=self,
@@ -1156,15 +1180,11 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             match_mode=match_mode,
             allowed_matches=allowed_matches,
         )
-        attempted_match = matcher.relax_pattern_until_it_matches(
+        return matcher.relax_pattern_until_it_matches_getting_match(
             graph_logger=graph_logger,
             ontology=ontology,
             trim_after_match=trim_after_match,
         )
-        if attempted_match:
-            return attempted_match
-        else:
-            return None
 
     def __repr__(self) -> str:
         return (
