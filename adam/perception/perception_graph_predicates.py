@@ -34,7 +34,7 @@ from adam.perception.perception_graph_nodes import (
 # Perception graph predicate nodes are defined below.
 # These match the graph nodes defined above when using computer vision inputs
 # Or ADAM objects when matching to the symbolic representation
-from adam.semantics import ObjectSemanticNode
+from adam.semantics import ObjectSemanticNode, AffordanceSemanticNode
 from adam.utilities import sign
 
 
@@ -131,6 +131,14 @@ class CategoricalPredicate(NodePredicate):
     def from_node(categorical_node: CategoricalNode) -> "CategoricalPredicate":
         return CategoricalPredicate(
             label=categorical_node.label, value=categorical_node.value
+        )
+
+    @staticmethod
+    def from_affordance_semantics(
+        affordance_semantic_node: AffordanceSemanticNode,
+    ) -> "CategoricalPredicate":
+        return CategoricalPredicate(
+            label="affordance", value=affordance_semantic_node.concept.debug_string
         )
 
     def dot_label(self) -> str:

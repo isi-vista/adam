@@ -84,6 +84,7 @@ from adam.semantics import (
     Concept,
     KindConcept,
     SemanticNode,
+    AffordanceSemanticNode,
 )
 
 
@@ -228,6 +229,16 @@ class IntegratedTemplateLearner(
 
             if self.affordance_learner:
                 self.affordance_learner.learn_from(current_learner_state)
+
+                # We acknowledge that calling this a second time can duplicate nodes
+                # As no learner processes the output after this we can handle duplication
+                # In any tasks using AffordanceSemanticNodes downstream, but we need to run this
+                # To get any newly learned/refined affordances
+                current_learner_state = self.affordance_learner.enrich_during_learning(
+                    current_learner_state
+                )
+
+                self._backpropagate_affordance(current_learner_state)
 
         # Engage generics learner if the utterance is indefinite
         if self.generics_learner and not self.is_definite(current_learner_state):
@@ -839,6 +850,17 @@ class IntegratedTemplateLearner(
                 complete_semantics_graph.add_edge(u, v, **data)
 
         return complete_semantics_graph
+
+    def _backpropagate_affordance(
+        self, current_learner_state: LanguagePerceptionSemanticAlignment
+    ) -> None:
+        for node in current_learner_state.perception_semantic_alignment.semantic_nodes:
+            if not isinstance(node, AffordanceSemanticNode):
+                continue
+
+            self.object_learner.process_affordance(
+                node.slot_fillings[SLOT1].concept, node
+            )
 
 
 @attrs

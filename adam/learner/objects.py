@@ -40,6 +40,7 @@ from adam.learner.learner_utils import (
     candidate_object_hypotheses,
     covers_entire_utterance,
     get_objects_from_perception,
+    add_predicate_node_to_object_template,
 )
 from adam.learner.object_recognizer import (
     ObjectRecognizer,
@@ -64,6 +65,7 @@ from adam.perception.perception_graph import (
     PerceptionGraphPatternMatch,
     GraphLogger,
 )
+from adam.perception.perception_graph_predicates import CategoricalPredicate
 from adam.random_utils import RandomChooser
 from adam.semantics import (
     Concept,
@@ -73,6 +75,7 @@ from adam.semantics import (
     ObjectSemanticNode,
     FunctionalObjectConcept,
     SyntaxSemanticsVariable,
+    AffordanceSemanticNode,
 )
 
 
@@ -81,7 +84,7 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner, ABC):
         self, language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment
     ) -> bool:
         # We can try to learn objects from anything, as long as the scene isn't already
-        # completely understod.
+        # completely understood.
         return (
             not language_perception_semantic_alignment.language_concept_alignment.is_entirely_aligned
         )
@@ -269,6 +272,16 @@ class SubsetObjectLearner(AbstractObjectTemplateLearner, AbstractTemplateSubsetL
         )
         if match is not None:
             yield match
+
+    def process_affordance(
+        self, concept: Concept, affordance_node: AffordanceSemanticNode
+    ) -> None:
+        self._concept_to_hypotheses[concept] = immutableset(
+            add_predicate_node_to_object_template(
+                template, CategoricalPredicate.from_affordance_semantics(affordance_node)
+            )
+            for template in self._concept_to_hypotheses[concept]
+        )
 
 
 @attrs(slots=True)

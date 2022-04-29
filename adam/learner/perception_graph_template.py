@@ -281,12 +281,12 @@ class PerceptionGraphTemplate:
             template_variable_to_pattern_node=self.template_variable_to_pattern_node,
         )
 
-    def copy_remove_temporal_scopes(self) -> "PerceptionGraphTemplate":
+    def copy_removing_temporal_scopes(self) -> "PerceptionGraphTemplate":
         if not self.graph_pattern.dynamic:
             return self
 
         return PerceptionGraphTemplate(
-            graph_pattern=self.graph_pattern.copy_remove_temporal_scopes(),
+            graph_pattern=self.graph_pattern.copy_removing_temporal_scopes(),
             template_variable_to_pattern_node=self.template_variable_to_pattern_node,
         )
 

@@ -447,10 +447,17 @@ def build_affordance_learner_factory(
             "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase3"
         )
     ]
+    min_continuous_feature_match_score = params.floating_point(
+        "min_continuous_feature_match_score",
+        default=DEFAULT_MIN_CONTINUOUS_FEATURE_MATCH_SCORE,
+    )
 
     if learner_type == "subset":
         return SubsetAffordanceLearner(
-            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+            ontology=ontology,
+            beam_size=beam_size,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         )
     elif learner_type == "none":
         return None

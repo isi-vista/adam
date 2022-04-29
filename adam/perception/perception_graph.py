@@ -941,7 +941,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
         return PerceptionGraphPattern(dynamic=True, graph=wrapped_graph)
 
-    def copy_remove_temporal_scopes(self) -> "PerceptionGraphPattern":
+    def copy_removing_temporal_scopes(self) -> "PerceptionGraphPattern":
         """Produces a copy of this perception graph pattern
         where all edge predicates have their temporal scope removed.
 
