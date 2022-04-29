@@ -42,7 +42,10 @@ def integrated_learner_factory(language_mode: LanguageMode):
     return SymbolicIntegratedTemplateLearner(
         object_learner=LANGUAGE_MODE_TO_TEMPLATE_LEARNER_OBJECT_RECOGNIZER[language_mode],
         relation_learner=SubsetRelationLearner(
-            ontology=GAILA_PHASE_1_ONTOLOGY, beam_size=5, language_mode=language_mode
+            ontology=GAILA_PHASE_1_ONTOLOGY,
+            beam_size=5,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         ),
     )
 

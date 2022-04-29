@@ -23,6 +23,7 @@ from adam.perception.perception_graph import (
     raise_graph_exception,
     NodePredicate,
     TemporalScope,
+    PerceptionGraphPatternMatch,
 )
 from adam.semantics import ObjectSemanticNode, SyntaxSemanticsVariable
 
@@ -53,12 +54,17 @@ class PerceptionGraphTemplate:
         template_variable_to_matched_object_node: Mapping[
             SyntaxSemanticsVariable, ObjectSemanticNode
         ],
+        *,
+        min_continuous_feature_match_score: float,
     ) -> "PerceptionGraphTemplate":
         # It is possible the perception graph has additional recognized objects
         # which are not aligned to surface template slots.
         # We assume these are not arguments of the verb and remove them from the perception
         # before creating a pattern.
-        pattern_from_graph = PerceptionGraphPattern.from_graph(perception_graph)
+        pattern_from_graph = PerceptionGraphPattern.from_graph(
+            perception_graph,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
+        )
         pattern_graph = pattern_from_graph.perception_graph_pattern
         matched_object_to_matched_predicate = (
             pattern_from_graph.perception_graph_node_to_pattern_node
@@ -116,6 +122,33 @@ class PerceptionGraphTemplate:
         If this intersection is an empty graph or would not contain all `SyntaxSemanticsVariable`\ s,
         this returns None.
         """
+        result = self.intersection_getting_match(
+            pattern,
+            graph_logger=graph_logger,
+            ontology=ontology,
+            debug_callback=debug_callback,
+            allowed_matches=allowed_matches,
+            match_mode=match_mode,
+            trim_after_match=trim_after_match,
+        )
+
+        return result.intersection if result else result
+
+    def intersection_getting_match(
+        self,
+        pattern: "PerceptionGraphTemplate",
+        *,
+        graph_logger: Optional[GraphLogger] = None,
+        ontology: Ontology,
+        debug_callback: Optional[Callable[[Any, Any], None]] = None,
+        allowed_matches: ImmutableSetMultiDict[
+            NodePredicate, NodePredicate
+        ] = immutablesetmultidict(),
+        match_mode: MatchMode,
+        trim_after_match: Optional[
+            Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
+        ] = None,
+    ):
         if self.graph_pattern.dynamic != pattern.graph_pattern.dynamic:
             raise RuntimeError("Can only intersection patterns of the same dynamic-ness")
 
@@ -138,9 +171,8 @@ class PerceptionGraphTemplate:
                 f"weakly connected components heading into intersection. ",
                 pattern.graph_pattern,
             )
-
         # First we just intersect the pattern graph.
-        intersected_pattern = self.graph_pattern.intersection(
+        intersected_pattern_match = self.graph_pattern.intersection_getting_match(
             pattern.graph_pattern,
             graph_logger=graph_logger,
             ontology=ontology,
@@ -149,9 +181,11 @@ class PerceptionGraphTemplate:
             match_mode=match_mode,
             trim_after_match=trim_after_match,
         )
-
-        if intersected_pattern:
-            if self.graph_pattern.dynamic != intersected_pattern.dynamic:
+        if intersected_pattern_match is not None:
+            if (
+                self.graph_pattern.dynamic
+                != intersected_pattern_match.matched_pattern.dynamic
+            ):
                 raise RuntimeError(
                     "Something is wrong - pattern dynamic-ness should not change "
                     "after intersection"
@@ -165,18 +199,30 @@ class PerceptionGraphTemplate:
             # from the right-hand graph.
             template_variable_to_pattern_node = pattern.template_variable_to_pattern_node
             if graph_logger:
-                graph_logger.log_graph(intersected_pattern, INFO, "Intersected pattern")
+                graph_logger.log_graph(
+                    intersected_pattern_match.matched_pattern, INFO, "Intersected pattern"
+                )
+            slots_preserved = True
             for (_, object_wildcard) in template_variable_to_pattern_node.items():
                 # we return none here since this means that the given template cannot be learned from since one of the slots has been pruned away
-                if object_wildcard not in intersected_pattern:
-                    return None
+                if object_wildcard not in intersected_pattern_match.matched_pattern:
+                    slots_preserved = False
+                    break
 
-            return PerceptionGraphTemplate(
-                graph_pattern=intersected_pattern,
-                template_variable_to_pattern_node=template_variable_to_pattern_node,
+            result = (
+                PerceptionGraphTemplateIntersectionResult(
+                    intersected_pattern_match,
+                    PerceptionGraphTemplate(
+                        graph_pattern=intersected_pattern_match.matched_pattern,
+                        template_variable_to_pattern_node=template_variable_to_pattern_node,
+                    ),
+                )
+                if slots_preserved
+                else None
             )
         else:
-            return None
+            result = None
+        return result
 
     @pattern_node_to_template_variable.default
     def _init_pattern_node_to_template_variable(
@@ -222,3 +268,18 @@ class PerceptionGraphTemplate:
             ),
             template_variable_to_pattern_node=self.template_variable_to_pattern_node,
         )
+
+
+@attrs(frozen=True, slots=True)
+class PerceptionGraphTemplateIntersectionResult:
+    match: PerceptionGraphPatternMatch = attrib(
+        validator=instance_of(PerceptionGraphPatternMatch)
+    )
+    intersection: PerceptionGraphTemplate = attrib(
+        validator=instance_of(PerceptionGraphTemplate)
+    )
+
+    def confirm_match(self):
+        # Assumes that when we do the intersection in the template learner, we call
+        # the intersection_getting_match() method on self, not the argument.
+        self.match.confirm_pattern_match()

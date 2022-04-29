@@ -108,6 +108,7 @@ from adam.perception.perception_graph_predicates import (
     RgbColorPredicate,
     ObjectStrokePredicate,
     StrokeGNNRecognitionPredicate,
+    DistributionalContinuousPredicate,
 )
 from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
@@ -737,6 +738,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         object_schema: ObjectStructuralSchema,
         *,
         perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+        min_continuous_feature_match_score: float,
     ) -> "PerceptionGraphPattern":
         """
         Creates a pattern for recognizing an object based on its *object_schema*.
@@ -776,12 +778,13 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
         # Finally, we convert the PerceptionGraph DiGraph representation to a PerceptionGraphPattern
         return PerceptionGraphPattern.from_graph(
-            perception_graph=PerceptionGraph(perception_graph_as_digraph)
+            perception_graph=PerceptionGraph(perception_graph_as_digraph),
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         ).perception_graph_pattern
 
     @staticmethod
     def from_graph(
-        perception_graph: PerceptionGraph,
+        perception_graph: PerceptionGraph, *, min_continuous_feature_match_score: float
     ) -> "PerceptionGraphPatternFromGraph":
         """
         Creates a pattern for recognizing an object based on its *perception_graph*.
@@ -792,6 +795,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             perception_graph=perception_graph.copy_as_digraph(),
             pattern_graph=pattern_graph,
             perception_node_to_pattern_node=perception_node_to_pattern_node,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         )
         return PerceptionGraphPatternFromGraph(
             perception_graph_pattern=PerceptionGraphPattern(
@@ -806,6 +810,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         ontology: Ontology,
         *,
         perception_generator: HighLevelSemanticsSituationToDevelopmentalPrimitivePerceptionGenerator,
+        min_continuous_feature_match_score: float,
     ) -> "PerceptionGraphPattern":
         """
         Creates a pattern for recognizing an obect based on its *ontology_node*
@@ -825,6 +830,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             return PerceptionGraphPattern.from_schema(
                 first(ontology.structural_schemata(node)),
                 perception_generator=perception_generator,
+                min_continuous_feature_match_score=min_continuous_feature_match_score,
             )
         # If the node doesn't have a corresponding structural schemata we see if it can be
         # created as a single object scene
@@ -862,11 +868,14 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
 
         # We then turn this DiGraph representation into a PerceptionGraphPattern
         return PerceptionGraphPattern.from_graph(
-            perception_graph=PerceptionGraph(perception_graph_as_digraph)
+            perception_graph=PerceptionGraph(perception_graph_as_digraph),
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         ).perception_graph_pattern
 
     @staticmethod
-    def phase3_pattern(node: OntologyNode) -> "PerceptionGraphPattern":
+    def phase3_pattern(
+        node: OntologyNode, *, min_continuous_feature_match_score: float
+    ) -> "PerceptionGraphPattern":
         digraph = DiGraph()
 
         fake_cluster = ObjectClusterNode(
@@ -883,7 +892,8 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         digraph.add_edge(fake_cluster, fake_gnn_recognition, label=HAS_PROPERTY_LABEL)
 
         return PerceptionGraphPattern.from_graph(
-            perception_graph=PerceptionGraph(digraph, dynamic=False)
+            perception_graph=PerceptionGraph(digraph, dynamic=False),
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         ).perception_graph_pattern
 
     def pattern_complexity(self) -> int:
@@ -942,6 +952,7 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         pattern_graph: DiGraph,
         *,
         perception_node_to_pattern_node: Dict[Any, "NodePredicate"],
+        min_continuous_feature_match_score: float,
     ) -> None:
         # Two mapping methods that map nodes and edges from the source PerceptionGraph onto the corresponding
         # node and edge representations on the PerceptionGraphPattern.
@@ -989,8 +1000,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                         node
                     )
                 elif isinstance(node, ContinuousNode):
-                    perception_node_to_pattern_node[key] = ContinuousPredicate.from_node(
-                        node
+                    perception_node_to_pattern_node[
+                        key
+                    ] = DistributionalContinuousPredicate.from_node(
+                        node, min_match_score=min_continuous_feature_match_score
                     )
                 elif isinstance(node, RgbColorNode):
                     perception_node_to_pattern_node[key] = RgbColorPredicate.from_node(
@@ -1135,6 +1148,30 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         The algorithm used is approximate and is not guaranteed to return the largest
         possible match.
         """
+        attempted_match = self.intersection_getting_match(
+            graph_pattern,
+            debug_callback=debug_callback,
+            graph_logger=graph_logger,
+            ontology=ontology,
+            allowed_matches=allowed_matches,
+            match_mode=match_mode,
+            trim_after_match=trim_after_match,
+        )
+        return attempted_match.matched_pattern if attempted_match else None
+
+    def intersection_getting_match(
+        self,
+        graph_pattern,
+        *,
+        debug_callback: Optional[DebugCallableType] = None,
+        graph_logger: Optional["GraphLogger"] = None,
+        ontology: Ontology,
+        allowed_matches: ImmutableSetMultiDict[Any, Any] = immutablesetmultidict(),
+        match_mode: MatchMode,
+        trim_after_match: Optional[
+            Callable[["PerceptionGraphPattern"], "PerceptionGraphPattern"]
+        ] = None,
+    ) -> Optional["PerceptionGraphPatternMatch"]:
         matcher = PatternMatching(
             pattern=graph_pattern,
             graph_to_match_against=self,
@@ -1143,15 +1180,11 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
             match_mode=match_mode,
             allowed_matches=allowed_matches,
         )
-        attempted_match = matcher.relax_pattern_until_it_matches(
+        return matcher.relax_pattern_until_it_matches_getting_match(
             graph_logger=graph_logger,
             ontology=ontology,
             trim_after_match=trim_after_match,
         )
-        if attempted_match:
-            return attempted_match
-        else:
-            return None
 
     def __repr__(self) -> str:
         return (
@@ -1402,6 +1435,35 @@ class PatternMatching:
         If a matching relaxed `PerceptionGraphPattern` can be found, it is returned.
         Otherwise, *None* is returned.
         """
+        match = self.relax_pattern_until_it_matches_getting_match(
+            graph_logger=graph_logger,
+            ontology=ontology,
+            min_ratio=min_ratio,
+            trim_after_match=trim_after_match,
+        )
+        return (
+            match.matched_pattern
+            if isinstance(match, PerceptionGraphPatternMatch)
+            else None
+        )
+
+    def relax_pattern_until_it_matches_getting_match(
+        self,
+        *,
+        graph_logger: Optional["GraphLogger"] = None,
+        ontology: Ontology,
+        min_ratio: Optional[float] = None,
+        trim_after_match: Optional[
+            Callable[[PerceptionGraphPattern], PerceptionGraphPattern]
+        ],
+    ) -> Optional["PerceptionGraphPatternMatch"]:
+        """
+        Prunes or relaxes the *pattern* for this matching until it successfully matches
+        using heuristic rules.
+
+        If a matching relaxed `PerceptionGraphPattern` can be found, the corresponding
+        `PerceptionGraphPatternMatch` is returned. Otherwise, *None* is returned.
+        """
 
         min_num_nodes_to_continue = 1
         if min_ratio:
@@ -1431,7 +1493,7 @@ class PatternMatching:
                 )
             )
             if isinstance(match_attempt, PerceptionGraphPatternMatch):
-                return cur_pattern
+                return match_attempt
             else:
                 relaxation_step += 1
                 # If we couldn't successfully match the current part of the pattern,
@@ -1813,6 +1875,29 @@ class PerceptionGraphPatternMatch:
     in `matched_sub_graph` they were aligned to.
     """
 
+    def confirm_pattern_match(self) -> None:
+        """
+        Update the pattern graph nodes by confirming a match for all matched nodes.
+
+        This mutates the pattern graph nodes.
+        """
+        for node in self.matched_pattern:
+            node.confirm_match(self.pattern_node_to_matched_graph_node[node])
+
+    def confirm_graph_match(self) -> None:
+        """
+        Update the graph nodes by confirming a match for all matched nodes.
+
+        This method does nothing when the graph is an actual perception graph. When the graph is a
+        pattern graph, this mutates the graph nodes.
+        """
+        if isinstance(self.graph_matched_against, PerceptionGraphPattern):
+            for node in self.matched_pattern:
+                graph_node = cast(
+                    NodePredicate, self.pattern_node_to_matched_graph_node[node]
+                )
+                graph_node.confirm_match(node)
+
 
 class EdgePredicate(ABC):
     r"""
@@ -2134,6 +2219,7 @@ _PATTERN_PREDICATE_NODE_ORDER = [
     AnyObjectPredicate,
     ObjectStrokePredicate,
     CategoricalPredicate,
+    DistributionalContinuousPredicate,
     ContinuousPredicate,
     RgbColorPredicate,
     ObjectStroke,

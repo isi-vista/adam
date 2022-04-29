@@ -61,7 +61,7 @@ class AxesInfo(Generic[_ObjectT], CanRemapObjects[_ObjectT]):
 
 
 @runtime
-class AxisFunction(Protocol, Generic[_ObjectT]):
+class AxisFunction(Protocol[_ObjectT]):
     r"""
     A procedure for selecting a particular `GeonAxis`.
 

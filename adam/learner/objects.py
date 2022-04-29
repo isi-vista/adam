@@ -149,7 +149,10 @@ class AbstractObjectTemplateLearner(AbstractTemplateLearner):
             fake_perception_graph = PerceptionGraph(
                 graph=fake_subgraph, dynamic=perception_graph_after_matching.dynamic
             )
-            fake_pattern_graph = PerceptionGraphPattern.from_graph(fake_perception_graph)
+            fake_pattern_graph = PerceptionGraphPattern.from_graph(
+                fake_perception_graph,
+                min_continuous_feature_match_score=self._min_continuous_feature_match_score,
+            )
             fake_object_semantic_node = ObjectSemanticNode(
                 concept=FunctionalObjectConcept("unknown_object"), confidence=1.0
             )
@@ -195,7 +198,8 @@ class SubsetObjectLearner(AbstractObjectTemplateLearner, AbstractTemplateSubsetL
         return immutableset(
             PerceptionGraphTemplate(
                 graph_pattern=PerceptionGraphPattern.from_graph(
-                    candidate_object
+                    candidate_object,
+                    min_continuous_feature_match_score=self._min_continuous_feature_match_score,
                 ).perception_graph_pattern,
                 template_variable_to_pattern_node=immutabledict(),
             )
@@ -225,7 +229,7 @@ class SubsetObjectLearner(AbstractObjectTemplateLearner, AbstractTemplateSubsetL
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
     ) -> Optional[PerceptionGraphTemplate]:
-        return previous_pattern_hypothesis.intersection(
+        match = previous_pattern_hypothesis.intersection_getting_match(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.OBJECT,
@@ -238,6 +242,11 @@ class SubsetObjectLearner(AbstractObjectTemplateLearner, AbstractTemplateSubsetL
                 ]
             ),
         )
+        if match:
+            match.confirm_match()
+            return match.intersection
+        # We don't need this, but Mypy wants it.
+        return None
 
     def _match_template(
         self,
@@ -289,6 +298,9 @@ class ProposeButVerifyObjectLearner(
             language_mode=params.enum(
                 "language_mode", LanguageMode, default=LanguageMode.ENGLISH
             ),
+            min_continuous_feature_match_score=params.floating_point(
+                "min_continuous_feature_match_score", default=0.3
+            ),
         )
 
     def log_hypotheses(self, log_output_path: Path) -> None:
@@ -308,7 +320,10 @@ class ProposeButVerifyObjectLearner(
         learning_state: LanguagePerceptionSemanticAlignment,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> AbstractSet[PerceptionGraphTemplate]:
-        potential_meanings = candidate_object_hypotheses(learning_state)
+        potential_meanings = candidate_object_hypotheses(
+            learning_state,
+            min_continuous_feature_match_score=self._min_continuous_feature_match_score,
+        )
 
         # Pick a random meaning for our hypothesis (Independent of any prior data)
         return immutableset([self._rng.choice(potential_meanings)])
@@ -367,6 +382,9 @@ class CrossSituationalObjectLearner(
             ontology=ontology if ontology else GAILA_PHASE_1_ONTOLOGY,
             language_mode=params.enum(
                 "language_mode", LanguageMode, default=LanguageMode.ENGLISH
+            ),
+            min_continuous_feature_match_score=params.floating_point(
+                "min_continuous_feature_match_score", default=0.3
             ),
         )
 
@@ -446,7 +464,12 @@ class ObjectRecognizerAsTemplateLearner(TemplateLearner):
         for candiate_object_graph in extract_candidate_objects(
             perception_graph_after_matching, sort_by_increasing_size=False
         ):
-            fake_pattern_graph = PerceptionGraphPattern.from_graph(candiate_object_graph)
+            fake_pattern_graph = PerceptionGraphPattern.from_graph(
+                candiate_object_graph,
+                # Use an arbitrary threshold -- it doesn't matter because the object recognizer
+                # does not currently take advantage of score-based continuous feature matching
+                min_continuous_feature_match_score=0.3,
+            )
             fake_object_semantic_node = ObjectSemanticNode(
                 concept=FunctionalObjectConcept("unknown_object"), confidence=1.0
             )
@@ -578,7 +601,8 @@ class PursuitObjectLearner(AbstractPursuitLearner, AbstractObjectTemplateLearner
         return immutableset(
             PerceptionGraphTemplate(
                 graph_pattern=PerceptionGraphPattern.from_graph(
-                    candidate_object
+                    candidate_object,
+                    min_continuous_feature_match_score=self._min_continuous_feature_match_score,
                 ).perception_graph_pattern,
                 template_variable_to_pattern_node=immutabledict(),
             )

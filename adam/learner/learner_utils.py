@@ -766,6 +766,8 @@ def get_objects_from_perception(
 
 def candidate_object_hypotheses(
     language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+    *,
+    min_continuous_feature_match_score: float,
 ) -> Sequence[PerceptionGraphTemplate]:
     """
     Given a learning input, returns all possible meaning hypotheses.
@@ -773,7 +775,8 @@ def candidate_object_hypotheses(
     return [
         PerceptionGraphTemplate(
             graph_pattern=PerceptionGraphPattern.from_graph(
-                object_
+                object_,
+                min_continuous_feature_match_score=min_continuous_feature_match_score,
             ).perception_graph_pattern
         )
         for object_ in get_objects_from_perception(

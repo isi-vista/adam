@@ -128,6 +128,7 @@ class SubsetRelationLearner(
                 PerceptionGraphTemplate.from_graph(
                     learning_state.perception_semantic_alignment.perception_graph,
                     template_variable_to_matched_object_node=bound_surface_template.slot_to_semantic_node,
+                    min_continuous_feature_match_score=self._min_continuous_feature_match_score,
                 )
             ]
         )
@@ -142,7 +143,7 @@ class SubsetRelationLearner(
         previous_pattern_hypothesis: PerceptionGraphTemplate,
         current_pattern_hypothesis: PerceptionGraphTemplate,
     ) -> Optional[PerceptionGraphTemplate]:
-        return previous_pattern_hypothesis.intersection(
+        match = previous_pattern_hypothesis.intersection_getting_match(
             current_pattern_hypothesis,
             ontology=self._ontology,
             match_mode=MatchMode.NON_OBJECT,
@@ -155,6 +156,11 @@ class SubsetRelationLearner(
                 ]
             ),
         )
+        if match:
+            match.confirm_match()
+            return match.intersection
+        # We don't need this, but Mypy wants it.
+        return None
 
 
 @attrs
@@ -260,6 +266,7 @@ class PursuitRelationLearner(AbstractPursuitLearner, AbstractRelationTemplateLea
             PerceptionGraphTemplate.from_graph(
                 perception_graph=candidate_relation_meaning,
                 template_variable_to_matched_object_node=bound_surface_template.slot_to_semantic_node,
+                min_continuous_feature_match_score=self._min_continuous_feature_match_score,
             )
             for candidate_relation_meaning in _extract_candidate_relations(
                 learning_state.perception_semantic_alignment.perception_graph,

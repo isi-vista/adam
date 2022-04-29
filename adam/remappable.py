@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Mapping, List
+from typing import TypeVar, Mapping, List
 
 from typing_extensions import Protocol, runtime
 
@@ -7,7 +7,7 @@ _ObjectToT = TypeVar("_ObjectToT")
 
 
 @runtime
-class CanRemapObjects(Protocol, Generic[_ObjectFromT]):
+class CanRemapObjects(Protocol[_ObjectFromT]):
     def copy_remapping_objects(
         self, object_map: Mapping[_ObjectFromT, _ObjectToT]
     ) -> "CanRemapObjects[_ObjectToT]":

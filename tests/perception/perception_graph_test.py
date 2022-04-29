@@ -1,11 +1,14 @@
 import random as r
 from itertools import chain
+from platform import python_implementation
 from typing import cast
 
+from attr import evolve
 import pytest
 from more_itertools import first, only
 from networkx import DiGraph
 
+from adam.continuous import GaussianContinuousValueMatcher
 from adam.curriculum.curriculum_utils import (
     CHOOSER_FACTORY,
     phase1_instances,
@@ -54,6 +57,13 @@ from adam.perception.perception_graph import (
     AnyEdgePredicate,
     AnyObjectPerception,
     PerceptionGraphNode,
+    RelationTypeIsPredicate,
+    HAS_PROPERTY_LABEL,
+)
+from adam.perception.perception_graph_nodes import ContinuousNode
+from adam.perception.perception_graph_predicates import (
+    DistributionalContinuousPredicate,
+    AnyObjectPredicate,
 )
 from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
@@ -162,7 +172,11 @@ def do_object_on_table_test(
 
     # We test that a perceptual pattern for "object_to_match" matches in all four cases.
     object_to_match_pattern = PerceptionGraphPattern.from_schema(
-        object_schema, perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR
+        object_schema,
+        perception_generator=GAILA_PHASE_1_PERCEPTION_GENERATOR,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     )
 
     situations_with_object_to_match = chain(
@@ -258,7 +272,10 @@ def test_last_failed_pattern_node():
 
         # Original perception pattern
         whole_perception_pattern = PerceptionGraphPattern.from_graph(
-            perception
+            perception,
+            # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+            # score-based continuous feature matching here
+            min_continuous_feature_match_score=0.3,
         ).perception_graph_pattern
         # Create an altered perception graph we replace the color node
         altered_perception_digraph = perception.copy_as_digraph()
@@ -325,7 +342,10 @@ def test_successfully_extending_partial_match():
     # Create a perception pattern for the whole thing
     # and also a perception pattern for a subset of the whole pattern
     whole_perception_pattern = PerceptionGraphPattern.from_graph(
-        perception
+        perception,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     partial_digraph = whole_perception_pattern.copy_as_digraph()
@@ -382,7 +402,10 @@ def test_semantically_infeasible_partial_match():
         PerceptionGraph.from_frame(perceptual_representation.frames[0])
     )
     whole_perception_pattern = PerceptionGraphPattern.from_graph(
-        perception
+        perception,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     # Create an altered perception graph we remove the color node
@@ -416,7 +439,10 @@ def test_semantically_infeasible_partial_match():
             altered_perception_digraph[edge[0]][edge[1]][k] = v
 
     altered_perception_pattern = PerceptionGraphPattern.from_graph(
-        PerceptionGraph(altered_perception_digraph)
+        PerceptionGraph(altered_perception_digraph),
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     partial_digraph = altered_perception_pattern.copy_as_digraph()
@@ -488,7 +514,10 @@ def test_syntactically_infeasible_partial_match():
 
     altered_perception_perception_graph = PerceptionGraph(altered_perception_digraph)
     altered_perception_pattern = PerceptionGraphPattern.from_graph(
-        altered_perception_perception_graph
+        altered_perception_perception_graph,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     # Start the matching process, get a partial match
@@ -542,7 +571,10 @@ def test_allowed_matches_with_bad_partial_match():
                 for node in perception._graph.nodes  # pylint: disable=protected-access
                 if getattr(node, "debug_handle", None) == "box_0"
             }
-        )
+        ),
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     pattern2: PerceptionGraphPattern = PerceptionGraphPattern.from_graph(
@@ -552,7 +584,10 @@ def test_allowed_matches_with_bad_partial_match():
                 for node in perception._graph.nodes  # pylint: disable=protected-access
                 if getattr(node, "debug_handle", None) in {"box_0", "the ground"}
             }
-        )
+        ),
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     pattern1_box: AnyObjectPerception = cast(
@@ -745,7 +780,10 @@ def test_matching_static_vs_dynamic_graphs():
     )
 
     perception_pattern = PerceptionGraphPattern.from_graph(
-        perception_graph
+        perception_graph,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     temporal_perception_pattern = perception_pattern.copy_with_temporal_scopes(
@@ -790,7 +828,10 @@ def test_copy_with_temporal_scope_pattern_content():
     )
 
     perception_pattern = PerceptionGraphPattern.from_graph(
-        perception_graph
+        perception_graph,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     temporal_perception_graph = perception_graph.copy_with_temporal_scopes(
@@ -864,7 +905,10 @@ def test_simulated_one_object_graph():
 
     perception_graph = PerceptionGraph.from_simulated_frame(representation.frames[0])
     perception_graph_pattern = PerceptionGraphPattern.from_graph(
-        perception_graph
+        perception_graph,
+        # Use an arbitrary threshold -- it shouldn't matter because we don't make use of
+        # score-based continuous feature matching here
+        min_continuous_feature_match_score=0.3,
     ).perception_graph_pattern
 
     matcher = perception_graph_pattern.matcher(
@@ -873,3 +917,135 @@ def test_simulated_one_object_graph():
     result = any(matcher.matches(use_lookahead_pruning=False))
     if not result:
         return False
+
+
+def _simulated_graph_with_continuous_feature(*, feature_name: str, observed_value: float):
+    base_frame = VisualPerceptionFrame.from_yaml_str(ONE_OBJECT_TEST_SCENE_YAML)
+    assert len(base_frame.clusters) == 1
+
+    object_ = base_frame.clusters[0]
+    object_with_continuous_feature = evolve(
+        object_,
+        properties=immutableset(
+            chain(
+                object_.properties,
+                [ContinuousNode(label=feature_name, value=observed_value, weight=1.0)],
+            )
+        ),
+    )
+    return PerceptionGraph.from_simulated_frame(
+        VisualPerceptionFrame(clusters=(object_with_continuous_feature,))
+    )
+
+
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
+def test_simulated_graph_continuous_feature_matching_succeeds_in_trivial_case():
+    # Create a fake graph with a continuous feature
+    feature_name = "cromulence"
+    observed_value = 0.3
+    perception_graph = _simulated_graph_with_continuous_feature(
+        feature_name=feature_name, observed_value=observed_value
+    )
+
+    # Create a pattern from the graph without modifying that pattern
+    pattern = PerceptionGraphPattern.from_graph(
+        perception_graph, min_continuous_feature_match_score=0.99
+    ).perception_graph_pattern
+
+    # This pattern should match the perception graph
+    matcher = pattern.matcher(perception_graph, match_mode=MatchMode.NON_OBJECT)
+    assert any(matcher.matches(use_lookahead_pruning=False))
+
+
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
+def test_simulated_graph_continuous_feature_matching_succeeds_when_appropriate():
+    # Create a fake graph with a continuous feature
+    feature_name = "cromulence"
+    observed_value = 0.3
+    perception_graph = _simulated_graph_with_continuous_feature(
+        feature_name=feature_name, observed_value=observed_value
+    )
+
+    # Create a pattern that should match the graph
+    min_match_score = 0.3
+    pattern_from_graph = PerceptionGraphPattern.from_graph(
+        perception_graph, min_continuous_feature_match_score=min_match_score
+    )
+    digraph = pattern_from_graph.perception_graph_pattern.copy_as_digraph()
+
+    # Replace the old continuous feature node with a new one of our design
+    cluster = next(node for node in digraph if isinstance(node, AnyObjectPredicate))
+    old_continuous_pred = next(
+        node for node in digraph if isinstance(node, DistributionalContinuousPredicate)
+    )
+    digraph.remove_node(old_continuous_pred)
+
+    matcher = GaussianContinuousValueMatcher.from_observation(-0.99)
+    matcher.update_on_observation(0.99)
+    for value in [-0.99, 0.99] * 49:
+        matcher.update_on_observation(value)
+    feature = DistributionalContinuousPredicate(
+        matcher=matcher,
+        label=feature_name,
+        min_match_score=min_match_score,
+        fallback_value=0.0,
+        fallback_tolerance=0.25,
+        min=-1.0,
+        max=1.0,
+    )
+    digraph.add_node(feature)
+    digraph.add_edge(
+        cluster, feature, predicate=RelationTypeIsPredicate(HAS_PROPERTY_LABEL)
+    )
+    pattern = PerceptionGraphPattern(digraph, dynamic=False)
+
+    # This should match the perception graph
+    matcher = pattern.matcher(perception_graph, match_mode=MatchMode.NON_OBJECT)
+    assert any(matcher.matches(use_lookahead_pruning=False))
+
+
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
+def test_simulated_graph_continuous_feature_matching_fails_when_appropriate():
+    # Create a fake graph with a continuous feature
+    feature_name = "cromulence"
+    observed_value = 2.0
+    perception_graph = _simulated_graph_with_continuous_feature(
+        feature_name=feature_name, observed_value=observed_value
+    )
+
+    # Create a pattern that should NOT match the graph
+    min_match_score = 0.3
+    pattern_from_graph = PerceptionGraphPattern.from_graph(
+        perception_graph, min_continuous_feature_match_score=min_match_score
+    )
+    digraph = pattern_from_graph.perception_graph_pattern.copy_as_digraph()
+
+    # Replace the old continuous feature node with a new one of our design
+    cluster = next(node for node in digraph if isinstance(node, AnyObjectPredicate))
+    old_continuous_pred = next(
+        node for node in digraph if isinstance(node, DistributionalContinuousPredicate)
+    )
+    digraph.remove_node(old_continuous_pred)
+
+    matcher = GaussianContinuousValueMatcher.from_observation(-0.99)
+    matcher.update_on_observation(0.99)
+    for value in [-0.99, 0.99] * 49:
+        matcher.update_on_observation(value)
+    feature = DistributionalContinuousPredicate(
+        matcher=matcher,
+        label=feature_name,
+        min_match_score=min_match_score,
+        fallback_value=0.0,
+        fallback_tolerance=0.25,
+        min=-1.0,
+        max=1.0,
+    )
+    digraph.add_node(feature)
+    digraph.add_edge(
+        cluster, feature, predicate=RelationTypeIsPredicate(HAS_PROPERTY_LABEL)
+    )
+    pattern = PerceptionGraphPattern(digraph, dynamic=False)
+
+    # This should NOT match the perception graph
+    matcher = pattern.matcher(perception_graph, match_mode=MatchMode.NON_OBJECT)
+    assert not any(matcher.matches(use_lookahead_pruning=False))

@@ -177,6 +177,7 @@ ONTOLOGY_STR_TO_ONTOLOGY = immutabledict(  # type: ignore
         ),
     ]
 )
+DEFAULT_MIN_CONTINUOUS_FEATURE_MATCH_SCORE: float = 0.3
 
 
 def build_object_learner_factory(
@@ -202,10 +203,17 @@ def build_object_learner_factory(
             "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
         )
     ]
+    min_continuous_feature_match_score = params.floating_point(
+        "min_continuous_feature_match_score",
+        default=DEFAULT_MIN_CONTINUOUS_FEATURE_MATCH_SCORE,
+    )
 
     if learner_type == "subset":
         return SubsetObjectLearner(
-            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+            ontology=ontology,
+            beam_size=beam_size,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         )
     elif learner_type == "pbv":
         chooser = RandomChooser.for_seed(
@@ -218,6 +226,7 @@ def build_object_learner_factory(
             rng=chooser,
             ontology=ontology,
             language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
             graph_logger=graph_logger,
         )
     elif learner_type == "cross-situational":
@@ -230,6 +239,7 @@ def build_object_learner_factory(
             expected_number_of_meanings=len(ontology.nodes_with_properties(THING)),
             ontology=ontology,
             language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
             graph_logger=graph_logger,
         )
     elif learner_type == "pursuit":
@@ -245,6 +255,7 @@ def build_object_learner_factory(
             smoothing_parameter=params.floating_point("smoothing_parameter"),
             ontology=ontology,
             language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
             hypothesis_logger=graph_logger,
         )
     elif learner_type == "recognizer":
@@ -284,10 +295,17 @@ def build_attribute_learner_factory(
             "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
         )
     ]
+    min_continuous_feature_match_score = params.floating_point(
+        "min_continuous_feature_match_score",
+        default=DEFAULT_MIN_CONTINUOUS_FEATURE_MATCH_SCORE,
+    )
 
     if learner_type == "subset":
         return SubsetAttributeLearner(
-            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+            ontology=ontology,
+            beam_size=beam_size,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         )
     elif learner_type == "pursuit":
         rng = random.Random()
@@ -302,6 +320,7 @@ def build_attribute_learner_factory(
             smoothing_parameter=params.floating_point("smoothing_parameter"),
             ontology=ontology,
             language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
             hypothesis_logger=graph_logger,
         )
     elif learner_type == "none":
@@ -325,10 +344,17 @@ def build_relation_learner_factory(
             "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
         )
     ]
+    min_continuous_feature_match_score = params.floating_point(
+        "min_continuous_feature_match_score",
+        default=DEFAULT_MIN_CONTINUOUS_FEATURE_MATCH_SCORE,
+    )
 
     if learner_type == "subset":
         return SubsetRelationLearner(
-            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+            ontology=ontology,
+            beam_size=beam_size,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         )
     elif learner_type == "pursuit":
         rng = random.Random()
@@ -343,6 +369,7 @@ def build_relation_learner_factory(
             smoothing_parameter=params.floating_point("smoothing_parameter"),
             ontology=ontology,
             language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
             hypothesis_logger=graph_logger,
         )
     elif learner_type == "none":
@@ -363,10 +390,17 @@ def build_action_learner_factory(
             "ontology", valid_options=ONTOLOGY_STR_TO_ONTOLOGY.keys(), default="phase2"
         )
     ]
+    min_continuous_feature_match_score = params.floating_point(
+        "min_continuous_feature_match_score",
+        default=DEFAULT_MIN_CONTINUOUS_FEATURE_MATCH_SCORE,
+    )
 
     if learner_type == "subset":
         return SubsetVerbLearner(
-            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+            ontology=ontology,
+            beam_size=beam_size,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=min_continuous_feature_match_score,
         )
     elif learner_type == "none":
         # We don't want to include this learner type.
@@ -389,7 +423,10 @@ def build_plural_learner_factory(
 
     if learner_type == "subset":
         return SubsetPluralLearner(
-            ontology=ontology, beam_size=beam_size, language_mode=language_mode
+            ontology=ontology,
+            beam_size=beam_size,
+            language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
         )
     elif learner_type == "none":
         # We don't want to include this learner type.

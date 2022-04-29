@@ -45,6 +45,7 @@ def pursuit_learner_factory(language_mode: LanguageMode):
             smoothing_parameter=0.002,
             ontology=GAILA_PHASE_1_ONTOLOGY,
             language_mode=language_mode,
+            min_continuous_feature_match_score=0.3,
             rank_gaze_higher=False,
         ),
     )

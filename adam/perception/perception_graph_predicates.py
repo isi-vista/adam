@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Any, Tuple
+from typing import Optional, Any, Tuple, Union
 
 from attr import attrs, attrib
 from attr.validators import optional, instance_of, in_, deep_iterable
@@ -7,6 +7,7 @@ from immutablecollections import ImmutableSet
 from immutablecollections.converter_utils import _to_tuple, _to_immutableset
 
 from adam.axis import GeonAxis
+from adam.continuous import ContinuousValueMatcher, GaussianContinuousValueMatcher
 from adam.geon import Geon, CrossSection
 from adam.math_3d import Point
 from adam.ontology import OntologyNode
@@ -64,6 +65,11 @@ class NodePredicate(ABC):
         """
 
     def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        """
+        Determines whether a NodePredicate matches another Node Predicate
+        """
+
+    def confirm_match(self, node: Union[PerceptionGraphNode, "NodePredicate"]) -> None:
         """
         Determines whether a NodePredicate matches another Node Predicate
         """
@@ -179,6 +185,121 @@ class ContinuousPredicate(NodePredicate):
                 <= self.value + self.tolerance
             )
         return False
+
+
+@attrs(slots=True, eq=False)
+class DistributionalContinuousPredicate(NodePredicate):
+    """
+    Matches a node where the value matches a Gaussian distribution with the given match score
+    """
+
+    label: str = attrib(validator=instance_of(str))
+    matcher: ContinuousValueMatcher = attrib(
+        validator=instance_of(ContinuousValueMatcher)
+    )
+    min_match_score: float = attrib(validator=instance_of(float))
+    _fallback_value: float = attrib(validator=instance_of(float))
+    _fallback_tolerance: float = attrib(validator=instance_of(float))
+    _min: float = attrib(validator=instance_of(float))
+    _max: float = attrib(validator=instance_of(float))
+
+    @staticmethod
+    def from_node(
+        node: ContinuousNode, *, min_match_score: float, fallback_tolerance: float = 0.25
+    ) -> "DistributionalContinuousPredicate":
+        return DistributionalContinuousPredicate(
+            label=node.label,
+            matcher=GaussianContinuousValueMatcher.from_observation(node.value),
+            min_match_score=min_match_score,  # Maybe change this in the future ?
+            fallback_value=node.value,
+            fallback_tolerance=fallback_tolerance,
+            min=node.value,
+            max=node.value,
+        )
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        if isinstance(graph_node, ContinuousNode):
+            # If we have enough samples, do score-based value matching.
+            if self.matcher.n_observations > 2:
+                return (
+                    self.label == graph_node.label
+                    and self.matcher.match_score(graph_node.value) >= self.min_match_score
+                )
+            # Otherwise, fall back on value + tolerance matching.
+            else:
+                return (
+                    self.label == graph_node.label
+                    and self._fallback_value - self._fallback_tolerance
+                    <= graph_node.value
+                    <= self._fallback_value + self._fallback_tolerance
+                )
+        return False
+
+    def dot_label(self) -> str:
+        return (
+            f"DistributionalContinuousPredicate(label={self.label}, matcher={self.matcher}, "
+            f"min_match_score={self.min_match_score}, min={self._min}, max={self._max})"
+        )
+
+    def is_equivalent(self, other) -> bool:
+        return (
+            isinstance(other, DistributionalContinuousPredicate)
+            and other.label == self.label
+        )
+
+    def matches_predicate(self, predicate_node: NodePredicate) -> bool:
+        if isinstance(predicate_node, DistributionalContinuousPredicate):
+            return self.label == predicate_node.label
+        return False
+
+    def confirm_match(self, node: Union[PerceptionGraphNode, "NodePredicate"]) -> None:
+        if isinstance(node, ContinuousNode) and self.label == node.label:
+            self._handle_single_value_update(node.value)
+        elif (
+            isinstance(node, DistributionalContinuousPredicate)
+            and self.label == node.label
+        ):
+            self._merge_with_compatible_node(node)
+        else:
+            raise ValueError(
+                f"Can't confirm match with apparently non-matching node {node}."
+            )
+
+    def _handle_single_value_update(self, value: float):
+        # pylint: disable=protected-access
+        # Pylint doesn't realize the "client class" whose private members we're accessing is this
+        # same class
+        self._min = min(value, self._min)
+        self._max = max(value, self._max)
+        self.matcher.update_on_observation(value)
+
+    def _merge_with_compatible_node(
+        self, node: "DistributionalContinuousPredicate"
+    ) -> None:
+        # pylint: disable=protected-access
+        # Pylint doesn't realize the "client class" whose private members we're accessing is this
+        # same class
+        #
+        # We don't statically know the concrete type of either matcher, so we check the types match
+        # exactly instead of using isinstance.
+        if type(self.matcher) == type(  # noqa: E721 pylint: disable=unidiomatic-typecheck
+            node.matcher
+        ):
+            self.matcher.merge(node.matcher)
+            self._min = min(node._min, self._min)
+            self._max = max(node._max, self._max)
+        else:
+            raise ValueError(
+                f"Can't merge distributions of different types {self.matcher} and {node.matcher}."
+            )
+
+    @property
+    def min(self):
+        return self._min
+
+    @property
+    def max(self):
+        return self._max
 
 
 @attrs(frozen=True, slots=True, eq=False)
