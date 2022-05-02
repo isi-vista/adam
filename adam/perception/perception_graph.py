@@ -39,6 +39,7 @@ from typing import (
 from uuid import uuid4
 
 import graphviz
+import yaml
 from more_itertools import first, ilen
 from networkx import DiGraph, connected_components, is_isomorphic, set_node_attributes
 from typing_extensions import Protocol
@@ -46,6 +47,7 @@ from typing_extensions import Protocol
 from adam.axes import AxesInfo, HasAxes
 from adam.axis import GeonAxis
 from adam.geon import Geon, MaybeHasGeon, CrossSection
+from adam.math_3d import Point, DepthPoint
 from adam.ontology import OntologyNode
 from adam.ontology.ontology import Ontology
 from adam.ontology.phase1_ontology import (
@@ -54,6 +56,7 @@ from adam.ontology.phase1_ontology import (
     LIQUID,
     PART_OF,
     RECOGNIZED_PARTICULAR_PROPERTY,
+    VOLITIONALLY_INVOLVED,
 )
 from adam.ontology import IS_SPEAKER, IS_ADDRESSEE
 from adam.ontology.phase1_spatial_relations import (
@@ -89,6 +92,7 @@ from adam.perception.perception_graph_nodes import (
     GraphNode,
     ObjectStroke,
     StrokeGNNRecognitionNode,
+    JointPointNode,
 )
 from adam.perception.perception_graph_predicates import (
     NodePredicate,
@@ -313,6 +317,16 @@ ORIENTATION_CHANGED_PROPERTY = OntologyNode("orientation-changed")
 """
 Property used in perception graphs to indicate an orientation change
 while an object traverses a path.
+"""
+INVOLVED_IN_ACTION = OntologyNode("action-references-object")
+"""
+Edge label used in perception graphs to indicate an object cluster participates in a given action.
+"""
+JOINT_POINT_TRAVERSAL = OntologyNode("joint-point-traversal")
+"""
+Edge label used in perception graphs to link an action decode to its corresponding joint points. 
+
+`JointPointNode`s are also referenced by their `ObjectClusterNode` with a `HAS_PROPERTY` label.
 """
 
 
@@ -2932,9 +2946,167 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
             (len(perceptual_representation.frames),),
         )
 
-        raise NotImplementedError(
-            "Multiple frame translation is not yet supported for Visual Perception Frames."
+        if perceptual_representation.simulated_actions_file is None:
+            raise ValueError(
+                "Simulated actions file cannot be None when creating a multi-frame perception graph."
+            )
+
+        before_graph_frame = PerceptionGraph.add_temporal_scopes_to_edges(
+            self._translate_frame(perceptual_representation.frames[0]),
+            TemporalScope.BEFORE,
         )
+
+        after_graph_frame = PerceptionGraph.add_temporal_scopes_to_edges(
+            self._translate_frame(perceptual_representation.frames[1]),
+            TemporalScope.AFTER,
+        )
+
+        _dynamic_digraph = before_graph_frame
+        _dynamic_digraph.add_nodes_from(after_graph_frame.nodes)
+
+        for (source, target, after_label) in after_graph_frame.edges.data(LABEL):
+            if _dynamic_digraph.has_edge(source, target):
+                # This edge also appears in the first frame,
+                # so we need to merge the edge metadata between the frames.
+
+                # We know the edges in these graphs are wrapped with temporal scopes
+                # because we applied the temporal scopes above.
+                after_label = cast(TemporallyScopedEdgeLabel, after_label)
+                before_label: TemporallyScopedEdgeLabel = _dynamic_digraph.edges[
+                    source, target
+                ][LABEL]
+
+                # We don't know how to merge edges which differ in anything
+                # except temporal specifiers
+                if before_label.attribute == after_label.attribute:
+                    _dynamic_digraph.edges[source, target][
+                        LABEL
+                    ] = TemporallyScopedEdgeLabel(
+                        before_label.attribute,
+                        temporal_specifiers=chain(
+                            before_label.temporal_specifiers,
+                            after_label.temporal_specifiers,
+                        ),
+                    )
+                else:
+                    _dynamic_digraph.edges[source, target][
+                        LABEL
+                    ] = TemporallyScopedEdgeLabel(
+                        after_label.attribute,
+                        temporal_specifiers=chain(after_label.temporal_specifiers),
+                    )
+                    logging.warning(
+                        f"We currently don't know how to handle a change in label "
+                        f"on an edge between the before frame and the after frame."
+                        f"Source={source}; Target={target}; "
+                        f"before label={before_label.attribute}; "
+                        f"after label={after_label.attribute}."
+                        f"As a hack, we delete the 'before' and preserve the 'after'."
+                        f"See https://github.com/isi-vista/adam/issues/666"
+                    )
+            else:
+                # This edge does not also appear in the first frame,
+                # so no merging is needed.
+                _dynamic_digraph.add_edge(source, target, label=after_label)
+
+        decoded_object_to_cluster_node = {
+            object_cluster_node.cluster_id: object_cluster_node
+            for object_cluster_node in _dynamic_digraph.nodes
+            if isinstance(object_cluster_node, ObjectClusterNode)
+        }
+
+        with open(
+            perceptual_representation.simulated_actions_file, encoding="utf-8"
+        ) as action_feature_file:
+            action_features = yaml.safe_load(action_feature_file)
+            action_stroke_graph = action_features["stroke_graph"]
+
+            # This needs to look up the nodes in the original graphs?
+            agent_node = decoded_object_to_cluster_node[action_features["object_name"]]
+            involved_object_nodes = [
+                decoded_object_to_cluster_node[object_name]
+                for object_name in action_features["objects"]
+            ]
+            involved_object_nodes.append(agent_node)
+
+            action_decode_node = CategoricalNode(
+                label="action_gnn",
+                value=action_stroke_graph["action_name"].lower(),
+                weight=action_stroke_graph["confidence_score"],
+            )
+
+            joint_point_nodes = []
+            for i, joint_feature in enumerate(
+                zip(
+                    action_stroke_graph["joint_points_world_coords"],
+                    action_stroke_graph["joint_points_xyd_coords"],
+                    action_stroke_graph["joint_points_confidence_score"],
+                )
+            ):
+                world_coord, xyd_coord, conf = joint_feature
+                joint_point_nodes.append(
+                    JointPointNode(
+                        scene_xyd_coord=DepthPoint(
+                            xyd_coord[0], xyd_coord[1], xyd_coord[2]
+                        ),
+                        world_coord=Point(world_coord[0], world_coord[1], world_coord[2]),
+                        confidence=conf,
+                        weight=conf,
+                        temporal_index=i,
+                    )
+                )
+
+            # First we link the objects to the action node
+            edges_to_add: List[Tuple[GraphNode, GraphNode, OntologyNode]] = [
+                (object_node, action_decode_node, INVOLVED_IN_ACTION)
+                for object_node in involved_object_nodes
+            ]
+            edges_to_add.extend(
+                (action_decode_node, joint_node, JOINT_POINT_TRAVERSAL)
+                for joint_node in joint_point_nodes
+            )
+            edges_to_add.extend(
+                (agent_node, joint_node, HAS_PROPERTY_LABEL)
+                for joint_node in joint_point_nodes[1:-1]
+            )
+
+            # Special Case the first and last joint point as 'before' and 'after'
+            # This probably isn't needed but it's closer to temporally correct
+            _dynamic_digraph.add_edge(
+                agent_node,
+                joint_point_nodes[0],
+                label=TemporallyScopedEdgeLabel.for_dynamic_perception(
+                    HAS_PROPERTY_LABEL, TemporalScope.BEFORE
+                ),
+            )
+            _dynamic_digraph.add_edge(
+                agent_node,
+                joint_point_nodes[-1],
+                label=TemporallyScopedEdgeLabel.for_dynamic_perception(
+                    HAS_PROPERTY_LABEL, TemporalScope.AFTER
+                ),
+            )
+
+            # Also to help clarify the agent we mark them as 'VOLITIONAL' from the original symbolic system
+            # This is mostly a way of representing the structured knowledge in the feature file.
+            _dynamic_digraph.add_edge(
+                agent_node,
+                VOLITIONALLY_INVOLVED,
+                label=TemporallyScopedEdgeLabel.for_dynamic_perception(
+                    HAS_PROPERTY_LABEL, [TemporalScope.BEFORE, TemporalScope.AFTER]
+                ),
+            )
+
+            for source, target, label in edges_to_add:
+                _dynamic_digraph.add_edge(
+                    source,
+                    target,
+                    label=TemporallyScopedEdgeLabel.for_dynamic_perception(
+                        label, TemporalScope.DURING
+                    ),
+                )
+
+        return _dynamic_digraph
 
 
 def raise_graph_exception(exception_message: str, graph: PerceptionGraphProtocol):

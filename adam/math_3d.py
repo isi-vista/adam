@@ -22,3 +22,27 @@ class Point:
     z: float = attrib(  # pylint:disable=invalid-name
         validator=instance_of(float), converter=float
     )
+
+
+@attrs(frozen=True)
+class DepthPoint:
+    """
+    A point in 3D space represented by a depth value for the z direction.
+    """
+
+    x_coord: float = attrib(validator=instance_of(float), converter=float)
+    y_coord: float = attrib(validator=instance_of(float), converter=float)
+    depth: float = attrib(validator=instance_of(float), converter=float)
+
+    @property
+    def x(self) -> float:  # pylint:disable=invalid-name
+        return self.x_coord
+
+    @property
+    def y(self) -> float:  # pylint:disable=invalid-name
+        return self.y_coord
+
+    @property
+    def z(self) -> float:  # pylint:disable=invalid-name
+        """Provided for ease of accessing the Depth value."""
+        return self.depth

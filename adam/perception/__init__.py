@@ -4,6 +4,7 @@ used to describe `Situation`\ s from the point-of-view of `TopLevelLanguageLearn
 """
 from abc import ABC, abstractmethod
 from enum import Enum
+from pathlib import Path
 from typing import Generic, Optional, Tuple, TypeVar
 
 from attr import attrib, attrs
@@ -99,6 +100,9 @@ class PerceptualRepresentation(Generic[PerceptionT]):
     # mypy is confused by the instance_of with a generic class
     during: Optional[DuringAction[ObjectPerception]] = attrib(  # type: ignore
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
+    )
+    simulated_actions_file: Optional[Path] = attrib(
+        validator=optional(instance_of(Path)), default=None, kw_only=True
     )
 
     @staticmethod

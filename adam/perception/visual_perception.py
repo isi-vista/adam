@@ -233,6 +233,9 @@ class VisualPerceptionRepresentation(PerceptualRepresentation[PerceptionT]):
     during: Optional[DuringAction[ObjectPerception]] = attrib(  # type: ignore
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
+    simulated_actions_file: Optional[Path] = attrib(
+        validator=optional(instance_of(Path)), default=None, kw_only=True
+    )
 
     @staticmethod
     def single_frame(
@@ -249,3 +252,21 @@ class VisualPerceptionRepresentation(PerceptualRepresentation[PerceptionT]):
 
         """
         return VisualPerceptionRepresentation((perception_frame,))
+
+    @staticmethod
+    def multi_frame(
+        frames: Sequence[_PerceptionT2], action_feature: Path
+    ) -> "VisualPerceptionRepresentation[_PerceptionT2]":
+        """
+        Convenience method for generating a `PerceptualReprsentation` which is multiple frames.
+
+        Args:
+            frames: a sequence of `PerceptualRepresentationFrame`.
+            action_feature: A path to a YAML file for action feature extraction.
+
+        Returns:
+            A `PerceptualRepresentation` wrapping the provided frames and action features.
+        """
+        return VisualPerceptionRepresentation(
+            frames=tuple(frames), simulated_actions_file=action_feature
+        )
