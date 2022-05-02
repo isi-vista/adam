@@ -16,7 +16,7 @@ def _matcher_from_values(values: Sequence[float]) -> GaussianContinuousValueMatc
 
 def test_gaussian_matcher_is_correct_after_construction():
     matcher = GaussianContinuousValueMatcher(0.0)
-    assert matcher.match_score(0.0) == 1.0
+    assert np.isnan(matcher.match_score(0.0))
 
 
 def test_gaussian_matcher_parameters_are_correct_after_update():
