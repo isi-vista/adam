@@ -1,7 +1,23 @@
+import logging
 from math import sqrt
+from platform import python_implementation
 from typing import Sequence
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    from platform import python_implementation
+
+    if python_implementation() == "CPython":
+        raise
+    else:
+        logging.warning(
+            "Ignoring missing NumPy requirement on non-CPython implementation %s. This means we "
+            "can't run the continuous value matcher tests.",
+            python_implementation(),
+        )
+        norm = None
+import pytest
 
 from adam.continuous import GaussianContinuousValueMatcher
 
