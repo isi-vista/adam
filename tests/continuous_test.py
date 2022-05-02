@@ -30,17 +30,20 @@ def _matcher_from_values(values: Sequence[float]) -> GaussianContinuousValueMatc
     return matcher
 
 
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
 def test_gaussian_matcher_is_correct_after_construction():
     matcher = GaussianContinuousValueMatcher(0.0)
     assert np.isnan(matcher.match_score(0.0))
 
 
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
 def test_gaussian_matcher_parameters_are_correct_after_update():
     matcher = _matcher_from_values([-sqrt(1 / 2), sqrt(1 / 2)])
     assert matcher.mean == 0.0
     assert abs(matcher.sample_variance - 1.0) < 0.0005
 
 
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
 def test_gaussian_matcher_parameters_are_correct_for_annoying_sample():
     # Values sampled from numpy.random.standard_normal() with seed 103, 2022-04-14
     values = [
@@ -70,6 +73,7 @@ def test_gaussian_matcher_parameters_are_correct_for_annoying_sample():
     assert abs(matcher.sample_variance - np.var(values, ddof=1)) < 0.0005
 
 
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
 def test_gaussian_matcher_scores_are_correct_after_updates():
     # Values sampled from numpy.random.standard_normal() with seed 103, 2022-04-14
     values = [
