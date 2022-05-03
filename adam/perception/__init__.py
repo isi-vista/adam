@@ -4,11 +4,10 @@ used to describe `Situation`\ s from the point-of-view of `TopLevelLanguageLearn
 """
 from abc import ABC, abstractmethod
 from enum import Enum
-from pathlib import Path
-from typing import Generic, Optional, Tuple, TypeVar
+from typing import Generic, Optional, Tuple, TypeVar, Mapping, Any
 
 from attr import attrib, attrs
-from attr.validators import instance_of, optional
+from attr.validators import instance_of, optional, deep_mapping
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.preconditions import check_arg
@@ -101,8 +100,9 @@ class PerceptualRepresentation(Generic[PerceptionT]):
     during: Optional[DuringAction[ObjectPerception]] = attrib(  # type: ignore
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
-    simulated_actions_file: Optional[Path] = attrib(
-        validator=optional(instance_of(Path)), default=None, kw_only=True
+    simulated_actions_features: Optional[Mapping[str, Any]] = attrib(
+        default=None,
+        kw_only=True,
     )
 
     @staticmethod

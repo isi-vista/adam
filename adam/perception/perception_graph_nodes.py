@@ -157,4 +157,4 @@ class JointPointNode(GraphNode):
         )
 
     def __str__(self) -> str:
-        return f"JointPointNode([{self.temporal_index}], world_coord={self.world_coord}, scene_zyd+coord={self.scene_xyd_coord} ({self.confidence:.2f}))"
+        return f"JointPointNode([{self.temporal_index}], world_coord={self.world_coord}, scene_zyd_coord={self.scene_xyd_coord} ({self.confidence:.2f}))"

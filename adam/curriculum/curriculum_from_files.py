@@ -103,27 +103,30 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
             features=feature_yamls,
             strokes=sorted(situation_dir.glob("stroke_[0-9]*_[0-9]*.png")),
             stroke_graphs=sorted(situation_dir.glob("stroke_graph_*")),
-            actions=sorted(situation_dir.glob("actions_*")),
+            actions=sorted(situation_dir.glob("action_*")),
         )
         language = TokenSequenceLinguisticDescription(tokens=language_tuple)
-        perception = (
-            VisualPerceptionRepresentation.single_frame(
+        if len(feature_yamls) == 1:
+            perception = VisualPerceptionRepresentation.single_frame(
                 VisualPerceptionFrame.from_yaml(
                     situation_dir / feature_yamls[0],
                     color_is_rgb=color_is_rgb,
                 )
             )
-            if len(feature_yamls) == 1
-            else VisualPerceptionRepresentation.multi_frame(
+        else:
+            # If we have more than one feature yaml there is also some information in a
+            # separate file relating to action feature extraction
+            with open(situation_dir / "action.yaml", encoding="utf-8") as action_yaml:
+                action_features = yaml.safe_load(action_yaml)
+            perception = VisualPerceptionRepresentation.multi_frame(
                 frames=[
                     VisualPerceptionFrame.from_yaml(
                         situation_dir / feature_file, color_is_rgb=color_is_rgb
                     )
                     for feature_file in feature_yamls
                 ],
-                action_feature=situation_dir / "action.yaml",
+                action_features=action_features,
             )
-        )
         instances.append((situation, language, perception))  # type: ignore
 
     return [
