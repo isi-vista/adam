@@ -112,6 +112,7 @@ from adam.perception.perception_graph_predicates import (
     ObjectStrokePredicate,
     StrokeGNNRecognitionPredicate,
     DistributionalContinuousPredicate,
+    JointPointPredicate,
 )
 from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
@@ -1062,6 +1063,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                 elif isinstance(node, StrokeGNNRecognitionNode):
                     perception_node_to_pattern_node[key] = StrokeGNNRecognitionPredicate(
                         recognized_object=node.object_recognized
+                    )
+                elif isinstance(node, JointPointNode):
+                    perception_node_to_pattern_node[key] = JointPointPredicate(
+                        temporal_index=node.temporal_index, joint_index=node.joint_index
                     )
                 else:
                     raise RuntimeError(f"Don't know how to map node {node}")
