@@ -2912,24 +2912,9 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
             weight=action_stroke_graph["confidence_score"],
         )
 
-        joint_point_nodes = [
-            JointPointNode(
-                scene_xyd_coord=DepthPoint(xyd_coord[0], xyd_coord[1], xyd_coord[2]),
-                world_coord=Point(world_coord[0], world_coord[1], world_coord[2]),
-                confidence=conf,
-                weight=conf,
-                temporal_index=i,
-            )
-            for i, (world_coord, xyd_coord, conf) in enumerate(
-                zip(
-                    action_stroke_graph["joint_points_world_coords"],
-                    action_stroke_graph["joint_points_xyd_coords"],
-                    action_stroke_graph["joint_points_confidence_score"],
-                )
-            )
-        ]
+        joint_point_nodes = self._extract_joint_points(action_stroke_graph)
 
-        self._link_actions_to_objects(
+        self._link_action_to_objects(
             _dynamic_digraph, action_decode_node, involved_object_nodes
         )
         self._link_action_to_agent(_dynamic_digraph, agent_node)
@@ -2940,7 +2925,7 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
         return _dynamic_digraph
 
     @staticmethod
-    def _link_actions_to_objects(
+    def _link_action_to_objects(
         perception_digraph: DiGraph,
         action_node: CategoricalNode,
         object_nodes: Sequence[ObjectClusterNode],
@@ -2985,17 +2970,7 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
                 ),
             )
 
-        # Link the joint points to the agent
-        for joint_node in joint_point_nodes[1:-1]:
-            perception_digraph.add_edge(
-                agent_node,
-                joint_node,
-                label=TemporallyScopedEdgeLabel.for_dynamic_perception(
-                    HAS_PROPERTY_LABEL, TemporalScope.DURING
-                ),
-            )
-
-        # Special Case the first and last joint point as 'before' and 'after'
+        # Special Case the first and last joint point temporally as 'before' and 'after'
         # This probably isn't needed but it's closer to temporally correct
         perception_digraph.add_edge(
             agent_node,
@@ -3011,6 +2986,31 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
                 HAS_PROPERTY_LABEL, TemporalScope.AFTER
             ),
         )
+
+    @staticmethod
+    def _extract_joint_points(
+        action_stroke_graph: Mapping[str, Any]
+    ) -> Sequence[JointPointNode]:
+        return [
+            JointPointNode(
+                scene_xyd_coord=DepthPoint(xyd_coord[0], xyd_coord[1], xyd_coord[2]),
+                world_coord=Point(world_coord[0], world_coord[1], world_coord[2]),
+                confidence=conf,
+                weight=conf,
+                temporal_index=temporal_index,
+                joint_index=joint_num,
+            )
+            for temporal_index, (world_coords, xyd_coords, confs) in enumerate(
+                zip(
+                    action_stroke_graph["joint_points_world_coords"],
+                    action_stroke_graph["joint_points_xyd_coords"],
+                    action_stroke_graph["joint_points_confidence_score"],
+                )
+            )
+            for joint_num, (world_coord, xyd_coord, conf) in enumerate(
+                zip(world_coords, xyd_coords, confs)
+            )
+        ]
 
 
 def _merge_before_and_after_graphs(before_graph, after_graph) -> DiGraph:

@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Generic, Optional, Tuple, TypeVar, Mapping, Any
 
 from attr import attrib, attrs
-from attr.validators import instance_of, optional, deep_mapping
+from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from immutablecollections.converter_utils import _to_immutableset
 from vistautils.preconditions import check_arg

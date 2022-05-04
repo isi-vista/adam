@@ -148,13 +148,14 @@ class JointPointNode(GraphNode):
     world_coord: Point = attrib(validator=instance_of(Point))
     scene_xyd_coord: DepthPoint = attrib(validator=instance_of(DepthPoint))
     temporal_index: int = attrib(validator=instance_of(int))
+    joint_index: int = attrib(validator=instance_of(int))
     confidence: float = attrib(validator=instance_of(float))
 
     def dot_label(self) -> str:
         return (
             f"JointPointNode(world_coord={self.world_coord}, scene_xyd_coord={self.scene_xyd_coord},"
-            f"confidence={self.confidence:.4f}, temporal_index={self.temporal_index})"
+            f"confidence={self.confidence:.4f}, temporal_index={self.temporal_index}, joint_index={self.joint_index})"
         )
 
     def __str__(self) -> str:
-        return f"JointPointNode([{self.temporal_index}], world_coord={self.world_coord}, scene_zyd_coord={self.scene_xyd_coord} ({self.confidence:.2f}))"
+        return f"JointPointNode([{self.joint_index}.{self.temporal_index}], world_coord={self.world_coord}, scene_xyd_coord={self.scene_xyd_coord} ({self.confidence:.2f}))"
