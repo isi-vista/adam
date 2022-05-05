@@ -9,9 +9,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Utility script to convert feature YAMLs"
     )
-    parser.add_argument("--input-feature-dir", type=Path, help="An input directory of the features")
-    parser.add_argument("--input-cur-dir", type=Path, help="An input directory of the curriculum")
-    parser.add_argument("--output-dir", type=Path, help="The curriculum output directory")
+    parser.add_argument("--input-feature-dir", type=Path, help="An input directory of the features", required=True)
+    parser.add_argument("--input-cur-dir", type=Path, help="An input directory of the curriculum", required=True)
+    parser.add_argument("--output-dir", type=Path, help="The curriculum output directory", required=True)
     args = parser.parse_args()
 
     output_dir: Path = args.output_dir
