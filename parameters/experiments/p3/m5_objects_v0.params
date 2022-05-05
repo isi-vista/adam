@@ -1,0 +1,60 @@
+_includes:
+   - "../../root.params"
+
+# Learner Configuration
+learner: simulated-integrated-learner-params
+object_learner:
+    learner_type: "stroke-gnn"
+    ontology: "phase3"
+    min_continuous_feature_match_score: 0.05
+attribute_learner:
+    learner_type: "none"
+relation_learner:
+    learner_type: "none"
+action_learner:
+    learner_type: "none"
+plural_learner:
+    learner_type: "none"
+affordance_learner:
+ learner_type: "none"
+include_functional_learner: false
+include_generics_learner: false
+suppress_error: false
+
+# Curriculum Configuration
+curriculum: "phase3"
+train_curriculum:
+    curriculum_type: "training"
+    curriculum: "m5_objects_v0"
+    color_is_rgb: True
+test_curriculum:
+    curriculum_type: "testing"
+    curriculum: "m5_objects_v0_eval"
+    color_is_rgb: True
+
+# Experiment Configuration
+experiment: "m5_objects_v0"
+experiment_group_dir: '%adam_experiment_root%/learners/%learner%/experiments/%train_curriculum.curriculum%/'
+log_learner_state: true
+experiment_type: simulated
+
+# Hypothesis Logging
+hypothesis_log_dir: "%experiment_group_dir%/hypotheses"
+log_hypothesis_every_n_steps: 250
+
+# Debug Configuration
+debug_log_directory: "%experiment_group_dir%/graphs"
+debug_perception_log_dir: "%experiment_group_dir%/perception_graphs"
+
+# Observer Params
+post_observer:
+    experiment_output_path: "%experiment_group_dir%"
+    copy_curriculum: true
+    file_name: "post_decode"
+
+test_observer:
+    experiment_output_path: "%post_observer.experiment_output_path%/test_curriculums/%test_curriculum.curriculum%/"
+    copy_curriculum: true
+    file_name: "post_decode"
+    calculate_accuracy_by_language: true
+    calculate_overall_accuracy: true
