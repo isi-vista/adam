@@ -1,5 +1,6 @@
 import argparse
 import itertools as itt
+import logging
 import shutil
 from pathlib import Path
 
@@ -51,6 +52,11 @@ def main():
         input_feature_dir: Path = args.input_feature_dir / object_name
         for cam in range(n_cameras):
             input_curriculum_dir: Path = args.input_cur_dir / f"{args.input_split}_{object_name}" / f"cam{cam}"
+            if not input_curriculum_dir.exists():
+                logging.warning(
+                    "Input curriculum dir %s does not exist, so globs on this directory will fail.",
+                    input_curriculum_dir
+                )
             for ex in range(range_examples):
                 output_situation = output_dir / f"situation_{situation_num}"
                 output_situation.mkdir(parents=True)
