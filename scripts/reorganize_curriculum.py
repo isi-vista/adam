@@ -7,7 +7,7 @@ import yaml
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Utility script to convert feature YAMLs"
+        description="Utility script to reorganize curricula"
     )
     parser.add_argument("--input-feature-dir", type=Path, help="An input directory of the features", required=True)
     parser.add_argument("--input-cur-dir", type=Path, help="An input directory of the curriculum", required=True)
