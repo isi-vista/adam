@@ -5,6 +5,30 @@ from pathlib import Path
 import yaml
 
 
+OBJECTS_LIST = (
+    "apple",
+    "ball",
+    "banana",
+    "book",
+    "box",
+    "chair",
+    "cubeblock",
+    "cup",
+    "desk",
+    "floor",
+    "mug",
+    "orange",
+    "paper",
+    "sofa",
+    "sphereblock",
+    "table",
+    "toysedan",
+    "toytruck",
+    "triangleblock",
+    "window",
+)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Utility script to reorganize curricula"
