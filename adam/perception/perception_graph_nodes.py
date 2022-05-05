@@ -144,6 +144,23 @@ class StrokeGNNRecognitionNode(GraphNode):
 
 
 @attrs(frozen=True, slots=True, eq=False)
+class TrajectoryRecognitionNode(GraphNode):
+    """A property node indicating Stroke GNN object recognition."""
+
+    action_recognized: str = attrib(validator=instance_of(str))
+    confidence: float = attrib(validator=instance_of(float))
+
+    def dot_label(self):
+        return (
+            f"TrajectoryRecognitionNode(action_recognized={self.action_recognized}, "
+            f"confidence={self.confidence:.4f})"
+        )
+
+    def __str__(self) -> str:
+        return f"TrajectoryRecognitionNode(action recognized={self.action_recognized} ({self.confidence:.2f}))"
+
+
+@attrs(frozen=True, slots=True, eq=False)
 class JointPointNode(GraphNode):
     world_coord: Point = attrib(validator=instance_of(Point))
     scene_xyd_coord: DepthPoint = attrib(validator=instance_of(DepthPoint))

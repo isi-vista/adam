@@ -92,6 +92,7 @@ from adam.perception.perception_graph_nodes import (
     ObjectStroke,
     StrokeGNNRecognitionNode,
     JointPointNode,
+    TrajectoryRecognitionNode,
 )
 from adam.perception.perception_graph_predicates import (
     NodePredicate,
@@ -113,6 +114,7 @@ from adam.perception.perception_graph_predicates import (
     StrokeGNNRecognitionPredicate,
     DistributionalContinuousPredicate,
     JointPointPredicate,
+    TrajectoryRecognitionPredicate,
 )
 from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
@@ -1063,6 +1065,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                 elif isinstance(node, StrokeGNNRecognitionNode):
                     perception_node_to_pattern_node[key] = StrokeGNNRecognitionPredicate(
                         recognized_object=node.object_recognized
+                    )
+                elif isinstance(node, TrajectoryRecognitionNode):
+                    perception_node_to_pattern_node[key] = TrajectoryRecognitionPredicate(
+                        recognized_action=node.action_recognized
                     )
                 elif isinstance(node, JointPointNode):
                     perception_node_to_pattern_node[key] = JointPointPredicate(
@@ -2911,9 +2917,9 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
         ]
         involved_object_nodes.append(agent_node)
 
-        action_decode_node = CategoricalNode(
-            label="action_gnn",
-            value=action_stroke_graph["action_name"].lower(),
+        action_decode_node = TrajectoryRecognitionNode(
+            action_recognized=action_stroke_graph["action_name"].lower(),
+            confidence=action_stroke_graph["confidence_score"],
             weight=action_stroke_graph["confidence_score"],
         )
 
@@ -2932,7 +2938,7 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
     @staticmethod
     def _link_action_to_objects(
         perception_digraph: DiGraph,
-        action_node: CategoricalNode,
+        action_node: TrajectoryRecognitionNode,
         object_nodes: Sequence[ObjectClusterNode],
     ) -> None:
         for object_node in object_nodes:
@@ -2962,7 +2968,7 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
     def _link_agent_and_action_to_joint_points(
         perception_digraph: DiGraph,
         agent_node: ObjectClusterNode,
-        action_node: CategoricalNode,
+        action_node: TrajectoryRecognitionNode,
         joint_point_nodes: Sequence[JointPointNode],
     ) -> None:
         # Link the joint points to the Action

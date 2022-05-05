@@ -30,6 +30,7 @@ from adam.perception.perception_graph_nodes import (
     ObjectStroke,
     StrokeGNNRecognitionNode,
     JointPointNode,
+    TrajectoryRecognitionNode,
 )
 
 # Perception graph predicate nodes are defined below.
@@ -407,6 +408,33 @@ class StrokeGNNRecognitionPredicate(NodePredicate):
         return (
             predicate_node.recognized_object == self.recognized_object
             if isinstance(predicate_node, StrokeGNNRecognitionPredicate)
+            else False
+        )
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class TrajectoryRecognitionPredicate(NodePredicate):
+    """Matches a Stroke GNN recognition."""
+
+    recognized_action: str = attrib(validator=instance_of(str))
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        return (
+            graph_node.action_recognized == self.recognized_action
+            if isinstance(graph_node, TrajectoryRecognitionNode)
+            else False
+        )
+
+    def dot_label(self) -> str:
+        return f"TrajectoryRecognitionPredicate(action={self.recognized_action})"
+
+    def is_equivalent(self, other: "NodePredicate") -> bool:
+        return isinstance(other, TrajectoryRecognitionPredicate)
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return (
+            predicate_node.recognized_action == self.recognized_action
+            if isinstance(predicate_node, TrajectoryRecognitionPredicate)
             else False
         )
 
