@@ -33,6 +33,26 @@ N_EXAMPLES_PER_OBJECT = 10
 N_CAMERAS = 3
 
 
+# These must also match the ontology node labels due to how the GNN recognizer works.
+OBJECT_DEBUG_NAME_TO_NAME = {
+    "toysedan": "toy_sedan",
+    "toytruck": "toy_truck",
+    "cubeblock": "cube_block",
+    "sphereblock": "sphere_block",
+    "triangleblock": "pyramid_block",
+}
+
+
+def _removeprefix(string: str, prefix: str) -> str:
+    """
+    Shim for Python 3.9+ removeprefix.
+    """
+    if string[:len(prefix)] == prefix:
+        return string[len(prefix):]
+    else:
+        return string
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Utility script to reorganize curricula"
@@ -57,12 +77,12 @@ def main():
     output_dir: Path = args.output_dir
 
     situation_num = 0
-    for object_name, range_examples, n_cameras in zip(
+    for object_debug_name, range_examples, n_cameras in zip(
         OBJECTS_LIST, itt.repeat(N_EXAMPLES_PER_OBJECT), itt.repeat(N_CAMERAS)
     ):
-        input_feature_dir: Path = args.input_feature_dir / object_name
+        input_feature_dir: Path = args.input_feature_dir / object_debug_name
         for cam in range(n_cameras):
-            input_curriculum_dir: Path = args.input_cur_dir / f"{args.input_split}_{args.input_slice}{object_name}" / f"cam{cam}"
+            input_curriculum_dir: Path = args.input_cur_dir / f"{args.input_split}_{args.input_slice}{object_debug_name}" / f"cam{cam}"
             if not input_curriculum_dir.exists():
                 logging.warning(
                     "Input curriculum dir %s does not exist, so globs on this directory will fail.",
@@ -127,6 +147,16 @@ def main():
                     with open(file, encoding="utf-8") as feature_file:
                         feature_yaml = yaml.safe_load(feature_file)
 
+                    for object in feature_yaml:
+                        # Clean up the object name so it matches the internal ones
+                        object["stroke_graph"]["concept_name"] = _removeprefix(
+                            object["stroke_graph"]["concept_name"], args.input_split + "_"
+                        )
+                        # And modify it so it matches what's in phase3_ontology
+                        object["stroke_graph"]["concept_name"] = OBJECT_DEBUG_NAME_TO_NAME.get(
+                            object["stroke_graph"]["concept_name"], object["stroke_graph"]["concept_name"]
+                        )
+
                     output_dict = {
                         "objects": [object_ for object_ in feature_yaml]
                     }
@@ -140,6 +170,7 @@ def main():
                 for idx, file in enumerate(sorted(input_feature_dir.glob(f"stroke_graph_{ex}*"))):
                     shutil.copy(file, output_situation / f"stroke_graph_{idx}.png")
                 # Description file
+                object_name = OBJECT_DEBUG_NAME_TO_NAME.get(object_debug_name, object_debug_name)
                 with open(output_situation / "description.yaml", "w", encoding="utf-8") as description_file:
                     yaml.dump({"language": f"a {object_name}"}, description_file)
 
