@@ -29,6 +29,7 @@ OBJECTS_LIST = (
     "window",
 )
 N_EXAMPLES_PER_OBJECT = 10
+N_CAMERAS = 3
 
 
 def main():
@@ -44,7 +45,9 @@ def main():
     output_dir: Path = args.output_dir
 
     situation_num = 0
-    for object_name, range_examples in zip(OBJECTS_LIST, itt.repeat(N_EXAMPLES_PER_OBJECT)):
+    for object_name, range_examples, n_cameras in zip(
+        OBJECTS_LIST, itt.repeat(N_EXAMPLES_PER_OBJECT), itt.repeat(N_CAMERAS)
+    ):
         input_curriculum_dir: Path = args.input_cur_dir / object_name
         input_feature_dir: Path = args.input_feature_dir / object_name
         for ex in range(range_examples):
