@@ -72,19 +72,22 @@ def main():
                 output_situation = output_dir / f"situation_{situation_num}"
                 output_situation.mkdir(parents=True)
                 # Depth Files
-                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"depth__{ex}_*"))):
+                # Absent in M5 curriculum
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"depth_*_{ex}.png"))):
                     shutil.copy(file, output_situation / f"depth_{idx}.png")
-                # PDC Files
-                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"pdc_rgb__{ex}_*"))):
+                # PCD Files
+                # In M5 curriculum, only present in small_single_ slice
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"pcd_rgb*_{ex}.ply"))):
                     shutil.copy(file, output_situation / f"pdc_rgb_{idx}.ply")
                 # RGB Files
-                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"rgb__{ex}_*"))):
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"rgb_*_{ex}.png"))):
                     shutil.copy(file, output_situation / f"rgb_{idx}.png")
-                # PDC Semantic Files
-                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"pdc_semantic__{ex}_*"))):
+                # PCD Semantic Files
+                # In M5 curriculum, only present in small_single_ slice
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"pcd_semantic_*_{ex}.ply"))):
                     shutil.copy(file, output_situation / f"pdc_semantic_{idx}.ply")
                 # Semantic Files
-                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"semantic__{ex}_*"))):
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"semantic_*_{ex}.png"))):
                     shutil.copy(file, output_situation / f"semantic_{idx}.png")
                 # Feature File
                 for file in sorted(input_feature_dir.glob(f"feature_{ex}*")):
@@ -98,10 +101,10 @@ def main():
                     with open(output_situation / "feature.yaml", "w", encoding="utf-8") as feature_file:
                         yaml.dump(output_dict, feature_file)
                 # Stroke File
-                for idx, file in enumerate(sorted(input_feature_dir.glob(f"stroke_{ex}_*"))):
+                for idx, file in enumerate(sorted(input_feature_dir.glob(f"stroke_{ex}*"))):
                     shutil.copy(file, output_situation / f"stroke_{idx}_{idx}.png")
                 # Stroke Graph File
-                for idx, file in enumerate(sorted(input_feature_dir.glob(f"stroke_graph_{ex}_*"))):
+                for idx, file in enumerate(sorted(input_feature_dir.glob(f"stroke_graph_{ex}*"))):
                     shutil.copy(file, output_situation / f"stroke_graph_{idx}.png")
                 # Description file
                 with open(output_situation / "description.yaml", "w", encoding="utf-8") as description_file:
