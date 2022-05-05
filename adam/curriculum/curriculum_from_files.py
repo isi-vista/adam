@@ -92,7 +92,7 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
             ) as situation_description_file:
                 situation_description = yaml.safe_load(situation_description_file)
             language_tuple = tuple(situation_description["language"].split(" "))
-        feature_yamls = sorted(situation_dir.glob("feature_*"))
+        feature_yamls = sorted(situation_dir.glob("feature*"))
         situation = SimulationSituation(
             language=language_tuple,
             scene_images_png=sorted(situation_dir.glob("rgb_*")),
