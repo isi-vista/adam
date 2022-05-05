@@ -25,9 +25,18 @@ from adam.situation.phase_3_situations import SimulationSituation
 PHASE_3_TRAINING_CURRICULUM_OPTIONS = [
     "m4_core",
     "m4_stretch",
+    "m5_objects",
+    "m5_objects_v0",
+    "m5_objects_v0_with_mugs",
 ]
 
-PHASE_3_TESTING_CURRICULUM_OPTIONS = ["m4_core_eval", "m4_stretch_eval"]
+PHASE_3_TESTING_CURRICULUM_OPTIONS = [
+    "m4_core_eval",
+    "m4_stretch_eval",
+    "m5_objects_eval",
+    "m5_objects_v0_eval",
+    "m5_objects_v0_with_mugs_eval",
+]
 
 TRAINING_CUR = "training"
 TESTING_CUR = "testing"
