@@ -15,7 +15,6 @@ from adam.paths import (
     CURRICULUM_INFO_FILE,
     SITUATION_DIR_NAME,
     SITUATION_DESCRIPTION_FILE,
-    FEATURE_YAML,
 )
 from adam.perception.visual_perception import (
     VisualPerceptionFrame,
@@ -58,6 +57,7 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
         if curriculum_type == TRAINING_CUR
         else PHASE_3_TESTING_CURRICULUM_OPTIONS,
     )
+    color_is_rgb = params.boolean("color_is_rgb", default=False)
 
     if curriculum_type == TRAINING_CUR:
         root_dir = TRAINING_CURRICULUM_DIR
@@ -92,6 +92,7 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
             ) as situation_description_file:
                 situation_description = yaml.safe_load(situation_description_file)
             language_tuple = tuple(situation_description["language"].split(" "))
+        feature_yamls = sorted(situation_dir.glob("feature_*"))
         situation = SimulationSituation(
             language=language_tuple,
             scene_images_png=sorted(situation_dir.glob("rgb_*")),
@@ -99,17 +100,33 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
             depth_pngs=sorted(situation_dir.glob("depth_*")),
             pdc_semantic_plys=sorted(situation_dir.glob("pdc_semantic_*")),
             semantic_pngs=sorted(situation_dir.glob("semantic_*")),
-            features=sorted(situation_dir.glob("feature_*")),
+            features=feature_yamls,
             strokes=sorted(situation_dir.glob("stroke_[0-9]*_[0-9]*.png")),
             stroke_graphs=sorted(situation_dir.glob("stroke_graph_*")),
+            actions=sorted(situation_dir.glob("action*")),
         )
         language = TokenSequenceLinguisticDescription(tokens=language_tuple)
-        perception = VisualPerceptionRepresentation.single_frame(
-            VisualPerceptionFrame.from_yaml(
-                situation_dir / FEATURE_YAML,
-                color_is_rgb=params.boolean("color_is_rgb", default=False),
+        if len(feature_yamls) == 1:
+            perception = VisualPerceptionRepresentation.single_frame(
+                VisualPerceptionFrame.from_yaml(
+                    situation_dir / feature_yamls[0],
+                    color_is_rgb=color_is_rgb,
+                )
             )
-        )
+        else:
+            # If we have more than one feature yaml there is also some information in a
+            # separate file relating to action feature extraction
+            with open(situation_dir / "action.yaml", encoding="utf-8") as action_yaml:
+                action_features = yaml.safe_load(action_yaml)
+            perception = VisualPerceptionRepresentation.multi_frame(
+                frames=[
+                    VisualPerceptionFrame.from_yaml(
+                        situation_dir / feature_file, color_is_rgb=color_is_rgb
+                    )
+                    for feature_file in feature_yamls
+                ],
+                action_features=action_features,
+            )
         instances.append((situation, language, perception))  # type: ignore
 
     return [

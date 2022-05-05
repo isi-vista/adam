@@ -21,6 +21,7 @@ class SimulationSituation(Situation):
     pdc_semantic_plys: Sequence[Path] = attrib(validator=deep_iterable(instance_of(Path)))
     strokes: Sequence[Path] = attrib(validator=deep_iterable(instance_of(Path)))
     stroke_graphs: Sequence[Path] = attrib(validator=deep_iterable(instance_of(Path)))
+    actions: Sequence[Path] = attrib(validator=deep_iterable(instance_of(Path)))
 
     def all_files(self) -> Iterable[Path]:
         for file_path in chain(
@@ -32,5 +33,6 @@ class SimulationSituation(Situation):
             self.pdc_semantic_plys,
             self.strokes,
             self.stroke_graphs,
+            self.actions,
         ):
             yield file_path

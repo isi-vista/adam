@@ -29,6 +29,8 @@ from adam.perception.perception_graph_nodes import (
     RgbColorNode,
     ObjectStroke,
     StrokeGNNRecognitionNode,
+    JointPointNode,
+    TrajectoryRecognitionNode,
 )
 
 # Perception graph predicate nodes are defined below.
@@ -406,6 +408,63 @@ class StrokeGNNRecognitionPredicate(NodePredicate):
         return (
             predicate_node.recognized_object == self.recognized_object
             if isinstance(predicate_node, StrokeGNNRecognitionPredicate)
+            else False
+        )
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class TrajectoryRecognitionPredicate(NodePredicate):
+    """Matches a Stroke GNN recognition."""
+
+    recognized_action: str = attrib(validator=instance_of(str))
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        return (
+            graph_node.action_recognized == self.recognized_action
+            if isinstance(graph_node, TrajectoryRecognitionNode)
+            else False
+        )
+
+    def dot_label(self) -> str:
+        return f"TrajectoryRecognitionPredicate(action={self.recognized_action})"
+
+    def is_equivalent(self, other: "NodePredicate") -> bool:
+        return isinstance(other, TrajectoryRecognitionPredicate)
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return (
+            predicate_node.recognized_action == self.recognized_action
+            if isinstance(predicate_node, TrajectoryRecognitionPredicate)
+            else False
+        )
+
+
+@attrs(frozen=True, slots=True, eq=False)
+class JointPointPredicate(NodePredicate):
+    """Matches a JointPointNode"""
+
+    temporal_index: int = attrib(validator=instance_of(int))
+    joint_index: int = attrib(validator=instance_of(int))
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        return (
+            graph_node.temporal_index == self.temporal_index
+            and graph_node.joint_index == self.joint_index
+            if isinstance(graph_node, JointPointNode)
+            else False
+        )
+
+    def dot_label(self) -> str:
+        return f"JointPoint(joint_index={self.joint_index}, temporal_index={self.temporal_index})"
+
+    def is_equivalent(self, other: "NodePredicate") -> bool:
+        return isinstance(other, JointPointPredicate)
+
+    def matches_predicate(self, predicate_node: "NodePredicate") -> bool:
+        return (
+            predicate_node.temporal_index == self.temporal_index
+            and predicate_node.joint_index == self.joint_index
+            if isinstance(predicate_node, JointPointPredicate)
             else False
         )
 

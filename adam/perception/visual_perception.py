@@ -233,6 +233,10 @@ class VisualPerceptionRepresentation(PerceptualRepresentation[PerceptionT]):
     during: Optional[DuringAction[ObjectPerception]] = attrib(  # type: ignore
         validator=optional(instance_of(DuringAction)), default=None, kw_only=True
     )
+    simulated_actions_features: Optional[Mapping[str, Any]] = attrib(
+        default=None,
+        kw_only=True,
+    )
 
     @staticmethod
     def single_frame(
@@ -249,3 +253,21 @@ class VisualPerceptionRepresentation(PerceptualRepresentation[PerceptionT]):
 
         """
         return VisualPerceptionRepresentation((perception_frame,))
+
+    @staticmethod
+    def multi_frame(
+        frames: Sequence[_PerceptionT2], action_features: Mapping[str, Any]
+    ) -> "VisualPerceptionRepresentation[_PerceptionT2]":
+        """
+        Convenience method for generating a `PerceptualReprsentation` which is multiple frames.
+
+        Args:
+            frames: a sequence of `PerceptualRepresentationFrame`.
+            action_features: A mapping of str to feature representations
+
+        Returns:
+            A `PerceptualRepresentation` wrapping the provided frames and action features.
+        """
+        return VisualPerceptionRepresentation(
+            frames=tuple(frames), simulated_actions_features=action_features
+        )
