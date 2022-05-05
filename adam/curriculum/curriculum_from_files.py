@@ -103,7 +103,7 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
             features=feature_yamls,
             strokes=sorted(situation_dir.glob("stroke_[0-9]*_[0-9]*.png")),
             stroke_graphs=sorted(situation_dir.glob("stroke_graph_*")),
-            actions=sorted(situation_dir.glob("action_*")),
+            actions=sorted(situation_dir.glob("action*")),
         )
         language = TokenSequenceLinguisticDescription(tokens=language_tuple)
         if len(feature_yamls) == 1:
