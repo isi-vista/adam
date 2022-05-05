@@ -47,7 +47,7 @@ def main():
     for object_name, range_examples in zip(OBJECTS_LIST, itt.repeat(N_EXAMPLES_PER_OBJECT)):
         input_curriculum_dir: Path = args.input_cur_dir / object_name
         input_feature_dir: Path = args.input_feature_dir / object_name
-        for ex in range(1, range_examples):
+        for ex in range(range_examples):
             output_situation = output_dir / f"situation_{situation_num}"
             output_situation.mkdir(parents=True)
             # Depth Files
