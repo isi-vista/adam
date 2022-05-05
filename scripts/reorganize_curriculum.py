@@ -248,6 +248,7 @@ def main():
 
     with open(output_dir / "info.yaml", "w", encoding="utf-8") as info_file:
         yaml.dump({"curriculum": output_dir.stem, "num_dirs": situation_num}, info_file)
+    logging.info("Saved %d situations.", situation_num)
 
 
 if __name__ == "__main__":
