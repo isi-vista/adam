@@ -79,6 +79,7 @@ def main():
     output_dir: Path = args.output_dir
 
     situation_num = 0
+    objects_covered = set()
     for object_debug_name, range_examples, n_cameras in zip(
         OBJECTS_LIST, itt.repeat(N_EXAMPLES_PER_OBJECT), itt.repeat(N_CAMERAS)
     ):
@@ -245,10 +246,13 @@ def main():
                     yaml.dump({"language": f"a {object_name}"}, description_file)
 
                 situation_num += 1
+                objects_covered.add(object_debug_name)
 
     with open(output_dir / "info.yaml", "w", encoding="utf-8") as info_file:
         yaml.dump({"curriculum": output_dir.stem, "num_dirs": situation_num}, info_file)
     logging.info("Saved %d situations.", situation_num)
+    logging.info("Objects covered: %s", objects_covered)
+    logging.info("Objects not covered: %s", set(OBJECTS_LIST) - objects_covered)
 
 
 if __name__ == "__main__":
