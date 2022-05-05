@@ -37,6 +37,7 @@ def main():
     )
     parser.add_argument("--input-feature-dir", type=Path, help="An input directory of the features", required=True)
     parser.add_argument("--input-cur-dir", type=Path, help="An input directory of the curriculum", required=True)
+    parser.add_argument("--input-split", type=str, help="The input curriculum split to process", required=True)
     parser.add_argument("--output-dir", type=Path, help="The curriculum output directory", required=True)
     args = parser.parse_args()
 
