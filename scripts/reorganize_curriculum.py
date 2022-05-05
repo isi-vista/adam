@@ -122,6 +122,13 @@ def main():
                 # RGB Files
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"rgb_*_{ex}.png"))):
                     shutil.copy(file, output_situation / f"rgb_{idx}.png")
+                if not any(input_curriculum_dir.glob(f"rgb__{ex}*")):
+                    logging.warning(
+                        "Missing RGB image for object %s (camera %d, example %d).",
+                        object_debug_name,
+                        cam,
+                        ex,
+                    )
                 # Infrared Files
                 # In M5 curriculum, only present in small_single_ slice
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"infrared_*_{ex}.png"))):
@@ -155,6 +162,13 @@ def main():
                 # Semantic Files
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"semantic_*_{ex}.png"))):
                     shutil.copy(file, output_situation / f"semantic_{idx}.png")
+                if not any(input_curriculum_dir.glob(f"semantic__{ex}*")):
+                    logging.warning(
+                        "Missing semantic image for object %s (camera %d, example %d).",
+                        object_debug_name,
+                        cam,
+                        ex,
+                    )
                 # Feature File
                 for file in sorted(
                     # Note the input slice isn't used in the feature directory or file names.
@@ -199,6 +213,17 @@ def main():
                     )
                 ):
                     shutil.copy(file, output_situation / f"stroke_graph_{idx}.png")
+                if not any(
+                    args.input_feature_dir.glob(
+                        f"stroke_graph_{args.input_split}_{object_debug_name}_{cam}_{ex}*"
+                    )
+                ):
+                    logging.warning(
+                        "Missing stroke graph for object %s (camera %d, example %d).",
+                        object_debug_name,
+                        cam,
+                        ex,
+                    )
                 # Description file
                 object_name = OBJECT_DEBUG_NAME_TO_NAME.get(object_debug_name, object_debug_name)
                 with open(output_situation / "description.yaml", "w", encoding="utf-8") as description_file:
