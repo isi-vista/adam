@@ -1,14 +1,16 @@
+from functools import partial
 import logging
 import shutil
+
 import yaml
 
 from PIL import Image, ImageFont, ImageDraw
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Generic, Mapping, MutableMapping, Optional, Tuple
+from typing import Any, Callable, Generic, Mapping, MutableMapping, Optional, Tuple
 
 from attr import attrib, attrs
-from attr.validators import instance_of, optional
+from attr.validators import instance_of, is_callable, optional
 from more_itertools import only, take
 from adam.perception.visual_perception import VisualPerceptionRepresentation
 from vistautils.parameters import Parameters
@@ -765,6 +767,85 @@ class HTMLLoggerPostObserver(  # pragma: no cover
             self.candidate_accuracy_observer.report()
         if self.precision_recall_observer:
             self.precision_recall_observer.report()
+
+
+@attrs(slots=True)
+class ByLanguageCandidateAccuracyObserver(
+    DescriptionObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+):
+    """
+    Like CandidateAccuracyObserver except we calculate accuracy separately for each true
+    description.
+
+    This is used for example to calculate objectwise accuracy values for M5.
+    """
+
+    name: str = attrib(validator=instance_of(str))
+    candidate_accuracy_observer_factory: Callable[
+        [str], CandidateAccuracyObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+    ] = attrib(kw_only=True, validator=is_callable())
+    true_description_to_observer: MutableMapping[
+        str, CandidateAccuracyObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+    ] = attrib(init=False, factory=dict)
+
+    @staticmethod
+    def _make_candidate_accuracy_observer(
+        own_name: str,
+        true_language: str,
+    ):
+        return CandidateAccuracyObserver(f"{own_name}_for_{true_language}")
+
+    @candidate_accuracy_observer_factory.default
+    def _default_candidate_accuracy_observer_factory(
+        self,
+    ) -> Callable[
+        [str], CandidateAccuracyObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+    ]:
+        return partial(
+            ByLanguageCandidateAccuracyObserver._make_candidate_accuracy_observer,
+            self.name,
+        )
+
+    def observe(
+        self,
+        situation: Optional[SituationT],
+        true_description: LinguisticDescription,
+        perceptual_representation: PerceptualRepresentation[PerceptionT],
+        predicted_scene_description: TopLevelLanguageLearnerDescribeReturn,
+    ) -> None:
+        true_description_string = " ".join(true_description.as_token_sequence())
+        observer_for_description = self.true_description_to_observer.setdefault(
+            true_description_string,
+            self.candidate_accuracy_observer_factory(true_description_string),
+        )
+        observer_for_description.observe(
+            situation,
+            true_description,
+            perceptual_representation,
+            predicted_scene_description,
+        )
+
+    def report(self) -> None:
+        for true_description, observer in self.true_description_to_observer.items():
+            # Why report accuracy here instead of using the observer's .report()? Because we want to
+            # specify in *this message* "This is the accuracy for scenes described as 'a ball'"
+            # in one message rather than having "true description: a ball" followed by an accuracy
+            # report (which could get hard to read).
+            accuracy = observer.accuracy()
+
+            if accuracy is not None:
+                # pylint:disable=protected-access
+                logging.info(
+                    "%s: for description '%s', accuracy of learner's predictions ('gold' "
+                    "description was in learner's candidates) %d / %d predictions ("
+                    "%03.2f %%)",
+                    self.name,
+                    true_description,
+                    # hack :(
+                    observer._num_predictions_with_gold_in_candidates,  # noqa
+                    observer._num_predictions,  # noqa
+                    100 * accuracy,
+                )
 
 
 @attrs(slots=True)
