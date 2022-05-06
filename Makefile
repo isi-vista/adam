@@ -30,7 +30,7 @@ FLAKE8:=flake8
 FLAKE8_CMD:=$(FLAKE8) $(SOURCE_DIR_NAME)
 
 IGNORE_TESTS = --ignore tests/experiment_test.py
-CPYTHON_TESTS=(tests/continuous_test.py tests/perception/perception_graph_test.py tests/learner/object_learner_test.py)
+CPYTHON_TESTS=tests/continuous_test.py tests/perception/perception_graph_test.py tests/learner/object_learner_test.py
 
 test: 
 	$(PYTHON) -m pytest $(IGNORE_TESTS) tests
