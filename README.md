@@ -62,7 +62,7 @@ Run `adam.experiment.run_m9 /full/path/to/parameters/experiment/m9/m9.params`
 
 First, make sure the Flask backend is running. To start the backend:
 
-```commandline
+```bash
 cd adam/flask_backend
 bash start_flask.sh &
 ```
