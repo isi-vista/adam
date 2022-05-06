@@ -1,7 +1,23 @@
+import logging
 from math import sqrt
+from platform import python_implementation
 from typing import Sequence
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    from platform import python_implementation
+
+    if python_implementation() == "CPython":
+        raise
+    else:
+        logging.warning(
+            "Ignoring missing NumPy requirement on non-CPython implementation %s. This means we "
+            "can't run the continuous value matcher tests.",
+            python_implementation(),
+        )
+        norm = None
+import pytest
 
 from adam.continuous import GaussianContinuousValueMatcher
 
@@ -14,17 +30,20 @@ def _matcher_from_values(values: Sequence[float]) -> GaussianContinuousValueMatc
     return matcher
 
 
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
 def test_gaussian_matcher_is_correct_after_construction():
     matcher = GaussianContinuousValueMatcher(0.0)
-    assert matcher.match_score(0.0) == 1.0
+    assert np.isnan(matcher.match_score(0.0))
 
 
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
 def test_gaussian_matcher_parameters_are_correct_after_update():
     matcher = _matcher_from_values([-sqrt(1 / 2), sqrt(1 / 2)])
     assert matcher.mean == 0.0
     assert abs(matcher.sample_variance - 1.0) < 0.0005
 
 
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
 def test_gaussian_matcher_parameters_are_correct_for_annoying_sample():
     # Values sampled from numpy.random.standard_normal() with seed 103, 2022-04-14
     values = [
@@ -54,6 +73,7 @@ def test_gaussian_matcher_parameters_are_correct_for_annoying_sample():
     assert abs(matcher.sample_variance - np.var(values, ddof=1)) < 0.0005
 
 
+@pytest.mark.skipif(python_implementation() != "CPython", reason="requires SciPy")
 def test_gaussian_matcher_scores_are_correct_after_updates():
     # Values sampled from numpy.random.standard_normal() with seed 103, 2022-04-14
     values = [

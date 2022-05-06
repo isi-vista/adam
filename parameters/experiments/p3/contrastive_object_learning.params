@@ -1,0 +1,76 @@
+_includes:
+   - "../../root.params"
+
+experiment: "contrastive_object_learning"
+experiment_group_dir: '%adam_experiment_root%/contrastive_learning/'
+log_learner_state: false
+experiment_type: simulated
+
+include_image_links: true
+sort_learner_descriptions_by_length: True
+num_pretty_descriptions: 5
+
+# Learner parameters
+learner: simulated-integrated-learner-params
+object_learner:
+   learner_type: "subset"
+   ontology: "phase3"
+   random_seed: 0
+   # learning_factor: 0.02
+   # graph_match_confirmation_threshold: 0.5
+   # lexicon_entry_threshold: 0.7
+   # smoothing_parameter: 0.001
+attribute_learner:
+   learner_type: "none"
+relation_learner:
+   learner_type: "none"
+action_learner:
+   learner_type: "none"
+plural_learner:
+   learner_type: "none"
+include_functional_learner: false
+include_generics_learner: false
+contrastive_object_learner:
+   ontology: "phase3"
+suppress_error: false
+
+# Curriculum
+curriculum: "phase3"
+train_curriculum:
+   curriculum_type: "training"
+   curriculum: "m4_core"
+   color_is_rgb: True
+test_curriculum:
+   curriculum_type: "testing"
+   curriculum: "m4_core_eval"
+   color_is_rgb: True
+curriculum_creation_seed: 76
+max_contrastive_samples_per_concept_pair: 5
+
+# load_from_curriculum_repository: '%adam_root%/p3_curricula/m4_curriculum'
+
+# Hypothesis Logging
+hypothesis_log_dir: "%experiment_group_dir%/hypotheses"
+log_hypothesis_every_n_steps: 250
+before_contrastive_hypothesis_log_dir: "%experiment_group_dir%/before_contrastive_hypotheses"
+after_contrastive_hypothesis_log_dir: "%experiment_group_dir%/after_contrastive_hypotheses"
+
+# Debug Configuration
+debug_log_directory: "%experiment_group_dir%/graphs"
+debug_perception_log_dir: "%experiment_group_dir%/perception_graphs"
+
+# Observers
+post_observer:
+   experiment_output_path: "%experiment_group_dir%/%experiment%"
+   copy_curriculum: true
+   file_name: "post_decode"
+
+test_observer:
+   experiment_output_path: "%post_observer.experiment_output_path%/test_curriculums/%test_curriculum.curriculum%/"
+   copy_curriculum: true
+   file_name: "post_decode"
+
+contrastive_post_observer:
+   experiment_output_path: "%experiment_group_dir%/contrastive_samples/"
+   copy_curriculum: true
+   file_name: "post_decode"

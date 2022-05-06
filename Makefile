@@ -3,6 +3,7 @@ default:
 
 # easier to test python2 vs. python3
 PYTHON=pypy3
+CPYTHON=python3
 
 SHELL=bash
 SOURCE_DIR_NAME=adam
@@ -28,10 +29,14 @@ FILTERED_MYPY:=$(MYPY) | perl -ne 'print if !/(Too many arguments|Only concrete 
 FLAKE8:=flake8
 FLAKE8_CMD:=$(FLAKE8) $(SOURCE_DIR_NAME)
 
-IGNORE_TESTS = --ignore tests/experiment_test.py --ignore tests/continuous_test.py
+IGNORE_TESTS = --ignore tests/experiment_test.py
+CPYTHON_TESTS=tests/continuous_test.py tests/perception/perception_graph_test.py tests/learner/object_learner_test.py
 
 test: 
 	$(PYTHON) -m pytest $(IGNORE_TESTS) tests
+
+test-cpy:
+	$(CPYTHON) -c "from platform import python_implementation; exit(python_implementation() != 'CPython')" && $(CPYTHON) -m pytest $(CPYTHON_TESTS)
 
 coverage:
 	$(PYTHON) -m pytest $(IGNORE_TESTS) --cov=adam tests
