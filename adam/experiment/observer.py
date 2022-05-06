@@ -855,6 +855,13 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
     counter: int = attrib(kw_only=True, default=0)
     copy_curriculum: bool = attrib(kw_only=True, default=True)
     file_name: Optional[str] = attrib(validator=optional(instance_of(str)), default=None)
+    _by_language_candidate_accuracy_observer: Optional[
+        ByLanguageCandidateAccuracyObserver[
+            SituationT, LinguisticDescriptionT, PerceptionT
+        ]
+    ] = attrib(
+        validator=optional(instance_of(ByLanguageCandidateAccuracyObserver)), default=None
+    )
 
     @staticmethod
     def from_params(
@@ -867,6 +874,11 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
             experiment_path=params.creatable_directory("experiment_output_path"),
             copy_curriculum=params.boolean("copy_curriculum", default=True),
             file_name=params.optional_string("file_name"),
+            by_language_candidate_accuracy_observer=ByLanguageCandidateAccuracyObserver(
+                name="yamllogger_by_language_candidate_accuracy_observer"
+            )
+            if params.boolean("calculate_accuracy_by_language", default=False)
+            else None,
         )
 
     def _convert_to_output_format(
@@ -994,10 +1006,18 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
         ) as decode:
             yaml.dump(output_dict, decode)
 
+        if self._by_language_candidate_accuracy_observer:
+            self._by_language_candidate_accuracy_observer.observe(
+                situation,
+                true_description,
+                perceptual_representation,
+                predicted_scene_description,
+            )
         self.counter += 1
 
     def report(self) -> None:
-        pass
+        if self._by_language_candidate_accuracy_observer:
+            self._by_language_candidate_accuracy_observer.report()
 
 
 # used by TopChoiceExactMatchObserver
