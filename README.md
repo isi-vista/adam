@@ -60,6 +60,13 @@ Run `adam.experiment.run_m9 /full/path/to/parameters/experiment/m9/m9.params`
 
 # To Run the angular viewer application
 
+First, make sure the Flask backend is running. To start the backend:
+
+```commandline
+cd adam/flask_backend
+bash start_flask.sh &
+```
+
 The angular application is located under `/angular-viewer/adam-angular-demo`
 Navigate to the directory above and serve the application locally on port 4200:
 
