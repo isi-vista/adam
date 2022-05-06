@@ -103,12 +103,6 @@ language_mode : CHINESE
 
 and then run the commands given above.
 
-# Visualization
-
-## To step through visual representations of the curriculum
-
-Run `adam.visualization.make_scenes`
-
 # Contributing
 
 Run `make precommit` before commiting.
