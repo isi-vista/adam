@@ -74,7 +74,14 @@ def main():
                 # Depth Files
                 # Absent in M5 curriculum
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"depth_*_{ex}.png"))):
+                    # We handle these files separately
+                    if file.name.startswith("depth_vis"):
+                        continue
                     shutil.copy(file, output_situation / f"depth_{idx}.png")
+                # Depth Vis Files
+                # In M5 curriculum, only present in small_single_ slice
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"depth_vis_*_{ex}.png"))):
+                    shutil.copy(file, output_situation / f"depthvis_{idx}.png")
                 # PCD Files
                 # In M5 curriculum, only present in small_single_ slice
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"pcd_rgb*_{ex}.ply"))):
@@ -82,6 +89,32 @@ def main():
                 # RGB Files
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"rgb_*_{ex}.png"))):
                     shutil.copy(file, output_situation / f"rgb_{idx}.png")
+                # Infrared Files
+                # In M5 curriculum, only present in small_single_ slice
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"infrared_*_{ex}.png"))):
+                    shutil.copy(file, output_situation / f"infrared_{idx}.png")
+                # Normal Files
+                # In M5 curriculum, only present in small_single_ slice
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"normal_*_{ex}.png"))):
+                    shutil.copy(file, output_situation / f"normal_{idx}.png")
+                # Flow? Files
+                # Maybe related to optical flow? Not present for in mug samples
+                # In M5 curriculum, only present in small_single_ slice
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"flow_*_{ex}.flo"))):
+                    shutil.copy(file, output_situation / f"flow_{idx}.flo")
+                # Flowvis? Files
+                # Maybe related to optical flow? Not present for in mug samples
+                # In M5 curriculum, only present in small_single_ slice
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"flowvis_*_{ex}.png"))):
+                    shutil.copy(file, output_situation / f"flowvis_{idx}.png")
+                # Optical Flow Files
+                # In M5 curriculum, only present in small_single_ slice
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"opticalflow_*_{ex}.png"))):
+                    shutil.copy(file, output_situation / f"optical_flow_{idx}.png")
+                # Optical Flow Vis Files
+                # In M5 curriculum, only present in small_single_ slice
+                for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"opticalflowvis_*_{ex}.png"))):
+                    shutil.copy(file, output_situation / f"optical_flowvis_{idx}.png")
                 # PCD Semantic Files
                 # In M5 curriculum, only present in small_single_ slice
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"pcd_semantic_*_{ex}.ply"))):
