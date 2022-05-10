@@ -104,6 +104,19 @@ def main():
                         ex,
                     )
                     continue
+                if not any(
+                    args.input_feature_dir.glob(
+                        f"feature_{args.input_split}_{object_debug_name}_{cam}_{ex}*"
+                    )
+                ):
+                    logging.warning(
+                        "Missing features (BUT NOT STROKES???) for object %s (camera %d, "
+                        "example %d); skipping...",
+                        object_debug_name,
+                        cam,
+                        ex,
+                    )
+                    continue
 
                 output_situation = output_dir / f"situation_{situation_num}"
                 output_situation.mkdir(parents=True)
