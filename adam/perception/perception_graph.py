@@ -603,6 +603,10 @@ class PerceptionGraph(PerceptionGraphProtocol, Sized, Iterable[PerceptionGraphNo
             label = f"Object Cluster {unwrapped_perception_node.cluster_id} | View: {unwrapped_perception_node.viewpoint_id}"
         elif isinstance(unwrapped_perception_node, ObjectStroke):
             label = f"Stroke: [{', '.join(str(point) for point in unwrapped_perception_node.normalized_coordinates)}]"
+        elif isinstance(unwrapped_perception_node, TrajectoryRecognitionNode):
+            label = f"Trajectory Recognition: {unwrapped_perception_node.action_recognized} ({unwrapped_perception_node.confidence})"
+        elif isinstance(unwrapped_perception_node, JointPointNode):
+            label = f"JointPointNode ({unwrapped_perception_node.joint_index}.{unwrapped_perception_node.temporal_index}) world: {unwrapped_perception_node.world_coord}"
         elif isinstance(
             unwrapped_perception_node,
             (ContinuousNode, CategoricalNode, RgbColorNode, StrokeGNNRecognitionNode),
