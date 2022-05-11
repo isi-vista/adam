@@ -2276,9 +2276,12 @@ _PATTERN_PREDICATE_NODE_ORDER = [
     ObjectSemanticNodePerceptionPredicate,
     # Match the Stroke GNN property next
     StrokeGNNRecognitionPredicate,
+    # Then match trajectories
+    TrajectoryRecognitionPredicate,
     # The graph predicate types listed here
     AnyObjectPredicate,
     ObjectStrokePredicate,
+    JointPointPredicate,
     CategoricalPredicate,
     DistributionalContinuousPredicate,
     ContinuousPredicate,
@@ -2314,8 +2317,10 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 _GRAPH_NODE_ORDER = [  # type: ignore
     ObjectSemanticNode,
     StrokeGNNRecognitionNode,
+    TrajectoryRecognitionNode,
     ObjectClusterNode,
     ObjectStroke,
+    JointPointNode,
     CategoricalNode,
     ContinuousNode,
     RgbColorNode,

@@ -1,3 +1,5 @@
+from itertools import chain
+
 from immutablecollections import immutableset
 
 from adam.axes import Axes, directed, straight_up
@@ -74,6 +76,7 @@ from adam.ontology.phase1_ontology import (
     _PAPER_SCHEMA,
     PHASE_3_M4_CORE_CONCEPT,
     PHASE_3_M4_STRETCH_CONCEPT,
+    PERSON,
 )
 from adam.ontology.structural_schema import ObjectStructuralSchema
 
@@ -219,6 +222,9 @@ PHASE_3_CURRICULUM_OBJECTS = immutableset(
         TOY_SEDAN,
     ]
 )
+
+
+PHASE_3_DECODE_OBJECTS = immutableset(chain(PHASE_3_CURRICULUM_OBJECTS, [PERSON]))
 
 # TODO: Implement P1/P2 Structural Schema for P3 Objects
 # https://github.com/isi-vista/adam/issues/1048
