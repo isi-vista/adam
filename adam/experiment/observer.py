@@ -862,6 +862,9 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
     ] = attrib(
         validator=optional(instance_of(ByLanguageCandidateAccuracyObserver)), default=None
     )
+    _candidate_accuracy_observer: Optional[
+        CandidateAccuracyObserver[SituationT, LinguisticDescriptionT, PerceptionT]
+    ] = attrib(validator=optional(instance_of(CandidateAccuracyObserver)), default=None)
 
     @staticmethod
     def from_params(
@@ -878,6 +881,12 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
                 name="yamllogger_by_language_candidate_accuracy_observer"
             )
             if params.boolean("calculate_accuracy_by_language", default=False)
+            else None,
+            candidate_accuracy_observer=CandidateAccuracyObserver(
+                name="yamllogger_candidate_accuracy_observer",
+                accuracy_to_txt=False,
+            )
+            if params.boolean("calculate_overall_accuracy", default=False)
             else None,
         )
 
@@ -1013,11 +1022,20 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
                 perceptual_representation,
                 predicted_scene_description,
             )
+        if self._candidate_accuracy_observer:
+            self._candidate_accuracy_observer.observe(
+                situation,
+                true_description,
+                perceptual_representation,
+                predicted_scene_description,
+            )
         self.counter += 1
 
     def report(self) -> None:
         if self._by_language_candidate_accuracy_observer:
             self._by_language_candidate_accuracy_observer.report()
+        if self._candidate_accuracy_observer:
+            self._candidate_accuracy_observer.report()
 
 
 # used by TopChoiceExactMatchObserver
