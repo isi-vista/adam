@@ -127,6 +127,21 @@ class RgbColorNode(GraphNode):
 
 
 @attrs(frozen=True, slots=True, eq=False)
+class CielabColorNode(GraphNode):
+    """A node representing a CIELAB perception value."""
+
+    lab_l: float = attrib(validator=instance_of(float))
+    lab_a: float = attrib(validator=instance_of(float))
+    lab_b: float = attrib(validator=instance_of(float))
+
+    def dot_label(self):
+        return f"CielabColorNode({self})"
+
+    def __str__(self) -> str:
+        return f"Lab=({self.lab_l:.2f}, {self.lab_a:.2f}, {self.lab_b:.2f})"
+
+
+@attrs(frozen=True, slots=True, eq=False)
 class StrokeGNNRecognitionNode(GraphNode):
     """A property node indicating Stroke GNN object recognition."""
 

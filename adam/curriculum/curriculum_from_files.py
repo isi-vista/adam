@@ -22,12 +22,13 @@ from adam.perception.visual_perception import (
 )
 from adam.situation.phase_3_situations import SimulationSituation
 
-PHASE_3_TRAINING_CURRICULUM_OPTIONS = [
-    "m4_core",
-    "m4_stretch",
-]
+PHASE_3_TRAINING_CURRICULUM_OPTIONS = ["m4_core", "m4_stretch", "m5_objects_v0_with_mugs"]
 
-PHASE_3_TESTING_CURRICULUM_OPTIONS = ["m4_core_eval", "m4_stretch_eval"]
+PHASE_3_TESTING_CURRICULUM_OPTIONS = [
+    "m4_core_eval",
+    "m4_stretch_eval",
+    "m5_objects_v0_with_mugs_eval",
+]
 
 TRAINING_CUR = "training"
 TESTING_CUR = "testing"
@@ -92,7 +93,7 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
             ) as situation_description_file:
                 situation_description = yaml.safe_load(situation_description_file)
             language_tuple = tuple(situation_description["language"].split(" "))
-        feature_yamls = sorted(situation_dir.glob("feature_*"))
+        feature_yamls = sorted(situation_dir.glob("feature*"))
         situation = SimulationSituation(
             language=language_tuple,
             scene_images_png=sorted(situation_dir.glob("rgb_*")),
