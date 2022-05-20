@@ -3,6 +3,8 @@ from typing import Union, Tuple, Any, Optional
 
 from attr import attrs, attrib
 from attr.validators import instance_of, in_, optional, deep_iterable
+from colormath.color_conversions import convert_color
+from colormath.color_objects import sRGBColor, LabColor
 from immutablecollections import ImmutableSet
 from immutablecollections.converter_utils import _to_immutableset
 
@@ -139,6 +141,39 @@ class CielabColorNode(GraphNode):
 
     def __str__(self) -> str:
         return f"Lab=({self.lab_l:.2f}, {self.lab_a:.2f}, {self.lab_b:.2f})"
+
+    def to_tuple(self) -> tuple:
+        return self.lab_l, self.lab_a, self.lab_b
+
+    @staticmethod
+    def from_rgb(node: RgbColorNode) -> "CielabColorNode":
+        rgb_color: sRGBColor = sRGBColor(
+            node.red, node.green, node.blue, is_upscaled=True
+        )
+        lab_color: LabColor = convert_color(
+            color=rgb_color, target_cs=LabColor, target_illuminant="d65"
+        )
+        return CielabColorNode(
+            lab_l=lab_color.lab_l,
+            lab_a=lab_color.lab_a,
+            lab_b=lab_color.lab_b,
+            weight=node.weight,
+        )
+
+    @staticmethod
+    def from_colors(
+        red: float, green: float, blue: float, *, weight: float = 1.0
+    ) -> "CielabColorNode":
+        rgb_color: sRGBColor = sRGBColor(red, green, blue, is_upscaled=True)
+        lab_color: LabColor = convert_color(
+            color=rgb_color, target_cs=LabColor, target_illuminant="d65"
+        )
+        return CielabColorNode(
+            lab_l=lab_color.lab_l,
+            lab_a=lab_color.lab_a,
+            lab_b=lab_color.lab_b,
+            weight=weight,
+        )
 
 
 @attrs(frozen=True, slots=True, eq=False)
