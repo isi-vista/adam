@@ -40,6 +40,17 @@ def main():
     parser.add_argument("--input-feature-dir", type=Path, help="An input directory of the features", required=True)
     parser.add_argument("--input-cur-dir", type=Path, help="An input directory of the curriculum", required=True)
     parser.add_argument("--input-split", type=str, help="The input curriculum split to process", required=True)
+    parser.add_argument(
+        "--input-slice",
+        type=str,
+        help='The input curriculum slice to use, as a string. This could be "small_single_" '
+        'meaning use the complete set of generated curriculum files. It can also be the empty '
+        'string "", the subset of files the processing code uses). This is the bit between the '
+        'split name and the object name in the curriculum file directory names, i.e. '
+        '{split}_{prefix}{object_name}. Defaults to "small_single_", because all such files are '
+        'uploaded to the Google Drive while the subsetted versions may not be.',
+        default="small_single_"
+    )
     parser.add_argument("--output-dir", type=Path, help="The curriculum output directory", required=True)
     args = parser.parse_args()
 
@@ -51,7 +62,7 @@ def main():
     ):
         input_feature_dir: Path = args.input_feature_dir / object_name
         for cam in range(n_cameras):
-            input_curriculum_dir: Path = args.input_cur_dir / f"{args.input_split}_{object_name}" / f"cam{cam}"
+            input_curriculum_dir: Path = args.input_cur_dir / f"{args.input_split}_{args.input_slice}{object_name}" / f"cam{cam}"
             if not input_curriculum_dir.exists():
                 logging.warning(
                     "Input curriculum dir %s does not exist, so globs on this directory will fail.",
