@@ -27,11 +27,13 @@ from adam.perception.perception_graph_nodes import (
     CategoricalNode,
     ContinuousNode,
     RgbColorNode,
+    CielabColorNode,
     ObjectStroke,
     StrokeGNNRecognitionNode,
     JointPointNode,
     TrajectoryRecognitionNode,
 )
+from adam.perception.perception_utils import dist
 
 # Perception graph predicate nodes are defined below.
 # These match the graph nodes defined above when using computer vision inputs
@@ -409,6 +411,97 @@ class RgbColorPredicate(NodePredicate):
     @staticmethod
     def from_node(node: RgbColorNode) -> "RgbColorPredicate":
         return RgbColorPredicate(red=node.red, green=node.green, blue=node.blue)
+
+
+@attrs(slots=True, eq=False)
+class CielabColorPredicate(NodePredicate):
+    """
+    Matches a node where the CIELAB value matches closely using a Gaussian distribution.
+    """
+
+    lab_l: float = attrib(validator=instance_of(float))
+    lab_a: float = attrib(validator=instance_of(float))
+    lab_b: float = attrib(validator=instance_of(float))
+    matcher: ContinuousValueMatcher = attrib(
+        validator=instance_of(ContinuousValueMatcher)
+    )
+    min_match_score: float = attrib(validator=instance_of(float))
+    _fallback_tolerance: float = attrib(validator=instance_of(float))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
+
+    @property
+    def weight(self) -> float:
+        return self._weight
+
+    @staticmethod
+    def from_node(
+        node: CielabColorNode, *, min_match_score: float, fallback_tolerance: float = 0.25
+    ) -> "CielabColorPredicate":
+        return CielabColorPredicate(
+            lab_l=node.lab_l,
+            lab_a=node.lab_a,
+            lab_b=node.lab_b,
+            matcher=GaussianContinuousValueMatcher.from_observation(0.0),
+            min_match_score=min_match_score,
+            fallback_tolerance=fallback_tolerance,
+            weight=1.0,
+        )
+
+    def __call__(self, graph_node: PerceptionGraphNode) -> bool:
+        if isinstance(graph_node, CielabColorNode):
+            # If we have enough samples, do score-based value matching.
+            if self.matcher.n_observations > 2:
+                return (
+                    self.matcher.match_score(dist(self.to_tuple(), graph_node.to_tuple()))
+                    >= self.min_match_score
+                )
+            # Otherwise, fall back on value + tolerance matching.
+            else:
+                return (
+                    -self._fallback_tolerance
+                    <= dist(self.to_tuple(), graph_node.to_tuple())
+                    <= self._fallback_tolerance
+                )
+        return False
+
+    def dot_label(self) -> str:
+        return f"CielabColorFeature(L={self.lab_l}, a={self.lab_a}, b={self.lab_b}) <{self._weight}>"
+
+    def is_equivalent(self, other) -> bool:
+        return isinstance(other, CielabColorPredicate)
+
+    def matches_predicate(self, predicate_node: NodePredicate) -> bool:
+        return isinstance(predicate_node, CielabColorPredicate)
+
+    def confirm_match(self, node: Union[PerceptionGraphNode, "NodePredicate"]) -> None:
+        if isinstance(node, CielabColorPredicate):
+            self.matcher.update_on_observation(dist(self.to_tuple(), node.to_tuple()))
+        else:
+            raise ValueError(
+                f"Can't confirm match with apparently non-matching node {node}."
+            )
+
+    def _merge_with_compatible_node(self, node: "CielabColorPredicate") -> None:
+        # pylint: disable=protected-access
+        # Pylint doesn't realize the "client class" whose private members we're accessing is this
+        # same class
+        #
+        # We don't statically know the concrete type of either matcher, so we check the types match
+        # exactly instead of using isinstance.
+        if type(self.matcher) == type(  # noqa: E721 pylint: disable=unidiomatic-typecheck
+            node.matcher
+        ):
+            self.matcher.merge(node.matcher)
+
+        else:
+            raise ValueError(
+                f"Can't merge distributions of different types {self.matcher} and {node.matcher}."
+            )
+
+    def to_tuple(self) -> tuple:
+        return self.lab_l, self.lab_a, self.lab_b
 
 
 @attrs(frozen=True, slots=True, eq=False)
