@@ -74,6 +74,8 @@ def main():
     parser.add_argument("--output-dir", type=Path, help="The curriculum output directory", required=True)
     args = parser.parse_args()
 
+    logging.basicConfig(level=logging.INFO)
+
     output_dir: Path = args.output_dir
 
     situation_num = 0
