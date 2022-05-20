@@ -14,7 +14,6 @@ except ImportError:
             "can't run the continuous value matcher tests.",
             python_implementation(),
         )
-        norm = None
 import pytest
 
 from adam.continuous import GaussianContinuousValueMatcher
