@@ -521,6 +521,9 @@ class JointPointPredicate(NodePredicate):
 
     temporal_index: int = attrib(validator=instance_of(int))
     joint_index: int = attrib(validator=instance_of(int))
+    _weight: float = attrib(
+        kw_only=True, default=1.0, validator=instance_of(float), eq=False
+    )
 
     def __call__(self, graph_node: PerceptionGraphNode) -> bool:
         return (
@@ -529,6 +532,10 @@ class JointPointPredicate(NodePredicate):
             if isinstance(graph_node, JointPointNode)
             else False
         )
+
+    @property
+    def weight(self) -> float:
+        return self._weight
 
     def dot_label(self) -> str:
         return f"JointPoint(joint_index={self.joint_index}, temporal_index={self.temporal_index})"
