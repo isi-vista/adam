@@ -22,6 +22,7 @@ from adam.perception import (
 from adam.perception.perception_graph_nodes import (
     GraphNode,
     RgbColorNode,
+    CielabColorNode,
     CategoricalNode,
     ContinuousNode,
     ObjectStroke,
@@ -131,6 +132,14 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
                 if color_is_rgb
                 else color_as_category(color_property)
             ]
+            if color_is_rgb:
+                properties.append(
+                    CielabColorNode.from_colors(
+                        red=color_property[0],
+                        green=color_property[1],
+                        blue=color_property[2],
+                    )
+                )
             properties.extend(
                 CategoricalNode(label=entry, value=cluster_map[entry], weight=1.0)
                 for entry in CATEGORY_PROPERTY_KEYS
