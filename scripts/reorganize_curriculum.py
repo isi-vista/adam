@@ -170,6 +170,7 @@ def main():
                         ex,
                     )
                 # Feature File
+                features_found = None
                 for file in sorted(
                     # Note the input slice isn't used in the feature directory or file names.
                     args.input_feature_dir.glob(
@@ -178,6 +179,18 @@ def main():
                 ):
                     with open(file, encoding="utf-8") as feature_file:
                         feature_yaml = yaml.safe_load(feature_file)
+
+                    if features_found:
+                        logging.warning(
+                            "Multiple feature files for object %s (camera %d, example %d): "
+                            "Got %s and %s",
+                            object_debug_name,
+                            cam,
+                            ex,
+                            feature_file,
+                            features_found,
+                        )
+                    features_found = True
 
                     for object in feature_yaml:
                         # Clean up the object name so it matches the internal ones
