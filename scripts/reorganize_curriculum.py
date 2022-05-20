@@ -80,7 +80,6 @@ def main():
     for object_debug_name, range_examples, n_cameras in zip(
         OBJECTS_LIST, itt.repeat(N_EXAMPLES_PER_OBJECT), itt.repeat(N_CAMERAS)
     ):
-        input_feature_dir: Path = args.input_feature_dir / object_debug_name
         for cam in range(n_cameras):
             input_curriculum_dir: Path = args.input_cur_dir / f"{args.input_split}_{args.input_slice}{object_debug_name}" / f"cam{cam}"
             if not input_curriculum_dir.exists():
@@ -143,7 +142,12 @@ def main():
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"semantic_*_{ex}.png"))):
                     shutil.copy(file, output_situation / f"semantic_{idx}.png")
                 # Feature File
-                for file in sorted(input_feature_dir.glob(f"feature_{ex}*")):
+                for file in sorted(
+                    # Note the input slice isn't used in the feature directory or file names.
+                    args.input_feature_dir.glob(
+                        f"feature_{args.input_split}_{object_debug_name}_{cam}_{ex}*"
+                    )
+                ):
                     with open(file, encoding="utf-8") as feature_file:
                         feature_yaml = yaml.safe_load(feature_file)
 
@@ -164,10 +168,22 @@ def main():
                     with open(output_situation / "feature.yaml", "w", encoding="utf-8") as feature_file:
                         yaml.dump(output_dict, feature_file)
                 # Stroke File
-                for idx, file in enumerate(sorted(input_feature_dir.glob(f"stroke_{ex}*"))):
+                for idx, file in enumerate(
+                    sorted(
+                        args.input_feature_dir.glob(
+                            f"stroke_{args.input_split}_{object_debug_name}_{cam}_{ex}*"
+                        )
+                    )
+                ):
                     shutil.copy(file, output_situation / f"stroke_{idx}_{idx}.png")
                 # Stroke Graph File
-                for idx, file in enumerate(sorted(input_feature_dir.glob(f"stroke_graph_{ex}*"))):
+                for idx, file in enumerate(
+                    sorted(
+                        args.input_feature_dir.glob(
+                            f"stroke_graph_{args.input_split}_{object_debug_name}_{cam}_{ex}*"
+                        )
+                    )
+                ):
                     shutil.copy(file, output_situation / f"stroke_graph_{idx}.png")
                 # Description file
                 object_name = OBJECT_DEBUG_NAME_TO_NAME.get(object_debug_name, object_debug_name)
