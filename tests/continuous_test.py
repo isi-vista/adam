@@ -6,8 +6,6 @@ from typing import Sequence
 try:
     import numpy as np
 except ImportError:
-    from platform import python_implementation
-
     if python_implementation() == "CPython":
         raise
     else:
