@@ -88,6 +88,7 @@ from adam.perception.perception_graph_nodes import (
     CategoricalNode,
     ContinuousNode,
     RgbColorNode,
+    CielabColorNode,
     GraphNode,
     ObjectStroke,
     StrokeGNNRecognitionNode,
@@ -110,6 +111,7 @@ from adam.perception.perception_graph_predicates import (
     CategoricalPredicate,
     ContinuousPredicate,
     RgbColorPredicate,
+    CielabColorPredicate,
     ObjectStrokePredicate,
     StrokeGNNRecognitionPredicate,
     DistributionalContinuousPredicate,
@@ -585,6 +587,8 @@ class PerceptionGraph(PerceptionGraphProtocol, Sized, Iterable[PerceptionGraphNo
             label = f"axis:{unwrapped_perception_node.debug_name}"
         elif isinstance(unwrapped_perception_node, RgbColorPerception):
             label = unwrapped_perception_node.hex
+        elif isinstance(unwrapped_perception_node, RgbColorPerception):
+            label = unwrapped_perception_node.hex
         elif isinstance(unwrapped_perception_node, OntologyNode):
             label = unwrapped_perception_node.handle
         elif isinstance(unwrapped_perception_node, Geon):
@@ -605,7 +609,13 @@ class PerceptionGraph(PerceptionGraphProtocol, Sized, Iterable[PerceptionGraphNo
             label = f"Stroke: [{', '.join(str(point) for point in unwrapped_perception_node.normalized_coordinates)}]"
         elif isinstance(
             unwrapped_perception_node,
-            (ContinuousNode, CategoricalNode, RgbColorNode, StrokeGNNRecognitionNode),
+            (
+                ContinuousNode,
+                CategoricalNode,
+                RgbColorNode,
+                CielabColorNode,
+                StrokeGNNRecognitionNode,
+            ),
         ):
             label = str(unwrapped_perception_node)
         else:
@@ -1057,6 +1067,10 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
                 elif isinstance(node, RgbColorNode):
                     perception_node_to_pattern_node[key] = RgbColorPredicate.from_node(
                         node
+                    )
+                elif isinstance(node, CielabColorNode):
+                    perception_node_to_pattern_node[key] = CielabColorPredicate.from_node(
+                        node, min_match_score=min_continuous_feature_match_score
                     )
                 elif isinstance(node, ObjectStroke):
                     perception_node_to_pattern_node[
@@ -2279,10 +2293,12 @@ _PATTERN_PREDICATE_NODE_ORDER = [
     DistributionalContinuousPredicate,
     ContinuousPredicate,
     RgbColorPredicate,
+    CielabColorPredicate,
     ObjectStroke,
     CategoricalNode,
     ContinuousNode,
     RgbColorNode,
+    CielabColorNode,
     # Paths are rare, match them next
     IsPathPredicate,
     PathOperatorPredicate,
@@ -2315,6 +2331,7 @@ _GRAPH_NODE_ORDER = [  # type: ignore
     CategoricalNode,
     ContinuousNode,
     RgbColorNode,
+    CielabColorNode,
     SpatialPath,
     PathOperator,
     OntologyNode,

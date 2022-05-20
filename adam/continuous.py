@@ -106,8 +106,15 @@ class GaussianContinuousValueMatcher(ContinuousValueMatcher):
         consistently across different matcher types.
         """
         standard_deviation = sqrt(self.sample_variance)
-        return 2.0 * norm.cdf(
-            self._mean - abs(value - self._mean), loc=self._mean, scale=standard_deviation
+        return (
+            1.0
+            if standard_deviation == 0 and value == self._mean
+            else 2.0
+            * norm.cdf(
+                self._mean - abs(value - self._mean),
+                loc=self._mean,
+                scale=standard_deviation,
+            )
         )
 
     @staticmethod
