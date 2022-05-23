@@ -155,7 +155,7 @@ TOY_SEDAN = OntologyNode(
 subtype(TOY_SEDAN, TOY)
 
 CUBE_BLOCK = OntologyNode(
-    "cube",
+    "cube_block",
     [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, CUBIC],
     non_inheritable_properties=[
         PHASE_3_CONCEPT,
@@ -165,7 +165,7 @@ CUBE_BLOCK = OntologyNode(
 )
 subtype(CUBE_BLOCK, BLOCK)
 PYRAMID_BLOCK = OntologyNode(
-    "pyramid",
+    "pyramid_block",
     [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, TRIANGULAR],
     non_inheritable_properties=[
         PHASE_3_CONCEPT,
@@ -175,7 +175,7 @@ PYRAMID_BLOCK = OntologyNode(
 )
 subtype(PYRAMID_BLOCK, BLOCK)
 SPHERICAL_BLOCK = OntologyNode(
-    "sphere",
+    "sphere_block",
     [CAN_FILL_TEMPLATE_SLOT, PERSON_CAN_HAVE, SPHERICAL],
     non_inheritable_properties=[
         PHASE_3_CONCEPT,

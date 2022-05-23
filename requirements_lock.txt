@@ -71,6 +71,8 @@ toml==0.10.2
 tomli==2.0.1
 towncrier==21.9.0
 typed-ast==1.5.2
+types-PyYAML==6.0.7
+types-tabulate==0.8.9
 typing_extensions==4.1.1
 urllib3==1.26.9
 vistautils==0.24.0

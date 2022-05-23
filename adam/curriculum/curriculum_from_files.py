@@ -25,9 +25,18 @@ from adam.situation.phase_3_situations import SimulationSituation
 PHASE_3_TRAINING_CURRICULUM_OPTIONS = [
     "m4_core",
     "m4_stretch",
+    "m5_objects",
+    "m5_objects_v0",
+    "m5_objects_v0_with_mugs",
 ]
 
-PHASE_3_TESTING_CURRICULUM_OPTIONS = ["m4_core_eval", "m4_stretch_eval"]
+PHASE_3_TESTING_CURRICULUM_OPTIONS = [
+    "m4_core_eval",
+    "m4_stretch_eval",
+    "m5_objects_eval",
+    "m5_objects_v0_eval",
+    "m5_objects_v0_with_mugs_eval",
+]
 
 TRAINING_CUR = "training"
 TESTING_CUR = "testing"
@@ -86,13 +95,19 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
     for situation_num in range(curriculum_params["num_dirs"]):
         situation_dir = curriculum_dir / SITUATION_DIR_NAME.format(num=situation_num)
         language_tuple: Tuple[str, ...] = tuple()
-        if curriculum_type == TRAINING_CUR:
+        if (situation_dir / SITUATION_DESCRIPTION_FILE).exists():
             with open(
                 situation_dir / SITUATION_DESCRIPTION_FILE, encoding="utf-8"
             ) as situation_description_file:
                 situation_description = yaml.safe_load(situation_description_file)
             language_tuple = tuple(situation_description["language"].split(" "))
-        feature_yamls = sorted(situation_dir.glob("feature_*"))
+        elif curriculum_type == TRAINING_CUR:
+            raise ValueError(
+                f"Training situations must provide a description, but situation {situation_num} "
+                f"in {curriculum_dir} does not."
+            )
+
+        feature_yamls = sorted(situation_dir.glob("feature*"))
         situation = SimulationSituation(
             language=language_tuple,
             scene_images_png=sorted(situation_dir.glob("rgb_*")),

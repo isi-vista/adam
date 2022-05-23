@@ -6,8 +6,6 @@ from typing import Sequence
 try:
     import numpy as np
 except ImportError:
-    from platform import python_implementation
-
     if python_implementation() == "CPython":
         raise
     else:
@@ -16,7 +14,6 @@ except ImportError:
             "can't run the continuous value matcher tests.",
             python_implementation(),
         )
-        norm = None
 import pytest
 
 from adam.continuous import GaussianContinuousValueMatcher
