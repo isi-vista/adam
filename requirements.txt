@@ -28,6 +28,8 @@ coverage
 pylint>=2.3.0
 flake8>=3.5.0
 mypy>=0.620
+types-PyYAML>=6.0.7
+types-tabulate>=0.8.9
 towncrier
 sphinx>=2.1.2
 sphinx-autodoc-typehints>=1.8.0
