@@ -414,7 +414,7 @@ class _PerceptionGeneration:
         )
 
         return PerceptualRepresentation(
-            frames=(first_frame, second_frame),
+            frames=(first_frame, second_frame),  # type: ignore
             during=self._compute_during(
                 during_from_action_description=_action_perception.during_action
             ),

@@ -252,7 +252,7 @@ class VisualPerceptionRepresentation(PerceptualRepresentation[PerceptionT]):
             A `PerceptualRepresentation` wrapping the provided frame.
 
         """
-        return VisualPerceptionRepresentation((perception_frame,))
+        return VisualPerceptionRepresentation((perception_frame,))  # type: ignore
 
     @staticmethod
     def multi_frame(
@@ -269,5 +269,5 @@ class VisualPerceptionRepresentation(PerceptualRepresentation[PerceptionT]):
             A `PerceptualRepresentation` wrapping the provided frames and action features.
         """
         return VisualPerceptionRepresentation(
-            frames=tuple(frames), simulated_actions_features=action_features
+            frames=tuple(frames), simulated_actions_features=action_features  # type: ignore
         )
