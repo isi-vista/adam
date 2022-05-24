@@ -119,7 +119,7 @@ class PerceptualRepresentation(Generic[PerceptionT]):
             A `PerceptualRepresentation` wrapping the provided frame.
 
         """
-        return PerceptualRepresentation((perception_frame,))
+        return PerceptualRepresentation((perception_frame,))  # type: ignore
 
     def is_dynamic(self) -> bool:
         """

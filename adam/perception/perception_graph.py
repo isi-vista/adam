@@ -603,6 +603,10 @@ class PerceptionGraph(PerceptionGraphProtocol, Sized, Iterable[PerceptionGraphNo
             label = f"Object Cluster {unwrapped_perception_node.cluster_id} | View: {unwrapped_perception_node.viewpoint_id}"
         elif isinstance(unwrapped_perception_node, ObjectStroke):
             label = f"Stroke: [{', '.join(str(point) for point in unwrapped_perception_node.normalized_coordinates)}]"
+        elif isinstance(unwrapped_perception_node, TrajectoryRecognitionNode):
+            label = f"Trajectory Recognition: {unwrapped_perception_node.action_recognized} ({unwrapped_perception_node.confidence})"
+        elif isinstance(unwrapped_perception_node, JointPointNode):
+            label = f"JointPointNode ({unwrapped_perception_node.joint_index}.{unwrapped_perception_node.temporal_index}) world: {unwrapped_perception_node.world_coord}"
         elif isinstance(
             unwrapped_perception_node,
             (ContinuousNode, CategoricalNode, RgbColorNode, StrokeGNNRecognitionNode),
@@ -1767,7 +1771,7 @@ class PatternMatching:
                     gather_nodes_to_excise(predecessor)
 
         last_failed_node = match_failure.last_failed_pattern_node
-        logging.info("Relaxation: last failed pattern node is %s", last_failed_node)
+        logging.debug("Relaxation: last failed pattern node is %s", last_failed_node)
 
         if last_failed_node in match_failure.pattern_node_to_graph_node_for_largest_match:
             # This means the supposed "last_failed_node" was in fact matched successfully,
@@ -1821,7 +1825,7 @@ class PatternMatching:
             logging.info("Deleting extra color nodes: %s", same_color_nodes)
         nodes_to_delete_directly.extend(same_color_nodes)
 
-        logging.info("Nodes to delete directly: %s", nodes_to_delete_directly)
+        logging.debug("Nodes to delete directly: %s", nodes_to_delete_directly)
 
         pattern_as_digraph.remove_nodes_from(immutableset(nodes_to_delete_directly))
 
@@ -1868,7 +1872,7 @@ class PatternMatching:
                 )
 
             if to_delete_due_to_disconnection:
-                logging.info(
+                logging.debug(
                     "Relaxation: deleted due to disconnection: %s",
                     to_delete_due_to_disconnection,
                 )
@@ -1887,7 +1891,7 @@ class PatternMatching:
             biggest_component = first(components)
             for component in components:
                 if component != biggest_component:
-                    logging.info(
+                    logging.debug(
                         "Relaxation: deleted due to being in smaller component: %s",
                         component,
                     )
@@ -2272,9 +2276,12 @@ _PATTERN_PREDICATE_NODE_ORDER = [
     ObjectSemanticNodePerceptionPredicate,
     # Match the Stroke GNN property next
     StrokeGNNRecognitionPredicate,
+    # Then match trajectories
+    TrajectoryRecognitionPredicate,
     # The graph predicate types listed here
     AnyObjectPredicate,
     ObjectStrokePredicate,
+    JointPointPredicate,
     CategoricalPredicate,
     DistributionalContinuousPredicate,
     ContinuousPredicate,
@@ -2310,8 +2317,10 @@ def _pattern_matching_node_order(node_node_data_tuple) -> int:
 _GRAPH_NODE_ORDER = [  # type: ignore
     ObjectSemanticNode,
     StrokeGNNRecognitionNode,
+    TrajectoryRecognitionNode,
     ObjectClusterNode,
     ObjectStroke,
+    JointPointNode,
     CategoricalNode,
     ContinuousNode,
     RgbColorNode,
@@ -2833,7 +2842,13 @@ class _DevelopmentalPrimitivePerceptionFrameTranslation(
 
 @attrs
 class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]):
-    def _translate_frame(self, frame: VisualPerceptionFrame) -> DiGraph:
+    def _translate_frame(
+        self,
+        frame: VisualPerceptionFrame,
+        *,
+        cluster_id_to_cluster_node: Mapping[str, ObjectClusterNode] = immutabledict(),
+        cluster_id_to_gnn_node: Mapping[str, StrokeGNNRecognitionNode] = immutabledict(),
+    ) -> DiGraph:
         """Gets the `DiGraph` corresponding to a `VisualPerceptionFrame`."""
         graph = DiGraph()
 
@@ -2841,20 +2856,31 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
         cluster_perception_to_graph_node = dict()
 
         for perceived_cluster in frame.clusters:
-            cluster_node = ObjectClusterNode(
-                cluster_id=perceived_cluster.cluster_id,
-                viewpoint_id=perceived_cluster.viewpoint_id,
-                center_x=perceived_cluster.centroid_x,
-                center_y=perceived_cluster.centroid_y,
-                weight=1.0,
-                std=perceived_cluster.std,
+            cluster_node = (
+                ObjectClusterNode(
+                    cluster_id=perceived_cluster.cluster_id,
+                    viewpoint_id=perceived_cluster.viewpoint_id,
+                    center_x=perceived_cluster.centroid_x,
+                    center_y=perceived_cluster.centroid_y,
+                    weight=1.0,
+                    std=perceived_cluster.std,
+                )
+                if perceived_cluster.cluster_id not in cluster_id_to_cluster_node
+                else cluster_id_to_cluster_node[perceived_cluster.cluster_id]
             )
             cluster_perception_to_graph_node[perceived_cluster] = cluster_node
             graph.add_node(cluster_node)
 
             for obj_property in perceived_cluster.properties:
                 dest_node = self._map_node(obj_property)
-                graph.add_edge(cluster_node, dest_node, label=HAS_PROPERTY_LABEL)
+                graph.add_edge(
+                    cluster_node,
+                    cluster_id_to_gnn_node[perceived_cluster.cluster_id]
+                    if isinstance(dest_node, StrokeGNNRecognitionNode)
+                    and perceived_cluster.cluster_id in cluster_id_to_gnn_node
+                    else dest_node,
+                    label=HAS_PROPERTY_LABEL,
+                )
 
             for stroke in perceived_cluster.strokes:
                 graph.add_edge(cluster_node, stroke, label=HAS_STROKE_LABEL)
@@ -2892,9 +2918,24 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
                 "Simulated actions features cannot be None when creating a multi-frame perception graph."
             )
 
+        frame_0 = self._translate_frame(perceptual_representation.frames[0])
         _dynamic_digraph = _merge_before_and_after_graphs(
-            self._translate_frame(perceptual_representation.frames[0]),
-            self._translate_frame(perceptual_representation.frames[1]),
+            frame_0,
+            self._translate_frame(
+                perceptual_representation.frames[1],
+                cluster_id_to_cluster_node={
+                    node.cluster_id: node
+                    for node in frame_0
+                    if isinstance(node, ObjectClusterNode)
+                },
+                cluster_id_to_gnn_node={
+                    cluster_node.cluster_id: successor
+                    for cluster_node in frame_0
+                    for successor in frame_0.successors(cluster_node)
+                    if isinstance(cluster_node, ObjectClusterNode)
+                    and isinstance(successor, StrokeGNNRecognitionNode)
+                },
+            ),
         )
 
         decoded_object_to_cluster_node = {

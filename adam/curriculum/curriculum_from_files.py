@@ -28,6 +28,8 @@ PHASE_3_TRAINING_CURRICULUM_OPTIONS = [
     "m5_objects",
     "m5_objects_v0",
     "m5_objects_v0_with_mugs",
+    "m5_actions",
+    "m5_actions_person_only",
 ]
 
 PHASE_3_TESTING_CURRICULUM_OPTIONS = [
@@ -36,6 +38,8 @@ PHASE_3_TESTING_CURRICULUM_OPTIONS = [
     "m5_objects_eval",
     "m5_objects_v0_eval",
     "m5_objects_v0_with_mugs_eval",
+    "m5_actions_eval",
+    "m5_actions_person_only_eval",
 ]
 
 TRAINING_CUR = "training"

@@ -105,7 +105,7 @@ class SubsetVerbLearner(AbstractTemplateSubsetLearner, AbstractVerbTemplateLearn
             len(
                 language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
             )
-            > 1
+            >= 1
         )
 
     def _new_concept(self, debug_string: str) -> ActionConcept:

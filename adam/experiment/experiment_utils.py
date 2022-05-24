@@ -64,7 +64,7 @@ from adam.language.dependency import LinearizedDependencyTree
 from adam.language.language_generator import LanguageGenerator
 from adam.ontology.phase3_ontology import (
     GAILA_PHASE_3_ONTOLOGY,
-    PHASE_3_CURRICULUM_OBJECTS,
+    PHASE_3_DECODE_OBJECTS,
 )
 from adam.random_utils import RandomChooser
 from adam.situation.high_level_semantics_situation import HighLevelSemanticsSituation
@@ -172,7 +172,7 @@ ONTOLOGY_STR_TO_ONTOLOGY = immutabledict(  # type: ignore
             "phase3",
             (
                 GAILA_PHASE_3_ONTOLOGY,
-                PHASE_3_CURRICULUM_OBJECTS,
+                PHASE_3_DECODE_OBJECTS,
                 None,  # Phase 3 does perception generation via external processes
             ),
         ),
