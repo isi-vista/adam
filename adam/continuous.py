@@ -365,7 +365,7 @@ class MultidimensionalGaussianContinuousValueMatcher(GaussianContinuousValueMatc
             elif other._n_observations == 1:
                 self.update_on_observation(other._root_coordinates)
             else:
-
+                return
                 raise ValueError(
                     f"Cannot merge two matchers that both have multiple observations (self with "
                     f"{self._n_observations} and other with {other._n_observations})."
