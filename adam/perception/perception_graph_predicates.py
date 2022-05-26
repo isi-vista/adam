@@ -7,7 +7,7 @@ from immutablecollections import ImmutableSet
 from immutablecollections.converter_utils import _to_tuple, _to_immutableset
 
 from adam.axis import GeonAxis
-from adam.continuous import ContinuousValueMatcher, GaussianContinuousValueMatcher
+from adam.continuous import ContinuousValueMatcher, GaussianContinuousValueMatcher, MultidimensionalGaussianContinuousValueMatcher
 from adam.geon import Geon, CrossSection
 from adam.math_3d import Point
 from adam.ontology import OntologyNode
@@ -443,7 +443,7 @@ class CielabColorPredicate(NodePredicate):
             lab_l=node.lab_l,
             lab_a=node.lab_a,
             lab_b=node.lab_b,
-            matcher=GaussianContinuousValueMatcher.from_observation(0.0),
+            matcher=MultidimensionalGaussianContinuousValueMatcher.from_observation(node.to_tuple()),
             min_match_score=min_match_score,
             fallback_tolerance=fallback_tolerance,
             weight=1.0,
@@ -454,7 +454,7 @@ class CielabColorPredicate(NodePredicate):
             # If we have enough samples, do score-based value matching.
             if self.matcher.n_observations > 2:
                 return (
-                    self.matcher.match_score(dist(self.to_tuple(), graph_node.to_tuple()))
+                    self.matcher.match_score(graph_node.to_tuple())
                     >= self.min_match_score
                 )
             # Otherwise, fall back on value + tolerance matching.
@@ -477,7 +477,7 @@ class CielabColorPredicate(NodePredicate):
 
     def confirm_match(self, node: Union[PerceptionGraphNode, "NodePredicate"]) -> None:
         if isinstance(node, CielabColorPredicate):
-            self.matcher.update_on_observation(dist(self.to_tuple(), node.to_tuple()))
+            self._merge_with_compatible_node(node)
         else:
             raise ValueError(
                 f"Can't confirm match with apparently non-matching node {node}."

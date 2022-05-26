@@ -2,7 +2,7 @@ from math import sqrt
 from typing import Iterable
 
 
-def dist(list_1: Iterable, list_2: Iterable):
+def dist(list_1: Iterable, list_2: Iterable) -> float:
     """
     Computes Euclidean distance between two iterables.
 
