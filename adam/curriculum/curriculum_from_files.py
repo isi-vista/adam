@@ -22,12 +22,18 @@ from adam.perception.visual_perception import (
 )
 from adam.situation.phase_3_situations import SimulationSituation
 
-PHASE_3_TRAINING_CURRICULUM_OPTIONS = ["m4_core", "m4_stretch", "m5_objects_v0_with_mugs"]
+PHASE_3_TRAINING_CURRICULUM_OPTIONS = [
+    "m4_core",
+    "m4_stretch",
+    "m5_objects_v0_with_mugs",
+    "m5_objects_v0_apples_oranges_bananas"
+]
 
 PHASE_3_TESTING_CURRICULUM_OPTIONS = [
     "m4_core_eval",
     "m4_stretch_eval",
     "m5_objects_v0_with_mugs_eval",
+    "m5_objects_v0_apples_oranges_bananas_eval",
 ]
 
 TRAINING_CUR = "training"
