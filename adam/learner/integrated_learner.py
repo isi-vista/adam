@@ -37,6 +37,7 @@ from adam.learner import (
     TopLevelLanguageLearner,
     TopLevelLanguageLearnerDescribeReturn,
 )
+from adam.learner.affordances import MappingAffordanceLearner
 from adam.learner.alignments import (
     LanguageConceptAlignment,
     LanguagePerceptionSemanticAlignment,
@@ -120,6 +121,9 @@ class IntegratedTemplateLearner(
     )
     affordance_learner: Optional[TemplateLearner] = attrib(
         validator=optional(instance_of(TemplateLearner)), default=None
+    )
+    mapping_affordance_learner: Optional[TemplateLearner] = attrib(
+        validator=optional(instance_of(MappingAffordanceLearner)), default=None
     )
 
     _max_attributes_per_word: int = attrib(validator=instance_of(int), default=3)
@@ -239,6 +243,9 @@ class IntegratedTemplateLearner(
                 )
 
                 self._backpropagate_affordance(current_learner_state)
+
+            if self.mapping_affordance_learner:
+                self.mapping_affordance_learner.learn_from(current_learner_state)
 
         # Engage generics learner if the utterance is indefinite
         if self.generics_learner and not self.is_definite(current_learner_state):
@@ -606,6 +613,10 @@ class IntegratedTemplateLearner(
             valid_sub_learners.append(self.functional_learner)
         if self.generics_learner:
             valid_sub_learners.append(self.generics_learner)
+        if self.affordance_learner:
+            valid_sub_learners.append(self.affordance_learner)
+        if self.mapping_affordance_learner:
+            valid_sub_learners.append(self.mapping_affordance_learner)
         return valid_sub_learners
 
     # TODO: Extract semantics learning into its own sub-learner
