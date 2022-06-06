@@ -60,7 +60,10 @@ from adam.perception.perception_graph import (
     RelationTypeIsPredicate,
     HAS_PROPERTY_LABEL,
 )
-from adam.perception.perception_graph_nodes import ContinuousNode
+from adam.perception.perception_graph_nodes import (
+    ContinuousNode,
+    RgbColorNode
+)
 from adam.perception.perception_graph_predicates import (
     DistributionalContinuousPredicate,
     AnyObjectPredicate,
@@ -917,6 +920,12 @@ def test_simulated_one_object_graph():
     result = any(matcher.matches(use_lookahead_pruning=False))
     if not result:
         return False
+
+
+def test_rgb_color_node():
+    assert RgbColorNode(red=0, blue=0, green=0, weight=1.0)
+    assert RgbColorNode(red=255, blue=255, green=255, weight=0.0)
+
 
 
 def _simulated_graph_with_continuous_feature(*, feature_name: str, observed_value: float):
