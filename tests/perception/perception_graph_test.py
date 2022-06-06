@@ -60,14 +60,11 @@ from adam.perception.perception_graph import (
     RelationTypeIsPredicate,
     HAS_PROPERTY_LABEL,
 )
-from adam.perception.perception_graph_nodes import (
-    ContinuousNode,
-    RgbColorNode
-)
+from adam.perception.perception_graph_nodes import ContinuousNode, RgbColorNode
 from adam.perception.perception_graph_predicates import (
     DistributionalContinuousPredicate,
     AnyObjectPredicate,
-    RgbColorPredicate
+    RgbColorPredicate,
 )
 from adam.perception.visual_perception import VisualPerceptionFrame
 from adam.random_utils import RandomChooser
@@ -927,9 +924,11 @@ def test_rgb_color_node():
     assert RgbColorNode(red=0, blue=0, green=0, weight=1.0)
     assert RgbColorNode(red=255, blue=255, green=255, weight=0.0)
 
+
 def test_rgb_color_predicate():
     assert RgbColorPredicate(red=0, blue=0, green=0, weight=1.0)
     assert RgbColorPredicate(red=255, blue=255, green=255, weight=0.0)
+
 
 def test_rgb_color_perception():
     assert RgbColorPerception(red=0, blue=0, green=0)
