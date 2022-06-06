@@ -115,9 +115,9 @@ class ContinuousNode(GraphNode):
 class RgbColorNode(GraphNode):
     """A node representing an RGB perception value."""
 
-    red: int = attrib(validator=in_(range(0, 255)))
-    green: int = attrib(validator=in_(range(0, 255)))
-    blue: int = attrib(validator=in_(range(0, 255)))
+    red: int = attrib(validator=in_(range(0, 256)))
+    green: int = attrib(validator=in_(range(0, 256)))
+    blue: int = attrib(validator=in_(range(0, 256)))
 
     def dot_label(self):
         return f"RgbColorNode({self})"
