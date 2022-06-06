@@ -371,9 +371,9 @@ class RgbColorPredicate(NodePredicate):
     Matches a node where the RGB value matches exactly.
     """
 
-    red: int = attrib(validator=in_(range(0, 255)))
-    green: int = attrib(validator=in_(range(0, 255)))
-    blue: int = attrib(validator=in_(range(0, 255)))
+    red: int = attrib(validator=in_(range(0, 256)))
+    green: int = attrib(validator=in_(range(0, 256)))
+    blue: int = attrib(validator=in_(range(0, 256)))
     _weight: float = attrib(
         kw_only=True, default=1.0, validator=instance_of(float), eq=False
     )
