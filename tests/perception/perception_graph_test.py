@@ -920,19 +920,19 @@ def test_simulated_one_object_graph():
         return False
 
 
-def test_rgb_color_node():
-    assert RgbColorNode(red=0, blue=0, green=0, weight=1.0)
-    assert RgbColorNode(red=255, blue=255, green=255, weight=0.0)
+def test_rgb_color_node_accepts_valid_values():
+    RgbColorNode(red=0, blue=0, green=0, weight=1.0)
+    RgbColorNode(red=255, blue=255, green=255, weight=0.0)
 
 
-def test_rgb_color_predicate():
-    assert RgbColorPredicate(red=0, blue=0, green=0, weight=1.0)
-    assert RgbColorPredicate(red=255, blue=255, green=255, weight=0.0)
+def test_rgb_color_predicate_accepts_valid_values():
+    RgbColorPredicate(red=0, blue=0, green=0, weight=1.0)
+    RgbColorPredicate(red=255, blue=255, green=255, weight=0.0)
 
 
-def test_rgb_color_perception():
-    assert RgbColorPerception(red=0, blue=0, green=0)
-    assert RgbColorPerception(red=255, blue=255, green=255)
+def test_rgb_color_perception_accepts_valid_values():
+    RgbColorPerception(red=0, blue=0, green=0)
+    RgbColorPerception(red=255, blue=255, green=255)
 
 
 def _simulated_graph_with_continuous_feature(*, feature_name: str, observed_value: float):
