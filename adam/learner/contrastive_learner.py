@@ -168,7 +168,10 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
             matching.perception_graphs(),
             [graph1_difference_nodes, graph2_difference_nodes],
         ):
-            pattern_to_graph_match = self._match_concept_pattern_to_graph(concept, graph)
+            temp = self._match_concept_pattern_to_multiple_graphs(concept, graph)
+            pattern_to_graph_match = self._match_concept_pattern_to_primary_graph(
+                concept, graph
+            )
             if pattern_to_graph_match:
                 self._update_counts(concept, pattern_to_graph_match, difference_nodes)
             else:
@@ -181,7 +184,28 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
         for concept in [concept1, concept2]:
             self._propose_updated_hypothesis_to_apprentice(concept)
 
-    def _match_concept_pattern_to_graph(
+    def _match_concept_pattern_to_multiple_graphs(
+        self, concept: Concept, graph: PerceptionGraph, top_n: Optional[int] = None
+    ) -> Optional[Mapping[PerceptionGraphPatternMatch, PerceptionGraphPatternMatch]]:
+        # Arbitrarily take the first match per hypothesis.
+        #
+        # Because there may be more than one match per hypothesis, this results in non-deterministic behavior in
+        # general. We would like to do something smarter. See the GitHub issue:
+        # https://github.com/isi-vista/adam/issues/1140
+        # TODO issue
+        return {
+            apprentice_concept.graph_pattern: apprentice_concept.graph_pattern.matcher(
+                graph,
+                match_mode=MatchMode.OBJECT,
+            ).relax_pattern_until_it_matches_getting_match(
+                ontology=self._ontology, trim_after_match=None
+            )
+            for apprentice_concept in self.apprentice.concept_to_hypotheses(
+                concept, top_n
+            )
+        }
+
+    def _match_concept_pattern_to_primary_graph(
         self, concept: Concept, graph: PerceptionGraph
     ) -> Optional[PerceptionGraphPatternMatch]:
         # Arbitrarily take the first match.
@@ -397,7 +421,7 @@ def _concepts_to_templates(
 ) -> Mapping[Concept, AbstractSet[SurfaceTemplate]]:
     return {
         concept: learner.templates_for_concept(concept)
-        for concept in learner.concepts_to_patterns()
+        for concept, _ in learner.concept_to_surface_template.items()
     }
 
 
