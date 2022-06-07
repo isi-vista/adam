@@ -399,20 +399,20 @@ def execute_experiment(
                             pickle.dumps(learner, protocol=pickle.HIGHEST_PROTOCOL)
                         )
                         logging.info("Pickled and unpickled.")
-                # Dump the observers to a pickle file
-                observers_holder = ObserversHolder(
-                    pre_observers=experiment.pre_example_training_observers,
-                    post_observers=experiment.post_example_training_observers,
-                    test_observers=experiment.test_observers,
-                )
-                pickle.dump(
-                    observers_holder,
-                    open(
-                        observer_path / f"observers_state_at_{str(num_observations)}.pkl",
-                        "wb",
-                    ),
-                    pickle.HIGHEST_PROTOCOL,
-                )
+                    # Dump the observers to a pickle file
+                    observers_holder = ObserversHolder(
+                        pre_observers=experiment.pre_example_training_observers,
+                        post_observers=experiment.post_example_training_observers,
+                        test_observers=experiment.test_observers,
+                    )
+                    pickle.dump(
+                        observers_holder,
+                        open(
+                            observer_path / f"observers_state_at_{str(num_observations)}.pkl",
+                            "wb",
+                        ),
+                        pickle.HIGHEST_PROTOCOL,
+                    )
 
             if experiment.pre_example_training_observers:
                 scene_description_before_seeing_example = learner.describe(
