@@ -408,7 +408,8 @@ def execute_experiment(
                     pickle.dump(
                         observers_holder,
                         open(
-                            observer_path / f"observers_state_at_{str(num_observations)}.pkl",
+                            observer_path
+                            / f"observers_state_at_{str(num_observations)}.pkl",
                             "wb",
                         ),
                         pickle.HIGHEST_PROTOCOL,
