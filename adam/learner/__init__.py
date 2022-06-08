@@ -22,6 +22,7 @@ from immutablecollections import (
     immutabledict,
     ImmutableSetMultiDict,
     immutablesetmultidict,
+    ImmutableSet,
 )
 from more_itertools import first
 from networkx import isolates
@@ -341,4 +342,12 @@ class ApprenticeLearner(Protocol):
         is a `PerceptionGraphPattern`.
 
         The learner may do with these as it will.
+        """
+
+    @abstractmethod
+    def concept_to_hypotheses(
+        self, concept: Concept, top_n: Optional[int]
+    ) -> ImmutableSet[PerceptionGraphTemplate]:
+        """
+        Retrieve top n hypotheses for input concept.
         """

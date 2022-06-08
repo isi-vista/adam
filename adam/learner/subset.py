@@ -259,7 +259,7 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ApprenticeLearner, ABC):
 
     def concept_to_hypotheses(
         self, concept: Concept, top_n: Optional[int] = None
-    ) -> Sequence[PerceptionGraphTemplate]:
+    ) -> ImmutableSet[PerceptionGraphTemplate]:
         if concept in self._concept_to_hypotheses:
             return immutableset(self._concept_to_hypotheses[concept][:top_n])
         else:
