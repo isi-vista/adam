@@ -170,6 +170,7 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
             "post-observation output. Only the final hypotheses will be logged. (This is probably "
             "a mistake.)"
         )
+    top_n: Optional[int] = params.optional_integer("max_contrastive_hypotheses")
     for (situation1, description1, perception1), (
         situation2,
         description2,
@@ -186,7 +187,8 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
                     ),
                 ),
                 learners=[],
-            )
+            ),
+            top_n,
         )
         if contrastive_post_observer is not None:
             contrastive_post_observer.observe(

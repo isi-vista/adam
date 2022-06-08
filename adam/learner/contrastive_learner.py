@@ -145,7 +145,9 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
         validator=instance_of(Counter), factory=Counter, init=False
     )
 
-    def learn_from(self, matching: LanguagePerceptionSemanticContrast) -> None:
+    def learn_from(
+        self, matching: LanguagePerceptionSemanticContrast, top_n: Optional[int] = None
+    ) -> None:
         """
         Learn from the given pair of semantically-aligned inputs.
         """
@@ -168,7 +170,7 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
             [graph1_difference_nodes, graph2_difference_nodes],
         ):
             pattern_to_graph_matches = self._match_concept_pattern_to_multiple_graphs(
-                concept, graph
+                concept, graph, top_n
             )
             if pattern_to_graph_matches:
                 self._update_counts(concept, pattern_to_graph_matches, difference_nodes)
@@ -180,7 +182,7 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
                 )
 
         for concept in [concept1, concept2]:
-            self._propose_updated_hypothesis_to_apprentice(concept)
+            self._propose_updated_hypothesis_to_apprentice(concept, top_n)
 
     def _match_concept_pattern_to_multiple_graphs(
         self, concept: Concept, graph: PerceptionGraph, top_n: Optional[int] = None

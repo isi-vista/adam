@@ -40,6 +40,7 @@ test_curriculum:
    color_is_rgb: True
 curriculum_creation_seed: 76
 max_contrastive_samples_per_concept_pair: 5
+max_contrastive_hypotheses: 1
 
 # Experiment Configuration
 experiment: "m5_contrastive_object_learning"
