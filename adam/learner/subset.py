@@ -257,6 +257,16 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ApprenticeLearner, ABC):
             if len(hypotheses) > 1
         )
 
+    def concept_to_hypotheses(
+        self, concept: Concept, top_n: Optional[int] = None
+    ) -> ImmutableSet[PerceptionGraphTemplate]:
+        if concept in self._concept_to_hypotheses:
+            return immutableset(self._concept_to_hypotheses[concept][:top_n])
+        else:
+            raise ValueError(
+                f"Attempted to retrieve hypothesis for concept {concept} but no such concept exists"
+            )
+
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
         return {k: v.graph_pattern for k, v, _ in self._primary_templates()}
 
@@ -291,7 +301,12 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ApprenticeLearner, ABC):
                             )
 
                     self._concept_to_hypotheses[concept] = immutableset(
-                        [evolve(hypothesis, graph_pattern=pattern_update)]
+                        [
+                            evolve(hypothesis, graph_pattern=pattern_update[hypothesis])
+                            if hypothesis in pattern_update
+                            else hypothesis
+                            for hypothesis in self._concept_to_hypotheses[concept]
+                        ]
                     )
                 else:
                     if len(self._concept_to_hypotheses[concept]) > 1:
