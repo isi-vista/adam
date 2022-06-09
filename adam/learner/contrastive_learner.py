@@ -416,7 +416,7 @@ def _concepts_to_templates(
 ) -> Mapping[Concept, AbstractSet[SurfaceTemplate]]:
     return {
         concept: learner.templates_for_concept(concept)
-        for concept, _ in learner.concept_to_surface_template.items()
+        for concept in learner.get_concepts()
     }
 
 

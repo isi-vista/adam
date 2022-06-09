@@ -1,12 +1,11 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import AbstractSet, Dict, Iterable, Optional, Set, Sequence, Tuple
+from typing import AbstractSet, Dict, Iterable, Optional, Set, Tuple
 
 from attr import Factory, attrib, attrs, evolve
 from attr.validators import instance_of
 from immutablecollections import ImmutableSet, immutableset
-from vistautils.iter_utils import only
 
 from adam.learner import ApprenticeLearner
 from adam.learner.alignments import LanguagePerceptionSemanticAlignment
@@ -269,6 +268,9 @@ class AbstractSubsetLearner(AbstractTemplateLearner, ApprenticeLearner, ABC):
 
     def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
         return {k: v.graph_pattern for k, v, _ in self._primary_templates()}
+
+    def get_concepts(self) -> ImmutableSet[Concept]:
+        return immutableset([concept for concept in self.concept_to_surface_template])
 
     def propose_updated_hypotheses(
         self,

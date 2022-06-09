@@ -351,3 +351,8 @@ class ApprenticeLearner(Protocol):
         """
         Retrieve top n hypotheses for input concept.
         """
+
+    def get_concepts(self) -> ImmutableSet[Concept]:
+        """
+        Retrtieve all concepts from learner
+        """
