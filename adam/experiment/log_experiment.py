@@ -600,6 +600,11 @@ def learner_factory_from_params(
         affordance_learner = build_affordance_learner_factory(  # type: ignore
             params.namespace_or_empty("affordance_learner"), beam_size, language_mode
         )
+        mapping_affordance_learner = build_affordance_learner_factory(  # type: ignore
+            params.namespace_or_empty("mapping_affordance_learner"),
+            beam_size,
+            language_mode,
+        )
         return lambda: SimulatedIntegratedTemplateLearner(
             object_learner=object_learner,
             attribute_learner=attribute_learner,
@@ -614,6 +619,7 @@ def learner_factory_from_params(
             plural_learner=plural_learner,
             suppress_error=params.boolean("suppress_error", default=True),
             affordance_learner=affordance_learner,
+            mapping_affordance_learner=mapping_affordance_learner,
         )
     else:
         raise RuntimeError("can't happen")

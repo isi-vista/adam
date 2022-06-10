@@ -2984,8 +2984,8 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
     ) -> None:
         for object_node in object_nodes:
             perception_digraph.add_edge(
-                object_node,
                 action_node,
+                object_node,
                 label=TemporallyScopedEdgeLabel.for_dynamic_perception(
                     INVOLVED_IN_ACTION, TemporalScope.DURING
                 ),
