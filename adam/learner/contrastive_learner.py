@@ -19,7 +19,7 @@ from more_itertools import first
 from typing_extensions import Protocol
 
 from attr import attrs, attrib, evolve
-from attr.validators import instance_of
+from attr.validators import instance_of, optional
 from immutablecollections import ImmutableSet, immutableset
 from networkx import DiGraph
 
@@ -125,6 +125,7 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
         validator=instance_of(SubsetObjectLearner)
     )
     _ontology: Ontology = attrib(validator=instance_of(Ontology))
+    _top_n: Optional[int] = attrib(validator=optional(instance_of(int)))
     observations: int = attrib(validator=instance_of(int), default=0, init=False)
     # These count the number of
     _stroke_gnn_recognition_nodes_present: Counter[Tuple[Concept, str]] = attrib(
@@ -146,9 +147,7 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
         validator=instance_of(Counter), factory=Counter, init=False
     )
 
-    def learn_from(
-        self, matching: LanguagePerceptionSemanticContrast, top_n: Optional[int] = None
-    ) -> None:
+    def learn_from(self, matching: LanguagePerceptionSemanticContrast) -> None:
         """
         Learn from the given pair of semantically-aligned inputs.
         """
@@ -171,7 +170,7 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
             [graph1_difference_nodes, graph2_difference_nodes],
         ):
             pattern_to_graph_matches = self._match_concept_pattern_to_multiple_graphs(
-                concept, graph, top_n
+                concept, graph
             )
             if pattern_to_graph_matches:
                 self._update_counts(concept, pattern_to_graph_matches, difference_nodes)
@@ -183,11 +182,11 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
                 )
 
         for concept in [concept1, concept2]:
-            self._propose_updated_hypothesis_to_apprentice(concept, top_n)
+            self._propose_updated_hypothesis_to_apprentice(concept)
 
     def _match_concept_pattern_to_multiple_graphs(
-        self, concept: Concept, graph: PerceptionGraph, top_n: Optional[int] = None
-    ) -> Mapping[PerceptionGraphPatternMatch, PerceptionGraphPatternMatch]:
+        self, concept: Concept, graph: PerceptionGraph
+    ) -> Mapping[PerceptionGraphTemplate, Optional[PerceptionGraphPatternMatch]]:
         # Arbitrarily take the first match per hypothesis.
         #
         # Because there may be more than one match per hypothesis, this results in non-deterministic behavior in
@@ -202,7 +201,7 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
                 ontology=self._ontology, trim_after_match=None
             )
             for apprentice_concept in self.apprentice.concept_to_hypotheses(
-                concept, top_n
+                concept, self._top_n
             )
         }
 
@@ -302,10 +301,8 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
                                 concept, pattern_node.label, pattern_node.value
                             ] += 1
 
-    def _propose_updated_hypothesis_to_apprentice(
-        self, concept: Concept, top_n: Optional[int] = None
-    ) -> None:
-        hypotheses = self.apprentice.concept_to_hypotheses(concept, top_n)
+    def _propose_updated_hypothesis_to_apprentice(self, concept: Concept) -> None:
+        hypotheses = self.apprentice.concept_to_hypotheses(concept, self._top_n)
         updated_hypotheses = dict()
         for hypothesis in hypotheses:
             pattern = hypothesis.graph_pattern

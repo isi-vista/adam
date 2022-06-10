@@ -346,7 +346,7 @@ class ApprenticeLearner(Protocol):
 
     @abstractmethod
     def concept_to_hypotheses(
-        self, concept: Concept, top_n: Optional[int]
+        self, concept: Concept
     ) -> ImmutableSet[PerceptionGraphTemplate]:
         """
         Retrieve top n hypotheses for input concept.
