@@ -257,7 +257,7 @@ class MappingAffordanceLearner(AbstractAffordanceTemplateLearner):
         validator=deep_mapping(instance_of(Concept), deep_iterable(instance_of(Concept))),
         factory=dict,
     )
-    debug_to_concept: MutableMapping[str, Concept] = attrib(
+    affordance_debug_string_to_concept: MutableMapping[str, Concept] = attrib(
         validator=deep_mapping(instance_of(str), instance_of(Concept)), factory=dict
     )
 
@@ -279,21 +279,23 @@ class MappingAffordanceLearner(AbstractAffordanceTemplateLearner):
         language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
         bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
     ) -> None:
-        for slot, object_semantic in bound_surface_template.slot_to_semantic_node.items():
-            debug_name = (
-                bound_surface_template.surface_template.to_short_string()
-                + f"_{slot.name}"
-            )
-            if debug_name in self.debug_to_concept:
-                concept = self.debug_to_concept[debug_name]
+        # This loop should only execute once in standard cases
+        # As a normal affordance only has one slot filler,
+        # the object the affordance affects.
+        for (
+            _,
+            object_semantic_node,
+        ) in bound_surface_template.slot_to_semantic_node.items():
+            debug_name = bound_surface_template.surface_template.to_short_string()
+            if debug_name in self.affordance_debug_string_to_concept:
+                concept = self.affordance_debug_string_to_concept[debug_name]
             else:
                 concept = self._new_concept(debug_name)
-                self.debug_to_concept[debug_name] = concept
+                self.affordance_debug_string_to_concept[debug_name] = concept
 
-            if object_semantic.concept not in self.concept_to_affordances:
-                self.concept_to_affordances[object_semantic.concept] = set()
-            if concept not in self.concept_to_affordances[object_semantic.concept]:
-                self.concept_to_affordances[object_semantic.concept].add(concept)
+            self.concept_to_affordances.setdefault(
+                object_semantic_node.concept, set()
+            ).add(concept)
 
     def _primary_templates(
         self,
@@ -337,8 +339,6 @@ class MappingAffordanceLearner(AbstractAffordanceTemplateLearner):
 
     def affordances_of_concept(self, concept: Concept) -> Sequence[Concept]:
         return sorted(
-            self.concept_to_affordances[concept]
-            if concept in self.concept_to_affordances
-            else [],
+            self.concept_to_affordances.get(concept, []),
             key=lambda x: x.debug_string,
         )

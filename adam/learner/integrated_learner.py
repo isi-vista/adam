@@ -122,7 +122,7 @@ class IntegratedTemplateLearner(
     affordance_learner: Optional[TemplateLearner] = attrib(
         validator=optional(instance_of(TemplateLearner)), default=None
     )
-    mapping_affordance_learner: Optional[TemplateLearner] = attrib(
+    mapping_affordance_learner: Optional[MappingAffordanceLearner] = attrib(
         validator=optional(instance_of(MappingAffordanceLearner)), default=None
     )
 
@@ -342,6 +342,9 @@ class IntegratedTemplateLearner(
             semantics_to_feature_strs=self._visual_features_from_semantics(
                 cur_description_state
             ),
+            concept_to_affordances=self._affordances_from_semantics(
+                cur_description_state
+            ),
         )
 
     @abstractmethod
@@ -523,8 +526,8 @@ class IntegratedTemplateLearner(
                     immutabledict(zip(slot_order, possible_slot_filling))
                 ).as_token_sequence()
 
+    @staticmethod
     def _visual_features_from_semantics(
-        self,
         current_description_state: PerceptionSemanticAlignment,
     ) -> Mapping[SemanticNode, Sequence[str]]:
         return immutabledict(
@@ -536,6 +539,18 @@ class IntegratedTemplateLearner(
             )
             for node in current_description_state.semantic_nodes
         )
+
+    def _affordances_from_semantics(
+        self, current_description_state: PerceptionSemanticAlignment
+    ) -> Mapping[Concept, Sequence[Concept]]:
+        return {
+            semantic_node.concept: self.mapping_affordance_learner.affordances_of_concept(
+                semantic_node.concept
+            )
+            if self.mapping_affordance_learner
+            else []
+            for semantic_node in current_description_state.semantic_nodes
+        }
 
     def log_hypotheses(self, log_output_path: Path) -> None:
         for sub_learner in self._sub_learners:

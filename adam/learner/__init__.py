@@ -107,6 +107,10 @@ class TopLevelLanguageLearnerDescribeReturn:
         ),
         kw_only=True,
     )
+    concept_to_affordances: Mapping[Concept, Sequence[Concept]] = attrib(
+        validator=deep_mapping(instance_of(Concept), deep_iterable(instance_of(Concept))),
+        kw_only=True,
+    )
 
 
 class TopLevelLanguageLearner(ABC, Generic[PerceptionT, LinguisticDescriptionT]):
@@ -201,6 +205,7 @@ class MemorizingLanguageLearner(
             description_to_confidence=descriptions_to_confidence,
             semantics_to_descriptions=immutabledict(),
             semantics_to_feature_strs=immutabledict(),
+            concept_to_affordances=immutabledict(),
         )
 
     def log_hypotheses(self, log_output_path: Path) -> None:

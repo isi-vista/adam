@@ -1,7 +1,7 @@
 import logging
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import LanguageMode
-from adam.learner.affordances import SubsetAffordanceLearner, MappingAffordanceLearner
+from adam.learner.affordances import SubsetAffordanceLearner
 from adam.learner.attributes import SubsetAttributeLearner, PursuitAttributeLearner
 from adam.learner.object_recognizer import ObjectRecognizer
 from adam.learner.objects import (
@@ -440,7 +440,7 @@ def build_affordance_learner_factory(
     params: Parameters, beam_size: int, language_mode: LanguageMode
 ) -> Optional[TemplateLearner]:
     learner_type = params.string(
-        "learner_type", valid_options=["subset", "mapping", "none"], default="subset"
+        "learner_type", valid_options=["subset", "none"], default="subset"
     )
     ontology, _, _ = ONTOLOGY_STR_TO_ONTOLOGY[
         params.string(
@@ -456,11 +456,6 @@ def build_affordance_learner_factory(
         return SubsetAffordanceLearner(
             ontology=ontology,
             beam_size=beam_size,
-            language_mode=language_mode,
-            min_continuous_feature_match_score=min_continuous_feature_match_score,
-        )
-    elif learner_type == "mapping":
-        return MappingAffordanceLearner(
             language_mode=language_mode,
             min_continuous_feature_match_score=min_continuous_feature_match_score,
         )

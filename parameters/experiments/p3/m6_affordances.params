@@ -23,10 +23,9 @@ plural_learner:
 affordance_learner:
     learner_type: "none"
     min_continuous_feature_match_score: 0.05
-mapping_affordance_learner:
-    learner_type: "mapping"
 include_functional_learner: false
 include_generics_learner: false
+include_mapping_affordance_learner: true
 suppress_error: false
 
 # Curriculum Configuration
