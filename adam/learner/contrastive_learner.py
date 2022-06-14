@@ -172,8 +172,14 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
             pattern_to_graph_matches = self._match_concept_pattern_to_multiple_graphs(
                 concept, graph
             )
+
             if pattern_to_graph_matches:
-                self._update_counts(concept, pattern_to_graph_matches, difference_nodes)
+                graph_matches = [
+                    graph_match
+                    for graph_match in pattern_to_graph_matches.values()
+                    if graph_match is not None
+                ]
+                self._update_counts(concept, graph_matches, difference_nodes)
             else:
                 logger.debug(
                     "Could not update counts for concept %s: Failed to match pattern to perception "
@@ -249,57 +255,54 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
     def _update_counts(
         self,
         concept: Concept,
-        pattern_to_graph_matches: Mapping[
-            PerceptionGraphTemplate, Optional[PerceptionGraphPatternMatch]
-        ],
+        pattern_to_graph_matches: Sequence[PerceptionGraphPatternMatch],
         difference_nodes: ImmutableSet[PerceptionGraphNode],
     ) -> None:
-        for pattern_to_graph_match in pattern_to_graph_matches.values():
-            if pattern_to_graph_match:
-                for pattern_node in pattern_to_graph_match.matched_pattern:
-                    # If it's a stroke GNN recognition node, count the "recognized object" string observed
-                    if isinstance(pattern_node, StrokeGNNRecognitionPredicate):
-                        self._stroke_gnn_recognition_nodes_present[
+        for pattern_to_graph_match in pattern_to_graph_matches:
+            for pattern_node in pattern_to_graph_match.matched_pattern:
+                # If it's a stroke GNN recognition node, count the "recognized object" string observed
+                if isinstance(pattern_node, StrokeGNNRecognitionPredicate):
+                    self._stroke_gnn_recognition_nodes_present[
+                        concept, pattern_node.recognized_object
+                    ] += 1
+
+                    if (
+                        pattern_to_graph_match.pattern_node_to_matched_graph_node[
+                            pattern_node
+                        ]
+                        in difference_nodes
+                    ):
+                        self._stroke_gnn_recognition_nodes_present_in_difference[
                             concept, pattern_node.recognized_object
                         ] += 1
+                # If it has an ontology node, count the observed property value
+                elif isinstance(pattern_node, IsOntologyNodePredicate):
+                    self._ontology_node_present[concept, pattern_node.property_value] += 1
 
-                        if (
-                            pattern_to_graph_match.pattern_node_to_matched_graph_node[
-                                pattern_node
-                            ]
-                            in difference_nodes
-                        ):
-                            self._stroke_gnn_recognition_nodes_present_in_difference[
-                                concept, pattern_node.recognized_object
-                            ] += 1
-                    # If it has an ontology node, count the observed property value
-                    elif isinstance(pattern_node, IsOntologyNodePredicate):
-                        self._ontology_node_present[
+                    if (
+                        pattern_to_graph_match.pattern_node_to_matched_graph_node[
+                            pattern_node
+                        ]
+                        in difference_nodes
+                    ):
+                        self._ontology_node_present_in_difference[
                             concept, pattern_node.property_value
                         ] += 1
+                # Otherwise, if it's categorical, count the value observed
+                elif isinstance(pattern_node, CategoricalPredicate):
+                    self._categorical_values_present[
+                        concept, pattern_node.label, pattern_node.value
+                    ] += 1
 
-                        if (
-                            pattern_to_graph_match.pattern_node_to_matched_graph_node[
-                                pattern_node
-                            ]
-                            in difference_nodes
-                        ):
-                            self._ontology_node_present_in_difference[
-                                concept, pattern_node.property_value
-                            ] += 1
-                    # Otherwise, if it's categorical, count the value observed
-                    elif isinstance(pattern_node, CategoricalPredicate):
-                        self._categorical_values_present[concept, pattern_node.label, pattern_node.value] += 1
-
-                        if (
-                            pattern_to_graph_match.pattern_node_to_matched_graph_node[
-                                pattern_node
-                            ]
-                            in difference_nodes
-                        ):
-                            self._categorical_values_present_in_difference[
-                                concept, pattern_node.label, pattern_node.value
-                            ] += 1
+                    if (
+                        pattern_to_graph_match.pattern_node_to_matched_graph_node[
+                            pattern_node
+                        ]
+                        in difference_nodes
+                    ):
+                        self._categorical_values_present_in_difference[
+                            concept, pattern_node.label, pattern_node.value
+                        ] += 1
 
     def _propose_updated_hypothesis_to_apprentice(self, concept: Concept) -> None:
         hypotheses = self.apprentice.concept_to_hypotheses(concept, self._top_n)
