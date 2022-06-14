@@ -1,4 +1,5 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Affordances } from '../../classes/affordances';
 import { Features } from '../../classes/features';
 import { LinguisticOutput } from '../../classes/linguistic-output';
 
@@ -26,6 +27,23 @@ export class ObjectResultsComponent implements OnChanges {
       features.push(feat);
     });
 
+    const affordances: Affordances[] = [];
+    if (entry.affordances) {
+      entry.affordances.forEach((element) => {
+        const element_split = element.split('_');
+        let feat = { name: element };
+        // Formatting the affordances is already handled in the back end, so this is just here to be safe
+        if (element_split.length > 2) {
+          feat = {
+            name: `can be ${element_split[0]} in "${element_split
+              .slice(1)
+              .join(' ')}"`,
+          };
+        }
+        affordances.push(feat);
+      });
+    }
+
     const sub_objects: LinguisticOutput[] = [];
 
     if (entry.sub_objects) {
@@ -40,6 +58,7 @@ export class ObjectResultsComponent implements OnChanges {
       confidence: entry.confidence,
       type: entry.type,
       features: features,
+      affordances: affordances,
       sub_objects: sub_objects,
     };
   }

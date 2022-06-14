@@ -15,3 +15,9 @@
   margin-left: 0;
   padding-left: 40px;
 }
+
+.affordance-list {
+  margin-left: 0;
+  padding-left: 40px;
+  font-style: italic;
+}
