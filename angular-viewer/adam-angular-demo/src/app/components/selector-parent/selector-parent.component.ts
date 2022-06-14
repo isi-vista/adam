@@ -20,10 +20,15 @@ export interface FeatureResponse {
   name: string;
 }
 
+export interface DerivedFeatureResponse {
+  name: string;
+}
+
 export interface LanguageResponse {
   text: string;
   confidence: number;
   features: FeatureResponse[];
+  derived_features: DerivedFeatureResponse[];
   sub_objects: LanguageResponse[];
 }
 
