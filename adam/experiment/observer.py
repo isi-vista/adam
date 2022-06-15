@@ -890,6 +890,11 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
             else None,
         )
 
+    @staticmethod
+    def _convert_affordance(raw_affordance: str) -> str:
+        fields = raw_affordance.split("_")
+        return f"can be {fields[0].upper()} in \"{' '.join(fields[1:])}\""
+
     def _convert_to_output_format(
         self,
         idx: int,
@@ -907,8 +912,14 @@ class YAMLLogger(DescriptionObserver[SituationT, LinguisticDescriptionT, Percept
             "features": sorted(
                 predicted_scene_description.semantics_to_feature_strs[semantic_node]
             ),
+            "affordances": sorted(
+                self._convert_affordance(affordance.debug_string)
+                for affordance in predicted_scene_description.concept_to_affordances[
+                    semantic_node.concept
+                ]
+            ),
             "sub-objects": [],
-            "raw_text": None,
+            "raw_text": semantic_node.concept.debug_string,
             "slot_alignment_to_confidence": None,
         }
 

@@ -65,6 +65,7 @@ from adam.perception.perception_graph_nodes import (
     ObjectClusterNode,
     GraphNode,
     StrokeGNNRecognitionNode,
+    TrajectoryRecognitionNode,
 )
 from adam.semantics import (
     Concept,
@@ -595,6 +596,7 @@ def extract_candidate_objects(
         if is_root_object_node(node)
         and node not in (GROUND_PERCEPTION, LEARNER_PERCEPTION)
     ]
+    logging.info(f"Extracting root object nodes: {candidate_object_root_nodes}")
 
     candidate_objects: List[PerceptionGraph] = []
     for root_object_node in candidate_object_root_nodes:
@@ -624,7 +626,7 @@ def extract_candidate_objects(
         # Finally, we find the sub-graph to match against which could possibly correspond
         # to this candidate object
         # by performing a BFS over the graph
-        # but *stopping whenever we encounter an object node
+        # but *stopping whenever we encounter an object node or action node
         # which is not part of this candidate object*.
         # This is a little more generous than we need to be, but it's simple.
         nodes_to_examine = [root_object_node]
@@ -633,7 +635,15 @@ def extract_candidate_objects(
         while nodes_to_examine:
             node_to_examine = nodes_to_examine.pop()
             is_allowable_node = (
-                not isinstance(node_to_examine, (ObjectPerception, ObjectSemanticNode))
+                not isinstance(
+                    node_to_examine,
+                    (
+                        ObjectPerception,
+                        ObjectSemanticNode,
+                        ObjectClusterNode,
+                        TrajectoryRecognitionNode,
+                    ),
+                )
                 or node_to_examine in object_nodes_in_object
             )
             if node_to_examine not in nodes_visited and is_allowable_node:

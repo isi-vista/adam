@@ -1,7 +1,20 @@
+import logging
 from abc import ABC
-from typing import AbstractSet, Tuple, Optional, Iterable
+from pathlib import Path
+from typing import (
+    AbstractSet,
+    Tuple,
+    Optional,
+    Iterable,
+    Dict,
+    MutableMapping,
+    Sequence,
+    MutableSet,
+)
 
-from attr import attrs
+import yaml
+from attr import attrs, attrib
+from attr.validators import deep_iterable, instance_of, deep_mapping
 from immutablecollections import immutablesetmultidict, immutableset
 
 from adam.learner import (
@@ -22,6 +35,8 @@ from adam.perception.perception_graph import (
     LABEL,
     edge_equals_ignoring_temporal_scope,
     HAS_STROKE_LABEL,
+    PerceptionGraphPattern,
+    PerceptionGraphPatternMatch,
 )
 from adam.perception.perception_graph_nodes import CategoricalNode
 from adam.perception.perception_graph_predicates import (
@@ -233,3 +248,97 @@ class SubsetAffordanceLearner(
                         if isinstance(node, ObjectSemanticNodePerceptionPredicate)
                     }
                 ), 1.0
+
+
+@attrs(slots=True)
+class MappingAffordanceLearner(AbstractAffordanceTemplateLearner):
+
+    concept_to_affordances: MutableMapping[Concept, MutableSet[Concept]] = attrib(
+        validator=deep_mapping(instance_of(Concept), deep_iterable(instance_of(Concept))),
+        factory=dict,
+    )
+    affordance_debug_string_to_concept: MutableMapping[str, Concept] = attrib(
+        validator=deep_mapping(instance_of(str), instance_of(Concept)), factory=dict
+    )
+
+    def _match_template(
+        self,
+        *,
+        concept: Concept,
+        pattern: PerceptionGraphTemplate,
+        perception_graph: PerceptionGraph,
+        confidence: float,
+    ) -> Iterable[Tuple[PerceptionGraphPatternMatch, SemanticNode]]:
+        return immutableset()
+
+    def _new_concept(self, debug_string: str) -> Concept:
+        return AffordanceConcept(debug_string)
+
+    def _learning_step(
+        self,
+        language_perception_semantic_alignment: LanguagePerceptionSemanticAlignment,
+        bound_surface_template: SurfaceTemplateBoundToSemanticNodes,
+    ) -> None:
+        # This loop should only execute once in standard cases
+        # As a normal affordance only has one slot filler,
+        # the object the affordance affects.
+        for (
+            _,
+            object_semantic_node,
+        ) in bound_surface_template.slot_to_semantic_node.items():
+            debug_name = bound_surface_template.surface_template.to_short_string()
+            if debug_name in self.affordance_debug_string_to_concept:
+                concept = self.affordance_debug_string_to_concept[debug_name]
+            else:
+                concept = self._new_concept(debug_name)
+                self.affordance_debug_string_to_concept[debug_name] = concept
+
+            self.concept_to_affordances.setdefault(
+                object_semantic_node.concept, set()
+            ).add(concept)
+
+    def _primary_templates(
+        self,
+    ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
+        return immutableset()
+
+    def _fallback_templates(
+        self,
+    ) -> Iterable[Tuple[Concept, PerceptionGraphTemplate, float]]:
+        return immutableset()
+
+    def templates_for_concept(self, concept: Concept) -> AbstractSet[SurfaceTemplate]:
+        return immutableset()
+
+    def process_affordance(
+        self, concept: Concept, affordance_node: AffordanceSemanticNode
+    ) -> None:
+        logging.debug(
+            "MappingAffordanceLearner doesn't process incoming affordance nodes."
+        )
+
+    def log_hypotheses(self, log_output_path: Path) -> None:
+        with open(
+            log_output_path / "mapping_affordance.yaml", "w", encoding="utf-8"
+        ) as log:
+            yaml.dump(
+                {
+                    f"ObjectConcept({concept.debug_string})": [
+                        f"{affordance.debug_string}"
+                        for affordance in sorted(
+                            affordances, key=lambda x: x.debug_string
+                        )
+                    ]
+                    for concept, affordances in self.concept_to_affordances.items()
+                },
+                log,
+            )
+
+    def concepts_to_patterns(self) -> Dict[Concept, PerceptionGraphPattern]:
+        return {}
+
+    def affordances_of_concept(self, concept: Concept) -> Sequence[Concept]:
+        return sorted(
+            self.concept_to_affordances.get(concept, []),
+            key=lambda x: x.debug_string,
+        )

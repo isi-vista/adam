@@ -64,6 +64,7 @@ from adam.language.language_utils import (
 )
 from adam.language_specific.english import ENGLISH_DETERMINERS
 from adam.learner import TopLevelLanguageLearner
+from adam.learner.affordances import MappingAffordanceLearner
 from adam.learner.attributes import SubsetAttributeLearner, PursuitAttributeLearner
 from adam.learner.functional_learner import FunctionalLearner
 from adam.learner.generics import SimpleGenericsLearner
@@ -614,6 +615,12 @@ def learner_factory_from_params(
             plural_learner=plural_learner,
             suppress_error=params.boolean("suppress_error", default=True),
             affordance_learner=affordance_learner,
+            mapping_affordance_learner=MappingAffordanceLearner(
+                language_mode=language_mode,
+                min_continuous_feature_match_score=0.3,  # Unused for this learner
+            )
+            if params.boolean("include_mapping_affordance_learner", default=False)
+            else None,
         )
     else:
         raise RuntimeError("can't happen")
