@@ -33,6 +33,7 @@ from adam.learner.alignments import (
     PerceptionSemanticAlignment,
 )
 from adam.learner.language_mode import LanguageMode
+from adam.learner.perception_graph_template import PerceptionGraphTemplate
 from adam.learner.surface_templates import (
     STANDARD_SLOT_VARIABLES,
     SurfaceTemplate,
@@ -327,10 +328,17 @@ class ApprenticeLearner(Protocol):
 
     @abstractmethod
     def propose_updated_hypotheses(
-        self, concept_to_updated_patterns: Dict[Concept, PerceptionGraphPattern]
+        self,
+        concept_to_hypothesis_updates: Dict[
+            Concept, Dict[PerceptionGraphTemplate, PerceptionGraphPattern]
+        ],
     ) -> None:
         """
         Propose new/updated hypotheses to the learner.
+
+        This expects hypothesis updates to be given as mappings of the form `old_hypothesis ->
+        new_hypothesis` where `old_hypothesis` is a `PerceptionGraphTemplate` and `new_hypothesis`
+        is a `PerceptionGraphPattern`.
 
         The learner may do with these as it will.
         """

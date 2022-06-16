@@ -48,7 +48,6 @@ from adam.perception.perception_graph_predicates import (
 )
 from adam.semantics import Concept, SemanticNode
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -270,7 +269,7 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
                         self._stroke_gnn_recognition_nodes_present_in_difference[
                             concept, pattern_node.recognized_object
                         ] += 1
-                # If it has an ontology node, do X
+                # If it has an ontology node, count the observed property value
                 elif isinstance(pattern_node, IsOntologyNodePredicate):
                     self._ontology_node_present[concept, pattern_node.property_value] += 1
 
@@ -299,23 +298,30 @@ class TeachingContrastiveObjectLearner(ContrastiveLearner):
                             concept, pattern_node.label, pattern_node.value
                         ] += 1
 
-    def _propose_updated_hypothesis_to_apprentice(self, concept: Concept) -> None:
-        pattern = self._get_apprentice_pattern(concept)
-        old_to_new_node = {}
-        old_pattern_digraph = pattern.copy_as_digraph()
-        new_pattern_digraph = DiGraph()
+    def _propose_updated_hypothesis_to_apprentice(
+        self, concept: Concept, top_n: Optional[int] = None
+    ) -> None:
+        hypotheses = self.apprentice.concept_to_hypotheses(concept, top_n)
+        updated_hypotheses = dict()
+        for hypothesis in hypotheses:
+            pattern = hypothesis.graph_pattern
+            old_to_new_node = {}
+            old_pattern_digraph = pattern.copy_as_digraph()
+            new_pattern_digraph = DiGraph()
 
-        for node, data in old_pattern_digraph.nodes(data=True):
-            old_to_new_node[node] = self._re_weighted_node(concept, node)
-            new_pattern_digraph.add_node(old_to_new_node[node], **data)
+            for node, data in old_pattern_digraph.nodes(data=True):
+                old_to_new_node[node] = self._re_weighted_node(concept, node)
+                new_pattern_digraph.add_node(old_to_new_node[node], **data)
 
-        for old_u, old_v, data in old_pattern_digraph.edges(data=True):
-            new_pattern_digraph.add_edge(
-                old_to_new_node[old_u], old_to_new_node[old_v], **data
+            for old_u, old_v, data in old_pattern_digraph.edges(data=True):
+                new_pattern_digraph.add_edge(
+                    old_to_new_node[old_u], old_to_new_node[old_v], **data
+                )
+
+            updated_hypotheses[hypothesis] = PerceptionGraphPattern(
+                new_pattern_digraph, dynamic=pattern.dynamic
             )
-
-        new_pattern = PerceptionGraphPattern(new_pattern_digraph, dynamic=pattern.dynamic)
-        self.apprentice.propose_updated_hypotheses({concept: new_pattern})
+        self.apprentice.propose_updated_hypotheses({concept: updated_hypotheses})
 
     def _re_weighted_node(self, concept: Concept, node: NodePredicate) -> NodePredicate:
         """
