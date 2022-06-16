@@ -1,4 +1,7 @@
 # copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
+from argparse import ArgumentParser
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -45,9 +48,17 @@ phase = ['train', 'test']
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "curriculum_path",
+        type=Path,
+        help="Where to read the curriculum from and write the outputs to.",
+    )
+    args = parser.parse_args()
+
 
     "Processing data from image to stroke graph"
-    base_path = '/Users/cs/Desktop/Research/darpa_3d/adam_single_objv0/'
+    base_path = args.curriculum_path
     for i in phase:
         if i == 'train':
             num_sample = 10
