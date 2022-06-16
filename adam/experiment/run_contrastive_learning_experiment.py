@@ -147,6 +147,7 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
         params.creatable_directory("before_contrastive_hypothesis_log_dir")
     )
     logging.info("Starting contrastive learning.")
+    top_n: Optional[int] = params.optional_integer("max_contrastive_hypotheses")
     object_learner = cast(SubsetObjectLearner, learner.object_learner)
     ontology, _objects, _perception_gen = ONTOLOGY_STR_TO_ONTOLOGY[
         params.string(
@@ -156,7 +157,7 @@ def contrastive_learning_entry_point(params: Parameters) -> None:
         )
     ]
     contrastive_learner = TeachingContrastiveObjectLearner(
-        apprentice=object_learner, ontology=ontology
+        apprentice=object_learner, ontology=ontology, top_n=top_n
     )
     contrastive_post_observer: Optional[
         YAMLLogger[Situation, LinguisticDescription, PerceptualRepresentationFrame]
