@@ -1,4 +1,7 @@
 # copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
+from argparse import ArgumentParser
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -45,10 +48,24 @@ phase = ['test']
 
 
 if __name__ == '__main__':
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "model_path",
+        type=Path,
+        help="The model path to use",
+    )
+    parser.add_argument(
+        "curriculum_path",
+        type=Path,
+        help="Directory we should read the curriculum from.",
+    )
+    args = parser.parse_args()
+
+    if not args.model_path.is_file():
+        raise ValueError(f"Cannot load model from nonexistent file {args.model_path}.")
 
     "Processing data from image to stroke graph"
-    model_location = ""
-    base_path = '/home/scheng53/Desktop/darpa_3d/adam_single_objv0/'
+    base_path = args.curriculum_path
     for i in phase:
         if i == 'train':
             num_sample = 10
@@ -141,7 +158,7 @@ if __name__ == '__main__':
                       message_size=20, n_layers=1, l_target=50,
                       type='regression')
     model = LinearModel(model_base, 50, len(label_name)).to(device)
-    model.load_state_dict(torch.load(model_location))
+    model.load_state_dict(torch.load(args.model_path))
     evaluation = accuracy
     model.eval()
     losses = []
