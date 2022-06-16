@@ -1,10 +1,19 @@
 # copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
+import logging
 import cv2
 import numpy as np
-import matlab
+try:
+    import matlab
+except ImportError:
+    logging.warning("Couldn't import MATLAB API; creating a placeholder object instead.")
+    matlab = object()
 import matplotlib.pyplot as plt
 import scipy.io
-import matlab.engine
+try:
+    import matlab.engine
+except ImportError:
+    logging.warning("Couldn't import MATLAB engine; setting it to None.")
+    matlab.engine = None
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.cluster import SpectralClustering
 import yaml
