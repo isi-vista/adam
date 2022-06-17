@@ -45,9 +45,7 @@ label_name = [
 phase = ['test']
 
 
-
-
-if __name__ == "__main__":
+def main():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
         "model_path",
@@ -84,7 +82,7 @@ if __name__ == "__main__":
 
                     "If infomation saved, load it"
                     if not os.path.exists(
-                            os.path.join(base_path, 'feature', 'feature_{}_{}_{}_{}.yaml'.format(i, j, p, q))):
+                        os.path.join(base_path, 'feature', 'feature_{}_{}_{}_{}.yaml'.format(i, j, p, q))):
                         try:
                             Extractor = Stroke_Extraction(obj_type="{}_{}".format(i, j), obj_id=q, obj_view=p,
                                                           base_path=base_path, vis=True, save_output=True)
@@ -183,3 +181,7 @@ if __name__ == "__main__":
         )[0]
     )
     print("test acc :{}".format(test_acc))
+
+
+if __name__ == "__main__":
+    main()
