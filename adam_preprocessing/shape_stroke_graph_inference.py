@@ -112,7 +112,7 @@ def main():
     best_acc = 0
 
     "Inference"
-    outputs = nn.LogSoftmax()(
+    outputs = nn.LogSoftmax(dim=1)(
         model(test_adjacency_matrices, test_node_features, test_edge_features)
     )
     test_acc = Variable(
