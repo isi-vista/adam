@@ -1,6 +1,7 @@
 # copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
 from argparse import ArgumentParser
 from pathlib import Path
+from typing import Sequence, Tuple
 
 import torch
 import torch.nn as nn
@@ -42,7 +43,62 @@ string_labels = [
 
 ]
 
-phases = ['train', 'test']
+
+def get_stroke_data(base_path_: str, phase_: str) -> Tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
+    my_coords = []
+    my_adj = []
+    my_label = []
+    if phase_ == 'train':
+        num_sample = 10
+    else:
+        num_sample = 5
+    for integer_label, string_label in enumerate(string_labels):
+        for object_view in range(1):
+            for sample_id in range(num_sample):
+                if not os.path.exists(
+                    os.path.join(
+                        base_path_, 'feature',
+                        'feature_{}_{}_{}_{}.yaml'.format(phase_, string_label, object_view, sample_id)
+                    )
+                ):
+                    Extractor = Stroke_Extraction(
+                        obj_type="{}_{}".format(phase_, string_label), obj_id=sample_id, obj_view=object_view,
+                        base_path=base_path_, vis=True, save_output=True
+                    )
+                    out = Extractor.get_strokes()
+                else:
+                    with open(
+                        os.path.join(
+                            base_path_, 'feature',
+                            'feature_{}_{}_{}_{}.yaml'.format(phase_, string_label, object_view, sample_id)
+                        ), 'r'
+                    ) as stream:
+                        out = yaml.safe_load(stream)
+                num_obj = len(out)
+                if num_obj == 0:
+                    continue
+                coords = []
+                adj = []
+                count = [0]
+                for object_number in range(num_obj):
+                    coords.append(out[object_number]['stroke_graph']['strokes_normalized_coordinates'])
+                    adj.append(out[object_number]['stroke_graph']['adjacency_matrix'])
+                    count.append(len(out[object_number]['stroke_graph']['adjacency_matrix']) + count[-1])
+                coords = np.asarray(coords)
+                coords = np.concatenate(coords, 0)
+                real_adj = np.zeros([count[-1], count[-1]])
+                for object_number in range(num_obj):
+                    real_adj[count[object_number]:count[object_number + 1],
+                    count[object_number]:count[object_number + 1]] = adj[object_number]
+                if phase_ == 'train':
+                    my_coords.append(coords)
+                    my_adj.append(real_adj)
+                    my_label.append(integer_label)
+                else:
+                    my_coords.append(coords)
+                    my_adj.append(real_adj)
+                    my_label.append(integer_label)
+    return my_coords, my_adj, my_label
 
 
 def main():
@@ -68,63 +124,8 @@ def main():
     logging.basicConfig(level=logging.INFO)
     "Processing data from image to stroke graph"
     base_path = args.curriculum_path
-    for phase in phases:
-        if phase == 'train':
-            num_sample = 10
-            train_coords = []
-            train_adj = []
-            train_label = []
-        else:
-            num_sample = 5
-            test_coords = []
-            test_adj = []
-            test_label = []
-        for integer_label, string_label in enumerate(string_labels):
-            for object_view in range(1):
-                for sample_id in range(num_sample):
-                    if not os.path.exists(
-                        os.path.join(
-                            base_path, 'feature',
-                            'feature_{}_{}_{}_{}.yaml'.format(phase, string_label, object_view, sample_id)
-                            )
-                    ):
-                        Extractor = Stroke_Extraction(
-                            obj_type="{}_{}".format(phase, string_label), obj_id=sample_id, obj_view=object_view,
-                            base_path=base_path, vis=True, save_output=True
-                            )
-                        out = Extractor.get_strokes()
-                    else:
-                        with open(
-                            os.path.join(
-                                base_path, 'feature',
-                                'feature_{}_{}_{}_{}.yaml'.format(phase, string_label, object_view, sample_id)
-                                ), 'r'
-                            ) as stream:
-                            out = yaml.safe_load(stream)
-                    num_obj = len(out)
-                    if num_obj == 0:
-                        continue
-                    coords = []
-                    adj = []
-                    count = [0]
-                    for object_number in range(num_obj):
-                        coords.append(out[object_number]['stroke_graph']['strokes_normalized_coordinates'])
-                        adj.append(out[object_number]['stroke_graph']['adjacency_matrix'])
-                        count.append(len(out[object_number]['stroke_graph']['adjacency_matrix']) + count[-1])
-                    coords = np.asarray(coords)
-                    coords = np.concatenate(coords, 0)
-                    real_adj = np.zeros([count[-1], count[-1]])
-                    for object_number in range(num_obj):
-                        real_adj[count[object_number]:count[object_number + 1],
-                        count[object_number]:count[object_number + 1]] = adj[object_number]
-                    if phase == 'train':
-                        train_coords.append(coords)
-                        train_adj.append(real_adj)
-                        train_label.append(integer_label)
-                    else:
-                        test_coords.append(coords)
-                        test_adj.append(real_adj)
-                        test_label.append(integer_label)
+    train_coords, train_adj, train_label = get_stroke_data(base_path, "train")
+    test_coords, test_adj, test_label = get_stroke_data(base_path, "test")
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     # data = from_pickle('./data.pkl')
     # train_coords = data['train_coords']
