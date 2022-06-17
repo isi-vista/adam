@@ -1,5 +1,6 @@
 # copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
 from argparse import ArgumentParser
+import logging
 from pathlib import Path
 from typing import Sequence, Tuple
 
@@ -18,87 +19,131 @@ import glob
 import pickle as pickle
 from MPNN import MPNN, MPNN_Linear
 from utils import accuracy, LinearModel, load_data
-from shape_stroke_extraction import Stroke_Extraction
 
 string_labels = [
-    'triangleblock',
+    'pyramid_block',
     'banana',
     'book',
     'ball',
-    'toytruck',
+    'toy_truck',
     'floor',
     'sofa',
     'orange',
     'window',
     'table',
-    'cubeblock',
-    'toysedan',
+    'cube_block',
+    'toy_sedan',
     'box',
     'cup',
-    'sphereblock',
+    'sphere_block',
     'chair',
     'desk',
     'apple',
-    'paper'
-
+    'paper',
+    'mug',
 ]
 
 
-def get_stroke_data(base_path_: str, phase_: str) -> Tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
-    my_coords = []
-    my_adj = []
-    my_label = []
-    if phase_ == 'train':
-        num_sample = 10
-    else:
-        num_sample = 5
-    for integer_label, string_label in enumerate(string_labels):
-        for object_view in range(1):
-            for sample_id in range(num_sample):
-                if not os.path.exists(
-                    os.path.join(
-                        base_path_, 'feature',
-                        'feature_{}_{}_{}_{}.yaml'.format(phase_, string_label, object_view, sample_id)
-                    )
-                ):
-                    Extractor = Stroke_Extraction(
-                        obj_type="{}_{}".format(phase_, string_label), obj_id=sample_id, obj_view=object_view,
-                        base_path=base_path_, vis=True, save_output=True
-                    )
-                    out = Extractor.get_strokes()
-                else:
-                    with open(
-                        os.path.join(
-                            base_path_, 'feature',
-                            'feature_{}_{}_{}_{}.yaml'.format(phase_, string_label, object_view, sample_id)
-                        ), 'r'
-                    ) as stream:
-                        out = yaml.safe_load(stream)
-                num_obj = len(out)
-                if num_obj == 0:
-                    continue
-                coords = []
-                adj = []
-                count = [0]
-                for object_number in range(num_obj):
-                    coords.append(out[object_number]['stroke_graph']['strokes_normalized_coordinates'])
-                    adj.append(out[object_number]['stroke_graph']['adjacency_matrix'])
-                    count.append(len(out[object_number]['stroke_graph']['adjacency_matrix']) + count[-1])
-                coords = np.asarray(coords)
-                coords = np.concatenate(coords, 0)
-                real_adj = np.zeros([count[-1], count[-1]])
-                for object_number in range(num_obj):
-                    real_adj[count[object_number]:count[object_number + 1],
-                    count[object_number]:count[object_number + 1]] = adj[object_number]
-                if phase_ == 'train':
-                    my_coords.append(coords)
-                    my_adj.append(real_adj)
-                    my_label.append(integer_label)
-                else:
-                    my_coords.append(coords)
-                    my_adj.append(real_adj)
-                    my_label.append(integer_label)
-    return my_coords, my_adj, my_label
+def get_stroke_data(curriculum_path: Path, train_or_test: str) -> Tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
+    # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
+    with open(curriculum_path / "info.yaml", encoding="utf=8") as curriculum_info_yaml:
+        curriculum_params = yaml.safe_load(curriculum_info_yaml)
+
+    curriculum_coords = []
+    curriculum_adjs = []
+    curriculum_labels = []
+    for situation_num in range(curriculum_params["num_dirs"]):
+        situation_dir = curriculum_path / f"situation_{situation_num}"
+        language_tuple: Tuple[str, ...] = tuple()
+        if (situation_dir / "description.yaml").exists():
+            with open(
+                situation_dir / "description.yaml", encoding="utf-8"
+            ) as situation_description_file:
+                situation_description = yaml.safe_load(situation_description_file)
+            language_tuple = tuple(situation_description["language"].split(" "))
+        elif train_or_test == "train":
+            raise ValueError(
+                f"Training situations must provide a description, but situation {situation_num} "
+                f"in {curriculum_path} does not."
+            )
+
+        integer_label, string_label = label_from_object_language_tuple(language_tuple, situation_num)
+        feature_yamls = sorted(situation_dir.glob("feature*"))
+        if len(feature_yamls) == 1:
+            with open(situation_dir / feature_yamls[0], encoding="utf-8") as feature_yaml_in:
+                features = yaml.safe_load(feature_yaml_in)
+
+            num_obj = len(features["objects"])
+            if num_obj == 0:
+                continue
+
+            # Sometimes the object detection/stroke extraction process picks up on multiple objects.
+            # When that happens, we want to combine them into one mega-example.
+            # In this mega-example, each distinct object is treated as its own connected component
+            # in a larger graph.
+            #
+            # First we'll grab the coordinates since that's the cleaner part.
+            # Concatenate together the coords for each connected component to get a single
+            # (n_strokes_overall, 2, n_control_points) coordinates array
+            coords = np.concatenate(
+                [
+                    np.asarray(object_["stroke_graph"]["strokes_normalized_coordinates"])
+                    for object_ in features["objects"]
+                ],
+                axis=0
+            )
+
+            # Now create together the big adjacency matrix
+            n_nodes_overall = coords.shape[0]
+            # jac: the above should do the same thing but I'm asserting to make sure it does.
+            # for clarity's sake, I should delete this once I verify it works.
+            assert n_nodes_overall == sum(
+                len(object_["stroke_graph"]["adjacency_matrix"]) for object_ in features["objects"]
+            )
+            adj = np.zeros([n_nodes_overall, n_nodes_overall])
+
+            nodes_seen = 0
+            for idx, object_ in enumerate(features["objects"]):
+                # Set the appropriate submatrix of adj equal to this object's adjacency matrix.
+                n_nodes = len(object_["stroke_graph"]["adjacency_matrix"])
+                adj[
+                    nodes_seen:nodes_seen + n_nodes,
+                    nodes_seen:nodes_seen + n_nodes,
+                ] = np.asarray(object_["stroke_graph"]["adjacency_matrix"])
+
+            curriculum_coords.append(coords)
+            curriculum_adjs.append(adj)
+            curriculum_labels.append(integer_label)
+
+        elif train_or_test == "train":
+            raise ValueError(f"Situation number {situation_num} has more than one feature file.")
+        # jac: Need to deal with this when we deal with decode for actions, which will probably
+        # require changing the return type here somehow... or other drastic changes.
+        else:
+            raise NotImplementedError(
+                f"Don't know how to do decode when situation number {situation_num} has more than "
+                f"one feature file."
+            )
+
+    return curriculum_coords, curriculum_adjs, curriculum_labels
+
+
+def label_from_object_language_tuple(language_tuple: Tuple[str, ...], situation_num: int) -> Tuple[int, str]:
+    if len(language_tuple) > 2:
+        raise ValueError(f"Don't know how to deal with long object name: {language_tuple}")
+    elif not language_tuple:
+        raise ValueError(f"Can't extract label from empty object name: {language_tuple}")
+    elif len(language_tuple) == 1:
+        logging.warning(
+            "Language tuple for object situation number %d is shorter than expected; this "
+            "might cause problems.",
+            situation_num,
+        )
+
+    string_label = language_tuple[-1]
+    if string_label not in string_labels:
+        raise ValueError(f"Unrecognized label: {string_label}")
+    return string_labels.index(string_label), string_label
 
 
 def main():
