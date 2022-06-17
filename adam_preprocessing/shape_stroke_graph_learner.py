@@ -140,6 +140,7 @@ def main():
             Variable(label),
         )
         optimizer.zero_grad()
+        # output should have shape (N_samples, n_classes)
         output = model(train_g, train_h, train_e)
         train_loss = criterion(nn.LogSoftmax()(output), train_target)
         losses.append(train_loss.item())
