@@ -47,10 +47,13 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     "Processing data from image to stroke graph"
+    logging.info("Loading training data...")
     train_coords, train_adj, train_label = get_stroke_data(
         args.train_curriculum_path, "train"
     )
+    logging.info("Loading test data...")
     test_coords, test_adj, test_label = get_stroke_data(args.eval_curriculum_path, "test")
+    logging.info("Done loading data.")
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     # data = from_pickle('./data.pkl')
     # train_coords = data['train_coords']
@@ -60,6 +63,7 @@ def main():
     # test_adj = data['test_adj']
     # test_label = data['test_label']
     "Converting stroke graph data for graph node/edge. "
+    logging.info("Converting data to new format...")
     nodes, edges, num_nodes = load_data(train_coords, train_adj)
     train_node_features = np.zeros([len(train_coords), num_nodes, 100])
     train_adjacency_matrices = np.zeros([len(train_coords), num_nodes, num_nodes])
@@ -114,7 +118,9 @@ def main():
         torch.tensor(test_adjacency_matrices).type(torch.FloatTensor).to(device)
     )
     test_label = torch.tensor(np.array(test_label)).type(torch.LongTensor).to(device)
+    logging.info("Done converting data format.")
     "MPNN model"
+    logging.info("Optimizing model...")
     model_base = MPNN(
         [100, 100], hidden_state_size=100, message_size=20, n_layers=1, l_target=50, type='regression'
         )
