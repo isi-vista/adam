@@ -1,5 +1,6 @@
 # copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
 from argparse import ArgumentParser
+from copy import deepcopy
 from pathlib import Path
 
 import torch
@@ -19,6 +20,15 @@ from MPNN import MPNN, MPNN_Linear
 from utils import accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
 
 
+def update_features_yaml(features_yaml, *, predicted_object: str):
+    # jac: not terribly efficient to do a full deepcopy, but who cares, this should be a small dict
+    # anyway... also this is probably much less expensive than the GNN inference itself.
+    result = deepcopy(features_yaml)
+    for object_ in result["objects"]:
+        object_["stroke_graph"]["concept_name"] = predicted_object
+    return result
+
+
 def main():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -30,6 +40,13 @@ def main():
         "curriculum_path",
         type=Path,
         help="Directory we should read the curriculum from.",
+    )
+    parser.add_argument(
+        "--save_outputs_to",
+        type=Path,
+        default=None,
+        help="Directory where we should write the feature outputs to. Outputs are structured as if "
+        "the output path is a curriculum directory.",
     )
     args = parser.parse_args()
 
@@ -88,18 +105,61 @@ def main():
     best_acc = 0
 
     "Inference"
+    outputs = nn.LogSoftmax()(
+        model(test_adjacency_matrices, test_node_features, test_edge_features)
+    )
     test_acc = Variable(
         evaluation(
-            (
-                nn.LogSoftmax()(
-                    model(test_adjacency_matrices, test_node_features, test_edge_features)
-                )
-            ).data,
+            outputs.data,
             test_label.data,
             topk=(1,),
         )[0]
     )
     print("test acc :{}".format(test_acc))
+
+    if args.save_outputs_to:
+        # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
+        with open(
+            args.curriculum_path / "info.yaml", encoding="utf=8"
+        ) as curriculum_info_yaml:
+            curriculum_params = yaml.safe_load(curriculum_info_yaml)
+
+        assert outputs.size(0) == curriculum_params["num_dirs"]
+
+        predicted_label_ints = outputs.argmax(dim=1)
+        for situation_num in range(curriculum_params["num_dirs"]):
+            input_situation_dir = args.curriculum_path / f"situation_{situation_num}"
+            feature_yamls = sorted(input_situation_dir.glob("feature*"))
+            if len(feature_yamls) == 1:
+                # Load features, update them, then save
+                with open(
+                    input_situation_dir / feature_yamls[0], encoding="utf-8"
+                ) as feature_yaml_in:
+                    features = yaml.safe_load(feature_yaml_in)
+
+                updated_features = update_features_yaml(
+                    features,
+                    predicted_object=STRING_OBJECT_LABELS[
+                        predicted_label_ints[situation_num]
+                    ],
+                )
+
+                output_situation_dir = args.save_outputs_to / f"situation_{situation_num}"
+                output_situation_dir.mkdir(exist_ok=True, parents=True)
+                with open(
+                    output_situation_dir / feature_yamls[0].name,
+                    mode="w",
+                    encoding="utf-8",
+                ) as feature_yaml_out:
+                    yaml.safe_dump(updated_features, feature_yaml_out)
+
+            # jac: Need to deal with this when we deal with decode for actions, which will probably
+            # require changing the return type here somehow... or other drastic changes.
+            else:
+                raise NotImplementedError(
+                    f"Don't know how to do decode when situation number {situation_num} has more than "
+                    f"one feature file."
+                )
 
 
 if __name__ == "__main__":
