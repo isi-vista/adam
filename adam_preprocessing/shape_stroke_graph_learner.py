@@ -59,6 +59,13 @@ if __name__ == "__main__":
         type=Path,
         help="Where to save the model state dict.",
     )
+    parser.add_argument(
+        "--num_train_steps",
+        type=int,
+        default=1000,
+        help="Number of steps or epochs to train the model for. (In this script steps = epochs "
+        "because our batch size is 'all of the input data'.)",
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     "Processing data from image to stroke graph"
@@ -168,7 +175,7 @@ if __name__ == "__main__":
     best_acc = 0
 
     "Training"
-    for i in range(1000):
+    for i in range(args.num_train_steps):
         train_g, train_h, train_e, train_target = Variable(g), Variable(h), Variable(e), Variable(
             label)
         optimizer.zero_grad()
