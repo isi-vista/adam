@@ -104,9 +104,14 @@ def get_stroke_data(base_path_: str, phase_: str) -> Tuple[Sequence[np.ndarray],
 def main():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
-        "curriculum_path",
+        "train_curriculum_path",
         type=Path,
-        help="Where to read the curriculum from and write the outputs to.",
+        help="Train curriculum. Where to read the curriculum from and write the outputs to.",
+    )
+    parser.add_argument(
+        "eval_curriculum_path",
+        type=Path,
+        help="Test curriculum. Where to read the curriculum from and write the outputs to.",
     )
     parser.add_argument(
         "save_model_to",
@@ -123,9 +128,10 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     "Processing data from image to stroke graph"
-    base_path = args.curriculum_path
-    train_coords, train_adj, train_label = get_stroke_data(base_path, "train")
-    test_coords, test_adj, test_label = get_stroke_data(base_path, "test")
+    train_coords, train_adj, train_label = get_stroke_data(
+        args.train_curriculum_path, "train"
+    )
+    test_coords, test_adj, test_label = get_stroke_data(args.eval_curriculum_path, "test")
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     # data = from_pickle('./data.pkl')
     # train_coords = data['train_coords']
