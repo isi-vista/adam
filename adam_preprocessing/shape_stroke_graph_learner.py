@@ -55,8 +55,7 @@ if __name__ == "__main__":
         help="Where to read the curriculum from and write the outputs to.",
     )
     args = parser.parse_args()
-
-
+    logging.basicConfig(level=logging.INFO)
     "Processing data from image to stroke graph"
     base_path = args.curriculum_path
     for i in phase:
@@ -178,5 +177,10 @@ if __name__ == "__main__":
             best_acc = test_acc
         train_loss.backward()
         optimizer.step()
-        print("{}, loss: {:.4e}, acc: {}, test acc :{}".format(i, train_loss.item(), acc, test_acc))
-    print("Best test acc is {}".format(best_acc))
+        logging.info(
+            "{}, loss: {:.4e}, acc: {}, test acc :{}".format(
+                i, train_loss.item(), acc, test_acc
+            ),
+            flush=True,
+        )
+    logging.info("Best test acc is {}".format(best_acc))
