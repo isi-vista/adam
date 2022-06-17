@@ -71,6 +71,7 @@ def main():
     """
     Converting stroke graph data for graph node/edge.
     """
+    logging.info("Converting data...")
     nodes_t, edges_t, num_nodes_t = load_data(test_coords, test_adj)
     test_node_features = np.zeros([len(test_coords), num_nodes_t, 100])
     test_adjacency_matrices = np.zeros([len(test_coords), num_nodes_t, num_nodes_t])
@@ -93,14 +94,18 @@ def main():
         torch.tensor(test_adjacency_matrices).type(torch.FloatTensor).to(device)
     )
     test_label = torch.tensor(np.array(test_label)).type(torch.LongTensor).to(device)
+    logging.info("Data reformatted.")
 
     "MPNN model"
 
+    logging.info("Loading model...")
     model_base = MPNN([100, 100], hidden_state_size=100,
                       message_size=20, n_layers=1, l_target=50,
                       type='regression')
     model = LinearModel(model_base, 50, len(STRING_OBJECT_LABELS)).to(device)
     model.load_state_dict(torch.load(args.model_path))
+    logging.info("Model loaded.")
+    logging.info("Predicting...")
     evaluation = accuracy
     model.eval()
     losses = []
@@ -118,8 +123,10 @@ def main():
         )[0]
     )
     logging.info("test acc :{}".format(test_acc))
+    logging.info("Done predicting.")
 
     if args.save_outputs_to:
+        logging.info("Saving outputs to %s...", args.save_outputs_to)
         # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
         with open(
             args.curriculum_path / "info.yaml", encoding="utf=8"
@@ -129,6 +136,7 @@ def main():
         assert outputs.size(0) == curriculum_params["num_dirs"]
 
         predicted_label_ints = outputs.argmax(dim=1)
+        n_saved = 0
         for situation_num in range(curriculum_params["num_dirs"]):
             input_situation_dir = args.curriculum_path / f"situation_{situation_num}"
             feature_yamls = sorted(input_situation_dir.glob("feature*"))
@@ -162,6 +170,9 @@ def main():
                     f"Don't know how to do decode when situation number {situation_num} has more than "
                     f"one feature file."
                 )
+            n_saved += 1
+        logging.info("Saved %d outputs to %s.", n_saved, args.save_outputs_to)
+        logging.info("Done saving outputs to %s.", args.save_outputs_to)
 
 
 if __name__ == "__main__":
