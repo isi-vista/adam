@@ -16,33 +16,7 @@ import matplotlib.pyplot as plt
 import glob
 import pickle as pickle
 from MPNN import MPNN, MPNN_Linear
-from utils import accuracy, LinearModel, load_data
-from shape_stroke_extraction import Stroke_Extraction
-
-label_name = [
-    'triangleblock',
-    'banana',
-    'book',
-    'ball',
-    'toytruck',
-    'floor',
-    'sofa',
-    'orange',
-    'window',
-    'table',
-    'cubeblock',
-    'toysedan',
-    'box',
-    'cup',
-    'sphereblock',
-    'chair',
-    'desk',
-    'apple',
-    'paper'
-
-]
-
-phase = ['test']
+from utils import accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
 
 
 def main():
@@ -63,64 +37,9 @@ def main():
         raise ValueError(f"Cannot load model from nonexistent file {args.model_path}.")
 
     "Processing data from image to stroke graph"
-    base_path = args.curriculum_path
-    for i in phase:
-        if i == 'train':
-            num_sample = 10
-            train_coords = []
-            train_adj = []
-            train_label = []
-        else:
-            num_sample = 5
-            test_coords = []
-            test_adj = []
-            test_label = []
-            test_camera = []
-        for l, j in enumerate(label_name):
-            for p in range(3):
-                for q in range(num_sample):
-
-                    "If infomation saved, load it"
-                    if not os.path.exists(
-                        os.path.join(base_path, 'feature', 'feature_{}_{}_{}_{}.yaml'.format(i, j, p, q))):
-                        try:
-                            Extractor = Stroke_Extraction(obj_type="{}_{}".format(i, j), obj_id=q, obj_view=p,
-                                                          base_path=base_path, vis=True, save_output=True)
-                            out = Extractor.get_strokes()
-                        except:
-                            print("no strokes")
-                            out = []
-                    else:
-                        with open(os.path.join(base_path, 'feature', 'feature_{}_{}_{}_{}.yaml'.format(i, j, p, q)),
-                                  'r') as stream:
-                            out = yaml.safe_load(stream)
-                    num_obj = len(out)
-                    if num_obj == 0:
-                        continue
-                    coords = []
-                    adj = []
-                    count = [0]
-
-                    "Merge multiple stroke graph if only one object in the image"
-
-                    for ii in range(num_obj):
-                        coords.append(out[ii]['stroke_graph']['strokes_normalized_coordinates'])
-                        adj.append(out[ii]['stroke_graph']['adjacency_matrix'])
-                        count.append(len(out[ii]['stroke_graph']['adjacency_matrix']) + count[-1])
-                    coords = np.asarray(coords)
-                    coords = np.concatenate(coords, 0)
-                    real_adj = np.zeros([count[-1], count[-1]])
-                    for iii in range(num_obj):
-                        real_adj[count[iii]:count[iii + 1], count[iii]:count[iii + 1]] = adj[iii]
-                    if i == 'train':
-                        train_coords.append(coords)
-                        train_adj.append(real_adj)
-                        train_label.append(l)
-                    else:
-                        test_coords.append(coords)
-                        test_adj.append(real_adj)
-                        test_label.append(l)
-                        test_camera.append(p)
+    print("Loading test data...")
+    test_coords, test_adj, test_label = get_stroke_data(args.curriculum_path, "test")
+    print("Done loading data.")
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     # data = from_pickle('./data.pkl')
@@ -161,7 +80,7 @@ def main():
     model_base = MPNN([100, 100], hidden_state_size=100,
                       message_size=20, n_layers=1, l_target=50,
                       type='regression')
-    model = LinearModel(model_base, 50, len(label_name)).to(device)
+    model = LinearModel(model_base, 50, len(STRING_OBJECT_LABELS)).to(device)
     model.load_state_dict(torch.load(args.model_path))
     evaluation = accuracy
     model.eval()
