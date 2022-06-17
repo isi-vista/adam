@@ -54,6 +54,11 @@ if __name__ == "__main__":
         type=Path,
         help="Where to read the curriculum from and write the outputs to.",
     )
+    parser.add_argument(
+        "save_model_to",
+        type=Path,
+        help="Where to save the model state dict.",
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     "Processing data from image to stroke graph"
@@ -184,3 +189,6 @@ if __name__ == "__main__":
             flush=True,
         )
     logging.info("Best test acc is {}".format(best_acc))
+    logging.info(f"Saving model state dict to {args.save_model_to}")
+    torch.save(model.state_dict(), args.save_model_to)
+    logging.info("Model saved.")
