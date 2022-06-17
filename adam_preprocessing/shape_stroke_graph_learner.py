@@ -142,13 +142,13 @@ def main():
         optimizer.zero_grad()
         # output should have shape (N_samples, n_classes)
         output = model(train_g, train_h, train_e)
-        train_loss = criterion(nn.LogSoftmax()(output), train_target)
+        train_loss = criterion(nn.LogSoftmax(dim=1)(output), train_target)
         losses.append(train_loss.item())
         acc = Variable(evaluation(output.data, train_target.data, topk=(1,))[0])
         test_acc = Variable(
             evaluation(
                 (
-                    nn.LogSoftmax()(
+                    nn.LogSoftmax(dim=1)(
                         model(
                             test_adjacency_matrices,
                             test_node_features,
