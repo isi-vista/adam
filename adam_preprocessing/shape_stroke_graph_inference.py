@@ -1,6 +1,7 @@
 # copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
 from argparse import ArgumentParser
 from copy import deepcopy
+import logging
 from pathlib import Path
 
 import torch
@@ -49,14 +50,15 @@ def main():
         "the output path is a curriculum directory.",
     )
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
 
     if not args.model_path.is_file():
         raise ValueError(f"Cannot load model from nonexistent file {args.model_path}.")
 
     "Processing data from image to stroke graph"
-    print("Loading test data...")
+    logging.info("Loading test data...")
     test_coords, test_adj, test_label = get_stroke_data(args.curriculum_path, "test")
-    print("Done loading data.")
+    logging.info("Done loading data.")
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     # data = from_pickle('./data.pkl')
@@ -115,7 +117,7 @@ def main():
             topk=(1,),
         )[0]
     )
-    print("test acc :{}".format(test_acc))
+    logging.info("test acc :{}".format(test_acc))
 
     if args.save_outputs_to:
         # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
