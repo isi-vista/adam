@@ -14,6 +14,9 @@ class GeonAxis:
     def copy(self) -> "GeonAxis":
         return evolve(self)
 
+    def dot_label(self) -> str:
+        return f"axis:{self.debug_name}"
+
     def __repr__(self) -> str:
         return (
             f"{self.debug_name}"

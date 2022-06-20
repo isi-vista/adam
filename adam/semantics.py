@@ -85,6 +85,9 @@ class SemanticNode(Protocol):
     confidence: float
     original_node_id: Optional[str] = None
 
+    def dot_label(self) -> str:
+        return f"Semantic Node: {self.concept.debug_string}"
+
     @staticmethod
     def for_concepts_and_arguments(
         concept: Concept,
@@ -134,6 +137,9 @@ class ObjectSemanticNode(SemanticNode):
     original_node_id: Optional[str] = attrib(
         default=None, validator=optional(instance_of(str))
     )
+
+    def dot_label(self) -> str:
+        return self.concept.debug_string
 
     # def __attrs_post_init__(self) -> None:
     #     for template in self.templates:

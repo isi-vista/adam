@@ -59,6 +59,10 @@ class ObjectPerception(HasAxes, MaybeHasGeon):
                 "its axes must be specified explicitly"
             )
 
+    def dot_label(self) -> str:
+        # object perceptions have no content, so they are blank nodes
+        return self.debug_handle
+
     def __repr__(self) -> str:
         return self.debug_handle
 
