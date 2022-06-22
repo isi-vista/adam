@@ -42,6 +42,23 @@ ACTION_DEBUG_NAME_TO_NAME = {
     "writing": "write",
 }
 
+ACTION_TO_TWO_CONCEPT_AFFORDANCE = {
+    "take": "person take box",
+    "sit": "person sit sofa",
+    "eat": "person eat apple",
+    "put": "person put box",
+    "open": "person open box",
+    "drink": "person drink water",
+    "close": "person close box",
+    "stack": "person stack box",
+    "throw": "person throw box",
+    "shake": "person shake apple",
+    "give": "person give box",
+    "spin": "person spin apple",
+    "spill": "person spill water",
+    "shove": "person shove box",
+}
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -53,11 +70,15 @@ def main():
     parser.add_argument("--annotation-files", type=Path, nargs="*", help="The annotation files to combine as object lookup", default=list())
     parser.add_argument("--output-dir", type=Path, help="The curriculum output directory", required=True)
     parser.add_argument("--language-person-only", action="store_true", help="Flag to build language for the scene which is only in the form 'a person X' where X is the action.")
+    parser.add_argument("--language-dual-concept", action="store_true", help="Flag to build test affordance curriculum with two concepts.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
     output_dir: Path = args.output_dir
+
+    if not args.language_person_only and args.language_dual_concept:
+        raise RuntimeError("Can't combine slot fill generation with dual concept templates.")
 
     objects_to_append = dict()
     for file in args.annotation_files:
@@ -195,9 +216,13 @@ def main():
                     yaml.dump(action_features, action_feature_out)
 
                 # Build output language
-                language = f"a person {ACTION_DEBUG_NAME_TO_NAME.get(action_debug_name, action_debug_name)}"
-                if not args.language_person_only and annotated_objects:
-                    language += f" a {annotated_objects[0]}"
+                action_name = ACTION_DEBUG_NAME_TO_NAME.get(action_debug_name, action_debug_name)
+                default_language = language = f"a person {action_name}"
+                if args.language_dual_concept:
+                    language = ACTION_TO_TWO_CONCEPT_AFFORDANCE.get(action_name, default_language)
+                else:
+                    if not args.language_person_only and annotated_objects:
+                        language = f"{default_language} a {annotated_objects[0]}"
 
                 # Description file
                 with open(output_situation / "description.yaml", "w", encoding="utf-8") as description_file:
