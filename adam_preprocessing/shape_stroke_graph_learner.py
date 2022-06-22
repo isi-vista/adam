@@ -44,7 +44,7 @@ phase = ['train', 'test']
 
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     "Processing data from image to stroke graph"
     base_path = '/Users/cs/Desktop/Research/darpa_3d/adam_single_objv0/'
