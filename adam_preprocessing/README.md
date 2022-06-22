@@ -4,7 +4,7 @@ This is the code for ADAM's visual preprocessing integrations. For the moment we
 [asu_gnn]: https://github.com/ASU-APG/adam-stage/tree/main/processing
 
 # Setup
-1. Create and activate a Python 3.10 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam python=3.7`
+1. Create and activate a Python 3.10 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam-gnn python=3.10`
 2. Install PyTorch and related dependencies: `conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch`
 3. Install other dependencies: `pip install -r requirements.txt`
 
