@@ -151,5 +151,3 @@ if __name__ == '__main__':
     test_acc = Variable(
         evaluation((nn.LogSoftmax()(model(test_g, test_h, test_e))).data, test_label.data, topk=(1,))[0])
     print("test acc :{}".format(test_acc))
-
-
