@@ -16,6 +16,15 @@ Assuming you want to run stroke extraction, be sure to install the following two
 - Statistics and Machine Learning Toolbox
 
 # Running
+## Stroke extraction
+To run stroke extraction on the apples and mugs in the M5 objects with mugs curriculum, run:
+
+```bash
+python adam_preprocess/shape_stroke_graph_learner.py \
+  "/nas/gaia/adam/phase3_data/adam_single_objv0_with_mugs" \
+  --object_types test_small_single_{apple,mug}
+```
+
 ## Training
 To train the model on say the M5 objects with mugs curriculum, evaluating on the corresponding eval curriculum:
 
