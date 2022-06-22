@@ -2,7 +2,7 @@
 The Message-Passing (Graph) Neural Network (MPNN) implementation used for the stroke-based object
 learner.
 
-Copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
+Copied from Sheng Cheng's code at https://github.com/ASU-APG/adam-stage/tree/main/processing
 """
 import torch
 import torch.nn as nn
