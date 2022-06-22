@@ -247,6 +247,5 @@ def load_data(data, adj):
                 distance_map = distance_map.flatten()
 
                 e[(ee[0][jj], ee[1][jj])] = distance_map
-                # e[(ee[0][jj], ee[1][jj])] = np.concatenate([distance_map, angle])
         edge_info.append(e)
     return node_info, edge_info, num_nodes
