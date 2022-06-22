@@ -4,6 +4,7 @@ Code for doing stroke extraction on a curriculum.
 Based on original code written by Sheng Cheng, found at
 https://github.com/ASU-APG/adam-stage/tree/main/processing
 """
+from argparse import ArgumentParser
 import logging
 import cv2
 import numpy as np
@@ -355,15 +356,28 @@ class Stroke_Extraction:
 
 
 def main():
-    for i in range(3):
-        for j in range(5):
-            S = Stroke_Extraction(
-                base_path="/home/scheng53/Desktop/darpa_3d/adam_single_objv0",
-                obj_type="test_small_single_mug",
-                obj_view=str(i),
-                obj_id=str(j),
-            )
-            out = S.get_strokes()
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "base_path",
+        help="The raw curriculum path to process.",
+    )
+    parser.add_argument(
+        "--object_types",
+        help="The object types to process.",
+        nargs="+",
+        default=("test_small_single_mug",),
+    )
+    args = parser.parse_args()
+    for object_type in args.object_types:
+        for i in range(3):
+            for j in range(5):
+                S = Stroke_Extraction(
+                    base_path=args.base_path,
+                    obj_type=object_type,
+                    obj_view=str(i),
+                    obj_id=str(j),
+                )
+                out = S.get_strokes()
     print("out")
 
 
