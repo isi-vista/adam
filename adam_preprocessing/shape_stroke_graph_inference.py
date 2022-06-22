@@ -62,13 +62,6 @@ def main():
     logging.info("Done loading data.")
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    # data = from_pickle('./data.pkl')
-    # train_coords = data['train_coords']
-    # train_adj = data['train_adj']
-    # train_label = data['train_label']
-    # test_coords = data['test_coords']
-    # test_adj = data['test_adj']
-    # test_label = data['test_label']
     """
     Converting stroke graph data for graph node/edge.
     """
