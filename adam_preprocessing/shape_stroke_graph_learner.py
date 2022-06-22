@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import glob
 import pickle as pickle
 from MPNN import MPNN, MPNN_Linear
-from utils import *
+from utils import accuracy, LinearModel, load_data
 from shape_stroke_extraction import Stroke_Extraction
 
 label_name = [
