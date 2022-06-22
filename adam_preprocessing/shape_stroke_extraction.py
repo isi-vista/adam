@@ -1,5 +1,9 @@
-# copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
-# code by Sheng Cheng
+"""
+Code for doing stroke extraction on a curriculum.
+
+Based on original code written by Sheng Cheng, found at
+https://github.com/ASU-APG/adam-stage/tree/main/processing
+"""
 import logging
 import cv2
 import numpy as np
