@@ -136,6 +136,7 @@ class Stroke_Extraction:
 
     def __init__(
         self,
+        *,
         obj_type="outputs",
         obj_id="1",
         obj_view="1",
