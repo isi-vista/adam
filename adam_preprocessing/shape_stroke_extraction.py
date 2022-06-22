@@ -8,7 +8,8 @@ from argparse import ArgumentParser
 import logging
 import cv2
 import numpy as np
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,8 @@ import os
 from scipy.sparse.csgraph import connected_components
 from sklearn.metrics import pairwise_distances
 import networkx as nx
+
+from utils import label_from_object_language_tuple
 
 
 def vectorized_bspline_coeff(vi, vs):
@@ -526,27 +529,54 @@ class Stroke_Extraction:
 def main():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
-        "base_path",
-        help="The raw curriculum path to process.",
+        "curriculum_path",
+        type=Path,
+        help="The curriculum path to process.",
     )
     parser.add_argument(
-        "--object_types",
-        help="The object types to process.",
-        nargs="+",
-        default=("test_small_single_mug",),
+        "output_dir",
+        type=Path,
+        help="The output curriculum dir.",
     )
     args = parser.parse_args()
+
     logging.basicConfig(level=logging.INFO)
-    for object_type in args.object_types:
-        for i in range(3):
-            for j in range(5):
-                S = Stroke_Extraction.from_m5_objects_curriculum_base_path(
-                    base_path=args.base_path,
-                    obj_type=object_type,
-                    obj_view=str(i),
-                    obj_id=str(j),
-                )
-                out = S.get_strokes()
+
+    # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
+    with open(
+        args.curriculum_path / "info.yaml", encoding="utf=8"
+    ) as curriculum_info_yaml:
+        curriculum_params = yaml.safe_load(curriculum_info_yaml)
+    logger.info("Input curriculum has %d dirs/situations.", curriculum_params["num_dirs"])
+
+    for situation_num in range(curriculum_params["num_dirs"]):
+        situation_dir = args.curriculum_path / f"situation_{situation_num}"
+        language_tuple: Tuple[str, ...] = tuple()
+        if (situation_dir / "description.yaml").exists():
+            with open(
+                situation_dir / "description.yaml", encoding="utf-8"
+            ) as situation_description_file:
+                situation_description = yaml.safe_load(situation_description_file)
+            language_tuple = tuple(situation_description["language"].split(" "))
+        _integer_label, string_label = label_from_object_language_tuple(
+            language_tuple, situation_num
+        )
+        output_situation_dir = args.output_dir / f"situation_{situation_num}"
+        output_situation_dir.mkdir(exist_ok=True, parents=True)
+        S = Stroke_Extraction(
+            segmentation_img_path=str(situation_dir / "semantic_0.png"),
+            rgb_img_path=str(situation_dir / "rgb_0.png"),
+            stroke_img_save_path=str(output_situation_dir / "stroke_0.png"),
+            stroke_graph_img_save_path=str(output_situation_dir / "stroke_graph_0.png"),
+            features_save_path=str(output_situation_dir / "feature.yaml"),
+            obj_type=string_label,
+            # TODO create issue: in the reorganized curriculum format, we don't store the
+            #  information about the object view/ID in an authoritative global-per-sample way such
+            #  that we could retrieve it here in the stroke extraction code.
+            obj_view=None,
+            obj_id=None,
+        )
+        S.get_strokes()
     print("out")
 
 

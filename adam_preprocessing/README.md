@@ -17,12 +17,22 @@ Assuming you want to run stroke extraction, be sure to install the following two
 
 # Running
 ## Stroke extraction
-To run stroke extraction on the apples and mugs in the M5 objects with mugs curriculum, run:
+To run stroke extraction on the M5 objects with mugs train curriculum, run:
 
 ```bash
 python adam_preprocess/shape_stroke_graph_learner.py \
-  "/nas/gaia/adam/phase3_data/adam_single_objv0_with_mugs" \
-  --object_types test_small_single_{apple,mug}
+  "data/curriculum/train/m5_objects_v0_with_mugs" \
+  "path/to/outputs"
+```
+
+The outputs will be saved in the usual curriculum format.
+
+Or, using the Slurm script:
+
+```bash
+sbatch extract_strokes.sh \
+  "data/curriculum/train/m5_objects_v0_with_mugs" \
+  "path/to/outputs"
 ```
 
 ## Training
