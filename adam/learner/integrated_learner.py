@@ -883,10 +883,10 @@ class IntegratedTemplateLearner(
         for node in current_learner_state.perception_semantic_alignment.semantic_nodes:
             if not isinstance(node, AffordanceSemanticNode):
                 continue
-
-            self.object_learner.process_affordance(
-                node.slot_fillings[SLOT1].concept, node
-            )
+            if node.slot_fillings:
+                self.object_learner.process_affordance(
+                    node.slot_fillings[SLOT1].concept, node
+                )
 
 
 @attrs

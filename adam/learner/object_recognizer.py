@@ -467,12 +467,6 @@ class ObjectRecognizer:
         This is useful as a pre-processing step
         before prepositional and verbal learning experiments.
         """
-        if (
-            language_perception_semantic_alignment.perception_semantic_alignment.semantic_nodes
-        ):
-            raise RuntimeError(
-                "We assume ObjectRecognizer is run first, with no previous alignments"
-            )
 
         (
             post_match_perception_semantic_alignment,
