@@ -140,7 +140,7 @@ class Stroke_Extraction:
         obj_type: str = "outputs",
         obj_id: str = "1",
         obj_view: str = "1",
-        base_path: str = "/Users/cs/Desktop/Research/darpa_3d/curriculum_basic_v1_1/curriculum/test/phase3-m4-core-eval/generation_yaml/",
+        base_path: str,
         vis: bool = True,
         save_output: bool = True,
     ):
