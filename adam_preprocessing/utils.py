@@ -235,7 +235,6 @@ def load_data(data, adj):
                 stroke2_1 = stroke2[:, :1]
                 stroke2_2 = stroke2[:, 1:]
 
-                # e[(ee[0][jj], ee[1][jj])] = angle
                 distance_map = np.square(stroke1_1).repeat(n, 1) + np.square(stroke2_1.T).repeat(n,
                                                                                                  0) - 2 * np.dot(
                     stroke1_1, stroke2_1.T)
