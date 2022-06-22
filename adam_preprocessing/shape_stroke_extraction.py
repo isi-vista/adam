@@ -82,6 +82,9 @@ def reduced_stroke(stroke, coef_inv):
 
 
 def kp2stroke(strokeinfo):
+    """
+    Given an "adjacency list" giving a stroke graph's edges, build a
+    """
     n = len(strokeinfo)
     connection = np.zeros([n, n])
     for i in range(n):
@@ -163,6 +166,17 @@ class Stroke_Extraction:
         self.save_dir = os.path.join(base_path, "feature")
 
     def stroke_extraction_from_matlab(self):
+        """
+        Get the raw stroke extraction results from Matlab using the BPL code.
+
+        Note that stroke extraction is performed on the object segmentation image, i.e. the
+        semantic_j.png file. It is *not* done on the raw RGB image.
+
+        The output is a pair [S, E] where:
+
+        - S is a k x 1 sequence of "edge paths in the image"
+        - E is a k x 2 sequence of "graph edges"
+        """
         eng = matlab.engine.start_matlab()
         s = eng.genpath("./lightspeed")
         eng.addpath(s, nargout=0)
@@ -173,6 +187,24 @@ class Stroke_Extraction:
         return out
 
     def remove_strokes(self):
+        """
+        Process Matlab stroke extraction results into labels.
+
+        In this function we:
+
+        - construct the adjacency matrix
+        - clean up the strokes, removing those with fewer than 10 key points (?)
+        - split the stroke graph into connected components
+        - determine the number of objects in the scene as the number of components
+        - label each stroke according to which object it is a part of
+
+        The outputs are stored in:
+
+        - self.num_obj
+        - self.strokes
+        - self.adj
+        - self.labels
+        """
         out = self.stroke_extraction_from_matlab()
         strokes = []
         removed_ind = []
@@ -211,6 +243,16 @@ class Stroke_Extraction:
         self.adj = adj
 
     def strokes2controlpoints(self):
+        """
+        Downsamples the known strokes to 10 points using B-splines.
+
+        Because of the processing logic in self.remove_strokes(), we know that each stroke has at
+        least 10 points such that it is possible to do this.
+
+        Outputs the downsampled strokes to self.reduced_strokes. This should be an N x 10 x 2 array,
+        where N is the number of strokes. The last dimension is the x vs y coords; the middle is the
+        control point number.
+        """
         reduced_strokes = []
         coef_inv = get_bsplines_matrix(10)
         for i in range(len(self.strokes)):
@@ -218,6 +260,11 @@ class Stroke_Extraction:
         self.reduced_strokes = reduced_strokes = np.array(reduced_strokes)
 
     def plot_strokes(self):
+        """
+        Create stroke image in self.save_dir.
+
+        The image is named `stroke_{object_type}_{object_view}_{object_id}.png`.
+        """
         stroke_colors = []
         for j in range(self.num_obj):
             reduced_obj = self.reduced_strokes[np.where(self.label == j)[0]]
@@ -241,6 +288,11 @@ class Stroke_Extraction:
         self.stroke_colors = stroke_colors
 
     def plot_graph(self):
+        """
+        Create stroke *graph* image in self.save_dir.
+
+        The image is named `stroke_graph_{object_type}_{object_view}_{object_id}.png`.
+        """
         for i in range(self.num_obj):
             plt.figure(i)
             G = nx.Graph()
@@ -271,6 +323,12 @@ class Stroke_Extraction:
         plt.close()
 
     def get_colors(self):
+        """
+        Collect the average color for each object in the image together with the object "centers."
+
+        This uses the object segmentation image to identify which pixels in the RGB image "belong
+        to" each object. This segmentation image file is usually named semantic_{stuff}.png
+        """
         img_seg = cv2.imread(self.path)
         img_seg = cv2.cvtColor(img_seg, cv2.COLOR_BGR2GRAY)
         obj_area = np.where(img_seg != 0)
@@ -286,6 +344,14 @@ class Stroke_Extraction:
         self.colors = colors
 
     def get_strokes(self):
+        """
+        Extract strokes from the image at self.path.
+
+        This performs stroke extraction as well as reformatting the outputs for use in ADAM.
+
+        This writes to `feature_{object_type}_{object_view}_{object_id}.yaml` if self.save_output is
+        true.
+        """
         self.remove_strokes()
         self.strokes2controlpoints()
         self.get_colors()
