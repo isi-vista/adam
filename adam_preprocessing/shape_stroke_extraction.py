@@ -3,6 +3,7 @@
 import logging
 import cv2
 import numpy as np
+
 try:
     import matlab
 except ImportError:
@@ -10,6 +11,7 @@ except ImportError:
     matlab = object()
 import matplotlib.pyplot as plt
 import scipy.io
+
 try:
     import matlab.engine
 except ImportError:
@@ -31,11 +33,18 @@ def vectorized_bspline_coeff(vi, vs):
 
     sel2 = np.logical_and((vs >= vi + 1), (vs < vi + 2))
     C[sel2] = (1 / 6) * (
-            -3 * np.power(vs[sel2] - vi[sel2] - 1, 3) + 3 * np.power(vs[sel2] - vi[sel2] - 1, 2) + 3 * (
-            vs[sel2] - vi[sel2] - 1) + 1)
+        -3 * np.power(vs[sel2] - vi[sel2] - 1, 3)
+        + 3 * np.power(vs[sel2] - vi[sel2] - 1, 2)
+        + 3 * (vs[sel2] - vi[sel2] - 1)
+        + 1
+    )
 
     sel3 = np.logical_and((vs >= vi + 2), (vs < vi + 3))
-    C[sel3] = (1 / 6) * (3 * np.power(vs[sel3] - vi[sel3] - 2, 3) - 6 * np.power(vs[sel3] - vi[sel3] - 2, 2) + 4)
+    C[sel3] = (1 / 6) * (
+        3 * np.power(vs[sel3] - vi[sel3] - 2, 3)
+        - 6 * np.power(vs[sel3] - vi[sel3] - 2, 2)
+        + 4
+    )
 
     sel4 = np.logical_and((vs >= vi + 3), (vs < vi + 4))
     C[sel4] = (1 / 6) * np.power(1 - (vs[sel4] - vi[sel4] - 3), 3)
@@ -82,7 +91,7 @@ def kp2stroke(strokeinfo):
     return connection
 
 
-class Stroke_Extraction():
+class Stroke_Extraction:
     """
     obj_type: object name + train/test
     obj_id: the id of the object
@@ -120,23 +129,36 @@ class Stroke_Extraction():
 
     """
 
-    def __init__(self, obj_type="outputs", obj_id="1", obj_view="1",
-                 base_path='/Users/cs/Desktop/Research/darpa_3d/curriculum_basic_v1_1/curriculum/test/phase3-m4-core-eval/generation_yaml/',
-                 vis=True, save_output=True):
+    def __init__(
+        self,
+        obj_type="outputs",
+        obj_id="1",
+        obj_view="1",
+        base_path="/Users/cs/Desktop/Research/darpa_3d/curriculum_basic_v1_1/curriculum/test/phase3-m4-core-eval/generation_yaml/",
+        vis=True,
+        save_output=True,
+    ):
         self.obj_view = obj_view
         self.obj_type = obj_type
         self.obj_id = obj_id
         self.vis = vis
         self.save_output = save_output
-        self.path = os.path.join(base_path, obj_type, 'cam{}'.format(obj_view), 'semantic_{}.png'.format(obj_id))
-        rgb_path = os.path.join(base_path, obj_type, 'cam{}'.format(obj_view), 'rgb_{}.png'.format(obj_id))
+        self.path = os.path.join(
+            base_path,
+            obj_type,
+            "cam{}".format(obj_view),
+            "semantic_{}.png".format(obj_id),
+        )
+        rgb_path = os.path.join(
+            base_path, obj_type, "cam{}".format(obj_view), "rgb_{}.png".format(obj_id)
+        )
         self.img_bgr = img_bgr = cv2.imread(rgb_path)
         self.img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-        self.save_dir = os.path.join(base_path, 'feature')
+        self.save_dir = os.path.join(base_path, "feature")
 
     def stroke_extraction_from_matlab(self):
         eng = matlab.engine.start_matlab()
-        s = eng.genpath('./BPL')
+        s = eng.genpath("./BPL")
         eng.addpath(s, nargout=0)
         out = eng.ske(self.path, nargout=2)
         eng.close()
@@ -164,11 +186,13 @@ class Stroke_Extraction():
                 for j in range(i + 1, len(strokes)):
                     dis = euclidean_distances(strokes[i], strokes[j])
                     if dis.min() < 15 and reduced_labels[i] == reduced_labels[j]:
-                        adj[i, j] = 1.
-                        adj[j, i] = 1.
+                        adj[i, j] = 1.0
+                        adj[j, i] = 1.0
         self.num_obj = num_obj = n_components
-        if adj is not [[1.]] and num_obj != 1:
-            clustering = SpectralClustering(n_clusters=num_obj, affinity='precomputed').fit(adj)
+        if adj is not [[1.0]] and num_obj != 1:
+            clustering = SpectralClustering(
+                n_clusters=num_obj, affinity="precomputed"
+            ).fit(adj)
             labels_ = clustering.labels_
         elif num_obj == 1:
             labels_ = np.zeros(len(adj))
@@ -194,13 +218,17 @@ class Stroke_Extraction():
             for i in range(len(reduced_obj)):
                 p = plt.plot(reduced_obj[i][:, 1], reduced_obj[i][:, 0], linewidth=3)
                 s_c.append(p[0].get_color())
-                plt.scatter(reduced_obj[i][:, 1], reduced_obj[i][:, 0], c='r')
+                plt.scatter(reduced_obj[i][:, 1], reduced_obj[i][:, 0], c="r")
             stroke_colors.append(s_c)
             plt.gca().invert_yaxis()
-            plt.gca().set_aspect('equal', adjustable='box')
+            plt.gca().set_aspect("equal", adjustable="box")
             plt.axis("off")
         plt.savefig(
-            os.path.join(self.save_dir, 'stroke_{}_{}_{}.png'.format(self.obj_type, self.obj_view, self.obj_id)))
+            os.path.join(
+                self.save_dir,
+                "stroke_{}_{}_{}.png".format(self.obj_type, self.obj_view, self.obj_id),
+            )
+        )
         plt.close()
         self.stroke_colors = stroke_colors
 
@@ -208,7 +236,7 @@ class Stroke_Extraction():
         for i in range(self.num_obj):
             plt.figure(i)
             G = nx.Graph()
-            if self.adj is [[0.]]:
+            if self.adj is [[0.0]]:
                 G.add_node("s0")
             else:
                 ind = np.where(self.label == i)[0]
@@ -219,11 +247,19 @@ class Stroke_Extraction():
                     G.add_node("s_{}".format(int(p + 1)))
                     for q in range(p, len(adj_obj)):
                         if adj_obj[p, q] == 1:
-                            G.add_edge("s_{}".format(int(p + 1)), "s_{}".format(int(q + 1)))
+                            G.add_edge(
+                                "s_{}".format(int(p + 1)), "s_{}".format(int(q + 1))
+                            )
             plt.subplot(1, self.num_obj, i + 1)
             nx.draw(G, with_labels=True, node_color=self.stroke_colors[i])
         plt.savefig(
-            os.path.join(self.save_dir, 'stroke_graph_{}_{}_{}.png'.format(self.obj_type, self.obj_view, self.obj_id)))
+            os.path.join(
+                self.save_dir,
+                "stroke_graph_{}_{}_{}.png".format(
+                    self.obj_type, self.obj_view, self.obj_id
+                ),
+            )
+        )
         plt.close()
 
     def get_colors(self):
@@ -269,32 +305,44 @@ class Stroke_Extraction():
                     ind_ = np.where(self.label == j)[0]
                     reduced_obj_ = self.reduced_strokes[ind_]
                     m_ = reduced_obj_.mean((0, 1))
-                    distance["object" + str(j)] = (np.sqrt(((m - m_) ** 2).sum())).tolist()
+                    distance["object" + str(j)] = (
+                        np.sqrt(((m - m_) ** 2).sum())
+                    ).tolist()
             if len(distance.keys()) == 0:
                 distance = None
-            data.append(dict(
-                object_name="object" + str(i),
-                subobject_id="0",
-                viewpoint_id=self.obj_view,
-                distance=distance,
-                stroke_graph=dict(
-                    adjacency_matrix=adj_obj.tolist(),
-                    stroke_mean_x=reduced_obj.mean((0, 1)).tolist()[1],
-                    stroke_mean_y=reduced_obj.mean((0, 1)).tolist()[0],
-                    stroke_std=reduced_obj.std((0, 1, 2)).tolist(),
-                    strokes_normalized_coordinates=reduced_strokes_norm.transpose(0, 2, 1).tolist(),
-                    concept_name=self.obj_type,
-                    confidence_score=1.,
-                ),
-                color=color.tolist(),
-                texture=None,
-                sub_part=None
-            ))
+            data.append(
+                dict(
+                    object_name="object" + str(i),
+                    subobject_id="0",
+                    viewpoint_id=self.obj_view,
+                    distance=distance,
+                    stroke_graph=dict(
+                        adjacency_matrix=adj_obj.tolist(),
+                        stroke_mean_x=reduced_obj.mean((0, 1)).tolist()[1],
+                        stroke_mean_y=reduced_obj.mean((0, 1)).tolist()[0],
+                        stroke_std=reduced_obj.std((0, 1, 2)).tolist(),
+                        strokes_normalized_coordinates=reduced_strokes_norm.transpose(
+                            0, 2, 1
+                        ).tolist(),
+                        concept_name=self.obj_type,
+                        confidence_score=1.0,
+                    ),
+                    color=color.tolist(),
+                    texture=None,
+                    sub_part=None,
+                )
+            )
         self.data = data
         if self.save_output:
-            with open(os.path.join(self.save_dir,
-                                   'feature_{}_{}_{}.yaml'.format(self.obj_type, self.obj_view, self.obj_id)),
-                      'w') as file:
+            with open(
+                os.path.join(
+                    self.save_dir,
+                    "feature_{}_{}_{}.yaml".format(
+                        self.obj_type, self.obj_view, self.obj_id
+                    ),
+                ),
+                "w",
+            ) as file:
                 documents = yaml.dump(data, file)
                 file.close()
         return data
@@ -303,10 +351,15 @@ class Stroke_Extraction():
 def main():
     for i in range(3):
         for j in range(5):
-            S = Stroke_Extraction(base_path='/home/scheng53/Desktop/darpa_3d/adam_single_objv0', obj_type='test_small_single_mug', obj_view=str(i), obj_id=str(j))
+            S = Stroke_Extraction(
+                base_path="/home/scheng53/Desktop/darpa_3d/adam_single_objv0",
+                obj_type="test_small_single_mug",
+                obj_view=str(i),
+                obj_id=str(j),
+            )
             out = S.get_strokes()
     print("out")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
