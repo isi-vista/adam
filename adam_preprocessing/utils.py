@@ -177,7 +177,6 @@ class LinearModel(nn.Module):
     def forward(self, g, h, e):
         x = self.model(g, h, e)
         self.feature = x
-        # x = nn.ReLU()(x)
         x = self.linear(x)
         return x
 
