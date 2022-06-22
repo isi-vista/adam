@@ -136,20 +136,26 @@ if __name__ == "__main__":
     Converting stroke graph data for graph node/edge.
     """
     nodes_t, edges_t, num_nodes_t = load_data(test_coords, test_adj)
-    test_h = np.zeros([len(test_coords), num_nodes_t, 100])
-    test_g = np.zeros([len(test_coords), num_nodes_t, num_nodes_t])
-    test_e = np.zeros([len(test_coords), num_nodes_t, num_nodes_t, 100])
+    test_node_features = np.zeros([len(test_coords), num_nodes_t, 100])
+    test_adjacency_matrices = np.zeros([len(test_coords), num_nodes_t, num_nodes_t])
+    test_edge_features = np.zeros([len(test_coords), num_nodes_t, num_nodes_t, 100])
 
     for i in range(len(test_coords)):
         num_node = len(test_adj[i])
-        test_h[i, :num_node, :] = nodes_t[i]
-        test_g[i, :num_node, :num_node] = np.array(test_adj[i])
+        test_node_features[i, :num_node, :] = nodes_t[i]
+        test_adjacency_matrices[i, :num_node, :num_node] = np.array(test_adj[i])
         for edge in edges_t[i].keys():
-            test_e[i, edge[0], edge[1], :] = edges_t[i][edge]
-            test_e[i, edge[1], edge[0], :] = edges_t[i][edge]
-    test_h = torch.tensor(test_h).type(torch.FloatTensor).to(device)
-    test_e = torch.tensor(test_e).type(torch.FloatTensor).to(device)
-    test_g = torch.tensor(test_g).type(torch.FloatTensor).to(device)
+            test_edge_features[i, edge[0], edge[1], :] = edges_t[i][edge]
+            test_edge_features[i, edge[1], edge[0], :] = edges_t[i][edge]
+    test_node_features = (
+        torch.tensor(test_node_features).type(torch.FloatTensor).to(device)
+    )
+    test_edge_features = (
+        torch.tensor(test_edge_features).type(torch.FloatTensor).to(device)
+    )
+    test_adjacency_matrices = (
+        torch.tensor(test_adjacency_matrices).type(torch.FloatTensor).to(device)
+    )
     test_label = torch.tensor(np.array(test_label)).type(torch.LongTensor).to(device)
 
     "MPNN model"
@@ -166,5 +172,14 @@ if __name__ == "__main__":
 
     "Inference"
     test_acc = Variable(
-        evaluation((nn.LogSoftmax()(model(test_g, test_h, test_e))).data, test_label.data, topk=(1,))[0])
+        evaluation(
+            (
+                nn.LogSoftmax()(
+                    model(test_adjacency_matrices, test_node_features, test_edge_features)
+                )
+            ).data,
+            test_label.data,
+            topk=(1,),
+        )[0]
+    )
     print("test acc :{}".format(test_acc))
