@@ -47,7 +47,7 @@ phase = ['test']
 
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
         "model_path",
