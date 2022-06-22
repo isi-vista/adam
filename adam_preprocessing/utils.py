@@ -181,8 +181,6 @@ class LinearModel(nn.Module):
         return x
 
 
-#         return nn.LogSoftmax()(x)
-
 def to_pickle(thing, path):  # save something
     with open(path, 'wb') as handle:
         pickle.dump(thing, handle, protocol=pickle.HIGHEST_PROTOCOL)
