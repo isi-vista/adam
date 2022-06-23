@@ -87,8 +87,7 @@ def kp2stroke(strokeinfo):
     """
     n = len(strokeinfo)
     connection = np.zeros([n, n])
-    for i in range(n):
-        node_ind = strokeinfo[i]
+    for i, node_ind in enumerate(strokeinfo):
         con = np.logical_or(strokeinfo == node_ind[0], strokeinfo == node_ind[1])
         con = np.logical_or(con[:, 0], con[:, 1])
         connection[i, np.where(con)[0]] = 1
