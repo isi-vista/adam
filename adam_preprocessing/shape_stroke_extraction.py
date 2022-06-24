@@ -408,6 +408,7 @@ class Stroke_Extraction:
             # shape: N_i x N_i
             adj_obj = self.adj[ind, :]
             adj_obj = adj_obj[:, ind]
+
             # Calculate the overall mean coordinates across all strokes and coordinates.
             # This is a 2D array with 2 entries -- one per coordinate.
             m = reduced_obj.mean((0, 1))
