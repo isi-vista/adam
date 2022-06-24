@@ -387,6 +387,7 @@ class Stroke_Extraction:
         This writes to `feature_{object_type}_{object_view}_{object_id}.yaml` if self.save_output is
         true.
         """
+        # Extract strokes, downsample, and add color data
         self.remove_strokes()
         self.strokes2controlpoints()
         self.get_colors()
@@ -396,16 +397,33 @@ class Stroke_Extraction:
         data = []
         if len(self.strokes) == 0:
             return data
+        # Translate the extracted (downsampled strokes) and color data into the ADAM stroke
+        # extraction data format.
         for i in range(self.num_obj):
+            # Using self.label, pick out the IDs/indices for the strokes belonging to object i.
+            # Use this to grab the relevant stroke samples and the relevant submatrix of self.adj.
             ind = np.where(self.label == i)[0]
+            # shape: N_i x 10 x 2 where N_i is the number of strokes in the ith object
             reduced_obj = self.reduced_strokes[ind]
+            # shape: N_i x N_i
             adj_obj = self.adj[ind, :]
             adj_obj = adj_obj[:, ind]
+            # Calculate the overall mean coordinates across all strokes and coordinates.
+            # This is a 2D array with 2 entries -- one per coordinate.
             m = reduced_obj.mean((0, 1))
+            # Get pairwise distances between the stroke coordinate mean (treated as a 1x2 array) and
+            # the pixel-based object centers.
             dd = pairwise_distances(m[None, :], self.colors[:, 3:])
+            # Choose the color using the nearest pixel-based object center.
             color = self.colors[dd[0].argmin(0), :3]
+            # We normalize using a standard deviation s that is calculated using both the deviations
+            # from the x-mean and the deviations from the y-mean, as if these have identical
+            # distributions. This is sort of weird.
             s = (reduced_obj - m).std()
             reduced_strokes_norm = (reduced_obj - m) / s
+            # Calculate pixel-space-distance from this object to every other object in the image.
+            # We use the Euclidean distance between the two objects' stroke coordinate means as our
+            # measure of distance between objects.
             distance = dict()
             for j in range(self.num_obj):
                 if i == j:
