@@ -169,6 +169,30 @@ class Stroke_Extraction:
         self.img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
         self.save_dir = os.path.join(base_path, "feature")
 
+    @staticmethod
+    def from_m5_objects_curriculum_base_path(
+        *,
+        obj_type: str = "outputs",
+        obj_id: str = "1",
+        obj_view: str = "1",
+        base_path: str,
+        vis: bool = True,
+        save_output: bool = True,
+    ) -> "Stroke_Extraction":
+        """
+        Set up to do stroke extraction on M5 objects raw curriculum format.
+
+        This is the format used before ISI reformatting.
+        """
+        return Stroke_Extraction(
+            obj_type=obj_type,
+            obj_id=obj_id,
+            obj_view=obj_view,
+            base_path=base_path,
+            vis=vis,
+            save_output=save_output,
+        )
+
     def stroke_extraction_from_matlab(self):
         """
         Get the raw stroke extraction results from Matlab using the BPL code.
@@ -507,7 +531,7 @@ def main():
     for object_type in args.object_types:
         for i in range(3):
             for j in range(5):
-                S = Stroke_Extraction(
+                S = Stroke_Extraction.from_m5_objects_curriculum_base_path(
                     base_path=args.base_path,
                     obj_type=object_type,
                     obj_view=str(i),
