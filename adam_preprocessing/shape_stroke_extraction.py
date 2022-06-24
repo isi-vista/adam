@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 import logging
 import cv2
 import numpy as np
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +109,11 @@ class Stroke_Extraction:
     obj_type: object name + train/test
     obj_id: the id of the object
     obj_view: the id of the camera
-    base_path : the root path for the folder
+    segmentation_img_path: the path to the object segmentation image
+    rgb_img_path: the path to the RGB image
+    stroke_img_save_path: where to save the stroke image (if saved)
+    stroke_graph_img_save_path: where to save the stroke graph image (if saved)
+    features_save_path: where to save the YAML file of features (if saved)
     vis: whether to save the visualization(graph structure and strokes)
     save_output: whether to save the output
 
@@ -145,10 +150,14 @@ class Stroke_Extraction:
         self,
         *,
         obj_type: str = "outputs",
-        obj_id: str = "1",
-        obj_view: str = "1",
+        obj_id: Optional[str] = "1",
+        obj_view: Optional[str] = "1",
         clustering_seed: int = 42,
-        base_path: str,
+        segmentation_img_path: str,
+        rgb_img_path: str,
+        stroke_img_save_path: str,
+        stroke_graph_img_save_path: str,
+        features_save_path: str,
         vis: bool = True,
         save_output: bool = True,
     ):
@@ -158,18 +167,12 @@ class Stroke_Extraction:
         self.clustering_seed = clustering_seed
         self.vis = vis
         self.save_output = save_output
-        self.path = os.path.join(
-            base_path,
-            obj_type,
-            "cam{}".format(obj_view),
-            "semantic_{}.png".format(obj_id),
-        )
-        rgb_path = os.path.join(
-            base_path, obj_type, "cam{}".format(obj_view), "rgb_{}.png".format(obj_id)
-        )
-        self.img_bgr = img_bgr = cv2.imread(rgb_path)
+        self.path = segmentation_img_path
+        self.img_bgr = img_bgr = cv2.imread(rgb_img_path)
         self.img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-        self.save_dir = os.path.join(base_path, "feature")
+        self.stroke_img_save_path = stroke_img_save_path
+        self.stroke_graph_img_save_path = stroke_graph_img_save_path
+        self.features_save_path = features_save_path
 
     @staticmethod
     def from_m5_objects_curriculum_base_path(
@@ -186,13 +189,34 @@ class Stroke_Extraction:
 
         This is the format used before ISI reformatting.
         """
+        save_dir = os.path.join(base_path, "feature")
         return Stroke_Extraction(
             obj_type=obj_type,
             obj_id=obj_id,
             obj_view=obj_view,
-            base_path=base_path,
+            segmentation_img_path=os.path.join(
+                base_path,
+                obj_type,
+                "cam{}".format(obj_view),
+                "semantic_{}.png".format(obj_id),
+            ),
+            rgb_img_path=os.path.join(
+                base_path, obj_type, "cam{}".format(obj_view), "rgb_{}.png".format(obj_id)
+            ),
             vis=vis,
             save_output=save_output,
+            stroke_img_save_path=os.path.join(
+                save_dir,
+                "stroke_{}_{}_{}.png".format(obj_type, obj_view, obj_id),
+            ),
+            stroke_graph_img_save_path=os.path.join(
+                save_dir,
+                "stroke_graph_{}_{}_{}.png".format(obj_type, obj_view, obj_id),
+            ),
+            features_save_path=os.path.join(
+                save_dir,
+                "feature_{}_{}_{}.yaml".format(obj_type, obj_view, obj_id),
+            ),
         )
 
     def stroke_extraction_from_matlab(self):
@@ -322,9 +346,7 @@ class Stroke_Extraction:
 
     def plot_strokes(self):
         """
-        Create stroke image in self.save_dir.
-
-        The image is named `stroke_{object_type}_{object_view}_{object_id}.png`.
+        Create stroke image, saving the result to self.stroke_img_save_path.
         """
         stroke_colors = []
         for j in range(self.num_obj):
@@ -339,20 +361,13 @@ class Stroke_Extraction:
             plt.gca().invert_yaxis()
             plt.gca().set_aspect("equal", adjustable="box")
             plt.axis("off")
-        plt.savefig(
-            os.path.join(
-                self.save_dir,
-                "stroke_{}_{}_{}.png".format(self.obj_type, self.obj_view, self.obj_id),
-            )
-        )
+        plt.savefig(self.stroke_img_save_path)
         plt.close()
         self.stroke_colors = stroke_colors
 
     def plot_graph(self):
         """
-        Create stroke *graph* image in self.save_dir.
-
-        The image is named `stroke_graph_{object_type}_{object_view}_{object_id}.png`.
+        Create stroke *graph* image in self.stroke_graph_img_save_path.
         """
         for i in range(self.num_obj):
             plt.figure(i)
@@ -373,14 +388,7 @@ class Stroke_Extraction:
                             )
             plt.subplot(1, self.num_obj, i + 1)
             nx.draw(G, with_labels=True, node_color=self.stroke_colors[i])
-        plt.savefig(
-            os.path.join(
-                self.save_dir,
-                "stroke_graph_{}_{}_{}.png".format(
-                    self.obj_type, self.obj_view, self.obj_id
-                ),
-            )
-        )
+        plt.savefig(self.stroke_graph_img_save_path)
         plt.close()
 
     def get_colors(self):
@@ -427,8 +435,7 @@ class Stroke_Extraction:
 
         This performs stroke extraction as well as reformatting the outputs for use in ADAM.
 
-        This writes to `feature_{object_type}_{object_view}_{object_id}.yaml` if self.save_output is
-        true.
+        This writes a YAML file to self.features_save_path if self.save_output is true.
         """
         # Extract strokes, downsample, and add color data
         self.remove_strokes()
@@ -508,12 +515,7 @@ class Stroke_Extraction:
         self.data = data
         if self.save_output:
             with open(
-                os.path.join(
-                    self.save_dir,
-                    "feature_{}_{}_{}.yaml".format(
-                        self.obj_type, self.obj_view, self.obj_id
-                    ),
-                ),
+                self.features_save_path,
                 "w",
             ) as file:
                 yaml.dump({"objects": data}, file)
