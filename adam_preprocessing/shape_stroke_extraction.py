@@ -422,6 +422,7 @@ class Stroke_Extraction:
             # distributions. This is sort of weird.
             s = (reduced_obj - m).std()
             reduced_strokes_norm = (reduced_obj - m) / s
+
             # Calculate pixel-space-distance from this object to every other object in the image.
             # We use the Euclidean distance between the two objects' stroke coordinate means as our
             # measure of distance between objects.
