@@ -439,6 +439,7 @@ class Stroke_Extraction:
                     ).tolist()
             if len(distance.keys()) == 0:
                 distance = None
+
             data.append(
                 dict(
                     object_name="object" + str(i),
