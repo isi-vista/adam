@@ -347,17 +347,34 @@ class Stroke_Extraction:
         This uses the object segmentation image to identify which pixels in the RGB image "belong
         to" each object. This segmentation image file is usually named semantic_{stuff}.png
         """
+        # jac: img_seg is a 256x256 integer array? gray-values/pixel values are distinct iff the
+        # objects for those locations are (considered) distinct. I think that is the convention
+        # here.
         img_seg = cv2.imread(self.path)
         img_seg = cv2.cvtColor(img_seg, cv2.COLOR_BGR2GRAY)
+        # jac: obj_area is a tuple of two equal-length arrays xs, ys such that for all i,
+        # img_seg[xs[i], ys[i]] != 0.
         obj_area = np.where(img_seg != 0)
         img_tmp = np.zeros([256, 256, 3], dtype=np.uint8)
         img_tmp[obj_area[0], obj_area[1], :] = self.img_rgb[obj_area[0], obj_area[1], :]
         colors = np.zeros([self.num_obj, 5])
         for i in range(self.num_obj):
+            # If we've gone beyond the number of unique objects identified in the object
+            # segmentation image, stop.
+            #
+            # jac: This can happen when stroke extraction splits one object into more than one
+            # connected stroke graph component, I think.
             if i >= len(np.unique(img_seg[obj_area])):
                 continue
+            # reminder: np.unique(img_seg[obj_area]) means "the ith unique object detected by object
+            # segmentation," so this means "make a matrix of the pixel locations that are part of
+            # this ith object."
+            #
+            # seg_i is a 2 x (N_pixels(i)) matrix -- the number of columns varies with the number of
+            # pixels.  row 0 is the row coordinate, row 1 is the column coordinate.
             seg_i = np.array(np.where(img_seg == np.unique(img_seg[obj_area])[i]))
             colors[i, :3] = self.img_rgb[seg_i[0], seg_i[1], :].mean(0)
+            # Store the mean coordinates for the object in the last two color columns
             colors[i, 3:] = seg_i.mean(1)
         self.colors = colors
 
