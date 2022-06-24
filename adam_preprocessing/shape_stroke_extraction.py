@@ -218,6 +218,7 @@ class Stroke_Extraction:
                 continue
             strokes.append(s)
         strokes = np.array(strokes)
+        # Do initial breakup of the scene into objects by looking at the connected components of the graph.
         n_components, labels = connected_components(adj, directed=True)
         if len(removed_ind) > 0:
             adj = np.delete(adj, np.array(removed_ind), 0)
@@ -231,13 +232,28 @@ class Stroke_Extraction:
                         adj[i, j] = 1.0
                         adj[j, i] = 1.0
         self.num_obj = num_obj = n_components
+        # If we have at least two strokes and two objects, see if we can break up the connected components further to
+        # get more fine-grained objects.
+        #
+        # jac: I'm guessing this might be meant to cope with occlusion/objects visually overlapping each other?
+        # jac: I don't think the "is not" here will ever get triggered. Oh well.
         if adj is not [[1.0]] and num_obj != 1:
             clustering = SpectralClustering(
                 n_clusters=num_obj, affinity="precomputed"
             ).fit(adj)
             labels_ = clustering.labels_
+        # If there's only one object, things are easy -- just assign all strokes to that one object.
         elif num_obj == 1:
             labels_ = np.zeros(len(adj))
+        # Otherwise, adj is [[1.0]] and num_obj is not 1. If num_obj is zero, this sets labels_ to an empty 1D array.
+        # If num_obj is greater than 1, it assigns all num_obj strokes to a single object.
+        #
+        # jac: The num_obj == 0 case is not interesting -- it's the case where we don't have any strokes to begin with
+        # so there's nothing to assign and we don't assign anything.
+        #
+        # jac: In the num_obj > 1 case I think what happened is that some of the strokes had fewer than 10 points so we
+        # deleted them from the adjacency matrix, but only after we already calculated the number of connected
+        # components. So adj is np.eye(1) but num_obj is greater than 1.
         else:
             labels_ = np.zeros(num_obj)
         self.label = labels_
