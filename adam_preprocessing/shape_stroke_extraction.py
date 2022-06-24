@@ -365,7 +365,7 @@ class Stroke_Extraction:
             # jac: This can happen when stroke extraction splits one object into more than one
             # connected stroke graph component, I think.
             if i >= len(np.unique(img_seg[obj_area])):
-                continue
+                break
             # reminder: np.unique(img_seg[obj_area]) means "the ith unique object detected by object
             # segmentation," so this means "make a matrix of the pixel locations that are part of
             # this ith object."
