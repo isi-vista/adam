@@ -244,7 +244,8 @@ class Stroke_Extraction:
         #
         # jac: I'm guessing this might be meant to cope with occlusion/objects visually overlapping each other?
         # jac: I don't think the "is not" here will ever get triggered. Oh well.
-        if adj is not [[1.0]] and num_obj != 1:
+        # jac: hack: changed to num_obj > 1. I think this is fine.
+        if adj is not [[1.0]] and num_obj > 1:
             clustering = SpectralClustering(
                 n_clusters=num_obj, affinity="precomputed"
             ).fit(adj)
