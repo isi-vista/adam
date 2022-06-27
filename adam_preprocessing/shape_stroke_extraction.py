@@ -294,6 +294,10 @@ class Stroke_Extraction:
         # deleted them from the adjacency matrix, but only after we already calculated the number of connected
         # components. So adj is np.eye(1) but num_obj is greater than 1.
         else:
+            if num_obj == 0:
+                logger.warning(
+                    "No objects detected for segmentation image %s.", self.path
+                )
             labels_ = np.zeros(num_obj)
         self.label = labels_
         self.strokes = strokes
