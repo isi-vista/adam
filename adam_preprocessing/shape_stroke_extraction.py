@@ -9,10 +9,12 @@ import logging
 import cv2
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 try:
     import matlab
 except ImportError:
-    logging.warning("Couldn't import MATLAB API; creating a placeholder object instead.")
+    logger.warning("Couldn't import MATLAB API; creating a placeholder object instead.")
     matlab = object()
 import matplotlib.pyplot as plt
 import scipy.io
@@ -20,7 +22,7 @@ import scipy.io
 try:
     import matlab.engine
 except ImportError:
-    logging.warning("Couldn't import MATLAB engine; setting it to None.")
+    logger.warning("Couldn't import MATLAB engine; setting it to None.")
     matlab.engine = None
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.cluster import SpectralClustering
@@ -528,6 +530,7 @@ def main():
         default=("test_small_single_mug",),
     )
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
     for object_type in args.object_types:
         for i in range(3):
             for j in range(5):
