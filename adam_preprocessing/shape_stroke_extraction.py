@@ -217,7 +217,14 @@ class Stroke_Extraction:
                 removed_ind.append(i)
                 continue
             strokes.append(s)
-        strokes = np.array(strokes)
+        # Make an array of the strokes.
+        # Because each stroke in the list may have more than 10 control points, this has to be a
+        # "ragged" array. Thus we specify dtype=object to avoid a NumPy deprecation warning.
+        #
+        # jac: Maybe we can get away with making this rectangular? But given we still need to
+        # downsample strokes at this point, I wouldn't be on it -- probably that would mess things
+        # up somehow.
+        strokes = np.array(strokes, dtype=object)
         # Do initial breakup of the scene into objects by looking at the connected components of the graph.
         n_components, labels = connected_components(adj, directed=True)
         if len(removed_ind) > 0:
