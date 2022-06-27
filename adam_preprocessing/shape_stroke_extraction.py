@@ -162,6 +162,8 @@ class Stroke_Extraction:
 
     def stroke_extraction_from_matlab(self):
         eng = matlab.engine.start_matlab()
+        s = eng.genpath("./lightspeed")
+        eng.addpath(s, nargout=0)
         s = eng.genpath("./BPL")
         eng.addpath(s, nargout=0)
         out = eng.ske(self.path, nargout=2)
