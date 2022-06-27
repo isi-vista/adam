@@ -20,6 +20,7 @@ except ImportError:
     matlab = object()
 import matplotlib.pyplot as plt
 import scipy.io
+from tqdm import tqdm
 
 try:
     import matlab.engine
@@ -549,7 +550,11 @@ def main():
         curriculum_params = yaml.safe_load(curriculum_info_yaml)
     logger.info("Input curriculum has %d dirs/situations.", curriculum_params["num_dirs"])
 
-    for situation_num in range(curriculum_params["num_dirs"]):
+    for situation_num in tqdm(
+        range(curriculum_params["num_dirs"]),
+        desc="Situations processed",
+        total=curriculum_params["num_dirs"],
+    ):
         situation_dir = args.curriculum_path / f"situation_{situation_num}"
         language_tuple: Tuple[str, ...] = tuple()
         if (situation_dir / "description.yaml").exists():
