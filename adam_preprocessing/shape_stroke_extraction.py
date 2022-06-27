@@ -238,7 +238,8 @@ class Stroke_Extraction:
                     if dis.min() < 15 and reduced_labels[i] == reduced_labels[j]:
                         adj[i, j] = 1.0
                         adj[j, i] = 1.0
-        self.num_obj = num_obj = n_components
+        # jac: hack to get things running
+        self.num_obj = num_obj = min(n_components, len(adj))
         # If we have at least two strokes and two objects, see if we can break up the connected components further to
         # get more fine-grained objects.
         #
