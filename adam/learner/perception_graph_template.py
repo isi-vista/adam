@@ -278,7 +278,15 @@ class PerceptionGraphTemplate:
         """
         return PerceptionGraphTemplate(
             graph_pattern=self.graph_pattern.copy_replacing_nodes(current_to_new_node),
-            template_variable_to_pattern_node=self.template_variable_to_pattern_node,
+            template_variable_to_pattern_node=immutabledict(
+                (variable, current_to_new_node.get(node, node))
+                for variable, node in self.template_variable_to_pattern_node.items()
+                if node not in current_to_new_node
+                or node in current_to_new_node
+                and isinstance(
+                    current_to_new_node[node], ObjectSemanticNodePerceptionPredicate
+                )
+            ),
         )
 
     def copy_removing_temporal_scopes(self) -> "PerceptionGraphTemplate":

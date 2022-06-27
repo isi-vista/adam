@@ -68,7 +68,7 @@ class AbstractAffordanceTemplateLearner(AbstractTemplateLearner, ABC):
         digraph = perception_semantic_alignment.perception_graph.copy_as_digraph()
         filtered_semantic_nodes = []
         for node in perception_semantic_alignment.semantic_nodes:
-            if isinstance(node, AffordanceSemanticNode):
+            if isinstance(node, AffordanceSemanticNode) and node in digraph:
                 digraph.remove_node(node)
                 continue
             filtered_semantic_nodes.append(node)
