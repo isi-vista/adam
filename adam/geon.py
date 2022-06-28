@@ -28,6 +28,9 @@ class CrossSection:
     )
     curved: bool = attrib(validator=instance_of(bool), default=False, kw_only=True)
 
+    def dot_label(self) -> str:
+        return str(self)
+
     def __repr__(self) -> str:
         return (
             f"[{sign(self.has_reflective_symmetry)}reflect-sym, "
@@ -84,6 +87,9 @@ class Geon(HasAxes):
     @generating_axis.default
     def _init_primary_axis(self) -> GeonAxis:
         return self.axes.primary_axis
+
+    def dot_label(self) -> str:
+        return str(self.cross_section) + str(self.cross_section_size)
 
 
 class MaybeHasGeon(Protocol):

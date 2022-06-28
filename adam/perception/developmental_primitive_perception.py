@@ -113,6 +113,9 @@ class RgbColorPerception:
     def hex(self) -> str:
         return f"#{self.red:02x}{self.green:02x}{self.blue:02x}"
 
+    def dot_label(self) -> str:
+        return self.hex
+
     def __repr__(self) -> str:
         """
         We represent colors by hex strings because these are easy to visualize using web tools.

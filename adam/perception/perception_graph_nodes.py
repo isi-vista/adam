@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Union, Tuple, Any, Optional
 
 from attr import attrs, attrib
@@ -27,6 +27,11 @@ class ObjectStroke:
         validator=deep_iterable(instance_of(Point)), converter=_to_immutableset
     )
 
+    def dot_label(self) -> str:
+        return (
+            f"Stroke: [{', '.join(str(point) for point in self.normalized_coordinates)}]"
+        )
+
     def __str__(self) -> str:
         return f"Stroke[{', '.join(f'({point.x:.2f}, {point.y:.2f})' for point in self.normalized_coordinates)}]"
 
@@ -37,6 +42,10 @@ class GraphNode(ABC):
     """Super-class for all perception graph nodes, useful for types."""
 
     weight: float = attrib(validator=instance_of(float))
+
+    @abstractmethod
+    def dot_label(self) -> str:
+        raise NotImplementedError()
 
 
 PerceptionGraphNode = Union[

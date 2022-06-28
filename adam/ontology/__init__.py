@@ -43,6 +43,9 @@ class OntologyNode:
     which should not be inherited by its children.
     """
 
+    def dot_label(self) -> str:
+        return self.handle
+
     def __repr__(self) -> str:
         if self.inheritable_properties:
             local_properties = ",".join(

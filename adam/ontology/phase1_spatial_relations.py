@@ -237,6 +237,9 @@ class Region(Generic[ReferenceObjectT]):
             "A region must have either a distance or direction specified.",
         )
 
+    def dot_label(self) -> str:
+        return f"reg:{self}"
+
     def __repr__(self) -> str:
         parts = [str(self.reference_object)]
         if self.distance:
@@ -249,6 +252,10 @@ class Region(Generic[ReferenceObjectT]):
 @attrs(frozen=True, slots=True)
 class PathOperator:
     name: str = attrib(validator=instance_of(str))
+
+    def dot_label(self) -> str:
+        # regions do have content but we express those as edges to other nodes
+        return self.name
 
 
 VIA = PathOperator("via")
@@ -413,6 +420,9 @@ class SpatialPath(Generic[ReferenceObjectT]):
             else other_path.orientation_changed,
             properties=chain(self.properties, other_path.properties),
         )
+
+    def dot_label(self) -> str:
+        return "path"
 
     # @reference_destination_object.default
     # def _assume_dest_is_source(self) -> Union[ReferenceObjectT, Region[ReferenceObjectT]]:

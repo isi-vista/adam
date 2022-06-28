@@ -575,48 +575,15 @@ class PerceptionGraph(PerceptionGraphProtocol, Sized, Iterable[PerceptionGraphNo
 
         if perception_node in replace_node_labels:
             label = replace_node_labels[perception_node]
-        elif isinstance(unwrapped_perception_node, ObjectPerception):
-            # object perceptions have no content, so they are blank nodes
-            label = unwrapped_perception_node.debug_handle
-        elif isinstance(unwrapped_perception_node, Region):
-            # regions do have content but we express those as edges to other nodes
-            label = f"reg:{unwrapped_perception_node}"
-        elif isinstance(unwrapped_perception_node, GeonAxis):
-            label = f"axis:{unwrapped_perception_node.debug_name}"
-        elif isinstance(unwrapped_perception_node, RgbColorPerception):
-            label = unwrapped_perception_node.hex
-        elif isinstance(unwrapped_perception_node, OntologyNode):
-            label = unwrapped_perception_node.handle
-        elif isinstance(unwrapped_perception_node, Geon):
-            label = str(unwrapped_perception_node.cross_section) + str(
-                unwrapped_perception_node.cross_section_size
-            )
-        elif isinstance(unwrapped_perception_node, CrossSection):
-            label = str(unwrapped_perception_node)
-        elif isinstance(unwrapped_perception_node, ObjectSemanticNode):
-            label = " ".join(unwrapped_perception_node.concept.debug_string)
-        elif isinstance(unwrapped_perception_node, SpatialPath):
-            label = "path"
-        elif isinstance(unwrapped_perception_node, PathOperator):
-            label = unwrapped_perception_node.name
-        elif isinstance(unwrapped_perception_node, ObjectClusterNode):
-            label = f"Object Cluster {unwrapped_perception_node.cluster_id} | View: {unwrapped_perception_node.viewpoint_id}"
-        elif isinstance(unwrapped_perception_node, ObjectStroke):
-            label = f"Stroke: [{', '.join(str(point) for point in unwrapped_perception_node.normalized_coordinates)}]"
-        elif isinstance(unwrapped_perception_node, TrajectoryRecognitionNode):
-            label = f"Trajectory Recognition: {unwrapped_perception_node.action_recognized} ({unwrapped_perception_node.confidence})"
-        elif isinstance(unwrapped_perception_node, JointPointNode):
-            label = f"JointPointNode ({unwrapped_perception_node.joint_index}.{unwrapped_perception_node.temporal_index}) world: {unwrapped_perception_node.world_coord}"
-        elif isinstance(
-            unwrapped_perception_node,
-            (ContinuousNode, CategoricalNode, RgbColorNode, StrokeGNNRecognitionNode),
-        ):
-            label = str(unwrapped_perception_node)
         else:
-            raise RuntimeError(
-                f"Do not know how to perception node render node "
-                f"{unwrapped_perception_node} with dot"
-            )
+            try:
+                label = unwrapped_perception_node.dot_label()
+            except AttributeError as exc:
+                # old else branch error
+                raise RuntimeError(
+                    f"Do not know how to perception node render node "
+                    f"{unwrapped_perception_node} with dot"
+                ) from exc
 
         # if we are rendering a pattern which partially matched against a graph,
         # the user can supply IDs for those nodes which matched to show the correspondence.
