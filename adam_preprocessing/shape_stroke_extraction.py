@@ -88,7 +88,10 @@ def kp2stroke(strokeinfo):
     n = len(strokeinfo)
     connection = np.zeros([n, n])
     for i, node_ind in enumerate(strokeinfo):
+        # con is n-long array that is true for all coordinates on an axis-aligned line with node_ind
+        # and false for the rest.
         con = np.logical_or(strokeinfo == node_ind[0], strokeinfo == node_ind[1])
+        # con is
         con = np.logical_or(con[:, 0], con[:, 1])
         connection[i, np.where(con)[0]] = 1
         if node_ind[0] == node_ind[1]:
