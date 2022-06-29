@@ -510,7 +510,7 @@ class Stroke_Extraction:
                 ),
                 "w",
             ) as file:
-                yaml.dump(data, file)
+                yaml.dump({"objects": data}, file)
                 file.close()
         return data
 
