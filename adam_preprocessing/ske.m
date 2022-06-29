@@ -1,4 +1,5 @@
 % copied from https://github.com/ASU-APG/adam-stage/tree/main/processing
+% original code by Sheng Cheng
 function [S, E] = ske(path)
 img = imread(path);
 gray_img = rgb2gray(img);
