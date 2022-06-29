@@ -145,6 +145,7 @@ class Stroke_Extraction:
         obj_type: str = "outputs",
         obj_id: str = "1",
         obj_view: str = "1",
+        clustering_seed: int = 42,
         base_path: str,
         vis: bool = True,
         save_output: bool = True,
@@ -152,6 +153,7 @@ class Stroke_Extraction:
         self.obj_view = obj_view
         self.obj_type = obj_type
         self.obj_id = obj_id
+        self.clustering_seed = clustering_seed
         self.vis = vis
         self.save_output = save_output
         self.path = os.path.join(
@@ -248,7 +250,9 @@ class Stroke_Extraction:
         # jac: hack: changed to num_obj > 1. I think this is fine.
         if adj is not [[1.0]] and num_obj > 1:
             clustering = SpectralClustering(
-                n_clusters=num_obj, affinity="precomputed"
+                random_state=self.clustering_seed,
+                n_clusters=num_obj,
+                affinity="precomputed",
             ).fit(adj)
             labels_ = clustering.labels_
         # If there's only one object, things are easy -- just assign all strokes to that one object.
