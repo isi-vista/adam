@@ -207,12 +207,12 @@ class Stroke_Extraction:
         - self.adj
         - self.labels
         """
-        out = self.stroke_extraction_from_matlab()
+        out_s, out_e = self.stroke_extraction_from_matlab()
         strokes = []
         removed_ind = []
-        adj = kp2stroke(np.array(out[1]))
-        for i in range(len(out[0])):
-            s = np.array(out[0][i])
+        adj = kp2stroke(np.array(out_e))
+        for i in range(len(out_s)):
+            s = np.array(out_s[i])
             if len(s) < 10:
                 removed_ind.append(i)
                 continue
