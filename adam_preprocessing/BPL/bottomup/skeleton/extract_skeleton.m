@@ -1,3 +1,4 @@
+% some modifications by Sheng Cheng
 %
 % Compute a bottom-up character skeleton.
 % This algorithm should be deterministic.
