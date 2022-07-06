@@ -33,6 +33,7 @@ mypy==0.950
 mypy-extensions==0.4.3
 networkx==2.6.3
 numpy==1.21.6
+opencv-python==4.6.0.66
 packaging==21.3
 pathspec==0.9.0
 Pillow==9.1.1
@@ -72,7 +73,9 @@ tomli==2.0.1
 towncrier==21.9.0
 typed-ast==1.5.4
 types-PyYAML==6.0.7
+types-requests==2.28.6
 types-tabulate==0.8.9
+types-urllib3==1.26.20
 typing_extensions==4.2.0
 urllib3==1.26.9
 vistautils==0.24.0

@@ -64,6 +64,11 @@ def main():
         default=1,
         help="Top k decodes to retrieve from the GNN",
     )
+    parser.add_argument(
+        "--dir-num",
+        default=None,
+        help="A specific situation directory to decode.",
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
@@ -111,7 +116,7 @@ def main():
                       message_size=20, n_layers=1, l_target=50,
                       type='regression')
     model = LinearModel(model_base, 50, len(STRING_OBJECT_LABELS)).to(device)
-    model.load_state_dict(torch.load(args.model_path))
+    model.load_state_dict(torch.load(args.model_path, map_location=device))
     logging.info("Model loaded.")
     logging.info("Predicting...")
     evaluation = accuracy
@@ -145,7 +150,7 @@ def main():
 
         _, predicted_label_ints = outputs.topk(args.top_k)
         n_saved = 0
-        for situation_num in range(curriculum_params["num_dirs"]):
+        for situation_num in range(curriculum_params["num_dirs"]) if args.dir_num is None else [args.dir_num]:
             input_situation_dir = args.curriculum_path / f"situation_{situation_num}"
             feature_yamls = sorted(input_situation_dir.glob("feature*"))
             if len(feature_yamls) == 1:

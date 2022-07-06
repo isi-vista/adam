@@ -537,11 +537,19 @@ def main():
         type=Path,
         help="The output curriculum dir.",
     )
+    parser.add_argument(
+        "--dir-num",
+        default=None,
+        help="A specific situation directory number to process. If provided only this directory is processed."
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
     # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
+    if args.dir_num:
+        logger.info(f"Processing directory number {args.dir_num}")
+
     with open(
         args.curriculum_path / "info.yaml", encoding="utf=8"
     ) as curriculum_info_yaml:
@@ -549,7 +557,7 @@ def main():
     logger.info("Input curriculum has %d dirs/situations.", curriculum_params["num_dirs"])
 
     for situation_num in tqdm(
-        range(curriculum_params["num_dirs"]),
+        range(curriculum_params["num_dirs"]) if args.dir_num is None else [args.dir_num],
         desc="Situations processed",
         total=curriculum_params["num_dirs"],
     ):

@@ -2,7 +2,7 @@
 # original code by Sheng Cheng
 import logging
 from pathlib import Path
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Optional
 import yaml
 
 import torch.nn as nn
@@ -36,16 +36,17 @@ STRING_OBJECT_LABELS = [
 
 
 def get_stroke_data(
-    curriculum_path: Path, train_or_test: str
+    curriculum_path: Path, train_or_test: str, *, dir_num: Optional[int], int_curriculum_labels: bool = True
 ) -> Tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
     # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
-    with open(curriculum_path / "info.yaml", encoding="utf=8") as curriculum_info_yaml:
-        curriculum_params = yaml.safe_load(curriculum_info_yaml)
+    if dir_num is None:
+        with open(curriculum_path / "info.yaml", encoding="utf=8") as curriculum_info_yaml:
+            curriculum_params = yaml.safe_load(curriculum_info_yaml)
 
     curriculum_coords = []
     curriculum_adjs = []
     curriculum_labels = []
-    for situation_num in range(curriculum_params["num_dirs"]):
+    for situation_num in range(curriculum_params["num_dirs"]) if dir_num is None else [dir_num]:
         situation_dir = curriculum_path / f"situation_{situation_num}"
         language_tuple: Tuple[str, ...] = tuple()
         if (situation_dir / "description.yaml").exists():
@@ -60,9 +61,6 @@ def get_stroke_data(
                 f"in {curriculum_path} does not."
             )
 
-        integer_label, string_label = label_from_object_language_tuple(
-            language_tuple, situation_num
-        )
         feature_yamls = sorted(situation_dir.glob("feature*"))
         if len(feature_yamls) == 1:
             with open(
@@ -111,7 +109,11 @@ def get_stroke_data(
 
             curriculum_coords.append(coords)
             curriculum_adjs.append(adj)
-            curriculum_labels.append(integer_label)
+            if int_curriculum_labels:
+                integer_label, _ = label_from_object_language_tuple(
+                    language_tuple, situation_num
+                )
+                curriculum_labels.append(integer_label)
 
         elif train_or_test == "train":
             raise ValueError(
