@@ -33,6 +33,7 @@ PHASE_3_TRAINING_CURRICULUM_OPTIONS = [
     "m6_objects_downsampled_2pertype_post_gnn",
     "m6_objects_downsampled_100 pertype_post_gnn",
     "m5_objects_v0_with_mugs_post_gnn",
+    "m6_unknown_objects"
 ]
 
 PHASE_3_TESTING_CURRICULUM_OPTIONS = [
@@ -46,6 +47,7 @@ PHASE_3_TESTING_CURRICULUM_OPTIONS = [
     "m5_objects_v0_with_mugs_eval_2pertype_post_gnn",
     "m5_objects_v0_with_mugs_eval_10pertype_post_gnn",
     "m5_objects_v0_with_mugs_eval_post_gnn",
+    "m6_unknown_objects_eval"
 ]
 
 TRAINING_CUR = "training"
