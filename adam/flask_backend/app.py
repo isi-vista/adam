@@ -20,12 +20,13 @@ from adam.paths import (
     TESTING_CURRICULUM_DIR,
     is_relative_to,
 )
-from utils import get_image_data
+from utils import get_image_data, retrieve_relevant_files
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config["CORS_HEADERS"] = "Content-Type"
 app.config["JSON_SORT_KEYS"] = False
+app.config["LEARNER_DIR_CONTENTS"] = {}
 
 
 @app.route("/api/learners", methods=["GET"])
@@ -204,7 +205,107 @@ def get_image() -> Any:
     return {"image_data": get_image_data(image_path)}
 
 
+@app.route("/api/poll_changes", methods=["GET"])
+def poll_changes() -> Any:
+    if not request.args:
+        abort(HTTPStatus.BAD_REQUEST)
+    learner = request.args.get("learner", default="")
+    training_curriculum = request.args.get("training_curriculum", default="")
+    testing_curriculum = request.args.get("testing_curriculum", default="")
+    if not learner or not training_curriculum or not testing_curriculum:
+        abort(HTTPStatus.BAD_REQUEST)
+
+    if any("/" in arg for arg in (learner, training_curriculum, testing_curriculum)):
+        abort(HTTPStatus.BAD_REQUEST)
+    curriculum_dir = (
+        LEARNERS_DIR
+        / learner
+        / EXPERIMENTS_DIR_NAME
+        / training_curriculum
+        / EXPERIMENTS_TESTING_DIR_NAME
+        / testing_curriculum
+    ).resolve()
+
+    if not is_relative_to(curriculum_dir, LEARNERS_DIR):
+        return {"message": "Directory out of range"}, HTTPStatus.BAD_REQUEST
+
+    if (
+        learner not in app.config["LEARNER_DIR_CONTENTS"]
+        or training_curriculum not in app.config["LEARNER_DIR_CONTENTS"][learner]
+        or testing_curriculum
+        not in app.config["LEARNER_DIR_CONTENTS"][learner][training_curriculum]
+        or not curriculum_dir.is_dir()
+    ):
+        return {"status": False, "message": "Invalid curriculum"}
+
+    ref_experiments = app.config["LEARNER_DIR_CONTENTS"][learner][training_curriculum][
+        testing_curriculum
+    ]
+    new_decodes = []
+    specific_updates = []
+    for situation_dir in curriculum_dir.iterdir():
+        if "situation" in situation_dir.name and situation_dir.is_dir():
+            if situation_dir.name not in ref_experiments:
+                ref_experiments[situation_dir.name] = set()
+            new_files = (
+                set([file.name for file in retrieve_relevant_files(situation_dir)])
+                - ref_experiments[situation_dir.name]
+            )
+            if new_files:
+                new_decodes.append(
+                    f"New files available for situation {int(situation_dir.name.rsplit('_')[-1]) + 1}"
+                )
+                specific_updates.append(
+                    f"Situation {int(situation_dir.name.rsplit('_')[-1]) + 1}:"
+                )
+                for file in sorted(new_files):
+                    specific_updates.append(f"\t{file}")
+                ref_experiments[situation_dir.name].update(new_files)
+    return (
+        {
+            "status": True,
+            "message": "\n".join(new_decodes),
+            "sub_message": "\n".join(specific_updates),
+        }
+        if new_decodes or specific_updates
+        else {"status": False}
+    )
+
+
+def init_dir_contents() -> None:
+    for learner in LEARNERS_DIR.iterdir():
+        if learner.is_dir() and (learner / EXPERIMENTS_DIR_NAME).is_dir():
+            app.config["LEARNER_DIR_CONTENTS"][learner.name] = {}
+            for training_curriculum in (learner / EXPERIMENTS_DIR_NAME).iterdir():
+                if (
+                    training_curriculum.is_dir()
+                    and (training_curriculum / EXPERIMENTS_TESTING_DIR_NAME).is_dir()
+                ):
+                    app.config["LEARNER_DIR_CONTENTS"][learner.name][
+                        training_curriculum.name
+                    ] = {}
+                    for testing_curriculum in (
+                        training_curriculum / EXPERIMENTS_TESTING_DIR_NAME
+                    ).iterdir():
+                        if testing_curriculum.is_dir():
+                            app.config["LEARNER_DIR_CONTENTS"][learner.name][
+                                training_curriculum.name
+                            ][testing_curriculum.name] = {}
+                            for situation_dir in testing_curriculum.iterdir():
+                                if (
+                                    "situation" in situation_dir.name
+                                    and situation_dir.is_dir()
+                                ):
+                                    app.config["LEARNER_DIR_CONTENTS"][learner.name][
+                                        training_curriculum.name
+                                    ][testing_curriculum.name][situation_dir.name] = set(
+                                        file.name
+                                        for file in retrieve_relevant_files(situation_dir)
+                                    )
+
+
 if __name__ == "__main__":
+    init_dir_contents()
     app.run(debug=True, load_dotenv=False)
 # else:
 #     gunicorn_logger = logging.getLogger("gunicorn.error")
