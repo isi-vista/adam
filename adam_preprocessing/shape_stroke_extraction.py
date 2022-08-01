@@ -410,8 +410,6 @@ class Stroke_Extraction:
         # jac: obj_area is a tuple of two equal-length arrays xs, ys such that for all i,
         # img_seg[xs[i], ys[i]] != 0.
         obj_area = np.where(img_seg != 0)
-        img_tmp = np.zeros([256, 256, 3], dtype=np.uint8)
-        img_tmp[obj_area[0], obj_area[1], :] = self.img_rgb[obj_area[0], obj_area[1], :]
         colors = np.zeros([self.num_obj, 5])
         for i in range(self.num_obj):
             # If we've gone beyond the number of unique objects identified in the object
