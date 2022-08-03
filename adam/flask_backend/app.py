@@ -1,5 +1,6 @@
 from glob import glob
 from http import HTTPStatus
+from os.path import relpath
 from typing import Any
 
 import yaml
@@ -9,6 +10,7 @@ from flask import Flask, abort, request
 from flask_cors import CORS
 
 from adam.paths import (
+    DATA_DIR,
     LEARNERS_DIR,
     SITUATION_DIR_NAME,
     POST_LEARN_FILE_NAME,
@@ -16,6 +18,7 @@ from adam.paths import (
     EXPERIMENTS_TESTING_DIR_NAME,
     TRAINING_CURRICULUM_DIR,
     TESTING_CURRICULUM_DIR,
+    is_relative_to,
 )
 
 app = Flask(__name__)
@@ -79,10 +82,12 @@ def get_scene() -> Any:
     scene_number = int(request.args.get("scene_number", "")) - 1
     if (
         not learner
-        and not training_curriculum
-        and not testing_curriculum
-        and not scene_number
+        or not training_curriculum
+        or not testing_curriculum
+        or not scene_number
     ):
+        abort(HTTPStatus.BAD_REQUEST)
+    if any("/" in arg for arg in (learner, training_curriculum, testing_curriculum)):
         abort(HTTPStatus.BAD_REQUEST)
 
     experiment_dir = (
@@ -93,7 +98,9 @@ def get_scene() -> Any:
         / EXPERIMENTS_TESTING_DIR_NAME
         / testing_curriculum
         / SITUATION_DIR_NAME.format(num=scene_number)
-    )
+    ).resolve()
+    if not is_relative_to(experiment_dir, LEARNERS_DIR):
+        return {"message": "Directory out of range"}, HTTPStatus.BAD_REQUEST
     if not experiment_dir.exists():
         return {"message": "Selected configuration does not exist"}
 
@@ -110,7 +117,7 @@ def get_scene() -> Any:
         "test_curriculum": testing_curriculum,
         "scene_number": scene_number,
         "scene_images": [
-            path.rsplit("data", maxsplit=1)[-1]
+            relpath(path, DATA_DIR)
             for path in sorted(
                 chain(
                     glob(f"{experiment_dir}/rgb__[0-9]*.png"),
@@ -119,11 +126,11 @@ def get_scene() -> Any:
             )
         ],
         "object_strokes": [
-            path.rsplit("data", maxsplit=1)[-1]
+            relpath(path, DATA_DIR)
             for path in sorted(glob(f"{experiment_dir}/stroke_[0-9]*_[0-9]*.png"))
         ],
         "stroke_graph": [
-            path.rsplit("data", maxsplit=1)[-1]
+            relpath(path, DATA_DIR)
             for path in sorted(glob(f"{experiment_dir}/stroke_graph_*.png"))
         ],
         "post_learning": post_learn,
