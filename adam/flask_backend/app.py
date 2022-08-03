@@ -20,6 +20,7 @@ from adam.paths import (
     TESTING_CURRICULUM_DIR,
     is_relative_to,
 )
+from utils import get_image_data
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -140,6 +141,67 @@ def get_scene() -> Any:
         #     "language_with_scene": "a chair",
         # }
     }
+
+
+@app.route("/api/get_image", methods=["GET"])
+def get_image() -> Any:
+    if not request.args:
+        abort(HTTPStatus.BAD_REQUEST)
+
+    learner = request.args.get("learner", default="")
+    training_curriculum = request.args.get("training_curriculum", default="")
+    testing_curriculum = request.args.get("testing_curriculum", default="")
+    scene_number = int(request.args.get("scene_number", "")) - 1
+    situation_dir = f"situation_{scene_number}"
+    image_file = request.args.get("image_file", default="")
+    if (
+        not learner
+        or not training_curriculum
+        or not testing_curriculum
+        or not situation_dir
+    ):
+        abort(HTTPStatus.BAD_REQUEST)
+
+    if any(
+        "/" in arg
+        for arg in (
+            learner,
+            training_curriculum,
+            testing_curriculum,
+            situation_dir,
+            image_file,
+        )
+    ):
+        abort(HTTPStatus.BAD_REQUEST)
+    image_path = (
+        LEARNERS_DIR
+        / learner
+        / EXPERIMENTS_DIR_NAME
+        / training_curriculum
+        / EXPERIMENTS_TESTING_DIR_NAME
+        / testing_curriculum
+        / situation_dir
+        / image_file
+    ).resolve()
+    if not is_relative_to(image_path, DATA_DIR):
+        return {"message": "Directory out of range"}, HTTPStatus.BAD_REQUEST
+
+    if (
+        learner not in app.config["LEARNER_DIR_CONTENTS"]
+        or training_curriculum not in app.config["LEARNER_DIR_CONTENTS"][learner]
+        or testing_curriculum
+        not in app.config["LEARNER_DIR_CONTENTS"][learner][training_curriculum]
+        or situation_dir
+        not in app.config["LEARNER_DIR_CONTENTS"][learner][training_curriculum][
+            testing_curriculum
+        ]
+        or image_file
+        not in app.config["LEARNER_DIR_CONTENTS"][learner][training_curriculum][
+            testing_curriculum
+        ][situation_dir]
+    ):
+        return {"message": "Invalid file"}, HTTPStatus.BAD_REQUEST
+    return {"image_data": get_image_data(image_path)}
 
 
 if __name__ == "__main__":
