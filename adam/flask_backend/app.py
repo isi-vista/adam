@@ -1,6 +1,5 @@
 from glob import glob
 from http import HTTPStatus
-from os.path import relpath
 from typing import Any
 
 import yaml
@@ -119,20 +118,21 @@ def get_scene() -> Any:
         "test_curriculum": testing_curriculum,
         "scene_number": scene_number,
         "scene_images": [
-            relpath(path, DATA_DIR)
+            get_image_data(path)
             for path in sorted(
                 chain(
                     glob(f"{experiment_dir}/rgb__[0-9]*.png"),
+                    glob(f"{experiment_dir}/rgb_[0-9]*.png"),
                     glob(f"{experiment_dir}/id_rgb_[0-9]*.png"),
                 )
             )
         ],
         "object_strokes": [
-            relpath(path, DATA_DIR)
+            get_image_data(path)
             for path in sorted(glob(f"{experiment_dir}/stroke_[0-9]*_[0-9]*.png"))
         ],
         "stroke_graph": [
-            relpath(path, DATA_DIR)
+            get_image_data(path)
             for path in sorted(glob(f"{experiment_dir}/stroke_graph_*.png"))
         ],
         "post_learning": post_learn,
