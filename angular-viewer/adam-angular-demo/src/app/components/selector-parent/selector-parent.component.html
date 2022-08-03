@@ -66,6 +66,13 @@
   >
     Reset
   </button>
+  <div
+    *ngIf="updated_data_files"
+    class="data_update thick-outline box large"
+    title="{{ update_sub_message }}"
+  >
+    {{ update_message }}
+  </div>
 </form>
 <div class="row" style="margin: 0 0 0 20px">
   <app-image-output

@@ -51,6 +51,12 @@ export interface SceneResponse {
   message?: string;
 }
 
+export interface DataUpdateResponse {
+  status: boolean;
+  message?: string;
+  sub_message?: string;
+}
+
 @Component({
   selector: 'app-selector-parent',
   templateUrl: './selector-parent.component.html',
@@ -69,6 +75,9 @@ export class SelectorParentComponent implements OnInit {
   submitted = false;
   initial = 'None';
   noOutput = false;
+  updated_data_files = false;
+  update_message = 'None';
+  update_sub_message = 'None';
 
   outputObject = {};
   differencesObject = {};
@@ -114,6 +123,9 @@ export class SelectorParentComponent implements OnInit {
       });
 
     this.selectedSceneNum = 1;
+    setInterval(() => {
+      this.poll_data_changes();
+    }, 10000);
   }
 
   formSubmit(): number {
@@ -164,5 +176,29 @@ export class SelectorParentComponent implements OnInit {
     this.submitted = false;
     this.outputObject = {};
     this.targetImgURLs = [];
+  }
+
+  poll_data_changes(): void {
+    const params = {
+      learner: this.selectedLearner,
+      training_curriculum: this.selectedTrain,
+      testing_curriculum: this.selectedTest,
+    };
+    this.http
+      .get(this.apiURL + '/api/poll_changes?', { params })
+      .toPromise()
+      .then((data: DataUpdateResponse) => {
+        if (data.status) {
+          this.updated_data_files = data.status;
+          this.update_message = data.message;
+          this.update_sub_message = data.sub_message;
+        } else {
+          this.updated_data_files = data.status;
+          if (data.message != null) {
+            this.toastr.error(data.message);
+          }
+        }
+        return 0;
+      });
   }
 }
