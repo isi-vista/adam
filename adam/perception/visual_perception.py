@@ -156,6 +156,15 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
                         weight=strokes_map["confidence_score"],
                     )
                 )
+            if "concept_names" in strokes_map:
+                for concept_name in strokes_map["concept_names"]:
+                    properties.append(
+                        StrokeGNNRecognitionNode(
+                            object_recognized=concept_name,
+                            confidence=strokes_map["confidence_score"],
+                            weight=strokes_map["confidence_score"],
+                        )
+                    )
 
             # Cluster ID is cleaned so that only the digit ID is displayed and not 'object'
             clusters.append(
