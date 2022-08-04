@@ -447,8 +447,6 @@ class Stroke_Extraction:
             self.plot_strokes()
             self.plot_graph()
         data = []
-        if len(self.strokes) == 0:
-            return data
         # Translate the extracted (downsampled strokes) and color data into the ADAM stroke
         # extraction data format.
         for i in range(self.num_obj):
@@ -549,17 +547,17 @@ def main():
     # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
     if args.dir_num:
         logger.info(f"Processing directory number {args.dir_num}")
-
-    with open(
-        args.curriculum_path / "info.yaml", encoding="utf=8"
-    ) as curriculum_info_yaml:
-        curriculum_params = yaml.safe_load(curriculum_info_yaml)
-    logger.info("Input curriculum has %d dirs/situations.", curriculum_params["num_dirs"])
+    else:
+        with open(
+            args.curriculum_path / "info.yaml", encoding="utf=8"
+        ) as curriculum_info_yaml:
+            curriculum_params = yaml.safe_load(curriculum_info_yaml)
+        logger.info("Input curriculum has %d dirs/situations.", curriculum_params["num_dirs"])
 
     for situation_num in tqdm(
         range(curriculum_params["num_dirs"]) if args.dir_num is None else [args.dir_num],
         desc="Situations processed",
-        total=curriculum_params["num_dirs"],
+        total=curriculum_params["num_dirs"] if args.dir_num is None else 100,
     ):
         situation_dir = args.curriculum_path / f"situation_{situation_num}"
         language_tuple: Tuple[str, ...] = tuple()
@@ -569,9 +567,11 @@ def main():
             ) as situation_description_file:
                 situation_description = yaml.safe_load(situation_description_file)
             language_tuple = tuple(situation_description["language"].split(" "))
-        _integer_label, string_label = label_from_object_language_tuple(
-            language_tuple, situation_num
-        )
+            _integer_label, string_label = label_from_object_language_tuple(
+                language_tuple, situation_num
+            )
+        else:
+            string_label = "dummy"
         output_situation_dir = args.output_dir / f"situation_{situation_num}"
         output_situation_dir.mkdir(exist_ok=True, parents=True)
         S = Stroke_Extraction(
@@ -584,8 +584,8 @@ def main():
             # TODO create issue: in the reorganized curriculum format, we don't store the
             #  information about the object view/ID in an authoritative global-per-sample way such
             #  that we could retrieve it here in the stroke extraction code.
-            obj_view=None,
-            obj_id=None,
+            obj_view="-1",
+            obj_id="-1",
         )
         S.get_strokes()
     print("out")
