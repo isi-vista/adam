@@ -66,8 +66,14 @@ def main():
     )
     parser.add_argument(
         "--dir-num",
+        type=int,
         default=None,
         help="A specific situation directory to decode.",
+    )
+    parser.add_argument(
+        "--compute-accuracy",
+        action="store_true",
+        help="Automatically compute GNN accuracy."
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
@@ -77,7 +83,7 @@ def main():
 
     "Processing data from image to stroke graph"
     logging.info("Loading test data...")
-    test_coords, test_adj, test_label = get_stroke_data(args.curriculum_path, "test")
+    test_coords, test_adj, test_label = get_stroke_data(args.curriculum_path, "test", dir_num=args.dir_num, int_curriculum_labels=args.compute_accuracy)
     logging.info("Done loading data.")
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -123,32 +129,37 @@ def main():
     model.eval()
     losses = []
     best_acc = 0
+    outputs = None
 
     "Inference"
-    outputs = nn.LogSoftmax(dim=1)(
-        model(test_adjacency_matrices, test_node_features, test_edge_features)
-    )
-    test_acc = Variable(
-        evaluation(
-            outputs.data,
-            test_label.data,
-            topk=(1,),
-        )[0]
-    )
-    logging.info("test acc :{}".format(test_acc))
+    if len(test_coords) > 0:
+        outputs = nn.LogSoftmax(dim=1)(
+            model(test_adjacency_matrices, test_node_features, test_edge_features)
+        )
+    else:
+        logging.warning("Can't give reasonable output for empty input.")
+    if args.compute_accuracy and outputs is not None:
+        test_acc = Variable(
+            evaluation(
+                outputs.data,
+                test_label.data,
+                topk=(1,),
+            )[0]
+        )
+        logging.info("test acc :{}".format(test_acc))
     logging.info("Done predicting.")
 
     if args.save_outputs_to:
         logging.info("Saving outputs to %s...", args.save_outputs_to)
         # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
-        with open(
-            args.curriculum_path / "info.yaml", encoding="utf=8"
-        ) as curriculum_info_yaml:
-            curriculum_params = yaml.safe_load(curriculum_info_yaml)
+        if args.dir_num is None:
+            with open(
+                args.curriculum_path / "info.yaml", encoding="utf=8"
+            ) as curriculum_info_yaml:
+                curriculum_params = yaml.safe_load(curriculum_info_yaml)
+            if outputs is not None:
+                assert outputs.size(0) == curriculum_params["num_dirs"]
 
-        assert outputs.size(0) == curriculum_params["num_dirs"]
-
-        _, predicted_label_ints = outputs.topk(args.top_k)
         n_saved = 0
         for situation_num in range(curriculum_params["num_dirs"]) if args.dir_num is None else [args.dir_num]:
             input_situation_dir = args.curriculum_path / f"situation_{situation_num}"
@@ -160,11 +171,17 @@ def main():
                 ) as feature_yaml_in:
                     features = yaml.safe_load(feature_yaml_in)
 
+                if outputs is None:
+                    predicted_objects = ["unknown"]
+                else:
+                    _, predicted_label_ints = outputs.topk(args.top_k)
+                    predicted_objects = [STRING_OBJECT_LABELS[
+                        predicted_label_ints[situation_num][i]] for i in range(args.top_k)
+                    ]
+
                 updated_features = update_features_yaml(
                     features,
-                    predicted_object=[STRING_OBJECT_LABELS[
-                        predicted_label_ints[situation_num][i]] for i in range(args.top_k)
-                    ],
+                    predicted_object=predicted_objects
                 )
 
                 output_situation_dir = args.save_outputs_to / f"situation_{situation_num}"
