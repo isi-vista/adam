@@ -30,3 +30,16 @@ SCENE_JSON = "scene.json"
 FEATURE_YAML = "feature.yaml"
 FONTS_DIR = DATA_DIR / "fonts"
 ROBOTO_FILE = FONTS_DIR / "Roboto.ttf"
+
+
+def is_relative_to(path: Path, base_path: Path) -> bool:
+    """
+    Return whether `path` is relative to `base path`.
+
+    Shim for Py3.9's `.is_relative_to()`.
+    """
+    try:
+        path.resolve().relative_to(base_path.resolve())
+        return True
+    except ValueError:
+        return False

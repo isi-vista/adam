@@ -1,4 +1,12 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
+import { environment } from '../../../environments/environment';
+
+export interface ImageResponse {
+  image_data: string;
+  message?: string;
+}
 
 @Component({
   selector: 'app-image-output',
@@ -18,7 +26,9 @@ export class ImageOutputComponent implements OnChanges {
   sceneStrokeGraphArray = [];
   suffix = '../../../assets';
 
-  constructor() {}
+  private apiURL = environment.API_URL;
+
+  constructor(private http: HttpClient, public toastr: ToastrService) {}
 
   reset(): void {
     this.sceneImageArray = [];
@@ -28,26 +38,9 @@ export class ImageOutputComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     this.reset();
-
-    for (const path_id in changes.scene_images.currentValue) {
-      this.sceneImageArray.push(
-        this.suffix +
-          changes.scene_images.currentValue[path_id].replace(/\\/g, '/')
-      );
-    }
-    for (const path_id in changes.stroke_images.currentValue) {
-      this.sceneStrokeArray.push(
-        this.suffix +
-          changes.stroke_images.currentValue[path_id].replace(/\\/g, '/')
-      );
-    }
-    for (const path_id in changes.stroke_graph_images.currentValue) {
-      this.sceneStrokeGraphArray.push(
-        this.suffix +
-          changes.stroke_graph_images.currentValue[path_id].replace(/\\/g, '/')
-      );
-    }
-
+    this.sceneImageArray = changes.scene_images.currentValue;
+    this.sceneStrokeArray = changes.stroke_images.currentValue;
+    this.sceneStrokeGraphArray = changes.stroke_graph_images.currentValue;
     this.isImg = true;
   }
 

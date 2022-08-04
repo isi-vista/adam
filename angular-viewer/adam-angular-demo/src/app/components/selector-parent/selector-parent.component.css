@@ -13,6 +13,13 @@
   border-radius: 10px;
 }
 
+.thick-outline {
+  border: black 5px solid;
+  width: fit-content;
+  padding: 10px 10px 10px 10px;
+  border-radius: 10px;
+}
+
 .box {
   margin: 40px 0 0 20px;
 }
@@ -38,4 +45,15 @@
 
 h3 {
   margin: 30px 0 0 0 20px;
+}
+.data_update {
+  right: 0;
+  top: 0;
+  display: flex;
+  font-weight: bold;
+  color: #1b40d4;
+  white-space: pre-wrap;
+  font-size: large;
+  max-height: 200px;
+  overflow: auto;
 }
