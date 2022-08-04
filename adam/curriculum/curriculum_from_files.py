@@ -115,7 +115,11 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
     ] = []
     for situation_num in range(curriculum_params["num_dirs"]):
         situation_dir = curriculum_dir / SITUATION_DIR_NAME.format(num=situation_num)
-        instances.append(phase3_process_scene_dir(situation_dir, color_is_rgb=color_is_rgb, curriculum_type=curriculum_type))  # type: ignore
+        instances.append(
+            phase3_process_scene_dir(
+                situation_dir, color_is_rgb=color_is_rgb, curriculum_type=curriculum_type
+            )
+        )
 
     return [
         ExplicitWithSituationInstanceGroup(  # type: ignore
@@ -152,7 +156,7 @@ def phase3_process_scene_dir(
         pdc_semantic_plys=sorted(situation_dir.glob("pdc_semantic_*")),
         semantic_pngs=sorted(situation_dir.glob("semantic_*")),
         features=feature_yamls,
-        strokes=sorted(situation_dir.glob("stroke_[0-9]*_[0-9]*.png")),
+        strokes=sorted(situation_dir.glob("stroke_[0-9]*.png")),
         stroke_graphs=sorted(situation_dir.glob("stroke_graph_*")),
         actions=sorted(situation_dir.glob("action*")),
     )
