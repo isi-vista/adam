@@ -80,14 +80,16 @@ def get_scene() -> Any:
     learner = request.args.get("learner", default="")
     training_curriculum = request.args.get("training_curriculum", default="")
     testing_curriculum = request.args.get("testing_curriculum", default="")
-    scene_number = int(request.args.get("scene_number", "")) - 1
+    raw_scene_number = request.args.get("scene_number", "")
     if (
         not learner
         or not training_curriculum
         or not testing_curriculum
-        or not scene_number
+        or not raw_scene_number
+        or int(raw_scene_number) <= 0
     ):
         abort(HTTPStatus.BAD_REQUEST)
+    scene_number = int(raw_scene_number) - 1
     if any("/" in arg for arg in (learner, training_curriculum, testing_curriculum)):
         abort(HTTPStatus.BAD_REQUEST)
 
@@ -152,17 +154,19 @@ def get_image() -> Any:
     learner = request.args.get("learner", default="")
     training_curriculum = request.args.get("training_curriculum", default="")
     testing_curriculum = request.args.get("testing_curriculum", default="")
-    scene_number = int(request.args.get("scene_number", "")) - 1
-    situation_dir = f"situation_{scene_number}"
+    raw_scene_number = request.args.get("scene_number", "")
     image_file = request.args.get("image_file", default="")
     if (
         not learner
         or not training_curriculum
         or not testing_curriculum
-        or not situation_dir
+        or not raw_scene_number
+        or int(raw_scene_number) <= 0
+        or not image_file
     ):
         abort(HTTPStatus.BAD_REQUEST)
-
+    scene_number = int(raw_scene_number) - 1
+    situation_dir = f"situation_{scene_number}"
     if any(
         "/" in arg
         for arg in (
