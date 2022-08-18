@@ -161,8 +161,7 @@ def main():
         logging.info(
             "{}, loss: {:.4e}, acc: {}, test acc :{}".format(
                 step, train_loss.item(), acc, test_acc
-            ),
-            flush=True,
+            )
         )
     logging.info("Best test acc is {}".format(best_acc))
     logging.info(f"Saving model state dict to {args.save_model_to}")

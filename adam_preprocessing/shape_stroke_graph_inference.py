@@ -137,7 +137,7 @@ def main():
             if len(feature_yamls) == 1:
                 # Load features, update them, then save
                 with open(
-                    input_situation_dir / feature_yamls[0], encoding="utf-8"
+                    feature_yamls[0], encoding="utf-8"
                 ) as feature_yaml_in:
                     features = yaml.safe_load(feature_yaml_in)
 
