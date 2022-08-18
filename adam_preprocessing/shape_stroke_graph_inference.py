@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from copy import deepcopy
 import logging
 from pathlib import Path
+from typing import Sequence
 
 import torch
 import torch.nn as nn
@@ -22,12 +23,19 @@ from MPNN import MPNN, MPNN_Linear
 from utils import accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
 
 
-def update_features_yaml(features_yaml, *, predicted_object: str):
+def update_features_yaml(features_yaml, *, predicted_objects: Sequence[str]):
     # jac: not terribly efficient to do a full deepcopy, but who cares, this should be a small dict
     # anyway... also this is probably much less expensive than the GNN inference itself.
     result = deepcopy(features_yaml)
     for object_ in result["objects"]:
-        object_["stroke_graph"]["concept_name"] = predicted_object
+        if len(predicted_objects) == 1:
+            object_["stroke_graph"]["concept_name"] = predicted_objects[0]
+            if "concept_names" in object_["stroke_graph"]:
+                del object_["stroke_graph"]["concept_names"]
+        else:
+            object_["stroke_graph"]["concept_names"] = predicted_objects
+            if "concept_name" in object_["stroke_graph"]:
+                del object_["stroke_graph"]["concept_name"]
     return result
 
 
@@ -49,6 +57,12 @@ def main():
         default=None,
         help="Directory where we should write the feature outputs to. Outputs are structured as if "
         "the output path is a curriculum directory.",
+    )
+    parser.add_argument(
+        "--top_k",
+        type=int,
+        default=1,
+        help="Top k decodes to retrieve from the GNN",
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
@@ -129,7 +143,7 @@ def main():
 
         assert outputs.size(0) == curriculum_params["num_dirs"]
 
-        predicted_label_ints = outputs.argmax(dim=1)
+        _, predicted_label_ints = outputs.topk(args.top_k)
         n_saved = 0
         for situation_num in range(curriculum_params["num_dirs"]):
             input_situation_dir = args.curriculum_path / f"situation_{situation_num}"
@@ -137,14 +151,14 @@ def main():
             if len(feature_yamls) == 1:
                 # Load features, update them, then save
                 with open(
-                    input_situation_dir / feature_yamls[0], encoding="utf-8"
+                    feature_yamls[0], encoding="utf-8"
                 ) as feature_yaml_in:
                     features = yaml.safe_load(feature_yaml_in)
 
                 updated_features = update_features_yaml(
                     features,
-                    predicted_object=STRING_OBJECT_LABELS[
-                        predicted_label_ints[situation_num]
+                    predicted_object=[STRING_OBJECT_LABELS[
+                        predicted_label_ints[situation_num][i]] for i in range(args.top_k)
                     ],
                 )
 

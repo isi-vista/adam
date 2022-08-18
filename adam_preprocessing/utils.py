@@ -66,7 +66,7 @@ def get_stroke_data(
         feature_yamls = sorted(situation_dir.glob("feature*"))
         if len(feature_yamls) == 1:
             with open(
-                situation_dir / feature_yamls[0], encoding="utf-8"
+                feature_yamls[0], encoding="utf-8"
             ) as feature_yaml_in:
                 features = yaml.safe_load(feature_yaml_in)
 
