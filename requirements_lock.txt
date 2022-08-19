@@ -73,7 +73,7 @@ tomli==2.0.1
 towncrier==21.9.0
 typed-ast==1.5.4
 types-PyYAML==6.0.7
-types-requests==2.28.6
+types-requests==2.28.8
 types-tabulate==0.8.9
 types-urllib3==1.26.20
 typing_extensions==4.2.0
