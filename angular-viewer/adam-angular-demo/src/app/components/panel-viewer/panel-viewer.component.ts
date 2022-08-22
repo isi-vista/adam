@@ -21,25 +21,40 @@ export class PanelViewerComponent implements OnChanges {
     let tempObject;
     for (const propName of Object.keys(changes)) {
       const chng = changes[propName];
-      const cur = JSON.parse(JSON.stringify(chng.currentValue));
-      tempObject = cur;
-    }
-
-    this.objectsArray = [];
-    for (const key in tempObject) {
-      if (key === 'similarities') {
-        continue;
+      if (typeof chng.currentValue !== 'undefined') {
+        const cur = JSON.parse(JSON.stringify(chng.currentValue));
+        tempObject = cur;
       }
-      this.objectsArray.push(key);
     }
 
-    this.objectOne = this.objectsArray[0];
-    this.objectTwo = this.objectsArray[1];
+    if (typeof tempObject === 'undefined') {
+      this.clearAppPanel();
+    } else {
+      this.objectsArray = [];
+      for (const key in tempObject) {
+        if (key === 'similarities') {
+          continue;
+        }
+        this.objectsArray.push(key);
+      }
 
-    this.objectOneArray = tempObject[this.objectOne];
-    this.objectTwoArray = tempObject[this.objectTwo];
-    this.similarities = tempObject.similarities;
+      this.objectOne = this.objectsArray[0];
+      this.objectTwo = this.objectsArray[1];
 
-    this.submit = true;
+      this.objectOneArray = tempObject[this.objectOne];
+      this.objectTwoArray = tempObject[this.objectTwo];
+      this.similarities = tempObject.similarities;
+      this.submit = true;
+    }
+  }
+
+  clearAppPanel(): void {
+    this.similarities = [];
+    this.objectOne = null;
+    this.objectTwo = null;
+    this.objectOneArray = [];
+    this.objectTwoArray = [];
+    this.objectsArray = [];
+    this.submit = false;
   }
 }
