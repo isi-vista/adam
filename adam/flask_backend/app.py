@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from glob import glob
 from http import HTTPStatus
 from typing import Any
@@ -77,22 +78,23 @@ def get_scene() -> Any:
     if not request.args:
         abort(HTTPStatus.BAD_REQUEST)
 
-    learner = request.args.get("learner", default="")
-    training_curriculum = request.args.get("training_curriculum", default="")
-    testing_curriculum = request.args.get("testing_curriculum", default="")
-    raw_scene_number = request.args.get("scene_number", "")
+    learner = request.args.get("learner", default=None)
+    training_curriculum = request.args.get("training_curriculum", default=None)
+    testing_curriculum = request.args.get("testing_curriculum", default=None)
+    raw_scene_number = request.args.get("scene_number", default=None)
     if (
-        not learner
-        or not training_curriculum
-        or not testing_curriculum
-        or not raw_scene_number
-        or int(raw_scene_number) <= 0
+        learner is None
+        or training_curriculum is None
+        or testing_curriculum is None
+        or raw_scene_number is None
+        or int(raw_scene_number) < 1
     ):
         abort(HTTPStatus.BAD_REQUEST)
-    scene_number = int(raw_scene_number) - 1
     if any("/" in arg for arg in (learner, training_curriculum, testing_curriculum)):
         abort(HTTPStatus.BAD_REQUEST)
 
+    # Account for display starting at 1 while the backend counts from 0
+    scene_number = int(raw_scene_number) - 1
     experiment_dir = (
         LEARNERS_DIR
         / learner
@@ -131,7 +133,7 @@ def get_scene() -> Any:
         ],
         "object_strokes": [
             get_image_data(path)
-            for path in sorted(glob(f"{experiment_dir}/stroke_[0-9]*_[0-9]*.png"))
+            for path in sorted(glob(f"{experiment_dir}/stroke_[0-9]*.png"))
         ],
         "stroke_graph": [
             get_image_data(path)
@@ -309,8 +311,13 @@ def init_dir_contents() -> None:
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--port", type=int, default=8000, help="Port to run flask app on."
+    )
+    args = parser.parse_args()
     init_dir_contents()
-    app.run(debug=True, load_dotenv=False)
+    app.run(debug=True, load_dotenv=False, port=args.port)
 # else:
 #     gunicorn_logger = logging.getLogger("gunicorn.error")
 #     logger.level = gunicorn_logger.level

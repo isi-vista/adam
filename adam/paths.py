@@ -3,6 +3,7 @@ from pathlib import Path
 
 TOP_LEVEL_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = TOP_LEVEL_DIR / "data"
+PREPROCESSING_DIR = TOP_LEVEL_DIR / "adam_preprocessing"
 CURRICULUM_DIR = DATA_DIR / "curriculum"
 TRAINING_CURRICULUM_DIR = CURRICULUM_DIR / "train"
 TESTING_CURRICULUM_DIR = CURRICULUM_DIR / "test"

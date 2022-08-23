@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Tuple, MutableSequence, Sequence
 
 import yaml
@@ -114,55 +115,11 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
     ] = []
     for situation_num in range(curriculum_params["num_dirs"]):
         situation_dir = curriculum_dir / SITUATION_DIR_NAME.format(num=situation_num)
-        language_tuple: Tuple[str, ...] = tuple()
-        if (situation_dir / SITUATION_DESCRIPTION_FILE).exists():
-            with open(
-                situation_dir / SITUATION_DESCRIPTION_FILE, encoding="utf-8"
-            ) as situation_description_file:
-                situation_description = yaml.safe_load(situation_description_file)
-            language_tuple = tuple(situation_description["language"].split(" "))
-        elif curriculum_type == TRAINING_CUR:
-            raise ValueError(
-                f"Training situations must provide a description, but situation {situation_num} "
-                f"in {curriculum_dir} does not."
+        instances.append(
+            phase3_process_scene_dir(
+                situation_dir, color_is_rgb=color_is_rgb, curriculum_type=curriculum_type
             )
-
-        feature_yamls = sorted(situation_dir.glob("feature*"))
-        situation = SimulationSituation(
-            language=language_tuple,
-            scene_images_png=sorted(situation_dir.glob("rgb_*")),
-            scene_point_cloud=tuple(situation_dir.glob("pdc_rgb_*")),
-            depth_pngs=sorted(situation_dir.glob("depth_*")),
-            pdc_semantic_plys=sorted(situation_dir.glob("pdc_semantic_*")),
-            semantic_pngs=sorted(situation_dir.glob("semantic_*")),
-            features=feature_yamls,
-            strokes=sorted(situation_dir.glob("stroke_[0-9]*_[0-9]*.png")),
-            stroke_graphs=sorted(situation_dir.glob("stroke_graph_*")),
-            actions=sorted(situation_dir.glob("action*")),
         )
-        language = TokenSequenceLinguisticDescription(tokens=language_tuple)
-        if len(feature_yamls) == 1:
-            perception = VisualPerceptionRepresentation.single_frame(
-                VisualPerceptionFrame.from_yaml(
-                    situation_dir / feature_yamls[0],
-                    color_is_rgb=color_is_rgb,
-                )
-            )
-        else:
-            # If we have more than one feature yaml there is also some information in a
-            # separate file relating to action feature extraction
-            with open(situation_dir / "action.yaml", encoding="utf-8") as action_yaml:
-                action_features = yaml.safe_load(action_yaml)
-            perception = VisualPerceptionRepresentation.multi_frame(
-                frames=[
-                    VisualPerceptionFrame.from_yaml(
-                        situation_dir / feature_file, color_is_rgb=color_is_rgb
-                    )
-                    for feature_file in feature_yamls
-                ],
-                action_features=action_features,
-            )
-        instances.append((situation, language, perception))  # type: ignore
 
     return [
         ExplicitWithSituationInstanceGroup(  # type: ignore
@@ -170,3 +127,59 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
             instances=tuple(instances),
         )
     ]
+
+
+def phase3_process_scene_dir(
+    situation_dir: Path, *, curriculum_type: str, color_is_rgb: bool = True
+) -> Tuple[
+    SimulationSituation,
+    TokenSequenceLinguisticDescription,
+    VisualPerceptionRepresentation[VisualPerceptionFrame],
+]:
+    language_tuple: Tuple[str, ...] = tuple()
+    if (situation_dir / SITUATION_DESCRIPTION_FILE).exists():
+        with open(
+            situation_dir / SITUATION_DESCRIPTION_FILE, encoding="utf-8"
+        ) as situation_description_file:
+            situation_description = yaml.safe_load(situation_description_file)
+        language_tuple = tuple(situation_description["language"].split(" "))
+    elif curriculum_type == TRAINING_CUR:
+        raise ValueError(
+            f"Training situations must provide a description, but situation {SITUATION_DESCRIPTION_FILE} does not."
+        )
+    feature_yamls = sorted(situation_dir.glob("feature*"))
+    situation = SimulationSituation(
+        language=language_tuple,
+        scene_images_png=sorted(situation_dir.glob("rgb_*")),
+        scene_point_cloud=tuple(situation_dir.glob("pdc_rgb_*")),
+        depth_pngs=sorted(situation_dir.glob("depth_*")),
+        pdc_semantic_plys=sorted(situation_dir.glob("pdc_semantic_*")),
+        semantic_pngs=sorted(situation_dir.glob("semantic_*")),
+        features=feature_yamls,
+        strokes=sorted(situation_dir.glob("stroke_[0-9]*.png")),
+        stroke_graphs=sorted(situation_dir.glob("stroke_graph_*")),
+        actions=sorted(situation_dir.glob("action*")),
+    )
+    language = TokenSequenceLinguisticDescription(tokens=language_tuple)
+    if len(feature_yamls) == 1:
+        perception = VisualPerceptionRepresentation.single_frame(
+            VisualPerceptionFrame.from_yaml(
+                situation_dir / feature_yamls[0],
+                color_is_rgb=color_is_rgb,
+            )
+        )
+    else:
+        # If we have more than one feature yaml there is also some information in a
+        # separate file relating to action feature extraction
+        with open(situation_dir / "action.yaml", encoding="utf-8") as action_yaml:
+            action_features = yaml.safe_load(action_yaml)
+        perception = VisualPerceptionRepresentation.multi_frame(
+            frames=[
+                VisualPerceptionFrame.from_yaml(
+                    situation_dir / feature_file, color_is_rgb=color_is_rgb
+                )
+                for feature_file in feature_yamls
+            ],
+            action_features=action_features,
+        )
+    return situation, language, perception
