@@ -181,7 +181,7 @@ def main():
 
                 updated_features = update_features_yaml(
                     features,
-                    predicted_object=predicted_objects
+                    predicted_objects=predicted_objects
                 )
 
                 output_situation_dir = args.save_outputs_to / f"situation_{situation_num}"
