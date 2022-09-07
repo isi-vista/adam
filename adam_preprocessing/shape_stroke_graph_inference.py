@@ -176,12 +176,12 @@ def main():
                 else:
                     _, predicted_label_ints = outputs.topk(args.top_k)
                     predicted_objects = [STRING_OBJECT_LABELS[
-                        predicted_label_ints[situation_num][i]] for i in range(args.top_k)
+                        predicted_label_ints[situation_num if args.dir_num is None else 0][i]] for i in range(args.top_k)
                     ]
 
                 updated_features = update_features_yaml(
                     features,
-                    predicted_object=predicted_objects
+                    predicted_objects=predicted_objects
                 )
 
                 output_situation_dir = args.save_outputs_to / f"situation_{situation_num}"
