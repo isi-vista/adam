@@ -30,6 +30,7 @@ The outputs will be saved in the usual curriculum format.
 Or, using the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
+cd adam_preprocess
 sbatch extract_strokes.sh \
   "data/curriculum/train/m5_objects_v0_with_mugs" \
   "path/to/outputs"
