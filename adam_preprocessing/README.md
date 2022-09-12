@@ -20,7 +20,7 @@ Assuming you want to run stroke extraction, be sure to install the following two
 To run stroke extraction on the M5 objects with mugs train curriculum, run:
 
 ```bash
-python adam_preprocess/shape_stroke_graph_learner.py \
+python adam_preprocess/shape_stroke_extraction.py \
   "data/curriculum/train/m5_objects_v0_with_mugs" \
   "path/to/outputs"
 ```
