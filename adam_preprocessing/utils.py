@@ -36,7 +36,7 @@ STRING_OBJECT_LABELS = [
 
 
 def get_stroke_data(
-    curriculum_path: Path, train_or_test: str, *, dir_num: Optional[int], int_curriculum_labels: bool = True
+    curriculum_path: Path, train_or_test: str, *, dir_num: Optional[int] = None, int_curriculum_labels: bool = True
 ) -> Tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
     # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
     if dir_num is None:
