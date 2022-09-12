@@ -27,7 +27,7 @@ python adam_preprocess/shape_stroke_extraction.py \
 
 The outputs will be saved in the usual curriculum format.
 
-Or, using the Slurm script:
+Or, using the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
 sbatch extract_strokes.sh \
@@ -45,7 +45,7 @@ python adam_preprocess/shape_stroke_graph_learner.py \
   "data/gnn/m5_objects_v0_with_mugs_pytorch.bin"
 ```
 
-Or, using the Slurm script:
+Or, using the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
 cd adam_preprocess
@@ -76,7 +76,7 @@ python adam_preprocess/shape_stroke_graph_inference.py \
   --save_outputs_to "data/curriculum/test/m5_objects_v0_with_mugs_eval"
 ```
 
-To use the Slurm script:
+To use the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
 cd adam_preprocess
