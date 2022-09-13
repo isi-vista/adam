@@ -27,7 +27,9 @@ You can check out our papers to read more about the system and to cite our work:
 
    ```
    adam_root: PATH_TO_WORKING_COPY_OF_THIS_REPO
-   adam_experiment_root: PATH_OUTSIDE_WORKING_COPY_TO_WRITE_EXPERIMENT_DATA_TO
+   # if you want to view experiment results in the UI, you must point adam_experiment_root to
+   # %adam_root%/data, otherwise any directory is fine:
+   adam_experiment_root: %adam_root%/data
 
    conda_environment: adam
    conda_base_path: PATH_TO_ANACONDA_DIRECTORY

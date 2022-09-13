@@ -4,10 +4,10 @@ This is the code for ADAM's visual preprocessing integrations. For the moment we
 [asu_gnn]: https://github.com/ASU-APG/adam-stage/tree/main/processing
 
 # Setup
-1. Create and activate a Python 3.10 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam-gnn python=3.10`
+1. Create and activate a Python 3.9 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam-gnn python=3.9`
 2. Install PyTorch and related dependencies: `conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch`
 3. Install other dependencies: `pip install -r requirements.txt`
-4. (Optional) If you want to run stroke extraction, install the Matlab API. On SAGA you can install this using: `cd /nas/gaia/adam/matlab/extern/engines/python && pip install .`.
+4. (Optional) If you want to run stroke extraction, install the Matlab API. (We have not yet figured out how to do this on SAGA.)
 
 ## (Optional) Matlab toolboxes
 Assuming you want to run stroke extraction, be sure to install the following two Matlab toolboxes:
@@ -20,16 +20,17 @@ Assuming you want to run stroke extraction, be sure to install the following two
 To run stroke extraction on the M5 objects with mugs train curriculum, run:
 
 ```bash
-python adam_preprocess/shape_stroke_graph_learner.py \
+python adam_preprocess/shape_stroke_extraction.py \
   "data/curriculum/train/m5_objects_v0_with_mugs" \
   "path/to/outputs"
 ```
 
 The outputs will be saved in the usual curriculum format.
 
-Or, using the Slurm script:
+Or, using the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
+cd adam_preprocess
 sbatch extract_strokes.sh \
   "data/curriculum/train/m5_objects_v0_with_mugs" \
   "path/to/outputs"
@@ -45,7 +46,7 @@ python adam_preprocess/shape_stroke_graph_learner.py \
   "data/gnn/m5_objects_v0_with_mugs_pytorch.bin"
 ```
 
-Or, using the Slurm script:
+Or, using the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
 cd adam_preprocess
@@ -76,7 +77,7 @@ python adam_preprocess/shape_stroke_graph_inference.py \
   --save_outputs_to "data/curriculum/test/m5_objects_v0_with_mugs_eval"
 ```
 
-To use the Slurm script:
+To use the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
 cd adam_preprocess
