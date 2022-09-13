@@ -1,7 +1,11 @@
-import stego.dino.vision_transformer as vits
+# type: ignore
+# pylint: disable=W,C
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+import stego.dino.vision_transformer as vits
 
 
 class LambdaLayer(nn.Module):
@@ -463,11 +467,11 @@ class NetWithActivations(torch.nn.Module):
         super(NetWithActivations, self).__init__()
         self.layers = nn.ModuleList(model.children())
         self.layer_nums = []
-        for l in layer_nums:
-            if l < 0:
-                self.layer_nums.append(len(self.layers) + l)
+        for layer in layer_nums:
+            if layer < 0:
+                self.layer_nums.append(len(self.layers) + layer)
             else:
-                self.layer_nums.append(l)
+                self.layer_nums.append(layer)
         self.layer_nums = set(sorted(self.layer_nums))
 
     def forward(self, x):

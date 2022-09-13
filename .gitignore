@@ -124,6 +124,7 @@ pip-wheel-metadata/
 src/
 data/
 segmentation_processing/model/
+segmentation_processing/logs
 
 # adam_MCL_CCP
 ColorPalette/

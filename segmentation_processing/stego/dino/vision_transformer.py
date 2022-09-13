@@ -1,3 +1,6 @@
+# type: ignore
+# pylint: disable=W,C
+#
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +23,7 @@ import math
 
 import torch
 import torch.nn as nn
+
 from stego.dino.utils import trunc_normal_
 
 

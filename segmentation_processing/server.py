@@ -12,11 +12,11 @@ from gunicorn import glogging
 from gunicorn.config import Config
 import torch.multiprocessing
 import torchvision
-from torchvision.transforms import transforms as transforms
+from torchvision.transforms import transforms
 
 from mask_rcnn.utils import inference_res as rcc_inference_res
 from stego.inf_utils import inference_res as stego_inference_res
-from stego.train_segmentation import LitUnsupervisedSegmenter
+from stego.train_segmentation import LitUnsupervisedSegmenter  # type: ignore
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -43,6 +43,9 @@ class GunicornLogger(glogging.Logger):  # type: ignore
 @app.route("/instanceseg", methods=["POST"])
 def mask() -> Any:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if not request.json:
+        abort(HTTPStatus.BAD_REQUEST)
+
     img = Image.open(BytesIO(base64.b64decode(request.json["image"])))
     segmentation_type = request.json.get("segmentation_type", "stego")
 
@@ -61,7 +64,9 @@ def mask() -> Any:
         stego_model = LitUnsupervisedSegmenter.load_from_checkpoint(STEGO_MODEL_PATH)
         stego_model.to(device=device).eval()
 
-        linear_masks, cluster_masks, linear_boxes, cluster_boxes = stego_segmentation(img, stego_model, device)
+        linear_masks, cluster_masks, linear_boxes, cluster_boxes = stego_segmentation(
+            img, stego_model, device
+        )
         linear_masks = linear_masks.tolist()
         linear_boxes = linear_boxes.tolist()
         cluster_boxes = cluster_boxes.tolist()

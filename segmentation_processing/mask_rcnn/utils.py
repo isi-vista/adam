@@ -1,3 +1,5 @@
+from typing import Any, Tuple
+
 import numpy as np
 import torch
 
@@ -98,14 +100,14 @@ INSTANCE_CATEGORIES = [
 COLORS = np.random.uniform(0, 255, size=(len(INSTANCE_CATEGORIES), 3))
 
 
-def inference_res(image, model, threshold):
+def inference_res(image: torch.Tensor, model: Any, threshold: float) -> Tuple[Any, Any, Any]:
     with torch.no_grad():
         outputs = model(image)
 
     # label likelihood scores
     scores = list(outputs[0]["scores"].detach().cpu().numpy())
-    thresholded_preds_inidices = [scores.index(i) for i in scores if i > threshold]
-    thresholded_preds_count = len(thresholded_preds_inidices)
+    thresholded_preds_indices = [scores.index(i) for i in scores if i > threshold]
+    thresholded_preds_count = len(thresholded_preds_indices)
 
     # threshold filter masks
     masks = (outputs[0]["masks"] > 0.5).squeeze().detach().cpu().numpy()
@@ -113,7 +115,8 @@ def inference_res(image, model, threshold):
 
     # retrieve bounding boxes in form (x1, y1), (x2, y2)
     boxes = [
-        [(int(i[0]), int(i[1])), (int(i[2]), int(i[3]))] for i in outputs[0]["boxes"].detach().cpu()
+        [(int(box_flat[0]), int(box_flat[1])), (int(box_flat[2]), int(box_flat[3]))]
+        for box_flat in outputs[0]["boxes"].detach().cpu()
     ]
 
     # filter results using likelihood threshold

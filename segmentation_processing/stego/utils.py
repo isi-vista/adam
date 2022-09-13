@@ -1,3 +1,6 @@
+# type: ignore
+# pylint: disable=W
+
 import collections
 import io
 import os
@@ -129,7 +132,7 @@ def load_model(model_type, data_dir):
         model = models.vgg11(pretrained=True)
         model = nn.Sequential(*list(model.children())[:-1] + [nn.AdaptiveAvgPool2d((1, 1))])
     else:
-        raise ValueError("No stego_model: {} found".format(model_type))
+        raise ValueError(f"No stego_model: {model_type} found")
 
     model.eval()
     model.cuda()
@@ -166,7 +169,7 @@ class ToTargetTensor(object):
 
 
 def prep_args():
-    import sys
+    import sys  # pylint: disable=import-outside-toplevel
 
     old_args = sys.argv
     new_args = [old_args.pop(0)]
@@ -177,7 +180,7 @@ def prep_args():
         elif arg.startswith("--"):
             new_args.append(arg[2:] + "=" + old_args.pop(0))
         else:
-            raise ValueError("Unexpected arg style {}".format(arg))
+            raise ValueError(f"Unexpected arg style {arg}")
     sys.argv = new_args
 
 
@@ -190,7 +193,7 @@ def get_transform(res, is_label, crop_type):
         cropper = T.Lambda(lambda x: x)
         res = (res, res)
     else:
-        raise ValueError("Unknown Cropper {}".format(crop_type))
+        raise ValueError(f"Unknown Cropper {crop_type}")
     if is_label:
         return T.Compose([T.Resize(res, Image.NEAREST), cropper, ToTargetTensor()])
     else:

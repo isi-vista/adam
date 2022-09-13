@@ -1,13 +1,15 @@
+from typing import Any, Tuple
+
 import numpy as np
 import torch
 import torch.multiprocessing
 import torch.nn.functional as F
 from torchvision.ops import masks_to_boxes
 
-from .crf import dense_crf
+from .crf import dense_crf  # type: ignore
 
 
-def inference_res(img, model):
+def inference_res(img: torch.Tensor, model: Any) -> Tuple[Any, Any, Any, Any]:
     with torch.no_grad():
         code1 = model(img)
         code2 = model(img.flip(dims=[3]))
@@ -31,11 +33,11 @@ def inference_res(img, model):
     for m in cluster_obj_ids:
         cluster_masks.append(np.equal(m, cluster_pred))
 
-    linear_masks = np.array(linear_masks)
-    cluster_masks = np.array(cluster_masks)
+    linear_masks_np = np.array(linear_masks)
+    cluster_masks_np = np.array(cluster_masks)
 
-    linear_masks_torch = torch.from_numpy(linear_masks)
-    cluster_masks_torch = torch.from_numpy(cluster_masks)
+    linear_masks_torch = torch.from_numpy(linear_masks_np)
+    cluster_masks_torch = torch.from_numpy(cluster_masks_np)
 
     linear_boxes = masks_to_boxes(linear_masks_torch)
     cluster_boxes = masks_to_boxes(cluster_masks_torch)

@@ -1,3 +1,6 @@
+# type: ignore
+# pylint: disable=W,C
+
 from os.path import join
 import random
 
@@ -209,14 +212,17 @@ class LitUnsupervisedSegmenter(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         # training_step defined the train loop.
         # It is independent of forward
-        net_optim, linear_probe_optim, cluster_probe_optim = self.optimizers()
+        (  # pylint: disable=unpacking-non-sequence
+            net_optim,
+            linear_probe_optim,
+            cluster_probe_optim,
+        ) = self.optimizers()
 
         net_optim.zero_grad()
         linear_probe_optim.zero_grad()
         cluster_probe_optim.zero_grad()
 
         with torch.no_grad():
-            ind = batch["ind"]
             img = batch["img"]
             img_aug = batch["img_aug"]
             coord_aug = batch["coord_aug"]

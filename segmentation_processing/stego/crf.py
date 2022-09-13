@@ -1,3 +1,4 @@
+# type: ignore
 #
 # Authors: Wouter Van Gansbeke & Simon Vandenhende
 # Licensed under the CC BY-NC 4.0 license (https://creativecommons.org/licenses/by-nc/4.0/)
@@ -14,9 +15,9 @@ from .utils import unnorm
 MAX_ITER = 10
 POS_W = 3
 POS_XY_STD = 1
-Bi_W = 4
-Bi_XY_STD = 67
-Bi_RGB_STD = 3
+Bi_W = 4  # pylint: disable=invalid-name
+Bi_XY_STD = 67  # pylint: disable=invalid-name
+Bi_RGB_STD = 3  # pylint: disable=invalid-name
 BGR_MEAN = np.array([104.008, 116.669, 122.675])
 
 
