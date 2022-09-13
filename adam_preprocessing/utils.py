@@ -106,6 +106,7 @@ def get_stroke_data(
                     nodes_seen : nodes_seen + n_nodes,
                     nodes_seen : nodes_seen + n_nodes,
                 ] = np.asarray(object_["stroke_graph"]["adjacency_matrix"])
+                nodes_seen += n_nodes
 
             curriculum_coords.append(coords)
             curriculum_adjs.append(adj)
