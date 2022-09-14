@@ -20,7 +20,7 @@ Assuming you want to run stroke extraction, be sure to install the following two
 To run stroke extraction on the M5 objects with mugs train curriculum, run:
 
 ```bash
-python adam_preprocess/shape_stroke_extraction.py \
+python adam_preprocessing/shape_stroke_extraction.py \
   "data/curriculum/train/m5_objects_v0_with_mugs" \
   "path/to/outputs"
 ```
@@ -30,7 +30,7 @@ The outputs will be saved in the usual curriculum format.
 Or, using the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
-cd adam_preprocess
+cd adam_preprocessing
 sbatch extract_strokes.sh \
   "data/curriculum/train/m5_objects_v0_with_mugs" \
   "path/to/outputs"
@@ -40,7 +40,7 @@ sbatch extract_strokes.sh \
 To train the model on say the M5 objects with mugs curriculum, evaluating on the corresponding eval curriculum:
 
 ```bash
-python adam_preprocess/shape_stroke_graph_learner.py \
+python adam_preprocessing/shape_stroke_graph_learner.py \
   "data/curriculum/train/m5_objects_v0_with_mugs" \
   "data/curriculum/test/m5_objects_v0_with_mugs_eval" \
   "data/gnn/m5_objects_v0_with_mugs_pytorch.bin"
@@ -49,7 +49,7 @@ python adam_preprocess/shape_stroke_graph_learner.py \
 Or, using the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
-cd adam_preprocess
+cd adam_preprocessing
 sbatch train.sh \
   "data/curriculum/train/m5_objects_v0_with_mugs" \
   "data/curriculum/test/m5_objects_v0_with_mugs_eval" \
@@ -62,7 +62,7 @@ Note that neither the Python train script nor the Slurm script handles decode/in
 To run the model trained on M5 objects with mugs curriculum, running decode for the corresponding eval curriculum:
 
 ```bash
-python adam_preprocess/shape_stroke_graph_inference.py \
+python adam_preprocessing/shape_stroke_graph_inference.py \
   "data/gnn/m5_objects_v0_with_mugs_pytorch.bin" \
   "data/curriculum/test/m5_objects_v0_with_mugs_eval" \
   --save_outputs_to "path/to/outputs"
@@ -71,7 +71,7 @@ python adam_preprocess/shape_stroke_graph_inference.py \
 To overwrite the decodes in the input curriculum files:
 
 ```bash
-python adam_preprocess/shape_stroke_graph_inference.py \
+python adam_preprocessing/shape_stroke_graph_inference.py \
   "data/gnn/m5_objects_v0_with_mugs_pytorch.bin" \
   "data/curriculum/test/m5_objects_v0_with_mugs_eval" \
   --save_outputs_to "data/curriculum/test/m5_objects_v0_with_mugs_eval"
@@ -80,7 +80,7 @@ python adam_preprocess/shape_stroke_graph_inference.py \
 To use the Slurm script (if you're able to run Matlab on SAGA):
 
 ```bash
-cd adam_preprocess
+cd adam_preprocessing
 sbatch predict.sh \
   "data/gnn/m5_objects_v0_with_mugs_pytorch.bin" \
   "data/curriculum/test/m5_objects_v0_with_mugs_eval" \
