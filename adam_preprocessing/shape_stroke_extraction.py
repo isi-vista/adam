@@ -236,10 +236,8 @@ class Stroke_Extraction:
         - E is a k x 2 sequence of "graph edges"
         """
         eng = matlab.engine.start_matlab()
-        s = eng.genpath("./lightspeed")
-        eng.addpath(s, nargout=0)
-        s = eng.genpath("./BPL")
-        eng.addpath(s, nargout=0)
+        file_dir = os.path.dirname(__file__)
+        eng.addpath(eng.genpath(file_dir), nargout=0)
         out = eng.ske(self.path, nargout=2)
         eng.close()
         return out
