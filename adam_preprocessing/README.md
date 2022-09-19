@@ -1,21 +1,25 @@
 # ADAM visual preprocessing integrations
+
 This is the code for ADAM's visual preprocessing integrations. For the moment we have only integrated the object stroke GNN. This is based on ASU's code [here][asu_gnn].
 
 [asu_gnn]: https://github.com/ASU-APG/adam-stage/tree/main/processing
 
 # Setup
+
 1. Create and activate a Python 3.9 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam-gnn python=3.9`
 2. Install PyTorch and related dependencies: `conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch`
 3. Install other dependencies: `pip install -r requirements.txt`
 4. (Optional) If you want to run stroke extraction, install the Matlab API. On SAGA you can install this using: `cd /nas/gaia/adam/matlab/extern/engines/python && pip install .`.
 
 ## (Optional) Matlab toolboxes
+
 Assuming you want to run stroke extraction, be sure to install the following two Matlab toolboxes:
 
 - Image Processing Toolkit
 - Statistics and Machine Learning Toolbox
 
 # A note about Matlab on SAGA
+
 Matlab on the cluster is subject to licensing restrictions. Specifically, if you want to run it on a SAGA host you must first personally activate Matlab using your license on that host. There [seems to be][matlab_lim] a two-host activation limit. Between these two problems, it's not practical to run Matlab code on `scavenge` or `ephemeral`. Keep this in mind.
 
 It's easiest to activate Matlab from inside a [VNC session][vnc]. Once inside, you'll want to run a terminal emulator and from there run `/nas/gaia/adam/matlab/bin/activate_matlab.sh`.
@@ -41,7 +45,9 @@ function getHostID() {
 [lic_cent]: https://www.mathworks.com/licensecenter/licenses/
 
 # Running
+
 ## Stroke extraction
+
 To run stroke extraction on the M5 objects with mugs train curriculum, run:
 
 ```bash
@@ -62,6 +68,7 @@ sbatch extract_strokes.sh \
 ```
 
 ## Training
+
 To train the model on say the M5 objects with mugs curriculum, evaluating on the corresponding eval curriculum:
 
 ```bash
@@ -84,6 +91,7 @@ sbatch train.sh \
 Note that neither the Python train script nor the Slurm script handles decode/inference.
 
 ## Inference/decode
+
 To run the model trained on M5 objects with mugs curriculum, running decode for the corresponding eval curriculum:
 
 ```bash
