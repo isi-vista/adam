@@ -15,6 +15,31 @@ Assuming you want to run stroke extraction, be sure to install the following two
 - Image Processing Toolkit
 - Statistics and Machine Learning Toolbox
 
+# A note about Matlab on SAGA
+Matlab on the cluster is subject to licensing restrictions. Specifically, if you want to run it on a SAGA host you must first personally activate Matlab using your license on that host. There [seems to be][matlab_lim] a two-host activation limit. Between these two problems, it's not practical to run Matlab code on `scavenge` or `ephemeral`. Keep this in mind.
+
+It's easiest to activate Matlab from inside a [VNC session][vnc]. Once inside, you'll want to run a terminal emulator and from there run `/nas/gaia/adam/matlab/bin/activate_matlab.sh`.
+
+Alternatively, you can try to activate Matlab through the [Licensing Center][lic_cent] on the Matlab website. Click on the row for your license, go to the tab "Install and activate," then choose the link "View Current Activations" and click on the button "Activate a computer." For the host ID, enter the output of the following Bash function on the host in question:
+
+```bash
+function getHostID() {
+    /sbin/ifconfig |
+      perl -ne 'print if not /docker|virbr/../^$/' |
+      grep -F 'ether' |
+      tail -n 1 |
+      sed -e 's/ \+ether \(\([0-9a-f]\{2\}:\)\{5\}[0-9a-f]\{2\}\).*/\1/' |
+      tr -d ':' |
+      tr '[:lower:]' '[:upper:]'
+}
+```
+
+(Note: This code "should" work but has not actually been used to activate a Matlab install before. So it might not give a working host ID after all.)
+
+[matlab_lim]: https://www.mathworks.com/matlabcentral/answers/441674-how-manu-computer-can-use-per-one-account-for-campus-wide-license?s_tid=srchtitle_total%20headcount_8
+[vnc]: https://github.com/isi-vista/saga-cluster/wiki/Setting-Up-VNC-Access-for-a-Development-Machine
+[lic_cent]: https://www.mathworks.com/licensecenter/licenses/
+
 # Running
 ## Stroke extraction
 To run stroke extraction on the M5 objects with mugs train curriculum, run:
@@ -27,7 +52,7 @@ python adam_preprocessing/shape_stroke_extraction.py \
 
 The outputs will be saved in the usual curriculum format.
 
-Or, using the Slurm script (if you're able to run Matlab on SAGA):
+Or, using the Slurm script:
 
 ```bash
 cd adam_preprocessing
@@ -46,7 +71,7 @@ python adam_preprocessing/shape_stroke_graph_learner.py \
   "data/gnn/m5_objects_v0_with_mugs_pytorch.bin"
 ```
 
-Or, using the Slurm script (if you're able to run Matlab on SAGA):
+Or, using the Slurm script:
 
 ```bash
 cd adam_preprocessing
@@ -77,7 +102,7 @@ python adam_preprocessing/shape_stroke_graph_inference.py \
   --save_outputs_to "data/curriculum/test/m5_objects_v0_with_mugs_eval"
 ```
 
-To use the Slurm script (if you're able to run Matlab on SAGA):
+To use the Slurm script:
 
 ```bash
 cd adam_preprocessing
