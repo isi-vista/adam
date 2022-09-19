@@ -7,7 +7,7 @@ This is the code for ADAM's visual preprocessing integrations. For the moment we
 1. Create and activate a Python 3.9 Anaconda environment (or your favorite other means of creating a virtual environment): `conda create --name adam-gnn python=3.9`
 2. Install PyTorch and related dependencies: `conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch`
 3. Install other dependencies: `pip install -r requirements.txt`
-4. (Optional) If you want to run stroke extraction, install the Matlab API. (We have not yet figured out how to do this on SAGA.)
+4. (Optional) If you want to run stroke extraction, install the Matlab API. On SAGA you can install this using: `cd /nas/gaia/adam/matlab/extern/engines/python && pip install .`.
 
 ## (Optional) Matlab toolboxes
 Assuming you want to run stroke extraction, be sure to install the following two Matlab toolboxes:
