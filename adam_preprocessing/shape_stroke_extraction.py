@@ -306,10 +306,10 @@ class Stroke_Extraction:
                 n_clusters=num_obj,
                 affinity="precomputed",
             ).fit(adj)
-            labels_ = clustering.labels_
+            stroke_obj_ids_ = clustering.labels_
         # If there's only one object, things are easy -- just assign all strokes to that one object.
         elif num_obj == 1:
-            labels_ = np.zeros(len(adj))
+            stroke_obj_ids_ = np.zeros(len(adj))
         # Otherwise, adj is [[1.0]] and num_obj is not 1. If num_obj is zero, this sets labels_ to an empty 1D array.
         # If num_obj is greater than 1, it assigns all num_obj strokes to a single object.
         #
@@ -324,8 +324,8 @@ class Stroke_Extraction:
                 logger.warning(
                     "No objects detected for segmentation image %s.", self.path
                 )
-            labels_ = np.zeros(num_obj)
-        self.label = labels_
+            stroke_obj_ids_ = np.zeros(num_obj)
+        self.stroke_obj_ids = stroke_obj_ids_
         self.strokes = strokes
         self.adj = adj
 
@@ -352,7 +352,7 @@ class Stroke_Extraction:
         """
         stroke_colors = []
         for j in range(self.num_obj):
-            reduced_obj = self.reduced_strokes[np.where(self.label == j)[0]]
+            reduced_obj = self.reduced_strokes[np.where(self.stroke_obj_ids == j)[0]]
             plt.subplot(1, self.num_obj, j + 1)
             s_c = []
             for i in range(len(reduced_obj)):
@@ -377,7 +377,7 @@ class Stroke_Extraction:
             if self.adj is [[0.0]]:
                 G.add_node("s0")
             else:
-                ind = np.where(self.label == i)[0]
+                ind = np.where(self.stroke_obj_ids == i)[0]
                 adj_obj = self.adj[ind, :]
                 adj_obj = adj_obj[:, ind]
 
@@ -450,7 +450,7 @@ class Stroke_Extraction:
         for i in range(self.num_obj):
             # Using self.label, pick out the IDs/indices for the strokes belonging to object i.
             # Use this to grab the relevant stroke samples and the relevant submatrix of self.adj.
-            ind = np.where(self.label == i)[0]
+            ind = np.where(self.stroke_obj_ids == i)[0]
             # shape: N_i x 10 x 2 where N_i is the number of strokes in the ith object
             reduced_obj = self.reduced_strokes[ind]
             # shape: N_i x N_i
@@ -479,7 +479,7 @@ class Stroke_Extraction:
                 if i == j:
                     continue
                 else:
-                    ind_ = np.where(self.label == j)[0]
+                    ind_ = np.where(self.stroke_obj_ids == j)[0]
                     reduced_obj_ = self.reduced_strokes[ind_]
                     m_ = reduced_obj_.mean((0, 1))
                     distance["object" + str(j)] = (
