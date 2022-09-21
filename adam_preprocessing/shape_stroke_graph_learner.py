@@ -45,15 +45,20 @@ def main():
         help="Number of steps or epochs to train the model for. (In this script steps = epochs "
         "because our batch size is 'all of the input data'.)",
     )
+    parser.add_argument(
+        "--multi-object",
+        action="store_true",
+        help="Allow for multiple objects in each situation"
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     "Processing data from image to stroke graph"
     logging.info("Loading training data...")
     train_coords, train_adj, train_label = get_stroke_data(
-        args.train_curriculum_path, "train"
+        args.train_curriculum_path, "train", multi_object=args.multi_object
     )
     logging.info("Loading test data...")
-    test_coords, test_adj, test_label = get_stroke_data(args.eval_curriculum_path, "test")
+    test_coords, test_adj, test_label = get_stroke_data(args.eval_curriculum_path, "test", multi_object=args.multi_object)
     logging.info("Done loading data.")
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     "Converting stroke graph data for graph node/edge. "
