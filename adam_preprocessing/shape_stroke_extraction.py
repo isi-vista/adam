@@ -4,12 +4,13 @@ Code for doing stroke extraction on a curriculum.
 Based on original code written by Sheng Cheng, found at
 https://github.com/ASU-APG/adam-stage/tree/main/processing
 """
+from itertools import cycle, islice
 from argparse import ArgumentParser
 import logging
 import cv2
 import numpy as np
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,8 @@ except ImportError:
     logger.warning("Couldn't import MATLAB API; creating a placeholder object instead.")
     matlab = object()
 import matplotlib.pyplot as plt
+from matplotlib.rcsetup import cycler as mpl_cycler
+import matplotlib.patheffects as patheffects
 import scipy.io
 from tqdm import tqdm
 
@@ -108,6 +111,305 @@ def kp2stroke(strokeinfo):
     return connection
 
 
+def merge_small_strokes(
+    strokes: Sequence[Sequence[Tuple[float, float]]], adj: np.ndarray
+) -> Tuple[Sequence[Sequence[Tuple[float, float]]], np.ndarray]:
+    """
+    Given a sequence of strokes and their adjacency matrix, merge small strokes.
+
+    Parameters:
+        strokes: The list of strokes.
+        adj: The adjacency matrix over strokes.
+
+    Return:
+        A tuple (new_strokes, new_adj) where we have merged as many small strokes as possible.
+    """
+    stroke_to_root_id = cluster_small_strokes(strokes, adj)
+    unique = np.unique(stroke_to_root_id)
+    root_id_to_new_stroke_idx = {
+        root_id: idx for idx, root_id in enumerate(unique)
+    }
+
+    # Build inverse map of root to children
+    root_to_cluster = {}
+    for stroke_id, root_id in enumerate(stroke_to_root_id):
+        root_to_cluster.setdefault(root_id, []).append(stroke_id)
+
+    # New strokes are built by merging all key points/control points of the strokes each cluster, in
+    # sorted order
+    new_strokes: List[List[Tuple[float, float]]] = [[] for _ in unique]
+    for idx, (root, cluster) in enumerate(root_to_cluster.items()):
+        cluster_strokes = [strokes[stroke_id] for stroke_id in cluster]
+        new_strokes[idx] = [point for stroke in strokes_end_to_end(cluster_strokes) for point in stroke]
+
+    # jac: I swear there has to be a more NumPy way to do this, but it eludes me. For now, avoiding
+    # premature optimization.
+    new_adj = np.zeros([len(unique), len(unique)])
+    for root1, cluster1 in root_to_cluster.items():
+        for root2, cluster2 in root_to_cluster.items():
+            new_stroke_idx1 = root_id_to_new_stroke_idx[stroke_to_root_id[root1]]
+            new_stroke_idx2 = root_id_to_new_stroke_idx[stroke_to_root_id[root2]]
+            new_adj[new_stroke_idx1, new_stroke_idx2] = np.logical_and(
+                root1 != root2,
+                np.any(adj[cluster1, :][:, cluster2])
+            )
+
+    return new_strokes, np.array(new_adj)
+
+
+def cluster_small_strokes(
+    strokes: Sequence[Sequence[Tuple[float, float]]], adj: np.ndarray
+) -> np.ndarray:
+    """
+    Given a sequence of strokes and their adjacency matrix, produce a clustering of small strokes.
+
+    Parameters:
+        strokes: The list of strokes.
+        adj: The adjacency matrix over strokes.
+
+    Return:
+        An array c with one entry per stroke identifying cluster to which that stroke belongs.
+        Additionally we force c[c[i]] = c[i] for all i.
+    """
+
+    def get_cluster_id(cluster: Sequence[int]) -> int:
+        return sum(2 ** stroke_id_ for stroke_id_ in cluster)
+
+    # jac: Given the representation above, we technically don't need this, but it saves time.
+    # If needed we could reconstruct the list from cluster_id_ as follows:
+    #     [x for x in range(len(strokes) if cluster_id_ & 1 << x == 1]
+    # But I don't think we are so desperate for memory/space.
+    cluster_to_stroke_ids = {get_cluster_id([idx]): [idx] for idx in range(len(strokes))}
+    # Each stroke starts in its own cluster
+    stroke_to_cluster_id = {idx: get_cluster_id([idx]) for idx in range(len(strokes))}
+
+    def cluster_len(cluster_id: int) -> int:
+        strokes_in_cluster = cluster_to_stroke_ids[cluster_id]
+        return sum(len(strokes[stroke_id]) for stroke_id in strokes_in_cluster)
+
+    def neighbors(cluster_id: int) -> Sequence[int]:
+        strokes_in_cluster = cluster_to_stroke_ids[cluster_id]
+        adjacent_strokes = np.max(
+            np.atleast_2d(adj[strokes_in_cluster]),
+            axis=0,
+        )
+        # Ignore strokes in the cluster
+        adjacent_strokes[strokes_in_cluster] = 0
+        return [stroke_to_cluster_id[stroke_id] for stroke_id, is_neighbor in enumerate(adjacent_strokes) if is_neighbor]
+
+    def cluster_degree(cluster_id: int) -> int:
+        return len(neighbors(cluster_id))
+
+    while True:
+        smallest_clusters_first = sorted(cluster_to_stroke_ids.keys(), key=cluster_len)
+        should_stop = True
+        for cluster_id_ in smallest_clusters_first:
+            if cluster_len(cluster_id_) < 10:
+                mergeable_neighbors = [
+                    neighbor for neighbor in neighbors(cluster_id_)
+                    if (cluster_degree(cluster_id_) == 2 or cluster_degree(neighbor) == 2)
+                    # They must also not share a neighbor -- this is to prevent connected T-shaped
+                    # stroke intersections from merging together.
+                    #
+                    # For example, say you have strokes like:
+                    #
+                    #   \ /
+                    #    .
+                    # _./
+                    #
+                    # where straight lines are strokes and periods are key points. Then your stroke
+                    # graph looks like a triangle with a hanger-on:
+                    #
+                    #    s1--s2
+                    #     \ /
+                    # s4---s3
+                    #
+                    # That's a problem because s1 and s2 are both degree 2, so going by degree alone
+                    # we're allowed to merge either with s3. Allowing this can lead to merging
+                    # strokes in a non-orientable way. Say you merge s1 with s3. Then you have a
+                    # graph like:
+                    #
+                    #        s'2
+                    #       /
+                    # s'4--s'3
+                    #
+                    # But now s'3 (representing the tail and the top-left stroke) can be merged with
+                    # s'2 (representing the top-right stroke), because it is degree 2! That's a
+                    # problem because there is no reasonable way to orient these three strokes so
+                    # that they form a connected path.
+                    #
+                    # To prevent this, we disallow merging strokes with common neighbors.
+                    and not any(
+                        shared_neighbor for shared_neighbor in neighbors(cluster_id_)
+                        if shared_neighbor in neighbors(neighbor)
+                    )
+                ]
+                if mergeable_neighbors:
+                    # We're still making progress, so don't stop yet!
+                    should_stop = False
+
+                    # Get the shortest neighbor
+                    shortest_neighbor = min(mergeable_neighbors, key=cluster_len)
+
+                    # Remove old clusters from mappings
+                    old_cluster = cluster_to_stroke_ids.pop(cluster_id_)
+                    old_neighbor_cluster = cluster_to_stroke_ids.pop(shortest_neighbor)
+
+                    # Set up new cluster
+                    new_cluster_strokes = old_cluster + old_neighbor_cluster
+                    new_cluster_id = get_cluster_id(new_cluster_strokes)
+                    cluster_to_stroke_ids[new_cluster_id] = new_cluster_strokes
+
+                    for stroke in new_cluster_strokes:
+                        stroke_to_cluster_id[stroke] = new_cluster_id
+
+                    break
+            else:
+                break
+
+        if should_stop:
+            break
+
+    return np.array([
+        min(cluster_to_stroke_ids[stroke_to_cluster_id[stroke_idx]])
+        for stroke_idx in range(len(strokes))
+    ])
+
+
+def strokes_end_to_end(strokes: Sequence[Sequence[Tuple[float, float]]]) -> Sequence[Sequence[Tuple[float, float]]]:
+    """
+    Given a sequence of strokes, return the strokes in an end-to-end ordering if possible.
+
+    This tries to achieve an ordering that is as close to end-to-end as possible.
+
+    Parameters:
+        strokes: The list of strokes.
+
+    Return:
+        A sequence of strokes with consistent orientation, ordered end to end.
+    """
+    if len(strokes) <= 1:
+        return strokes
+
+    def kings_move_distance(point1: Tuple[float, float], point2: Tuple[float, float]) -> float:
+        """Calculate the king's move (Chebyshev) distance between two points."""
+        x0, y0 = point1
+        x1, y1 = point2
+        return max(abs(x1 - x0), abs(y1 - y0))
+
+    def overlap(stroke1: Sequence[Tuple[float, float]], stroke2: Sequence[Tuple[float, float]]) -> bool:
+        """Check if two strokes overlap at their endpoints."""
+        return any(
+            kings_move_distance(stroke1[s1_endpoint], stroke2[s2_endpoint]) == 0
+            for s1_endpoint in [0, -1]
+            for s2_endpoint in [0, -1]
+        )
+
+    def consistent_orientation(stroke1: Sequence[Tuple[float, float]], stroke2: Sequence[Tuple[float, float]]) -> bool:
+        """Check if two overlapping strokes are oriented consistently."""
+        return (kings_move_distance(stroke1[0], stroke2[-1]) == 0) or (kings_move_distance(stroke1[-1], stroke2[0]) == 0)
+
+    # Create a graph where the nodes are strokes and edges represent "overlap at endpoints"
+    g = nx.Graph()
+    g.add_nodes_from(range(len(strokes)))
+    for idx1, stroke1 in enumerate(strokes):
+        for idx2, stroke2 in enumerate(strokes[idx1 + 1 :], start=idx1 + 1):
+            if overlap(stroke1, stroke2):
+                g.add_edge(idx1, idx2)
+
+    if not nx.is_connected(g):
+        raise ValueError("Can't order strokes end to end: Strokes are not connected enough.")
+
+    # The result should be a path graph. Equivalently (https://en.wikipedia.org/wiki/Path_graph):
+    # It should have no cycles (= it's a tree), and no vertex with degree > 2.
+    if nx.is_tree(g) and all(g.degree(n) <= 2 for n in g.nodes):
+        terminals = [n for n in g.nodes if g.degree(n) == 1]
+        last_node = None
+        cur_node = terminals[0]
+        ordering = [terminals[0]]
+        preserve_orientation = [True]
+        while cur_node != terminals[1]:
+            next_node = [n for n in g.neighbors(cur_node) if n != last_node][0]
+            ordering.append(next_node)
+            preserve_orientation.append(consistent_orientation(strokes[cur_node], strokes[next_node]))
+            last_node = cur_node
+            cur_node = next_node
+
+        result = [
+            strokes[stroke_idx] if preserve_orientation else reversed(strokes[stroke_idx])
+            for stroke_idx, preserve_orientation in zip(ordering, preserve_orientation)
+        ]
+        assert len(result) == len(strokes)
+        return result
+    else:
+        raise ValueError("Strokes don't connect in a line, so can't order them end to end.")
+
+
+def plot_oriented_strokes(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, float]]]) -> None:
+    """
+    Plot oriented strokes on the given axes.
+
+    This creates a line chart with one color per stroke where each line has arrows pointing in the
+    direction that the given stroke is oriented.
+
+    For strokes with just one point, we plot a circle instead.
+
+    Parameters:
+        ax: The axes to plot on.
+        strokes: The strokes to plot.
+    """
+    colors = mpl_cycler(color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
+    for idx, (stroke, color) in enumerate(zip(strokes, cycle(colors))):
+        xs, ys = zip(*stroke)
+        if len(stroke) > 1:
+            ax.plot(
+                xs,
+                ys,
+                label=idx,
+                path_effects=[
+                    patheffects.withTickedStroke(angle=45, length=0.5),
+                    patheffects.withTickedStroke(angle=-45, length=0.5),
+                ],
+                **color,
+            )
+        else:
+            ax.scatter(xs, ys, marker='s', label=idx, **color)
+
+
+def plot_stroke_graph(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, float]]], adj: 'np.ndarray[np.int]') -> None:
+    """
+    Plot stroke graph on the given axes.
+
+    We try to position the vertices as close as possible to the mean of the stroke's points.
+
+    Parameters:
+        ax: The axes to plot on.
+        strokes: The strokes to plot.
+        adj: The adjacency matrix over stroke indices.
+    """
+    if not np.all(adj.T == adj):
+        raise ValueError("Expected symmetric adjacency matrix (undirected graph) as input.")
+
+    g = nx.Graph()
+    if adj.shape == (1, 1):
+        g.add_node(0)
+    else:
+        for p in range(len(adj)):
+            g.add_node(p)
+            for q in range(p, len(adj)):
+                if adj[p][q] == 1:
+                    g.add_edge(p, q)
+
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    nx.draw(
+        g,
+        ax=ax,
+        pos={idx: np.mean(np.asarray(stroke), axis=0) for idx, stroke in enumerate(strokes)},
+        node_color=list(islice(cycle(colors), len(strokes))),
+        with_labels=True,
+    )
+
+
 class Stroke_Extraction:
     """
     obj_type: object name + train/test
@@ -162,6 +464,7 @@ class Stroke_Extraction:
         stroke_img_save_path: str,
         stroke_graph_img_save_path: str,
         features_save_path: str,
+        should_merge_small_strokes: bool = False,
         vis: bool = True,
         save_output: bool = True,
     ):
@@ -170,6 +473,7 @@ class Stroke_Extraction:
         self.obj_id = obj_id
         self.clustering_seed = clustering_seed
         self.vis = vis
+        self.should_merge_small_strokes = should_merge_small_strokes
         self.save_output = save_output
         self.path = segmentation_img_path
         self.img_bgr = img_bgr = cv2.imread(rgb_img_path)
@@ -265,8 +569,9 @@ class Stroke_Extraction:
         strokes = []
         removed_ind = []
         adj = kp2stroke(np.array(out_e))
-        for i in range(len(out_s)):
-            s = np.array(out_s[i])
+        new_s, adj = merge_small_strokes(out_s, adj) if self.should_merge_small_strokes else (out_s, adj)
+        for i in range(len(new_s)):
+            s = np.array(new_s[i])
             if len(s) < 10:
                 removed_ind.append(i)
                 continue
@@ -536,7 +841,18 @@ def main():
     parser.add_argument(
         "--dir-num",
         default=None,
-        help="A specific situation directory number to process. If provided only this directory is processed."
+        help="A specific situation directory number to process. If provided only this directory is processed.",
+    )
+    parser.add_argument(
+        "--merge-small-strokes",
+        action="store_true",
+        help="Merge small strokes before filtering."
+    )
+    parser.add_argument(
+        "--no-merge-small-strokes",
+        action="store_false",
+        dest="merge_small_strokes",
+        help="Don't merge small strokes before filtering."
     )
     parser.add_argument(
         "--use-segmentation-type",
@@ -556,7 +872,9 @@ def main():
             args.curriculum_path / "info.yaml", encoding="utf=8"
         ) as curriculum_info_yaml:
             curriculum_params = yaml.safe_load(curriculum_info_yaml)
-        logger.info("Input curriculum has %d dirs/situations.", curriculum_params["num_dirs"])
+        logger.info(
+            "Input curriculum has %d dirs/situations.", curriculum_params["num_dirs"]
+        )
 
     for situation_num in tqdm(
         range(curriculum_params["num_dirs"]) if args.dir_num is None else [args.dir_num],
@@ -590,6 +908,7 @@ def main():
             stroke_img_save_path=str(output_situation_dir / "stroke_0.png"),
             stroke_graph_img_save_path=str(output_situation_dir / "stroke_graph_0.png"),
             features_save_path=str(output_situation_dir / "feature.yaml"),
+            should_merge_small_strokes=args.merge_small_strokes,
             obj_type=string_label,
             # TODO create issue: in the reorganized curriculum format, we don't store the
             #  information about the object view/ID in an authoritative global-per-sample way such
