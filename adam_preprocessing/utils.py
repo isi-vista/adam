@@ -36,8 +36,32 @@ STRING_OBJECT_LABELS = [
 
 
 def get_stroke_data(
-    curriculum_path: Path, train_or_test: str, *, dir_num: Optional[int] = None, int_curriculum_labels: bool = True
+    curriculum_path: Path, train_or_test: str, *, dir_num: Optional[int] = None, int_curriculum_labels: bool = True, multi_object: bool = False
 ) -> Tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
+    """Load data on strokes from each scenario feature file in each scenario
+       dir in curriculum.
+
+    Params:
+        curriculum_path: path containing curriculum
+        train_or_test: whether the curriculum is for training or testing
+        dir_num: if specified, only extract strokes from the situation with this
+                 number (e.g. with `dir_num=16`, this function only extracts
+                 from `situation_16`)
+        int_curriculum_labels: whether each situation in curriculum has an
+                               integer label (curriculum_labels will be empty
+                               if this is set to False)
+        multi_object: whether to treat objects as separate or to fuse them
+
+    Returns:
+        curriculum_coords: list of all stroke coordinate arrays in curriculum
+                           (1 per object if multi_object, otherwise 1 per
+                           situation)
+        curriculum_adjs: list of all adjacency matrices in curriculum (1 per
+                         object if multi_object, otherwise 1 per situation)
+        curriculum_labels: list of all object labels in curriculum (1 per
+                           object if multi_object, otherwise 1 per
+                           situation)
+    """
     # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
     if dir_num is None:
         with open(curriculum_path / "info.yaml", encoding="utf=8") as curriculum_info_yaml:
@@ -72,56 +96,75 @@ def get_stroke_data(
             if num_obj == 0:
                 continue
 
-            # Sometimes the object detection/stroke extraction process picks up on multiple objects.
-            # When that happens, we want to combine them into one mega-example.
-            # In this mega-example, each distinct object is treated as its own connected component
-            # in a larger graph.
-            #
-            # First we'll grab the coordinates since that's the cleaner part.
-            # Concatenate together the coords for each connected component to get a single
-            # (n_strokes_overall, 2, n_control_points) coordinates array
-            coords = np.concatenate(
-                [
-                    np.asarray(object_["stroke_graph"]["strokes_normalized_coordinates"])
-                    for object_ in features["objects"]
-                ],
-                axis=0,
-            )
+            # If in multi-object mode, get each (coords, adj, label) for all
+            # objects across the curriculum
+            if multi_object:
+                for object_ in features["objects"]:
+                    coords = np.asarray(object_["stroke_graph"]["strokes_normalized_coordinates"])
+                    curriculum_coords.append(coords)
 
-            # Now create together the big adjacency matrix
-            n_nodes_overall = coords.shape[0]
-            # jac: the above should do the same thing but I'm asserting to make sure it does.
-            # for clarity's sake, I should delete this once I verify it works.
-            assert n_nodes_overall == sum(
-                len(object_["stroke_graph"]["adjacency_matrix"])
-                for object_ in features["objects"]
-            )
-            adj = np.zeros([n_nodes_overall, n_nodes_overall])
+                    adj = np.asarray(object_["stroke_graph"]["adjacency_matrix"])
+                    curriculum_adjs.append(adj)
 
-            nodes_seen = 0
-            for idx, object_ in enumerate(features["objects"]):
-                # Set the appropriate submatrix of adj equal to this object's adjacency matrix.
-                n_nodes = len(object_["stroke_graph"]["adjacency_matrix"])
-                adj[
-                    nodes_seen : nodes_seen + n_nodes,
-                    nodes_seen : nodes_seen + n_nodes,
-                ] = np.asarray(object_["stroke_graph"]["adjacency_matrix"])
-                nodes_seen += n_nodes
+                    if int_curriculum_labels:
+                        integer_label, _ = label_from_object_language_tuple(
+                            language_tuple, situation_num
+                        )
+                        curriculum_labels.append(integer_label)
 
-            curriculum_coords.append(coords)
-            curriculum_adjs.append(adj)
-            if int_curriculum_labels:
-                integer_label, _ = label_from_object_language_tuple(
-                    language_tuple, situation_num
+            # If in single-object mode, get 1 set of (coords, adj, label) for
+            # each situation
+            else:
+                # Combine multiple objects into one mega-example. Concatenate
+                # together the coords for each connected component to get a
+                # single (n_strokes_overall, 2, n_control_points) coordinates
+                # array
+                coords = np.concatenate(
+                    [
+                        np.asarray(object_["stroke_graph"]["strokes_normalized_coordinates"])
+                        for object_ in features["objects"]
+                    ],
+                    axis=0,
                 )
-                curriculum_labels.append(integer_label)
+
+                # Now create together the big adjacency matrix
+                n_nodes_overall = coords.shape[0]
+                # jac: the above should do the same thing but I'm asserting
+                # to make sure it does. for clarity's sake, I should delete
+                # this once I verify it works.
+                assert n_nodes_overall == sum(
+                    len(object_["stroke_graph"]["adjacency_matrix"])
+                    for object_ in features["objects"]
+                )
+                adj = np.zeros([n_nodes_overall, n_nodes_overall])
+
+                nodes_seen = 0
+                for idx, object_ in enumerate(features["objects"]):
+                    # Set the appropriate submatrix of adj equal to this
+                    # object's adjacency matrix.
+                    n_nodes = len(object_["stroke_graph"]["adjacency_matrix"])
+                    adj[
+                        nodes_seen: nodes_seen + n_nodes,
+                        nodes_seen: nodes_seen + n_nodes,
+                    ] = np.asarray(object_["stroke_graph"]["adjacency_matrix"])
+                    nodes_seen += n_nodes
+
+                curriculum_coords.append(coords)
+                curriculum_adjs.append(adj)
+
+                if int_curriculum_labels:
+                    integer_label, _ = label_from_object_language_tuple(
+                        language_tuple, situation_num
+                    )
+                    curriculum_labels.append(integer_label)
 
         elif train_or_test == "train":
             raise ValueError(
                 f"Situation number {situation_num} has more than one feature file."
             )
-        # jac: Need to deal with this when we deal with decode for actions, which will probably
-        # require changing the return type here somehow... or other drastic changes.
+        # jac: Need to deal with this when we deal with decode for actions,
+        # which will probably require changing the return type here
+        # somehow... or other drastic changes.
         else:
             raise NotImplementedError(
                 f"Don't know how to do decode when situation number {situation_num} has more than "
