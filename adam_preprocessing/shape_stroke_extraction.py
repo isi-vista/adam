@@ -538,6 +538,12 @@ def main():
         default=None,
         help="A specific situation directory number to process. If provided only this directory is processed."
     )
+    parser.add_argument(
+        "--use-segmentation-type",
+        choices=["semantic", "color-refined"],
+        default="semantic",
+        help="Extract strokes from the color-refined segmentation.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -572,8 +578,14 @@ def main():
             string_label = "dummy"
         output_situation_dir = args.output_dir / f"situation_{situation_num}"
         output_situation_dir.mkdir(exist_ok=True, parents=True)
+        if args.use_segmentation_type == "semantic":
+            segmentation_imgname = "semantic_0.png"
+        elif args.use_segmentation_type == "color-refined":
+            segmentation_imgname = "combined_color_refined_semantic_0.png"
+        else:
+            raise ValueError(f"Unrecognized segmentation type: {args.segmentation_type}.")
         S = Stroke_Extraction(
-            segmentation_img_path=str(situation_dir / "semantic_0.png"),
+            segmentation_img_path=str(situation_dir / segmentation_imgname),
             rgb_img_path=str(situation_dir / "rgb_0.png"),
             stroke_img_save_path=str(output_situation_dir / "stroke_0.png"),
             stroke_graph_img_save_path=str(output_situation_dir / "stroke_graph_0.png"),
