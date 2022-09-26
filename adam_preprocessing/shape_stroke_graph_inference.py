@@ -23,17 +23,17 @@ from MPNN import MPNN, MPNN_Linear
 from utils import accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
 
 
-def update_features_yaml(features_yaml, *, predicted_objects: Sequence[str]):
+def update_features_yaml(features_yaml, *, predictions_by_object: Sequence[Sequence[str]]):
     # jac: not terribly efficient to do a full deepcopy, but who cares, this should be a small dict
     # anyway... also this is probably much less expensive than the GNN inference itself.
     result = deepcopy(features_yaml)
-    for object_ in result["objects"]:
-        if len(predicted_objects) == 1:
-            object_["stroke_graph"]["concept_name"] = predicted_objects[0]
+    for object_, labels in zip(result["objects"], predictions_by_object):
+        if len(labels) == 1:
+            object_["stroke_graph"]["concept_name"] = labels[0]
             if "concept_names" in object_["stroke_graph"]:
                 del object_["stroke_graph"]["concept_names"]
         else:
-            object_["stroke_graph"]["concept_names"] = predicted_objects
+            object_["stroke_graph"]["concept_names"] = labels
             if "concept_name" in object_["stroke_graph"]:
                 del object_["stroke_graph"]["concept_name"]
     return result
@@ -75,6 +75,11 @@ def main():
         action="store_true",
         help="Automatically compute GNN accuracy."
     )
+    parser.add_argument(
+        "--multi-object",
+        action="store_true",
+        help="Allow for multiple objects in each situation"
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
@@ -83,7 +88,7 @@ def main():
 
     "Processing data from image to stroke graph"
     logging.info("Loading test data...")
-    test_coords, test_adj, test_label = get_stroke_data(args.curriculum_path, "test", dir_num=args.dir_num, int_curriculum_labels=args.compute_accuracy)
+    test_coords, test_adj, test_label = get_stroke_data(args.curriculum_path, "test", dir_num=args.dir_num, int_curriculum_labels=args.compute_accuracy, multi_object=args.multi_object)
     logging.info("Done loading data.")
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -157,10 +162,11 @@ def main():
                 args.curriculum_path / "info.yaml", encoding="utf=8"
             ) as curriculum_info_yaml:
                 curriculum_params = yaml.safe_load(curriculum_info_yaml)
-            if outputs is not None:
+            if outputs is not None and not args.multi_object:
                 assert outputs.size(0) == curriculum_params["num_dirs"]
 
         n_saved = 0
+        objs_seen = 0
         for situation_num in range(curriculum_params["num_dirs"]) if args.dir_num is None else [args.dir_num]:
             input_situation_dir = args.curriculum_path / f"situation_{situation_num}"
             feature_yamls = sorted(input_situation_dir.glob("feature*"))
@@ -172,16 +178,23 @@ def main():
                     features = yaml.safe_load(feature_yaml_in)
 
                 if outputs is None:
-                    predicted_objects = ["unknown"]
+                    predictions_by_object = [["unknown"]]
                 else:
                     _, predicted_label_ints = outputs.topk(args.top_k)
-                    predicted_objects = [STRING_OBJECT_LABELS[
-                        predicted_label_ints[situation_num if args.dir_num is None else 0][i]] for i in range(args.top_k)
-                    ]
+                    predictions_by_object = []
+                    num_objs = len(features['objects'])
+                    for object_idx in range(objs_seen, objs_seen + num_objs):
+                        # object_idx points to this object among all objects
+                        # object_predictions are the top k predictions for 1 given object
+                        object_predictions = [STRING_OBJECT_LABELS[
+                            predicted_label_ints[object_idx if args.dir_num is None else 0][i]] for i in range(args.top_k)
+                        ]
+                        predictions_by_object.append(object_predictions)
+                    objs_seen += num_objs
 
                 updated_features = update_features_yaml(
                     features,
-                    predicted_objects=predicted_objects
+                    predictions_by_object=predictions_by_object
                 )
 
                 output_situation_dir = args.save_outputs_to / f"situation_{situation_num}"
