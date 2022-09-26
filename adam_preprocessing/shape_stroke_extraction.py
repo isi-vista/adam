@@ -871,6 +871,18 @@ def main():
         default="semantic",
         help="Extract strokes from the color-refined segmentation.",
     )
+    parser.add_argument(
+        "--tolerate-errors",
+        action="store_true",
+        help="If passed, will attempt to continue processing of the input curriculum when "
+        "extraction fails for a given situation."
+    )
+    parser.add_argument(
+        "--no-tolerate-errors",
+        action="store_false",
+        dest="tolerate_errors",
+        help="If passed, will halt immediately when extraction fails for a given situation."
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -913,22 +925,29 @@ def main():
             segmentation_imgname = "combined_color_refined_semantic_0.png"
         else:
             raise ValueError(f"Unrecognized segmentation type: {args.segmentation_type}.")
-        S = Stroke_Extraction(
-            segmentation_img_path=str(situation_dir / segmentation_imgname),
-            rgb_img_path=str(situation_dir / "rgb_0.png"),
-            debug_matlab_stroke_img_save_path=str(output_situation_dir / "matlab_stroke_0.png"),
-            stroke_img_save_path=str(output_situation_dir / "stroke_0.png"),
-            stroke_graph_img_save_path=str(output_situation_dir / "stroke_graph_0.png"),
-            features_save_path=str(output_situation_dir / "feature.yaml"),
-            should_merge_small_strokes=args.merge_small_strokes,
-            obj_type=string_label,
-            # TODO create issue: in the reorganized curriculum format, we don't store the
-            #  information about the object view/ID in an authoritative global-per-sample way such
-            #  that we could retrieve it here in the stroke extraction code.
-            obj_view="-1",
-            obj_id="-1",
-        )
-        S.get_strokes()
+        try:
+            S = Stroke_Extraction(
+                segmentation_img_path=str(situation_dir / segmentation_imgname),
+                rgb_img_path=str(situation_dir / "rgb_0.png"),
+                debug_matlab_stroke_img_save_path=str(output_situation_dir / "matlab_stroke_0.png"),
+                stroke_img_save_path=str(output_situation_dir / "stroke_0.png"),
+                stroke_graph_img_save_path=str(output_situation_dir / "stroke_graph_0.png"),
+                features_save_path=str(output_situation_dir / "feature.yaml"),
+                should_merge_small_strokes=args.merge_small_strokes,
+                obj_type=string_label,
+                # TODO create issue: in the reorganized curriculum format, we don't store the
+                #  information about the object view/ID in an authoritative global-per-sample way such
+                #  that we could retrieve it here in the stroke extraction code.
+                obj_view="-1",
+                obj_id="-1",
+            )
+            S.get_strokes()
+        except ValueError as e:
+            if args.tolerate_errors:
+                logger.warning("Couldn't process situation %d; continuing...", situation_num)
+                logger.debug("Error in situation %d was %s", situation_num, e)
+            else:
+                raise
     print("out")
 
 
