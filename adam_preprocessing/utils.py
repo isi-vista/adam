@@ -38,6 +38,30 @@ STRING_OBJECT_LABELS = [
 def get_stroke_data(
     curriculum_path: Path, train_or_test: str, *, dir_num: Optional[int] = None, int_curriculum_labels: bool = True, multi_object: bool = False
 ) -> Tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
+    """Load data on strokes from each scenario feature file in each scenario
+       dir in curriculum.
+
+    Params:
+        curriculum_path: path containing curriculum
+        train_or_test: whether the curriculum is for training or testing
+        dir_num: if specified, only extract strokes from the situation with this
+                 number (e.g. with `dir_num=16`, this function only extracts
+                 from `situation_16`)
+        int_curriculum_labels: whether each situation in curriculum has an
+                               integer label (curriculum_labels will be empty
+                               if this is set to False)
+        multi_object: whether to treat objects as separate or to fuse them
+
+    Returns:
+        curriculum_coords: list of all stroke coordinate arrays in curriculum
+                           (1 per object if multi_object, otherwise 1 per
+                           situation)
+        curriculum_adjs: list of all adjacency matrices in curriculum (1 per
+                         object if multi_object, otherwise 1 per situation)
+        curriculum_labels: list of all object labels in curriculum (1 per
+                           object if multi_object, otherwise 1 per
+                           situation)
+    """
     # copied and edited from phase3_load_from_disk() -- see adam.curriculum.curriculum_from_files
     if dir_num is None:
         with open(curriculum_path / "info.yaml", encoding="utf=8") as curriculum_info_yaml:
