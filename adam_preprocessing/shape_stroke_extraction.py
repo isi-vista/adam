@@ -571,7 +571,7 @@ class Stroke_Extraction:
         adj = kp2stroke(np.array(out_e))
         new_s, adj = merge_small_strokes(out_s, adj) if self.should_merge_small_strokes else (out_s, adj)
         for i in range(len(new_s)):
-            s = np.array(new_s[i])
+            s = np.asarray(matlab.double(new_s[i]))
             if len(s) < 10:
                 removed_ind.append(i)
                 continue
