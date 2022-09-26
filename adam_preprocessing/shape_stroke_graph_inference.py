@@ -183,13 +183,30 @@ def main():
                     _, predicted_label_ints = outputs.topk(args.top_k)
                     predictions_by_object = []
                     num_objs = len(features['objects'])
-                    for object_idx in range(objs_seen, objs_seen + num_objs):
-                        # object_idx points to this object among all objects
-                        # object_predictions are the top k predictions for 1 given object
-                        object_predictions = [STRING_OBJECT_LABELS[
-                            predicted_label_ints[object_idx if args.dir_num is None else 0][i]] for i in range(args.top_k)
+
+                    # If in multi-object mode, predict separately for each
+                    # object (object_idx points to this object among all
+                    # objects in the curriculum):
+                    if args.multi_object:
+                        predictions_by_object.extend(
+                            [STRING_OBJECT_LABELS[
+                                predicted_label_ints[object_idx if args.dir_num
+                                is None else 0][i]] for i in range(args.top_k)
+                            ] for object_idx in
+                            range(objs_seen, objs_seen + num_objs)
+                        )
+
+                    # If in single-object mode, make a single prediction per
+                    # situation, then pretend that 1 prediction is <num_objs>
+                    # predictions for a later function that expects there to
+                    # be <num_objs> predictions for each feature file
+                    else:
+                        object_predictions = [
+                            STRING_OBJECT_LABELS[
+                                predicted_label_ints[situation_num if args.dir_num is None else 0][i]] for i in range(args.top_k)
                         ]
-                        predictions_by_object.append(object_predictions)
+                        for i in range(num_objs):
+                            predictions_by_object.append(object_predictions)
                     objs_seen += num_objs
 
                 updated_features = update_features_yaml(
