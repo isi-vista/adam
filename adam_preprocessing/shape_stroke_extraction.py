@@ -465,6 +465,8 @@ class Stroke_Extraction:
         stroke_graph_img_save_path: str,
         features_save_path: str,
         should_merge_small_strokes: bool = False,
+        debug_vis: bool = False,
+        debug_matlab_stroke_img_save_path: str,
         vis: bool = True,
         save_output: bool = True,
     ):
@@ -473,11 +475,13 @@ class Stroke_Extraction:
         self.obj_id = obj_id
         self.clustering_seed = clustering_seed
         self.vis = vis
+        self.debug_vis = debug_vis
         self.should_merge_small_strokes = should_merge_small_strokes
         self.save_output = save_output
         self.path = segmentation_img_path
         self.img_bgr = img_bgr = cv2.imread(rgb_img_path)
         self.img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+        self.debug_matlab_stroke_img_save_path = debug_matlab_stroke_img_save_path
         self.stroke_img_save_path = stroke_img_save_path
         self.stroke_graph_img_save_path = stroke_graph_img_save_path
         self.features_save_path = features_save_path
@@ -569,6 +573,13 @@ class Stroke_Extraction:
         strokes = []
         removed_ind = []
         adj = kp2stroke(np.array(out_e))
+        if self.debug_vis:
+            fig, ax = plt.subplots(ncols=2)
+            plot_oriented_strokes(ax, out_s)
+            plot_stroke_graph(ax, out_s, adj)
+            fig.tight_layout()
+            fig.savefig(self.debug_matlab_stroke_img_save_path)
+
         new_s, adj = merge_small_strokes(out_s, adj) if self.should_merge_small_strokes else (out_s, adj)
         for i in range(len(new_s)):
             s = np.asarray(matlab.double(new_s[i]))
@@ -905,6 +916,7 @@ def main():
         S = Stroke_Extraction(
             segmentation_img_path=str(situation_dir / segmentation_imgname),
             rgb_img_path=str(situation_dir / "rgb_0.png"),
+            debug_matlab_stroke_img_save_path=str(output_situation_dir / "matlab_stroke_0.png"),
             stroke_img_save_path=str(output_situation_dir / "stroke_0.png"),
             stroke_graph_img_save_path=str(output_situation_dir / "stroke_graph_0.png"),
             features_save_path=str(output_situation_dir / "feature.yaml"),
