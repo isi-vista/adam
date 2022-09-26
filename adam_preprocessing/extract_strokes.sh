@@ -11,7 +11,7 @@
 #SBATCH --output=R-%x.%j.out
 set -u
 
-if [[ "$#" -ne 2 ]] || [[ "$1" = "--help" ]] ; then
+if [[ "$#" -lt 2 ]] || [[ "$1" = "--help" ]] ; then
   printf '%s\n' "usage: $0 input_curriculum_dir output_curriculum_dir"
   exit 1
 else
