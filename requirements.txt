@@ -6,6 +6,8 @@ networkx>=2.3
 more-itertools>=7.2.0
 contexttimer>=0.3.3
 scipy>=1.7.3
+numpy
+tqdm
 
 # for some experiment generation
 git+https://github.com/isi-vista/saga-tools.git@master#egg=saga-tools
