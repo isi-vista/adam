@@ -1,5 +1,8 @@
 """
-Perform color segmentation refinement on an RGB image and pre-existing segmentation mask.
+Combine an instance segmentation mask and a color segmentation mask to produce a refined mask.
+
+This can produce either a combined mask image or one image per object (distinct mask) in the
+instance segmentation.
 """
 from argparse import ArgumentParser
 import logging
@@ -8,8 +11,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from color_segmentation import (
-    do_color_segmentation,
+from mask_image import (
     colors_to_index_np,
     with_random_colors,
 )
@@ -77,9 +79,9 @@ def main():
     )
 
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("rgb_img_path", type=Path, help="The RGB image to be segmented.")
+    parser.add_argument("color_seg_img_path", type=Path, help="The color segmentation image.")
     parser.add_argument(
-        "seg_img_path", type=Path, help="The segmentation image to be refined."
+        "inst_seg_img_path", type=Path, help="The instance segmentation image."
     )
     parser.add_argument(
         "--save_refined_segs_to",
@@ -107,8 +109,8 @@ def main():
     )
     args = parser.parse_args()
 
-    segmentation = cv2.imread(str(args.seg_img_path))
-    color_segmentation = do_color_segmentation(args.rgb_img_path)
+    segmentation = cv2.imread(str(args.inst_seg_img_path))
+    color_segmentation = cv2.imread(str(args.color_seg_img_path))
 
     # Randomize color segmentation colors if needed.
     if args.use_random_colors:
