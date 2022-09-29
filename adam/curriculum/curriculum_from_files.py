@@ -23,42 +23,6 @@ from adam.perception.visual_perception import (
 )
 from adam.situation.phase_3_situations import SimulationSituation
 
-PHASE_3_TRAINING_CURRICULUM_OPTIONS = [
-    "m4_core",
-    "m4_stretch",
-    "m5_objects",
-    "m5_objects_v0",
-    "m5_objects_v0_with_mugs",
-    "m5_actions",
-    "m5_actions_person_only",
-    "m6_objects_downsampled_2pertype_post_gnn",
-    "m6_objects_downsampled_10pertype_post_gnn",
-    "m5_objects_v0_with_mugs_post_gnn",
-    "m6_unknown_objects",
-    "m6_objects_v0_with_mugs_post_gnn_top2",
-    "m6_objects_v0_with_mugs_post_gnn_top3",
-    "m6_objects_v0_with_mugs_post_gnn_top4",
-    "m6_objects_v0_with_mugs_post_gnn_top5",
-]
-
-PHASE_3_TESTING_CURRICULUM_OPTIONS = [
-    "m4_core_eval",
-    "m4_stretch_eval",
-    "m5_objects_eval",
-    "m5_objects_v0_eval",
-    "m5_objects_v0_with_mugs_eval",
-    "m5_actions_eval",
-    "m5_actions_person_only_eval",
-    "m5_objects_v0_with_mugs_eval_2pertype_post_gnn",
-    "m5_objects_v0_with_mugs_eval_10pertype_post_gnn",
-    "m5_objects_v0_with_mugs_eval_post_gnn",
-    "m6_unknown_objects_eval",
-    "m6_objects_v0_with_mugs_eval_post_gnn_top2",
-    "m6_objects_v0_with_mugs_eval_post_gnn_top3",
-    "m6_objects_v0_with_mugs_eval_post_gnn_top4",
-    "m6_objects_v0_with_mugs_eval_post_gnn_top5",
-]
-
 TRAINING_CUR = "training"
 TESTING_CUR = "testing"
 
@@ -83,9 +47,6 @@ def phase3_load_from_disk(  # pylint: disable=unused-argument
     )
     curriculum_to_load = params.string(
         "curriculum",
-        valid_options=PHASE_3_TRAINING_CURRICULUM_OPTIONS
-        if curriculum_type == TRAINING_CUR
-        else PHASE_3_TESTING_CURRICULUM_OPTIONS,
     )
     color_is_rgb = params.boolean("color_is_rgb", default=False)
 
