@@ -18,12 +18,14 @@ mkl-fft
 mkl-random
 mkl-service
 olefile
+omegaconf
 open3d
 opencv-contrib-python
 pddlpy
 Pillow
 plantcv
 procgen
+pydensecrf @ git+https://github.com/lucasb-eyer/pydensecrf.git@0d53acbcf5123d4c88040fe68fbb9805fc5b2fb9
 pyglet
 pyOpenSSL
 pyquaternion

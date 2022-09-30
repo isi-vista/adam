@@ -1,9 +1,10 @@
+"""Segementation processing server."""
 import base64
 from http import HTTPStatus
 from io import BytesIO
 import logging
 import os
-from typing import Any, Tuple
+from typing import Any
 
 from PIL import Image
 from flask import Flask, abort, jsonify, request
@@ -42,16 +43,24 @@ class GunicornLogger(glogging.Logger):  # type: ignore
 
 @app.route("/instanceseg", methods=["POST"])
 def mask() -> Any:
+    """Route for instance segmentation processing.
+
+    Returns:
+        A JSON response.
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not request.json:
         abort(HTTPStatus.BAD_REQUEST)
 
-    img = Image.open(BytesIO(base64.b64decode(request.json["image"])))
     segmentation_type = request.json.get("segmentation_type", "stego")
 
     linear_masks = None
     linear_boxes = None
     labels = None
+
+    img = Image.open(BytesIO(base64.b64decode(request.json["image"])))
+    image = transform(img)
+    image = image.unsqueeze(0).to(device)
 
     if segmentation_type == "rcnn":
         rcnn_model = torchvision.models.detection.maskrcnn_resnet50_fpn(
@@ -59,22 +68,23 @@ def mask() -> Any:
         )
         rcnn_model.to(device=device).eval()
 
-        cluster_masks, cluster_boxes, labels = rcnn_segmentation(img, rcnn_model, device)
+        cluster_masks, cluster_boxes, labels = rcc_inference_res(image, rcnn_model, 0.5)
     elif segmentation_type == "stego":
         stego_model = LitUnsupervisedSegmenter.load_from_checkpoint(STEGO_MODEL_PATH)
         stego_model.to(device=device).eval()
 
-        linear_masks, cluster_masks, linear_boxes, cluster_boxes = stego_segmentation(
-            img, stego_model, device
+        linear_masks, cluster_masks, linear_boxes, cluster_boxes = stego_inference_res(
+            image, stego_model
         )
         linear_masks = linear_masks.tolist()
+        cluster_masks = cluster_masks.tolist()
         linear_boxes = linear_boxes.tolist()
         cluster_boxes = cluster_boxes.tolist()
     else:
         return abort(HTTPStatus.BAD_REQUEST)
 
     payload = dict(
-        masks=cluster_masks.tolist(),
+        masks=cluster_masks,
         linear_masks=linear_masks,
         boxes=cluster_boxes,
         linear_boxes=linear_boxes,
@@ -83,18 +93,6 @@ def mask() -> Any:
     )
 
     return jsonify(payload)
-
-
-def stego_segmentation(img: Image, stego_model: Any, device: Any) -> Tuple[Any, Any, Any, Any]:
-    image = transform(img)
-    image = image.unsqueeze(0).to(device)
-    return stego_inference_res(image, stego_model)
-
-
-def rcnn_segmentation(img: Image, rcnn_model: Any, device: Any) -> Tuple[Any, Any, Any]:
-    image = transform(img)
-    image = image.unsqueeze(0).to(device)
-    return rcc_inference_res(image, rcnn_model, 0.5)
 
 
 if __name__ == "__main__":

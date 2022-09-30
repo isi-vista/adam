@@ -15,7 +15,7 @@ convention = "google"
 
 [tool.pylint.basic]
 # Required to make packages with Cython extensions work
-extension-pkg-whitelist = "pydantic"
+extension-pkg-whitelist = "pydantic,pydensecrf"
 # Allows shorter names than the default regex,
 # which is in pylint.checkers.base.SnakeCaseStyle.DEFAULT_NAME_RGX
 argument-rgx = "(([a-z][a-z0-9_]*)|(_[a-z0-9_]*)|([A-Z]))$"

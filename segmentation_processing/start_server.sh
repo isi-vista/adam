@@ -16,9 +16,9 @@ set -euo pipefail
 # The invocation to gunicorn will need to change for final deployment. Right now
 # The reference to a venv is a placeholder.
 umask 0002  # Allow files to be created as group-writable
-../venv/bin/gunicorn \
+./venv/bin/gunicorn \
   --config ./gunicorn.conf.py \
   --access-logfile ./logs/server.log \
-  --bind "$(hostname --fqdn)":5001 \
+  --bind "$(hostname --fqdn)":"$1" \
   --timeout 0 \
   server:app

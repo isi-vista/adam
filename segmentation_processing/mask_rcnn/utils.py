@@ -125,4 +125,4 @@ def inference_res(image: torch.Tensor, model: Any, threshold: float) -> Tuple[An
     # class labels found from all mask-rcnn labels identified
     labels = [INSTANCE_CATEGORIES[i] for i in outputs[0]["labels"]]
 
-    return masks, boxes, labels
+    return masks.tolist(), boxes, labels

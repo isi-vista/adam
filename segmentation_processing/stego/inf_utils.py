@@ -45,4 +45,4 @@ def inference_res(img: torch.Tensor, model: Any) -> Tuple[Any, Any, Any, Any]:
     linear_boxes = linear_boxes.cpu().numpy()
     cluster_boxes = cluster_boxes.cpu().numpy()
 
-    return linear_masks, cluster_masks, linear_boxes, cluster_boxes
+    return linear_masks_np, cluster_masks_np, linear_boxes, cluster_boxes

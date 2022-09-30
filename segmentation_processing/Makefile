@@ -16,9 +16,6 @@ test:
 lint:
 	pylint $(PYTHON_FILES)
 
-docstyle:
-	pydocstyle $(PYTHON_FILES)
-
 mypy:
 	mypy $(PYTHON_FILES)
 
@@ -48,9 +45,9 @@ black-check:
 	isort --check $(PYTHON_FILES)
 	black --config pyproject.toml --check $(PYTHON_FILES)
 
-check: reqs-check black-check flake8 mypy lint docstyle test
+check: reqs-check black-check flake8 mypy lint test
 
-precommit: reqs-fix reqs-freeze black-fix check
+precommit: reqs-fix black-fix check
 
 update:
 	pip install --upgrade -r requirements-lock.txt --extra-index-url https://download.pytorch.org/whl/cu113
