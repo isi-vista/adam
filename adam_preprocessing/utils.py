@@ -36,7 +36,12 @@ STRING_OBJECT_LABELS = [
 
 
 def get_stroke_data(
-    curriculum_path: Path, train_or_test: str, *, dir_num: Optional[int] = None, int_curriculum_labels: bool = True, multi_object: bool = False
+    curriculum_path: Path,
+    train_or_test: str,
+    *,
+    dir_num: Optional[int] = None,
+    int_curriculum_labels: bool = True,
+    multi_object: bool = False,
 ) -> Tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
     """Load data on strokes from each scenario feature file in each scenario
        dir in curriculum.
