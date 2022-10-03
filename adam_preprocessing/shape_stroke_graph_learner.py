@@ -54,11 +54,13 @@ def main():
     logging.basicConfig(level=logging.INFO)
     "Processing data from image to stroke graph"
     logging.info("Loading training data...")
-    train_coords, train_adj, train_label = get_stroke_data(
+    _, train_coords, train_adj, train_label = get_stroke_data(
         args.train_curriculum_path, "train", multi_object=args.multi_object
     )
     logging.info("Loading test data...")
-    test_coords, test_adj, test_label = get_stroke_data(args.eval_curriculum_path, "test", multi_object=args.multi_object)
+    _, test_coords, test_adj, test_label = get_stroke_data(
+        args.eval_curriculum_path, "test", multi_object=args.multi_object
+    )
     logging.info("Done loading data.")
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     "Converting stroke graph data for graph node/edge. "

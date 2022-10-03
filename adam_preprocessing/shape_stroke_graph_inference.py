@@ -88,7 +88,13 @@ def main():
 
     "Processing data from image to stroke graph"
     logging.info("Loading test data...")
-    test_coords, test_adj, test_label = get_stroke_data(args.curriculum_path, "test", dir_num=args.dir_num, int_curriculum_labels=args.compute_accuracy, multi_object=args.multi_object)
+    situation_number_to_object_indices, test_coords, test_adj, test_label = get_stroke_data(
+        args.curriculum_path,
+        "test",
+        dir_num=args.dir_num,
+        int_curriculum_labels=args.compute_accuracy,
+        multi_object=args.multi_object,
+    )
     logging.info("Done loading data.")
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
