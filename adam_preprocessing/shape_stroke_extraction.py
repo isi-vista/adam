@@ -787,29 +787,60 @@ class Stroke_Extraction:
             s = (reduced_obj - m).std()
             reduced_strokes_norm = (reduced_obj - m) / s
 
+            # Calculate the dimensions of a 2D box around the object
+            max_x, max_y = reduced_obj.max((0, 1))
+            min_x, min_y = reduced_obj.min((0, 1))
+            x_size, y_size = max_x-min_x, max_y-min_y
+            box_area = x_size * y_size
+
             # Calculate pixel-space-distance from this object to every other object in the image.
             # We use the Euclidean distance between the two objects' stroke coordinate means as our
             # measure of distance between objects.
             distance = dict()
+            relative_distance = dict()
             for j in range(self.num_obj):
+                other_object_name = "object" + str(j)
                 if i == j:
                     continue
                 else:
                     ind_ = np.where(self.stroke_obj_ids == j)[0]
                     reduced_obj_ = self.reduced_strokes[ind_]
                     m_ = reduced_obj_.mean((0, 1))
-                    distance["object" + str(j)] = (
-                        np.sqrt(((m - m_) ** 2).sum())
-                    ).tolist()
+
+                    # Get x & y offsets, calculate distance
+                    offsets = m - m_
+                    distance[other_object_name] = (
+                        np.sqrt((offsets ** 2).sum())
+                    ).item()
+
+                    # "Relative distance" includes offsets along axes; this must
+                    # later be normalized by the product of the sizes of the two
+                    # objects.
+                    relative_distance[other_object_name] = dict(
+                        x_offset=offsets[0].item(),
+                        y_offset=offsets[1].item(),
+                        euclidean=distance[other_object_name]
+                    )
             if len(distance.keys()) == 0:
                 distance = None
+                relative_distance = None
 
-            data.append(
+            objects.append(
                 dict(
                     object_name="object" + str(i),
                     subobject_id="0",
                     viewpoint_id=self.obj_view,
                     distance=distance,
+                    relative_distance=relative_distance,
+                    size=dict(
+                        # FIXME: calling .item() causes crash (it says they
+                        #  are type `float`), but if they aren't cast to
+                        #  `float`, they get serialized as complex objects,
+                        #  not primitive floats.
+                        x=float(x_size),
+                        y=float(y_size),
+                        area=float(box_area)
+                    ),
                     stroke_graph=dict(
                         adjacency_matrix=adj_obj.tolist(),
                         stroke_mean_x=reduced_obj.mean((0, 1)).tolist()[1],
