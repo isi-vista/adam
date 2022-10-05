@@ -185,17 +185,13 @@ def main():
                     predictions_by_object = [["unknown"]]
                 else:
                     _, predicted_label_ints = outputs.topk(args.top_k)
-                    predictions_by_object = []
-                    num_objs = len(features['objects'])
-
-                    predictions_by_object.extend(
+                    predictions_by_object = [
                         [
                             STRING_OBJECT_LABELS[predicted_label_ints[object_idx][i]]
                             for i in range(args.top_k)
                         ] for object_idx in situation_number_to_object_indices[situation_num]
-                    )
-
-                    objs_seen += num_objs
+                    ]
+                    objs_seen += len(features['objects'])
 
                 updated_features = update_features_yaml(
                     features,
