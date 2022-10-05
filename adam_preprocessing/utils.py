@@ -2,7 +2,7 @@
 # original code by Sheng Cheng
 import logging
 from pathlib import Path
-from typing import Sequence, Tuple, Optional
+from typing import Mapping, Sequence, Tuple, Optional
 import yaml
 
 import torch.nn as nn
@@ -36,8 +36,13 @@ STRING_OBJECT_LABELS = [
 
 
 def get_stroke_data(
-    curriculum_path: Path, train_or_test: str, *, dir_num: Optional[int] = None, int_curriculum_labels: bool = True, multi_object: bool = False
-) -> Tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
+    curriculum_path: Path,
+    train_or_test: str,
+    *,
+    dir_num: Optional[int] = None,
+    int_curriculum_labels: bool = True,
+    multi_object: bool = False,
+) -> Tuple[Mapping[int, Sequence[int]], Sequence[np.ndarray], Sequence[np.ndarray], Sequence[int]]:
     """Load data on strokes from each scenario feature file in each scenario
        dir in curriculum.
 
@@ -53,6 +58,10 @@ def get_stroke_data(
         multi_object: whether to treat objects as separate or to fuse them
 
     Returns:
+        situation_number_to_object_index:
+            Maps each situation by number to a list of object indices. The list gives the objects
+            belonging to that situation. These object indices should be interpreted as indices into
+            the following lists.
         curriculum_coords: list of all stroke coordinate arrays in curriculum
                            (1 per object if multi_object, otherwise 1 per
                            situation)
@@ -67,9 +76,11 @@ def get_stroke_data(
         with open(curriculum_path / "info.yaml", encoding="utf=8") as curriculum_info_yaml:
             curriculum_params = yaml.safe_load(curriculum_info_yaml)
 
+    situation_number_to_object_indices = {}
     curriculum_coords = []
     curriculum_adjs = []
     curriculum_labels = []
+    n_objects_from_all_situations = 0
     for situation_num in range(curriculum_params["num_dirs"]) if dir_num is None else [dir_num]:
         situation_dir = curriculum_path / f"situation_{situation_num}"
         language_tuple: Tuple[str, ...] = tuple()
@@ -84,6 +95,8 @@ def get_stroke_data(
                 f"Training situations must provide a description, but situation {situation_num} "
                 f"in {curriculum_path} does not."
             )
+
+        situation_number_to_object_indices[situation_num] = []
 
         feature_yamls = sorted(situation_dir.glob("feature*"))
         if len(feature_yamls) == 1:
@@ -171,7 +184,13 @@ def get_stroke_data(
                 f"one feature file."
             )
 
-    return curriculum_coords, curriculum_adjs, curriculum_labels
+        n_objects = len(features["objects"]) if multi_object else 1
+        situation_number_to_object_indices[situation_num].extend(
+            range(n_objects_from_all_situations, n_objects_from_all_situations + n_objects)
+        )
+        n_objects_from_all_situations += n_objects
+
+    return situation_number_to_object_indices, curriculum_coords, curriculum_adjs, curriculum_labels
 
 
 def label_from_object_language_tuple(

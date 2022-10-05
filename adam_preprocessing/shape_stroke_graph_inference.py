@@ -88,7 +88,13 @@ def main():
 
     "Processing data from image to stroke graph"
     logging.info("Loading test data...")
-    test_coords, test_adj, test_label = get_stroke_data(args.curriculum_path, "test", dir_num=args.dir_num, int_curriculum_labels=args.compute_accuracy, multi_object=args.multi_object)
+    situation_number_to_object_indices, test_coords, test_adj, test_label = get_stroke_data(
+        args.curriculum_path,
+        "test",
+        dir_num=args.dir_num,
+        int_curriculum_labels=args.compute_accuracy,
+        multi_object=args.multi_object,
+    )
     logging.info("Done loading data.")
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -162,8 +168,6 @@ def main():
                 args.curriculum_path / "info.yaml", encoding="utf=8"
             ) as curriculum_info_yaml:
                 curriculum_params = yaml.safe_load(curriculum_info_yaml)
-            if outputs is not None and not args.multi_object:
-                assert outputs.size(0) == curriculum_params["num_dirs"]
 
         n_saved = 0
         objs_seen = 0
@@ -181,33 +185,13 @@ def main():
                     predictions_by_object = [["unknown"]]
                 else:
                     _, predicted_label_ints = outputs.topk(args.top_k)
-                    predictions_by_object = []
-                    num_objs = len(features['objects'])
-
-                    # If in multi-object mode, predict separately for each
-                    # object (object_idx points to this object among all
-                    # objects in the curriculum):
-                    if args.multi_object:
-                        predictions_by_object.extend(
-                            [STRING_OBJECT_LABELS[
-                                predicted_label_ints[object_idx if args.dir_num
-                                is None else 0][i]] for i in range(args.top_k)
-                            ] for object_idx in
-                            range(objs_seen, objs_seen + num_objs)
-                        )
-
-                    # If in single-object mode, make a single prediction per
-                    # situation, then pretend that 1 prediction is <num_objs>
-                    # predictions for a later function that expects there to
-                    # be <num_objs> predictions for each feature file
-                    else:
-                        object_predictions = [
-                            STRING_OBJECT_LABELS[
-                                predicted_label_ints[situation_num if args.dir_num is None else 0][i]] for i in range(args.top_k)
-                        ]
-                        for i in range(num_objs):
-                            predictions_by_object.append(object_predictions)
-                    objs_seen += num_objs
+                    predictions_by_object = [
+                        [
+                            STRING_OBJECT_LABELS[predicted_label_ints[object_idx][i]]
+                            for i in range(args.top_k)
+                        ] for object_idx in situation_number_to_object_indices[situation_num]
+                    ]
+                    objs_seen += len(features['objects'])
 
                 updated_features = update_features_yaml(
                     features,
