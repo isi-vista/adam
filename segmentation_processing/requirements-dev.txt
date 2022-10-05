@@ -1,0 +1,16 @@
+black
+coverage
+flake8
+mypy
+pylint
+pytest
+pytest-benchmark
+pytest-cov
+pytest-pythonpath
+sphinx
+sphinx-autodoc-typehints
+sphinx_rtd_theme
+towncrier
+types-PyYAML
+types-requests
+types-tabulate

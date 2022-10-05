@@ -123,6 +123,9 @@ adam/adam.code-workspace
 pip-wheel-metadata/
 src/
 data/
+segmentation_processing/model/
+segmentation_processing/logs/
+segmentation_processing/venv/
 
 # adam_MCL_CCP
 ColorPalette/
