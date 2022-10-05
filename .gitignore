@@ -123,3 +123,12 @@ adam/adam.code-workspace
 pip-wheel-metadata/
 src/
 data/
+
+# adam_MCL_CCP
+ColorPalette/
+MeanShift/
+PeterKovesi/
+piotr_toolbox/
+StructuredEdgeDetection/
+others/
+CCP_seg.m

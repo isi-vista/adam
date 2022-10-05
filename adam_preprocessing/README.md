@@ -18,6 +18,21 @@ Assuming you want to run stroke extraction, be sure to install the following two
 - Image Processing Toolkit
 - Statistics and Machine Learning Toolbox
 
+## (Optional) Color segmentation
+
+If you want to run color segmentation, you'll also need to download the Matlab code for color segmentation. This code is stored in a separate repo ([adam_MCL_CCP][adam_MCL_CCP]) due to licensing issues. To install it, download from https://github.com/isi-vista/adam_MCL_CCP/archive/refs/heads/main.zip. Extract the zip file somewhere, then move the Matlab code contents of the extracted directory into this directory. More precisely, in Bash:
+
+```bash
+cd /path/to/adam_preprocessing
+ZIP_NAME=adam_MCL_CCP-main
+if [[ ! -d tmp ]]; then
+    unzip "$ZIP_NAME".zip
+    # We only need to move the CCP_seg.m code and its dependencies
+    mv "$ZIP_NAME"/{CCP_seg.m,ColorPalette,MeanShift,PeterKovesi,StructuredEdgeDetection,piotr_toolbox,others} .
+    rmdir "$ZIP_NAME"
+fi
+```
+
 # A note about Matlab on SAGA
 
 Matlab on the cluster is subject to licensing restrictions. Specifically, if you want to run it on a SAGA host you must first personally activate Matlab using your license on that host. There [seems to be][matlab_lim] a two-host activation limit. Between these two problems, it's not practical to run Matlab code on `scavenge` or `ephemeral`. Keep this in mind.
