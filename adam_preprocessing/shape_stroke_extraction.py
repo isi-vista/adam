@@ -41,6 +41,9 @@ import networkx as nx
 from utils import label_from_object_language_tuple
 
 
+TOUCHING_DISTANCE_THRESHOLD = 50.0
+
+
 def vectorized_bspline_coeff(vi, vs):
     C = np.zeros(vi.shape)
     sel1 = np.logical_and((vs >= vi), (vs < vi + 1))
@@ -109,6 +112,21 @@ def kp2stroke(strokeinfo):
         else:
             connection[i, i] = 0
     return connection
+
+
+def objects_touching(object_one, object_two):
+    """Determine if two objects should be considered 'touching' based on the
+    euclidean (absolute) distance of their closest two points.
+    """
+    object_one_points = np.concatenate(object_one['stroke_graph']['original_reduced_strokes'], axis=0)
+    object_two_points = np.concatenate(object_two['stroke_graph']['original_reduced_strokes'], axis=0)
+
+    # Check euclidean distance between every pair of points in the two objects:
+    return np.any(
+        np.sum(
+            (object_one_points[:, np.newaxis] - object_two_points) ** 2, axis=-1
+        ) ** 0.5 < TOUCHING_DISTANCE_THRESHOLD
+    )
 
 
 def merge_small_strokes(
@@ -760,7 +778,7 @@ class Stroke_Extraction:
         if self.vis:
             self.plot_strokes()
             self.plot_graph()
-        data = []
+        objects = []
         # Translate the extracted (downsampled strokes) and color data into the ADAM stroke
         # extraction data format.
         for i in range(self.num_obj):
@@ -787,29 +805,60 @@ class Stroke_Extraction:
             s = (reduced_obj - m).std()
             reduced_strokes_norm = (reduced_obj - m) / s
 
+            # Calculate the dimensions of a 2D box around the object
+            max_x, max_y = reduced_obj.max((0, 1))
+            min_x, min_y = reduced_obj.min((0, 1))
+            x_size, y_size = max_x-min_x, max_y-min_y
+            box_area = x_size * y_size
+
             # Calculate pixel-space-distance from this object to every other object in the image.
             # We use the Euclidean distance between the two objects' stroke coordinate means as our
             # measure of distance between objects.
             distance = dict()
+            relative_distance = dict()
             for j in range(self.num_obj):
+                other_object_name = "object" + str(j)
                 if i == j:
                     continue
                 else:
                     ind_ = np.where(self.stroke_obj_ids == j)[0]
                     reduced_obj_ = self.reduced_strokes[ind_]
                     m_ = reduced_obj_.mean((0, 1))
-                    distance["object" + str(j)] = (
-                        np.sqrt(((m - m_) ** 2).sum())
-                    ).tolist()
+
+                    # Get x & y offsets, calculate distance
+                    offsets = m - m_
+                    distance[other_object_name] = (
+                        np.sqrt((offsets ** 2).sum())
+                    ).item()
+
+                    # "Relative distance" includes offsets along axes; this must
+                    # later be normalized by the product of the sizes of the two
+                    # objects.
+                    relative_distance[other_object_name] = dict(
+                        x_offset=offsets[0].item(),
+                        y_offset=offsets[1].item(),
+                        euclidean=distance[other_object_name]
+                    )
             if len(distance.keys()) == 0:
                 distance = None
+                relative_distance = None
 
-            data.append(
+            objects.append(
                 dict(
                     object_name="object" + str(i),
                     subobject_id="0",
                     viewpoint_id=self.obj_view,
                     distance=distance,
+                    relative_distance=relative_distance,
+                    size=dict(
+                        # FIXME: calling .item() causes crash (it says they
+                        #  are type `float`), but if they aren't cast to
+                        #  `float`, they get serialized as complex objects,
+                        #  not primitive floats.
+                        x=float(x_size),
+                        y=float(y_size),
+                        area=float(box_area)
+                    ),
                     stroke_graph=dict(
                         adjacency_matrix=adj_obj.tolist(),
                         stroke_mean_x=reduced_obj.mean((0, 1)).tolist()[1],
@@ -820,21 +869,61 @@ class Stroke_Extraction:
                         ).tolist(),
                         concept_name=self.obj_type,
                         confidence_score=1.0,
+                        # FIXME: I'm storing this for calculating touching;
+                        #  should do this in a more elegant way
+                        original_reduced_strokes=reduced_obj.tolist(),
                     ),
                     color=color.tolist(),
                     texture=None,
                     sub_part=None,
                 )
             )
-        self.data = data
+
+        # Calculate relative sizes using already-calculated absolute sizes:
+        for i in range(len(objects)):
+            relative_size = {'x_bigger_than': [], 'y_bigger_than': []}
+            for j in range(len(objects)):
+                if i == j:
+                    continue
+                else:
+                    other_object_name = objects[j]['object_name']
+                    for axis in ('x', 'y'):
+                        # Relative size is a discrete ('bigger_than') relation
+                        relative_size[f'{axis}_bigger_than'].append(objects[i]['size'][axis] > objects[j]['size'][axis])
+
+                        # Normalize relative distances by the relevant axis
+                        # sizes of both objects
+                        object_axis_size = objects[i]['size'][axis]
+                        other_object_axis_size = objects[j]['size'][axis]
+                        objects[i]['relative_distance'][other_object_name][f'{axis}_offset'] /= (object_axis_size * other_object_axis_size)
+
+                    # Normalize euclidean distance by product of areas of both
+                    # objects
+                    object_area = objects[i]['size']['area']
+                    other_object_area = objects[j]['size']['area']
+                    objects[i]['relative_distance'][other_object_name]['euclidean'] /= (object_area * other_object_area)
+            objects[i]['relative_size'] = relative_size
+
+        # Determine touching relations based on closest-point distance
+        touching = list()
+        for i in range(len(objects)):
+            object_name = objects[i]['object_name']
+            for j in range(i+1, len(objects)):
+                other_object_name = objects[j]['object_name']
+                if objects_touching(objects[i], objects[j]):
+                    touching.append([object_name, other_object_name])
+
+        # FIXME: This attribute is never used
+        self.data = objects
         if self.save_output:
             with open(
                 self.features_save_path,
                 "w",
             ) as file:
-                yaml.dump({"objects": data}, file)
+                yaml.dump({"objects": objects, "touching": touching}, file)
                 file.close()
-        return data
+        # FIXME: This return value is never used
+        return objects
 
 
 def main():
