@@ -7,7 +7,7 @@ if [[ ! -d venv/ ]]; then
   python -m venv venv
   source venv/bin/activate
   pip install --upgrade pip setuptools wheel
-  pip install -r requirements-lock.txt --extra-index-url https://download.pytorch.org/whl/cu113
+  pip install -r requirements.txt -r requirements-dev.txt --extra-index-url https://download.pytorch.org/whl/cu113
 fi
 
 # Download STEGO model

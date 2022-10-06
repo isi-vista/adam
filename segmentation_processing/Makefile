@@ -32,11 +32,6 @@ reqs-check:
 	$(SORT) --check requirements.txt
 	$(SORT) --check requirements-dev.txt
 
-reqs-freeze:
-	pip freeze >requirements-lock.txt
-	# Strip local versions so PyTorch is the same on Linux and macOS
-	sed --in-place -e 's/+[[:alnum:]]\+$$//g' requirements-lock.txt
-
 black-fix:
 	isort $(PYTHON_FILES)
 	black --config pyproject.toml $(PYTHON_FILES)
