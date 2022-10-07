@@ -545,7 +545,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
                     "--requeue",
                     f"--dependency=afterany:{train_segmentation_job}:{test_segmentation_job}",
                     "--job-name=adamCancelServer",
-                    f"--output=R-%x.%j.out",
+                    f"--output={str(job_logs_path.joinpath('R-%x.%j.out'))}",
                     f"--wrap=scancel {server_job_id}",
                 ],
                 save_to=submission_details_path,
