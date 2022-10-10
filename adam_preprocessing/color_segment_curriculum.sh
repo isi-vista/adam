@@ -4,7 +4,7 @@
 #SBATCH --partition=adam
 #SBATCH --time=23:00:00 # Number of hours required per node, max 24 on SAGA
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=2
 #SBATCH --mem=32g
 #SBATCH --gpus-per-task=1
 #SBATCH --nodes=1
