@@ -30,6 +30,10 @@ You can check out our papers to read more about the system and to cite our work:
    # if you want to view experiment results in the UI, you must point adam_experiment_root to
    # %adam_root%/data, otherwise any directory is fine:
    adam_experiment_root: %adam_root%/data
+   # if you want to run the full pipeline which includes preprocessing:
+   stroke_python_root: /path/to/anaconda3/envs/adam_preprocessing
+   # for the segmentation part of the pipeline (ISI: 500{1,2,3} are in use):
+   segmentation_api_port: XXXX
 
    conda_environment: adam
    conda_base_path: PATH_TO_ANACONDA_DIRECTORY

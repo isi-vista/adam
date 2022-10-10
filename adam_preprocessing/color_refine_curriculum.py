@@ -2,6 +2,7 @@
 Perform color segmentation and refinement on an entire input curriculum.
 """
 from argparse import ArgumentParser
+import json
 import logging
 import os.path
 from pathlib import Path
@@ -11,7 +12,6 @@ import cv2
 from tqdm import tqdm
 import yaml
 
-from color_segmentation import segment_rgb_file
 from color_refinement import refined_segmentations, refine_segmentation_simple
 
 logger = logging.getLogger(__name__)
@@ -122,34 +122,25 @@ def main():
         output_situation_dir = args.output_dir / f"situation_{situation_num}"
         output_situation_dir.mkdir(exist_ok=True, parents=True)
 
-        # Segment RGB files assuming one segmentation file per RGB image
-        failed = set()
-        for rgb_image in sorted(situation_dir.glob("rgb_*.png")):
-            number = parse_image_number(rgb_image.name)
-            try:
-                segment_rgb_file(
-                    rgb=rgb_image,
-                    save_with_proper_colors_to=output_situation_dir / f"original_colors_color_segmentation_{number}.png",
-                    save_with_random_colors_to=output_situation_dir / f"color_segmentation_{number}.png",
-                    color_seed=args.color_seed,
-                )
-            # jac: For some images we may not be able to refine the segmentation due to errors in
-            # the Matlab code. For now, ignore such errors and move on.
-            except ValueError:
-                logger.debug(
-                    "Couldn't segment image %s in situation %d, continuing...",
-                    rgb_image,
-                    situation_num,
-                )
-                failed.add(number)
-                continue
-
         # Refine segmentation files assuming one segmentation file per RGB image
         # This is how we do things right now (as of the August demo)
         # On the contrary, we save as output one refined segmentation mask per object
-        for semantic_image in sorted(situation_dir.glob("semantic_*.png")):
-            number = parse_image_number(semantic_image.name)
-            if number in failed:
+        color_segmentation_metadata = json.loads(
+            output_situation_dir.joinpath("color_segmentation_metadata.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        failed_image_numbers = color_segmentation_metadata["failed_image_numbers"]
+        rgb_images = sorted(situation_dir.glob("rgb_*.png"))
+        if not rgb_images:
+            logger.warning(
+                "No RGB images for situation number %d; not doing anything...", situation_num
+            )
+        for rgb_image in rgb_images:
+            number = parse_image_number(rgb_image.name)
+            semantic_image = situation_dir / f"semantic_{number}.png"
+            color_segmentation_image = output_situation_dir / f"color_segmentation_{number}.png"
+            if number in failed_image_numbers:
                 logger.debug(
                     "Skipping refinement for image number %d (%s) in situation %d because color "
                     "segmentation failed.",
@@ -157,6 +148,17 @@ def main():
                     semantic_image,
                     situation_num,
                 )
+                continue
+            elif not semantic_image.exists():
+                logger.warning(
+                    "Skipping refinement for image number %d (%s) in situation %d because instance "
+                    "segmentation file (%s) doesn't exist.",
+                    number,
+                    rgb_image,
+                    semantic_image,
+                    situation_num,
+                )
+                continue
             if args.multifile_output:
                 refine_segmentation_file(
                     semantic=semantic_image,
@@ -165,8 +167,10 @@ def main():
                     name_format=f"color_refined_semantic_{number}_{{}}.png",
                 )
             else:
+                assert semantic_image.exists()
+                assert color_segmentation_image.exists()
                 semantic_data = cv2.imread(str(semantic_image))
-                color_segmentation_data = cv2.imread(str(output_situation_dir / f"color_segmentation_{number}.png"))
+                color_segmentation_data = cv2.imread(str(color_segmentation_image))
                 color_refined_segmentation = refine_segmentation_simple(
                     color_segmentation_data, semantic_data
                 )

@@ -678,7 +678,7 @@ class Stroke_Extraction:
         coef_inv = get_bsplines_matrix(10)
         for i in range(len(self.strokes)):
             reduced_strokes.append(reduced_stroke(self.strokes[i], coef_inv))
-        self.reduced_strokes = reduced_strokes = np.array(reduced_strokes)
+        self.reduced_strokes = reduced_strokes = np.array(reduced_strokes, dtype=np.float64)
 
     def plot_strokes(self):
         """
