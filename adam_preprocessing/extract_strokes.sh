@@ -4,7 +4,7 @@
 #SBATCH --partition=adam
 #SBATCH --time=4:00:00 # Number of hours required per node, max 24 on SAGA
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=4
 #SBATCH --mem=32g
 #SBATCH --nodes=1
 #SBATCH --mail-type=FAIL,END
