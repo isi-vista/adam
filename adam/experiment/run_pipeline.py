@@ -1,5 +1,5 @@
 """
-A script intended to run the entire M3 pipeline.
+A script intended to run the entire Phase 3 pipeline (as of milestone 6).
 
 Note that this script does not take care of starting the object segmentation server. You have to do
 that separately.
