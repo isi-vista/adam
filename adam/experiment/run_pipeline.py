@@ -1,9 +1,6 @@
 """
 A script intended to run the entire Phase 3 pipeline (as of milestone 6).
 
-Note that this script does not take care of starting the object segmentation server. You have to do
-that separately.
-
 Note also that this writes to then reads from a params file for ADAM. If you run this again with the
 same params file name while a job is running, you will overwrite the old parameters! So be careful.
 """
