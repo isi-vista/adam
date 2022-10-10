@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=adamSegment
 #SBATCH --account=borrowed
-#SBATCH --partition=scavenge
-#SBATCH --qos=scavenge
+#SBATCH --partition=ephemeral
+#SBATCH --qos=ephemeral
 #SBATCH --time=1:00:00 # Number of hours required per node, max 24 on SAGA
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
