@@ -288,7 +288,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
     gnn_decode = parse_bool_param(pipeline_params, "gnn_decode")
     email = Email(pipeline_params.string("email")) if "email" in pipeline_params else None
     submission_details_path = pipeline_params.creatable_file("submission_details_path")
-    job_logs_path = pipeline_params.creatable_file("job_logs_path")
+    job_logs_path = pipeline_params.creatable_directory("job_logs_path")
     if train_gnn:
         model_path = pipeline_params.creatable_file("stroke_model_path")
     elif gnn_decode:
