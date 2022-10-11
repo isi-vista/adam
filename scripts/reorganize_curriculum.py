@@ -29,7 +29,6 @@ OBJECTS_LIST = (
     "triangleblock",
     "window",
 )
-N_EXAMPLES_PER_OBJECT = 10
 N_CAMERAS = 3
 
 
@@ -60,6 +59,13 @@ def main():
     parser.add_argument("--input-feature-dir", type=Path, help="An input directory of the features", required=True)
     parser.add_argument("--input-cur-dir", type=Path, help="An input directory of the curriculum", required=True)
     parser.add_argument("--input-split", type=str, help="The input curriculum split to process", required=True)
+    parser.add_argument(
+        "--examples-per-object",
+        type=int,
+        help="The number of examples per object. This is 10 for M5 objects train, 5 for M5 objects "
+        "test.",
+        required=True,
+    )
     parser.add_argument(
         "--input-slice",
         type=str,
@@ -93,7 +99,7 @@ def main():
     situation_num = 0
     objects_covered = set()
     for object_debug_name, range_examples, n_cameras in zip(
-        OBJECTS_LIST, itt.repeat(N_EXAMPLES_PER_OBJECT), itt.repeat(N_CAMERAS)
+        OBJECTS_LIST, itt.repeat(args.examples_per_object), itt.repeat(N_CAMERAS)
     ):
         for cam in range(n_cameras):
             input_curriculum_dir: Path = args.input_cur_dir / f"{args.input_split}_{args.input_slice}{object_debug_name}" / f"cam{cam}"
