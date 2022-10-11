@@ -15,7 +15,7 @@ from pathlib import Path
 import shlex
 from shutil import copytree
 from subprocess import run, CalledProcessError
-from typing import List, Mapping, NewType, Optional, Sequence
+from typing import Callable, List, Mapping, NewType, Optional, Sequence
 
 import yaml
 
@@ -247,21 +247,26 @@ def is_empty_dir(path: Path) -> bool:
     return path.is_dir() and child is None
 
 
-def ignore_from_base_curriculum(_parent: str, children: Sequence[str]) -> Sequence[str]:
-    def is_raw_input_file(path_str: str) -> bool:
-        path = Path(path_str)
-        return (
-            path.name.startswith("semantic")
-            or path.name.startswith("original_colors_color_segmentation_")
-            or path.name.startswith("color_segmentation_")
-            or path.name.startswith("color_refined_semantic_")
-            or path.name.startswith("combined_color_refined_semantic_")
-            or path.name.startswith("stroke_")
-            or path.name.startswith("feature")
-            or path.name.startswith("post_decode")
-        )
+def ignore_from_base_curriculum(
+    *, copy_segmentations: bool
+) -> Callable[[str, Sequence[str]], Sequence[str]]:
+    def ignore_fn(_parent: str, children: Sequence[str]) -> Sequence[str]:
+        def is_raw_input_file(path_str: str) -> bool:
+            path = Path(path_str)
+            return (
+                (path.name.startswith("semantic") and not copy_segmentations)
+                or path.name.startswith("original_colors_color_segmentation_")
+                or path.name.startswith("color_segmentation_")
+                or path.name.startswith("color_refined_semantic_")
+                or path.name.startswith("combined_color_refined_semantic_")
+                or path.name.startswith("stroke_")
+                or path.name.startswith("feature")
+                or path.name.startswith("post_decode")
+            )
 
-    return [child for child in children if is_raw_input_file(child)]
+        return [child for child in children if is_raw_input_file(child)]
+
+    return ignore_fn
 
 
 def make_run_identifier(run_start: datetime) -> str:
@@ -273,6 +278,9 @@ def pipeline_entrypoint(params: Parameters) -> None:
 
     pipeline_params = params.namespace("pipeline")
     use_sbatch = parse_bool_param(pipeline_params, "use_sbatch")
+    copy_segmentations_from_base = parse_bool_param(
+        pipeline_params, "copy_segmentations_from_base"
+    )
     do_object_segmentation = parse_bool_param(pipeline_params, "do_object_segmentation")
     segmentation_model = pipeline_params.string("segmentation_model")
     segmentation_api_port = params.integer("segmentation_api_port")
@@ -362,7 +370,9 @@ def pipeline_entrypoint(params: Parameters) -> None:
             copytree(
                 split_to_base_curriculum_path[split],
                 path,
-                ignore=ignore_from_base_curriculum,
+                ignore=ignore_from_base_curriculum(
+                    copy_segmentations=copy_segmentations_from_base
+                ),
             )
         elif not path.is_dir():
             raise RuntimeError(f"Path {path} for split {split} is not a dir.")
