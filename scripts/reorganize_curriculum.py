@@ -86,8 +86,8 @@ def main():
         "--keep-strokeless-situations",
         dest="drop_strokeless_situations",
         action="store_false",
-        help="If passed, include in the output any situations lacking stroke features. This is the "
-        "default behavior.",
+        help="If passed, do not drop situations just because they lack stroke features. This is "
+        "the default behavior.",
     )
     parser.add_argument("--output-dir", type=Path, help="The curriculum output directory", required=True)
     args = parser.parse_args()
