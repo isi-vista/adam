@@ -29,7 +29,6 @@ OBJECTS_LIST = (
     "triangleblock",
     "window",
 )
-N_EXAMPLES_PER_OBJECT = 10
 N_CAMERAS = 3
 
 
@@ -61,6 +60,13 @@ def main():
     parser.add_argument("--input-cur-dir", type=Path, help="An input directory of the curriculum", required=True)
     parser.add_argument("--input-split", type=str, help="The input curriculum split to process", required=True)
     parser.add_argument(
+        "--examples-per-object",
+        type=int,
+        help="The number of examples per object. This is 10 for M5 objects train, 5 for M5 objects "
+        "test.",
+        required=True,
+    )
+    parser.add_argument(
         "--input-slice",
         type=str,
         help='The input curriculum slice to use, as a string. This could be "small_single_" '
@@ -70,6 +76,18 @@ def main():
         '{split}_{prefix}{object_name}. Defaults to "small_single_", because all such files are '
         'uploaded to the Google Drive while the subsetted versions may not be.',
         default="small_single_"
+    )
+    parser.add_argument(
+        "--drop-strokeless-situations",
+        action="store_true",
+        help="If passed, don't include in the output any situations lacking stroke features.",
+    )
+    parser.add_argument(
+        "--keep-strokeless-situations",
+        dest="drop_strokeless_situations",
+        action="store_false",
+        help="If passed, do not drop situations just because they lack stroke features. This is "
+        "the default behavior.",
     )
     parser.add_argument("--output-dir", type=Path, help="The curriculum output directory", required=True)
     args = parser.parse_args()
@@ -81,7 +99,7 @@ def main():
     situation_num = 0
     objects_covered = set()
     for object_debug_name, range_examples, n_cameras in zip(
-        OBJECTS_LIST, itt.repeat(N_EXAMPLES_PER_OBJECT), itt.repeat(N_CAMERAS)
+        OBJECTS_LIST, itt.repeat(args.examples_per_object), itt.repeat(N_CAMERAS)
     ):
         for cam in range(n_cameras):
             input_curriculum_dir: Path = args.input_cur_dir / f"{args.input_split}_{args.input_slice}{object_debug_name}" / f"cam{cam}"
@@ -98,12 +116,19 @@ def main():
                     )
                 ):
                     logging.warning(
-                        "Missing strokes for object %s (camera %d, example %d); skipping...",
+                        "Missing strokes for object %s (camera %d, example %d).",
                         object_debug_name,
                         cam,
                         ex,
                     )
-                    continue
+                    if args.drop_strokeless_situations:
+                        logging.warning(
+                            "Skipping example %d, camera %d due to missing strokes for %s...",
+                            ex,
+                            cam,
+                            object_debug_name,
+                        )
+                        continue
                 if not any(
                     args.input_feature_dir.glob(
                         f"feature_{args.input_split}_{object_debug_name}_{cam}_{ex}*"
@@ -111,12 +136,19 @@ def main():
                 ):
                     logging.warning(
                         "Missing features (BUT NOT STROKES???) for object %s (camera %d, "
-                        "example %d); skipping...",
+                        "example %d).",
                         object_debug_name,
                         cam,
                         ex,
                     )
-                    continue
+                    if args.drop_strokeless_situations:
+                        logging.warning(
+                            "Skipping example %d, camera %d due to missing features for %s...",
+                            ex,
+                            cam,
+                            object_debug_name,
+                        )
+                        continue
 
                 output_situation = output_dir / f"situation_{situation_num}"
                 output_situation.mkdir(parents=True)
@@ -138,7 +170,7 @@ def main():
                 # RGB Files
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"rgb_*_{ex}.png"))):
                     shutil.copy(file, output_situation / f"rgb_{idx}.png")
-                if not any(input_curriculum_dir.glob(f"rgb__{ex}*")):
+                if not any(input_curriculum_dir.glob(f"rgb_*_{ex}.png")):
                     logging.warning(
                         "Missing RGB image for object %s (camera %d, example %d).",
                         object_debug_name,
@@ -178,7 +210,7 @@ def main():
                 # Semantic Files
                 for idx, file in enumerate(sorted(input_curriculum_dir.glob(f"semantic_*_{ex}.png"))):
                     shutil.copy(file, output_situation / f"semantic_{idx}.png")
-                if not any(input_curriculum_dir.glob(f"semantic__{ex}*")):
+                if not any(input_curriculum_dir.glob(f"semantic_*_{ex}.png")):
                     logging.warning(
                         "Missing semantic image for object %s (camera %d, example %d).",
                         object_debug_name,
