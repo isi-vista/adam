@@ -881,15 +881,16 @@ class Stroke_Extraction:
 
         # Calculate relative sizes using already-calculated absolute sizes:
         for i in range(len(objects)):
-            relative_size = {'x_bigger_than': [], 'y_bigger_than': []}
+            relative_size = dict()
             for j in range(len(objects)):
                 if i == j:
                     continue
                 else:
                     other_object_name = objects[j]['object_name']
+                    relative_size[other_object_name] = dict()
                     for axis in ('x', 'y'):
                         # Relative size is a discrete ('bigger_than') relation
-                        relative_size[f'{axis}_bigger_than'].append(objects[i]['size'][axis] > objects[j]['size'][axis])
+                        relative_size[other_object_name][f'{axis}_bigger_than'] = objects[i]['size'][axis] > objects[j]['size'][axis]
 
                         # Normalize relative distances by the relevant axis
                         # sizes of both objects
