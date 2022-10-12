@@ -3,7 +3,7 @@
 #SBATCH --account=borrowed
 #SBATCH --partition=ephemeral
 #SBATCH --qos=ephemeral
-#SBATCH --time=1:00:00 # Number of hours required per node, max 24 on SAGA
+#SBATCH --time=6:00:00 # Number of hours required per node, max 24 on SAGA
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32g
