@@ -4,6 +4,7 @@ _includes:
 pipeline:
     use_sbatch: false
     do_object_segmentation: true
+    copy_segmentations_from_base: false
     segmentation_model: "stego"
     segment_colors: false
     refine_colors: false
