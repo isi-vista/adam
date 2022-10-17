@@ -7,6 +7,7 @@ import logging
 import os.path
 from pathlib import Path
 import re
+import shutil
 
 import cv2
 from tqdm import tqdm
@@ -148,6 +149,13 @@ def main():
                     semantic_image,
                     situation_num,
                 )
+                if args.multifile_output:
+                    raise ValueError("Don't know what to do here.")
+                else:
+                    shutil.copy(
+                        semantic_image,
+                        output_situation_dir / f"combined_color_refined_semantic_{number}.png",
+                    )
                 continue
             elif not semantic_image.exists():
                 logger.warning(
