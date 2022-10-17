@@ -574,7 +574,8 @@ def pipeline_entrypoint(params: Parameters) -> None:
                         str(model_path),
                     ],
                     dependencies=dependency_list(
-                        split_to_name_to_id["train"].get("stroke_extraction")
+                        split_to_name_to_id["train"].get("stroke_extraction"),
+                        split_to_name_to_id["test"].get("stroke_extraction"),
                     ),
                     job_name="adamGNNTrain",
                     log_dir=job_logs_path,
