@@ -1,12 +1,23 @@
 import json
+from collections import defaultdict
 from pathlib import Path
 from typing import Sequence, Union, List, Mapping, Dict, Optional, Any, Tuple
 
 import yaml
 from attr import attrs, attrib
-from attr.validators import instance_of, deep_iterable, deep_mapping, optional
-from immutablecollections import ImmutableSet, ImmutableDict, immutabledict
-from immutablecollections.converter_utils import _to_immutableset, _to_immutabledict
+from attr.validators import (
+    instance_of,
+    deep_iterable,
+    deep_mapping,
+    optional,
+)
+from immutablecollections import ImmutableSet, ImmutableDict
+from immutablecollections.converter_utils import (
+    _to_immutableset,
+    _to_immutabledict,
+    immutabledict,
+    immutableset,
+)
 
 from adam.math_3d import Point
 from adam.ontology import OntologyNode
@@ -31,6 +42,26 @@ from adam.perception.perception_graph_nodes import (
 CATEGORY_PROPERTY_KEYS: List[str] = ["texture"]
 CONTINUOUS_PROPERTY_KEYS: List[str] = []
 STROKE_PROPERTY_KEYS: List[str] = ["stroke_mean_x", "stroke_mean_y", "stroke_std"]
+SIZE_PROPERTY_KEYS: List[str] = ["width", "height", "box_area"]
+RELATIVE_DISTANCE_PROPERTY_KEYS: List[str] = [
+    "x_offset",
+    "y_offset",
+    "euclidean_distance",
+]
+RELATIVE_SIZE_PROPERTY_KEYS: List[str] = ["width_greater_than", "height_greater_than"]
+
+
+def object_name_to_id(object_name):
+    return "".join(char for char in object_name if char.isdigit())
+
+
+def to_property_dict(
+    mapping: Mapping[str, Sequence[GraphNode]]
+) -> ImmutableDict[str, ImmutableSet[GraphNode]]:
+    """
+    Convert to dict of {str: list} to immutable equivalent.
+    """
+    return immutabledict({k: immutableset(v) for (k, v) in mapping.items()})
 
 
 @attrs(slots=True, frozen=True)
@@ -57,6 +88,10 @@ class ClusterPerception:
     properties: ImmutableSet[Union[GraphNode, OntologyNode]] = attrib(
         validator=deep_iterable(instance_of((GraphNode, OntologyNode))),
         converter=_to_immutableset,
+    )
+    relative_properties: ImmutableDict[str, ImmutableSet[GraphNode]] = attrib(
+        validator=deep_mapping(instance_of(str), deep_iterable(instance_of(GraphNode))),
+        converter=to_property_dict,
     )
     centroid_x: Optional[float] = attrib(
         validator=optional(instance_of(float)), default=None
@@ -94,12 +129,21 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
     clusters: Sequence[ClusterPerception] = attrib(
         validator=deep_iterable(instance_of(ClusterPerception))
     )
+    touching: ImmutableSet[Tuple[str, str]] = attrib(
+        validator=deep_iterable(
+            member_validator=deep_iterable(
+                member_validator=instance_of(str),
+            )
+        ),
+        converter=_to_immutableset,
+    )
 
     @staticmethod
     def from_mapping(
         perception_mapping: Mapping[str, Any], *, color_is_rgb: bool = False
     ) -> "VisualPerceptionFrame":
         clusters = []
+
         for cluster_map in perception_mapping["objects"]:
             color_property = cluster_map["color"]
             strokes_map = cluster_map["stroke_graph"]
@@ -141,6 +185,10 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
                 for entry in CONTINUOUS_PROPERTY_KEYS
                 if cluster_map[entry]
             )
+            properties.extend(
+                ContinuousNode(label=entry, value=cluster_map["size"][entry], weight=1.0)
+                for entry in SIZE_PROPERTY_KEYS
+            )
             # properties.extend(
             #     ContinuousNode(
             #         label=f"stroke-{entry}", value=strokes_map[entry], weight=1.0
@@ -166,16 +214,38 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
                         )
                     )
 
-            # Cluster ID is cleaned so that only the digit ID is displayed and not 'object'
+            relative_properties: Dict[str, List[GraphNode]] = defaultdict(list)
+            if cluster_map["relative_distance"] is not None:
+                for other_object_name, relative_distance in cluster_map[
+                    "relative_distance"
+                ].items():
+                    other_object_id = object_name_to_id(other_object_name)
+                    for key in RELATIVE_DISTANCE_PROPERTY_KEYS:
+                        value = relative_distance[key]
+                        relative_properties[other_object_id].append(
+                            ContinuousNode(label=key, value=value, weight=1.0)
+                        )
+            if cluster_map["relative_size"] is not None:
+                for other_object_name, relative_size in cluster_map[
+                    "relative_size"
+                ].items():
+                    other_object_id = object_name_to_id(other_object_name)
+                    for key in RELATIVE_SIZE_PROPERTY_KEYS:
+                        # Have to convert value to `str` to fit CategoricalNode
+                        value = relative_size[key]
+                        relative_properties[other_object_id].append(
+                            CategoricalNode(label=key, value=str(value), weight=1.0)
+                        )
+            relative_properties = dict(relative_properties)
+
             clusters.append(
                 ClusterPerception(
-                    cluster_id="".join(
-                        char for char in cluster_map["object_name"] if char.isdigit()
-                    ),
+                    cluster_id=object_name_to_id(cluster_map["object_name"]),
                     viewpoint_id=cluster_map["viewpoint_id"],
                     sub_object_id=cluster_map.get("subobject_id", 0),
                     strokes=strokes,
                     adjacent_strokes=adjacency_matrix,
+                    relative_properties=relative_properties,
                     properties=properties,
                     centroid_x=strokes_map["stroke_mean_x"],
                     centroid_y=strokes_map["stroke_mean_y"],
@@ -183,7 +253,13 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
                 )
             )
 
-        return VisualPerceptionFrame(clusters=clusters)
+        touching: List[Tuple[str, str]] = []
+        for object1_name, object2_name in perception_mapping["touching"]:
+            object1_id: str = object_name_to_id(object1_name)
+            object2_id: str = object_name_to_id(object2_name)
+            touching.append((object1_id, object2_id))
+
+        return VisualPerceptionFrame(clusters=clusters, touching=touching)
 
     @staticmethod
     def from_json_str(
