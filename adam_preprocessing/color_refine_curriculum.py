@@ -141,7 +141,7 @@ def main():
             semantic_image = situation_dir / f"semantic_{number}.png"
             color_segmentation_image = output_situation_dir / f"color_segmentation_{number}.png"
             if number in failed_image_numbers:
-                logger.debug(
+                logger.warning(
                     "Skipping refinement for image number %d (%s) in situation %d because color "
                     "segmentation failed.",
                     number,
