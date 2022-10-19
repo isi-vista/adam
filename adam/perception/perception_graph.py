@@ -330,6 +330,20 @@ Edge label used in perception graphs to link an action decode to its correspondi
 
 `JointPointNode`s are also referenced by their `ObjectClusterNode` with a `HAS_PROPERTY` label.
 """
+SOURCE_OBJECT = OntologyNode("source-object")
+"""
+Edge label in a `PerceptionGraph` linking a relative property to the 'source'
+object
+"""
+TARGET_OBJECT = OntologyNode("target-object")
+"""
+Edge label in a `PerceptionGraph` linking a relative property to the 'target'
+object
+"""
+TOUCHING = OntologyNode("touching")
+"""
+Edge label in a `PerceptionGraph` indicating a touching relation
+"""
 
 
 class PerceptionGraphProtocol(Protocol):
@@ -2865,6 +2879,45 @@ class _VisualPerceptionFrameTranslation(_FrameTranslation[VisualPerceptionFrame]
                         graph.add_edge(
                             source_stroke, dest_stroke, label=ADJACENT_STROKE_LABEL
                         )
+
+        # Add nodes & edges for relative properties
+        for perceived_cluster in frame.clusters:
+            source_node = cluster_perception_to_graph_node[perceived_cluster]
+            for (
+                target_cluster_id,
+                relative_property_set,
+            ) in perceived_cluster.relative_properties.items():
+
+                # Get the target node using its ID (this is a bit of a kludge)
+                for target_node in cluster_perception_to_graph_node.values():
+                    if target_node.cluster_id == target_cluster_id:
+                        break
+                else:
+                    raise ValueError(f"No target cluster for id: {target_cluster_id}")
+
+                for relative_property in relative_property_set:
+                    graph.add_node(relative_property)
+                    graph.add_edge(
+                        relative_property,
+                        source_node,
+                        label=SOURCE_OBJECT,
+                    )
+                    graph.add_edge(
+                        relative_property,
+                        target_node,
+                        label=TARGET_OBJECT,
+                    )
+
+        for touching_relation in frame.touching:
+            object1_id, object2_id = touching_relation
+
+            for cluster_node in cluster_perception_to_graph_node.values():
+                if cluster_node.cluster_id == object1_id:
+                    object1 = cluster_node
+                if cluster_node.cluster_id == object2_id:
+                    object2 = cluster_node
+            graph.add_edge(object1, object2, label=TOUCHING)
+            graph.add_edge(object2, object1, label=TOUCHING)
 
         return graph
 
