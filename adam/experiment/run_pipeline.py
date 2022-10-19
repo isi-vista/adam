@@ -387,6 +387,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
                 build_sbatch_command(
                     root / "segmentation_processing" / "start_server.sh",
                     script_args=[str(segmentation_api_port)],
+                    extra_sbatch_args=["--dependency=singleton"],
                     job_name="adamSegmentServer",
                     log_dir=job_logs_path,
                     email=email,
