@@ -639,7 +639,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
                 job_name="adamADAM",
                 log_dir=job_logs_path,
                 email=email,
-                mail_types=[MailType("SUCCESS"), MailType("FAIL")],
+                mail_types=[MailType("END"), MailType("FAIL")],
             ),
             save_to=submission_details_path,
         ),
