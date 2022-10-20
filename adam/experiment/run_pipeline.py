@@ -294,6 +294,14 @@ def pipeline_entrypoint(params: Parameters) -> None:
     extract_strokes = parse_bool_param(pipeline_params, "extract_strokes")
     train_gnn = parse_bool_param(pipeline_params, "train_gnn")
     gnn_decode = parse_bool_param(pipeline_params, "gnn_decode")
+    # To simplify things, training can be run only on ephemeral or ephemeral-lg.
+    # This means we don't have to either (1) automatically infer, or (2) ask the user to provide a
+    # parameter giving the appropriate account/QOS we pass to sbatch.
+    #
+    # Note that ephemeral-lg is needed for running STEGO + stroke-merging.
+    train_gnn_partition = pipeline_params.string(
+        "train_gnn_partition", valid_options=("ephemeral", "ephemeral-lg"), default="ephemeral"
+    )
     email = Email(pipeline_params.string("email")) if "email" in pipeline_params else None
     submission_details_path = pipeline_params.creatable_file("submission_details_path")
     job_logs_path = pipeline_params.creatable_directory("job_logs_path")
@@ -568,6 +576,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
             echo_command(
                 command_builder(
                     root / "adam_preprocessing" / "train.sh",
+                    extra_sbatch_args=["--partition", train_gnn_partition],
                     script_args=[
                         str(split_to_curriculum_path["train"]),
                         str(split_to_curriculum_path["test"]),
