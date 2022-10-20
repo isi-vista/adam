@@ -299,8 +299,8 @@ def pipeline_entrypoint(params: Parameters) -> None:
     # parameter giving the appropriate account/QOS we pass to sbatch.
     #
     # Note that ephemeral-lg is needed for running STEGO + stroke-merging.
-    train_gnn_partition = pipeline_params.string(
-        "train_gnn_partition", valid_options=("ephemeral", "ephemeral-lg"), default="ephemeral"
+    gnn_partition = pipeline_params.string(
+        "gnn_partition", valid_options=("ephemeral", "ephemeral-lg"), default="ephemeral"
     )
     email = Email(pipeline_params.string("email")) if "email" in pipeline_params else None
     submission_details_path = pipeline_params.creatable_file("submission_details_path")
@@ -576,7 +576,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
             echo_command(
                 command_builder(
                     root / "adam_preprocessing" / "train.sh",
-                    extra_sbatch_args=["--partition", train_gnn_partition],
+                    extra_sbatch_args=["--partition", gnn_partition],
                     script_args=[
                         str(split_to_curriculum_path["train"]),
                         str(split_to_curriculum_path["test"]),
@@ -609,6 +609,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
                 echo_command(
                     command_builder(
                         root / "adam_preprocessing" / "predict.sh",
+                        extra_sbatch_args=["--partition", gnn_partition],
                         script_args=[
                             str(model_path),
                             str(split_curriculum_dir),
