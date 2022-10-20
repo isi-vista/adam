@@ -13,6 +13,7 @@ pipeline:
     merge_small_strokes: true
     extract_strokes: true
     train_gnn: true
+    train_gnn_partition: "ephemeral-lg"
     gnn_decode: true
     submission_details_path: "%experiment_group_dir%/submission_details.log"
     job_logs_path: "%experiment_group_dir%/job_logs"
