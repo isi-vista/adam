@@ -294,6 +294,14 @@ def pipeline_entrypoint(params: Parameters) -> None:
     extract_strokes = parse_bool_param(pipeline_params, "extract_strokes")
     train_gnn = parse_bool_param(pipeline_params, "train_gnn")
     gnn_decode = parse_bool_param(pipeline_params, "gnn_decode")
+    # To simplify things, training can be run only on ephemeral or ephemeral-lg.
+    # This means we don't have to either (1) automatically infer, or (2) ask the user to provide a
+    # parameter giving the appropriate account/QOS we pass to sbatch.
+    #
+    # Note that ephemeral-lg is needed for running STEGO + stroke-merging.
+    gnn_partition = pipeline_params.string(
+        "gnn_partition", valid_options=("ephemeral", "ephemeral-lg"), default="ephemeral"
+    )
     email = Email(pipeline_params.string("email")) if "email" in pipeline_params else None
     submission_details_path = pipeline_params.creatable_file("submission_details_path")
     job_logs_path = pipeline_params.creatable_directory("job_logs_path")
@@ -568,13 +576,15 @@ def pipeline_entrypoint(params: Parameters) -> None:
             echo_command(
                 command_builder(
                     root / "adam_preprocessing" / "train.sh",
+                    extra_sbatch_args=["--partition", gnn_partition],
                     script_args=[
                         str(split_to_curriculum_path["train"]),
                         str(split_to_curriculum_path["test"]),
                         str(model_path),
                     ],
                     dependencies=dependency_list(
-                        split_to_name_to_id["train"].get("stroke_extraction")
+                        split_to_name_to_id["train"].get("stroke_extraction"),
+                        split_to_name_to_id["test"].get("stroke_extraction"),
                     ),
                     job_name="adamGNNTrain",
                     log_dir=job_logs_path,
@@ -599,6 +609,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
                 echo_command(
                     command_builder(
                         root / "adam_preprocessing" / "predict.sh",
+                        extra_sbatch_args=["--partition", gnn_partition],
                         script_args=[
                             str(model_path),
                             str(split_curriculum_dir),
@@ -638,7 +649,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
                 job_name="adamADAM",
                 log_dir=job_logs_path,
                 email=email,
-                mail_types=[MailType("SUCCESS"), MailType("FAIL")],
+                mail_types=[MailType("END"), MailType("FAIL")],
             ),
             save_to=submission_details_path,
         ),
