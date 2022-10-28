@@ -950,7 +950,9 @@ def _simulated_graph_with_continuous_feature(*, feature_name: str, observed_valu
         ),
     )
     return PerceptionGraph.from_simulated_frame(
-        VisualPerceptionFrame(clusters=(object_with_continuous_feature,))
+        VisualPerceptionFrame(
+            clusters=(object_with_continuous_feature,), touching=immutableset()
+        )
     )
 
 

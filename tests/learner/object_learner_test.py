@@ -590,12 +590,14 @@ def _make_fake_simulated_curriculum_with_continuous_features(
                         sub_object_id=0,
                         strokes=immutableset(),
                         adjacent_strokes=immutabledict(),
+                        relative_properties=immutabledict(),
                         properties=immutableset(properties),
                         centroid_x=centroid_x,
                         centroid_y=centroid_y,
                         std=std,
                     ),
-                )
+                ),
+                touching=immutableset(),
             )
         )
 

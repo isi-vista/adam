@@ -837,7 +837,7 @@ class Stroke_Extraction:
                     relative_distance[other_object_name] = dict(
                         x_offset=offsets[0].item(),
                         y_offset=offsets[1].item(),
-                        euclidean=distance[other_object_name]
+                        euclidean_distance=distance[other_object_name]
                     )
             if len(distance.keys()) == 0:
                 distance = None
@@ -855,9 +855,9 @@ class Stroke_Extraction:
                         #  are type `float`), but if they aren't cast to
                         #  `float`, they get serialized as complex objects,
                         #  not primitive floats.
-                        x=float(x_size),
-                        y=float(y_size),
-                        area=float(box_area)
+                        width=float(x_size),
+                        height=float(y_size),
+                        box_area=float(box_area)
                     ),
                     stroke_graph=dict(
                         adjacency_matrix=adj_obj.tolist(),
@@ -881,27 +881,29 @@ class Stroke_Extraction:
 
         # Calculate relative sizes using already-calculated absolute sizes:
         for i in range(len(objects)):
-            relative_size = {'x_bigger_than': [], 'y_bigger_than': []}
+            relative_size = dict()
             for j in range(len(objects)):
                 if i == j:
                     continue
                 else:
                     other_object_name = objects[j]['object_name']
-                    for axis in ('x', 'y'):
+                    relative_size[other_object_name] = dict()
+
+                    for axis, dimension in (('x', 'width'), ('y', 'height')):
                         # Relative size is a discrete ('bigger_than') relation
-                        relative_size[f'{axis}_bigger_than'].append(objects[i]['size'][axis] > objects[j]['size'][axis])
+                        object_dimension = objects[i]['size'][dimension]
+                        other_object_dimension = objects[j]['size'][dimension]
+                        relative_size[other_object_name][f'{dimension}_greater_than'] = object_dimension > other_object_dimension
 
                         # Normalize relative distances by the relevant axis
                         # sizes of both objects
-                        object_axis_size = objects[i]['size'][axis]
-                        other_object_axis_size = objects[j]['size'][axis]
-                        objects[i]['relative_distance'][other_object_name][f'{axis}_offset'] /= (object_axis_size * other_object_axis_size)
+                        objects[i]['relative_distance'][other_object_name][f'{axis}_offset'] /= (object_dimension * other_object_dimension)
 
                     # Normalize euclidean distance by product of areas of both
                     # objects
-                    object_area = objects[i]['size']['area']
-                    other_object_area = objects[j]['size']['area']
-                    objects[i]['relative_distance'][other_object_name]['euclidean'] /= (object_area * other_object_area)
+                    object_area = objects[i]['size']['box_area']
+                    other_object_area = objects[j]['size']['box_area']
+                    objects[i]['relative_distance'][other_object_name]['euclidean_distance'] /= (object_area * other_object_area)
             objects[i]['relative_size'] = relative_size
 
         # Determine touching relations based on closest-point distance
