@@ -3,7 +3,7 @@ import base64
 import json
 import logging
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import cv2
 import numpy as np
@@ -20,6 +20,84 @@ NP_RNG = np.random.default_rng(COLOR_SEED)
 LABEL_COLORS = NP_RNG.uniform(0, 255, size=(50, 3))
 STEGO_MODEL = "stego"
 MASK_RCNN_MODEL = "rcnn"
+
+
+# this should take a sequence of 4-tuples, but that form is not very convenient to use with the raw
+# JSON response
+def with_maximal_area(boxes: Sequence[Sequence[float]]) -> Sequence[int]:
+    """
+    Given some bounding boxes, identify those with maximal area.
+
+    Parameters:
+        boxes: A sequence of bounding boxes (x0, y0, x1, y1).
+
+    Returns:
+        A sequence of indices into :param:`boxes`.
+    """
+    threshold = 0.1
+    indices = []
+    max_area = 0.0
+    for idx, (x0, y0, x1, y1) in enumerate(boxes):
+        area = abs((x1 - x0) * (y1 - y0))
+        if max_area - threshold <= area <= max_area + threshold:
+            indices.append(idx)
+        elif area > max_area + threshold:
+            max_area = area
+            indices = [idx]
+
+    return indices
+
+
+def with_maximal_size(masks: Sequence[Sequence[Sequence[bool]]]) -> Sequence[int]:
+    """
+    Given some image masks, identify those with maximal size.
+
+    The size is the total number of pixels included in the mask, i.e. the number of True base
+    elements.
+
+    Parameters:
+        masks: A sequence of masks.
+
+    Returns:
+        A sequence of indices into :param:`masks`.
+    """
+    indices = []
+    max_pixels = 0
+    for idx, mask in enumerate(masks):
+        n_pixels_included = sum(sum(int(elem) for elem in row) for row in mask)
+        if n_pixels_included == max_pixels:
+            indices.append(idx)
+        elif n_pixels_included > max_pixels:
+            max_pixels = n_pixels_included
+            indices = [idx]
+
+    return indices
+
+
+def identify_background(response: Mapping[str, Any]) -> int:
+    """
+    Identify the background mask index for the given response.
+
+    This is a hack:
+
+    1. We find those masks with the biggest corresponding bounding box area, i.e. masks whose boxes
+       are not smaller than those of any other mask.
+    2. From those masks found in (1), we find the masks containing a maximal number of pixels, i.e.
+       masks where no other mask contains more pixels.
+    3. Finally, we pick an arbitrary mask from those in (2).
+
+    Parameters:
+        response:
+            The response from the segmentation server.
+
+    Returns:
+        The index of the mask corresponding to the background.
+    """
+    maximal_box_idcs = with_maximal_area(response["boxes"])
+    maximal_mask_idcs = with_maximal_size(
+        [response["masks"][i] for i in maximal_box_idcs]
+    )
+    return maximal_box_idcs[maximal_mask_idcs[0]]
 
 
 def stego_postprocessing(data: Mapping[str, Any], img: Any) -> Any:
@@ -153,6 +231,28 @@ def main() -> None:
 
             orig_img = cv2.imread(str(rgb_file))
             data = resp.json()
+            # Hack: If we're using STEGO, we identify the background mask's index (STEGO won't tell
+            # us) then delete the data for that mask. This should cause the background mask's area
+            # to be colored black, which is necessary for color refinement to work properly. See
+            # adam_preprocessing/color_refinement.py.
+            if args.model == STEGO_MODEL:
+                background_idx = identify_background(data)
+                # Ignore labels, linear_labels since those are empty
+                logging.debug(
+                    "Deleting background mask data at idx %d from situation %d image %d...",
+                    background_idx,
+                    idx,
+                    idy,
+                )
+                # Only update masks and boxes, because the background we identified was one of the
+                # unsupervised/clustering-based mask outputs. The linear layer may identify
+                # different masks/boxes.
+                for key in ["masks", "boxes"]:
+                    if data[key]:
+                        logging.debug(
+                            "Removing index %d from response key %s", background_idx, key
+                        )
+                        del data[key][background_idx]
 
             if args.model == STEGO_MODEL:
                 img = rcnn_postprocessing(data, orig_img)
