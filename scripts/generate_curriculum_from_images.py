@@ -1,7 +1,10 @@
 import argparse
 from pathlib import Path
 
+from PIL.Image import Resampling
 from yaml import load, dump
+
+IMAGE_SIZE = (640, 360)
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
@@ -37,7 +40,8 @@ def main() -> None:
             dump({'language': description}, description_file, Dumper=Dumper)
 
         # Output RGB image of situation
-        input_image.save(situation_dir / "rgb_0.png")
+        resized_image = input_image.resize(IMAGE_SIZE, Resampling.LANCZOS)
+        resized_image.save(situation_dir / "rgb_0.png")
 
     # Output info file
     with open(args.output_dir / "info.yaml", "w") as info_file:
