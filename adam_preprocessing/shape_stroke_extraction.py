@@ -508,7 +508,8 @@ class Stroke_Extraction:
         rgb_img_path: str,
         stroke_img_save_path: str,
         stroke_graph_img_save_path: str,
-        features_save_path: str,
+        output_dir: str,
+        process_masks_independently: bool = False,
         should_merge_small_strokes: bool = False,
         debug_vis: bool = False,
         debug_matlab_stroke_img_save_path: str,
@@ -529,7 +530,9 @@ class Stroke_Extraction:
         self.debug_matlab_stroke_img_save_path = debug_matlab_stroke_img_save_path
         self.stroke_img_save_path = stroke_img_save_path
         self.stroke_graph_img_save_path = stroke_graph_img_save_path
-        self.features_save_path = features_save_path
+        self.output_dir = output_dir
+        self.features_save_path = os.path.join(output_dir, "feature.yaml")
+        self.process_masks_independently = process_masks_independently
 
     @staticmethod
     def from_m5_objects_curriculum_base_path(
@@ -765,6 +768,24 @@ class Stroke_Extraction:
         # objects for those locations are (considered) distinct. I think that is the convention
         # here.
         img_seg = cv2.imread(self.path)
+        all_seg_pixels = np.reshape(img_seg, (-1, img_seg.shape[-1]))
+        all_unique_colors = np.unique(all_seg_pixels, axis=0)
+
+        # Ignore black (background) pixels
+        unique_colors = all_unique_colors[
+            np.where((all_unique_colors != [0, 0, 0]).any(axis=-1))
+        ]
+        # Array of boolean masks (one for each color), shape: (n_masks, height, width)
+        masks = np.all(
+            img_seg[np.newaxis, ...] ==
+            unique_colors[:, np.newaxis, np.newaxis, :], axis=-1
+        )
+        for i in range(unique_colors.shape[0]):
+            color = unique_colors[i, np.newaxis]
+            int_mask = masks[i, :, :, np.newaxis].astype(int)
+            color_mask = int_mask * color
+            cv2.imwrite(os.path.join(self.output_dir, f"{os.path.basename(self.path)}_mask_{i}.png"), color_mask)
+
         img_seg = cv2.cvtColor(img_seg, cv2.COLOR_BGR2GRAY)
         # jac: obj_area is a tuple of two equal-length arrays xs, ys such that for all i,
         # img_seg[xs[i], ys[i]] != 0.
@@ -1001,6 +1022,11 @@ def main():
         dest="tolerate_errors",
         help="If passed, will halt immediately when extraction fails for a given situation."
     )
+    parser.add_argument(
+        "--process-masks-independently",
+        action="store_true",
+        help="If passed, will not merge adjacent masks of different colors."
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -1050,14 +1076,15 @@ def main():
                 debug_matlab_stroke_img_save_path=str(output_situation_dir / "matlab_stroke_0.png"),
                 stroke_img_save_path=str(output_situation_dir / "stroke_0.png"),
                 stroke_graph_img_save_path=str(output_situation_dir / "stroke_graph_0.png"),
-                features_save_path=str(output_situation_dir / "feature.yaml"),
+                output_dir=output_situation_dir,
                 should_merge_small_strokes=args.merge_small_strokes,
-                obj_type=string_label,
+                obj_type="dummy",
                 # TODO create issue: in the reorganized curriculum format, we don't store the
                 #  information about the object view/ID in an authoritative global-per-sample way such
                 #  that we could retrieve it here in the stroke extraction code.
                 obj_view="-1",
                 obj_id="-1",
+                process_masks_independently=args.process_masks_independently,
             )
             S.get_strokes()
         except ValueError as e:
