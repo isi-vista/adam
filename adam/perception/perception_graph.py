@@ -1215,8 +1215,8 @@ class PerceptionGraphPattern(PerceptionGraphProtocol, Sized, Iterable["NodePredi
         ] = None,
     ) -> Optional["PerceptionGraphPatternMatch"]:
         matcher = PatternMatching(
-            pattern=graph_pattern,
-            graph_to_match_against=self,
+            pattern=self,
+            graph_to_match_against=graph_pattern,
             debug_callback=debug_callback,
             matching_pattern_against_pattern=True,
             match_mode=match_mode,

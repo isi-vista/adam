@@ -159,7 +159,7 @@ class SubsetPluralLearner(AbstractTemplateSubsetLearner, AbstractPluralTemplateL
             match_mode=MatchMode.NON_OBJECT,
             allowed_matches=immutablesetmultidict(
                 [
-                    (node2, node1)
+                    (node1, node2)
                     for previous_slot, node1 in previous_pattern_hypothesis.template_variable_to_pattern_node.items()
                     for new_slot, node2 in current_pattern_hypothesis.template_variable_to_pattern_node.items()
                     if previous_slot == new_slot

@@ -1,6 +1,6 @@
 from logging import INFO
 from pathlib import Path
-from typing import Any, Callable, List, Mapping, Optional, Union, Iterable
+from typing import Any, Callable, List, Mapping, Optional, Union, Iterable, cast
 
 from attr import attrib, attrs
 from attr.validators import deep_mapping, instance_of
@@ -205,7 +205,7 @@ class PerceptionGraphTemplate:
             slots_preserved = True
             for (_, object_wildcard) in template_variable_to_pattern_node.items():
                 # we return none here since this means that the given template cannot be learned from since one of the slots has been pruned away
-                if object_wildcard not in intersected_pattern_match.matched_pattern:
+                if object_wildcard not in intersected_pattern_match.matched_sub_graph:
                     slots_preserved = False
                     break
 
@@ -213,7 +213,10 @@ class PerceptionGraphTemplate:
                 PerceptionGraphTemplateIntersectionResult(
                     intersected_pattern_match,
                     PerceptionGraphTemplate(
-                        graph_pattern=intersected_pattern_match.matched_pattern,
+                        graph_pattern=cast(
+                            PerceptionGraphPattern,
+                            intersected_pattern_match.matched_sub_graph,
+                        ),
                         template_variable_to_pattern_node=template_variable_to_pattern_node,
                     ),
                 )
