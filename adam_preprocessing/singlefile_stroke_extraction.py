@@ -33,6 +33,11 @@ def main():
         help="String label to use."
     )
     parser.add_argument(
+        "--process-masks-independently",
+        action="store_true",
+        help="If passed, will not merge adjacent masks of different colors."
+    )
+    parser.add_argument(
         "--merge-small-strokes",
         action="store_true",
         help="Merge small strokes before filtering."
@@ -55,10 +60,11 @@ def main():
         debug_matlab_stroke_img_save_path=str(args.save_output_to_dir / "matlab_stroke_0.png"),
         stroke_img_save_path=str(args.save_output_to_dir / "stroke_0.png"),
         stroke_graph_img_save_path=str(args.save_output_to_dir / "stroke_graph_0.png"),
-        features_save_path=str(args.save_output_to_dir / "feature.yaml"),
+        output_dir=str(args.save_output_to_dir),
         obj_type=args.string_label,
         obj_view="-1",
         obj_id="-1",
+        process_masks_independently=args.process_masks_independently,
     ).get_strokes()
 
 
