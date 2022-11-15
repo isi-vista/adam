@@ -20,7 +20,9 @@ import matplotlib.pyplot as plt
 import glob
 import pickle as pickle
 from MPNN import MPNN, MPNN_Linear
-from utils import accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
+from utils import (
+    accuracy, get_situation_accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
+)
 
 
 def update_features_yaml(features_yaml, *, predictions_by_object: Sequence[Sequence[str]]):
@@ -157,7 +159,14 @@ def main():
                 topk=(1,),
             )[0]
         )
+        situation_test_acc = get_situation_accuracy(
+            outputs.data,
+            test_label.data,
+            situation_number_to_object_indices,
+        )
+
         logging.info("test acc :{}".format(test_acc))
+        logging.info("situation-level test acc :{}".format(situation_test_acc))
     logging.info("Done predicting.")
 
     if args.save_outputs_to:

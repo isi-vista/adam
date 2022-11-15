@@ -231,6 +231,50 @@ def accuracy(output, target, topk=(1,)):
     return res
 
 
+def get_situation_accuracy(
+    output: torch.Tensor,
+    target: torch.Tensor,
+    situation_number_to_object_indices: Mapping[int, Sequence[int]],
+) -> float:
+    """
+    Computes the situation-wise acurracy@k for the specified values of k.
+
+    Parameters:
+        output:
+            Has shape `(B, L)` where B is the batch size and L is the number of labels. A row `i`
+            corresponds to the outputs for object `i` and a column `j` corresponds to the scores for
+            a particular candidate label `j`. That is, each entry gives the model's logit score for
+            applying some candidate label to a specific object.
+        target:
+            Has shape `(B,)`, where B is the batch size. Should be integer-type, with entries being
+            the discrete 0-based label for each object.
+        situation_number_to_object_indices:
+            Maps situation numbers to the indices of the objects belonging to that situation in the
+            full array of coordinates/inputs. A pair `(k, vs)` says that the objects at indices `vs`
+            in the output/target belong to situation number `k`.
+    """
+    pred = output.argmax(dim=1, keepdim=False).type_as(target)
+    target = target.type_as(pred)
+
+    n_situations = 0
+    n_correct = 0
+    for situation, object_indices in situation_number_to_object_indices.items():
+        n_situations += 1
+        if object_indices:
+            if max(object_indices) < pred.shape[0]:
+                situation_preds = pred[object_indices]
+                n_correct += torch.any(
+                    situation_preds == target[object_indices].expand_as(situation_preds)
+                ).int().item()
+            else:
+                raise ValueError(
+                    f"Situation {situation}'s max object index ({max(object_indices)}) was out of "
+                    f"range: We have predictions for only {pred.shape[0]} objects.",
+                )
+
+    return 100 * n_correct / n_situations
+
+
 class LinearModel(nn.Module):
     def __init__(self, model, out, target):
         super(LinearModel, self).__init__()

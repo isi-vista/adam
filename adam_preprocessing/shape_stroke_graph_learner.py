@@ -18,7 +18,9 @@ import matplotlib.pyplot as plt
 import glob
 import pickle as pickle
 from MPNN import MPNN, MPNN_Linear
-from utils import accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
+from utils import (
+    accuracy, get_situation_accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
+)
 
 
 def main():
@@ -58,7 +60,7 @@ def main():
         args.train_curriculum_path, "train", multi_object=args.multi_object
     )
     logging.info("Loading test data...")
-    _, test_coords, test_adj, test_label = get_stroke_data(
+    test_situation_number_to_object_indices, test_coords, test_adj, test_label = get_stroke_data(
         args.eval_curriculum_path, "test", multi_object=args.multi_object
     )
     logging.info("Done loading data.")
@@ -161,13 +163,24 @@ def main():
                 topk=(1,),
             )[0]
         )
+        situation_test_acc = get_situation_accuracy(
+            nn.LogSoftmax(dim=1)(
+                model(
+                    test_adjacency_matrices,
+                    test_node_features,
+                    test_edge_features,
+                )
+            ).data,
+            test_label.data,
+            test_situation_number_to_object_indices,
+        )
         if test_acc > best_acc:
             best_acc = test_acc
         train_loss.backward()
         optimizer.step()
         logging.info(
-            "{}, loss: {:.4e}, acc: {}, test acc :{}".format(
-                step, train_loss.item(), acc, test_acc
+            "{}, loss: {:.4e}, acc: {}, test acc :{}, situation-level test acc: {}".format(
+                step, train_loss.item(), acc, test_acc, situation_test_acc
             )
         )
     logging.info("Best test acc is {}".format(best_acc))
