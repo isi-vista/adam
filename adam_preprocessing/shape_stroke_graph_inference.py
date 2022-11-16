@@ -179,7 +179,6 @@ def main():
                 curriculum_params = yaml.safe_load(curriculum_info_yaml)
 
         n_saved = 0
-        objs_seen = 0
         for situation_num in range(curriculum_params["num_dirs"]) if args.dir_num is None else [args.dir_num]:
             input_situation_dir = args.curriculum_path / f"situation_{situation_num}"
             feature_yamls = sorted(input_situation_dir.glob("feature*"))
@@ -200,7 +199,6 @@ def main():
                             for i in range(args.top_k)
                         ] for object_idx in situation_number_to_object_indices[situation_num]
                     ]
-                    objs_seen += len(features['objects'])
 
                 updated_features = update_features_yaml(
                     features,
