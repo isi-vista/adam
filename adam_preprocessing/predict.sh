@@ -15,7 +15,7 @@
 # Only request 1 GPU because we can't use any more -- the script does not use DP.
 set -u
 
-if [[ "$#" -ne 3 ]] || [[ "$1" = "--help" ]] ; then
+if [[ "$#" -lt 3 ]] || [[ "$1" = "--help" ]] ; then
   printf '%s\n' "usage: $0 model_path input_curriculum_dir output_curriculum_dir"
   python shape_stroke_graph_inference.py --help
   exit 1
@@ -26,6 +26,4 @@ else
   shift 3
 fi
 
-# Because we force there to be only 3 args and then shift by 3, "$@" should expand to nothing.
-# It's included as future-proofing in case we add/allow more args.
 python shape_stroke_graph_inference.py "$model_path" "$input_curriculum_dir" --save_outputs_to "$output_curriculum_dir" "$@"
