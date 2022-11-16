@@ -184,6 +184,33 @@ def main():
             )
         )
     logging.info("Best test acc is {}".format(best_acc))
+    test_acc = Variable(
+        evaluation(
+            (
+                nn.LogSoftmax(dim=1)(
+                    model(
+                        test_adjacency_matrices,
+                        test_node_features,
+                        test_edge_features,
+                    )
+                )
+            ).data,
+            test_label.data,
+            topk=(1,),
+        )[0]
+    )
+    situation_test_acc = get_situation_accuracy(
+        nn.LogSoftmax(dim=1)(
+            model(
+                test_adjacency_matrices,
+                test_node_features,
+                test_edge_features,
+            )
+        ).data,
+        test_label.data,
+        test_situation_number_to_object_indices,
+    )
+    logging.info("Final test acc is {}; situation-level is {}".format(test_acc, situation_test_acc))
     logging.info(f"Saving model state dict to {args.save_model_to}")
     torch.save(model.state_dict(), args.save_model_to)
     logging.info("Model saved.")
