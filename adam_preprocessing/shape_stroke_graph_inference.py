@@ -29,6 +29,10 @@ def update_features_yaml(features_yaml, *, predictions_by_object: Sequence[Seque
     # jac: not terribly efficient to do a full deepcopy, but who cares, this should be a small dict
     # anyway... also this is probably much less expensive than the GNN inference itself.
     result = deepcopy(features_yaml)
+    if len(result["objects"]) < len(predictions_by_object):
+        raise ValueError("Too many object predictions!")
+    if len(result["objects"]) > len(predictions_by_object):
+        raise ValueError("Not enough object predictions!")
     for object_, labels in zip(result["objects"], predictions_by_object):
         if len(labels) == 1:
             object_["stroke_graph"]["concept_name"] = labels[0]
@@ -199,6 +203,13 @@ def main():
                             for i in range(args.top_k)
                         ] for object_idx in situation_number_to_object_indices[situation_num]
                     ]
+
+                # In single-object mode, a situation with k objects produces only one input to the
+                # model -- we effectively concatenate all k objects. In order to correctly label all
+                # the merged objects, we must duplicate the predictions for that one merged
+                # object so that we have one prediction per object in the features file.
+                if not args.multi_object:
+                    predictions_by_object *= len(features["objects"])
 
                 updated_features = update_features_yaml(
                     features,
