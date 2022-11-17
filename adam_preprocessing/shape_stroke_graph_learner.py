@@ -164,7 +164,7 @@ def main():
             )[0]
         )
         situation_test_acc = get_situation_accuracy(
-            nn.LogSoftmax(dim=1)(
+            (
                 model(
                     test_adjacency_matrices,
                     test_node_features,
@@ -200,7 +200,7 @@ def main():
         )[0]
     )
     situation_test_acc = get_situation_accuracy(
-        nn.LogSoftmax(dim=1)(
+        (
             model(
                 test_adjacency_matrices,
                 test_node_features,
