@@ -254,6 +254,8 @@ def get_situation_accuracy(
             in the output/target belong to situation number `k`.
     """
     pred = output.argmax(dim=1, keepdim=False).type_as(target)
+    # jac: Shouldn't be necessary, given we already forced pred to be .type_as(target), but it was
+    # in Sheng's accuracy code and I didn't care to experiment and find out.
     target = target.type_as(pred)
 
     n_situations = 0
