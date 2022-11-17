@@ -42,7 +42,6 @@ from adam.perception.perception_graph_nodes import (
 CATEGORY_PROPERTY_KEYS: List[str] = ["texture"]
 CONTINUOUS_PROPERTY_KEYS: List[str] = []
 STROKE_PROPERTY_KEYS: List[str] = ["stroke_mean_x", "stroke_mean_y", "stroke_std"]
-SIZE_PROPERTY_KEYS: List[str] = ["width", "height", "box_area"]
 RELATIVE_DISTANCE_PROPERTY_KEYS: List[str] = [
     "x_offset",
     "y_offset",
@@ -100,6 +99,11 @@ class ClusterPerception:
         validator=optional(instance_of(float)), default=None
     )
     std: Optional[float] = attrib(validator=optional(instance_of(float)), default=None)
+    width: Optional[float] = attrib(validator=optional(instance_of(float)), default=None)
+    height: Optional[float] = attrib(validator=optional(instance_of(float)), default=None)
+    box_area: Optional[float] = attrib(
+        validator=optional(instance_of(float)), default=None
+    )
 
 
 def color_as_category(color_properties: Sequence[int]) -> OntologyNode:
@@ -185,10 +189,6 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
                 for entry in CONTINUOUS_PROPERTY_KEYS
                 if cluster_map[entry]
             )
-            properties.extend(
-                ContinuousNode(label=entry, value=cluster_map["size"][entry], weight=1.0)
-                for entry in SIZE_PROPERTY_KEYS
-            )
             # properties.extend(
             #     ContinuousNode(
             #         label=f"stroke-{entry}", value=strokes_map[entry], weight=1.0
@@ -250,6 +250,9 @@ class VisualPerceptionFrame(PerceptualRepresentationFrame):
                     centroid_x=strokes_map["stroke_mean_x"],
                     centroid_y=strokes_map["stroke_mean_y"],
                     std=strokes_map["stroke_std"],
+                    width=cluster_map["size"]["width"],
+                    height=cluster_map["size"]["height"],
+                    box_area=cluster_map["size"]["box_area"],
                 )
             )
 
