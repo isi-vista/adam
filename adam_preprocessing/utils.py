@@ -237,7 +237,14 @@ def get_situation_accuracy(
     situation_number_to_object_indices: Mapping[int, Sequence[int]],
 ) -> float:
     """
-    Computes the situation-wise acurracy@k for the specified values of k.
+    Computes the situation-level accuracy.
+
+    Situation-level accuracy means two things:
+
+    1. The model gets credit for inferences at the situation level. If stroke extraction detected K
+       objects in a situation, we give the model credit if the model correctly inferred the label of
+       *any* of the K objects in that situation.
+    2. The denominator for the accuracy calculation is the total number of situations.
 
     Parameters:
         output:
