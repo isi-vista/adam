@@ -270,16 +270,10 @@ def get_situation_accuracy(
     for situation, object_indices in situation_number_to_object_indices.items():
         n_situations += 1
         if object_indices:
-            if max(object_indices) < pred.shape[0]:
-                situation_preds = pred[object_indices]
-                n_correct += torch.any(
-                    situation_preds == target[object_indices].expand_as(situation_preds)
-                ).int().item()
-            else:
-                raise ValueError(
-                    f"Situation {situation}'s max object index ({max(object_indices)}) was out of "
-                    f"range: We have predictions for only {pred.shape[0]} objects.",
-                )
+            situation_preds = pred[object_indices]
+            n_correct += torch.any(
+                situation_preds == target[object_indices].expand_as(situation_preds)
+            ).int().item()
 
     return 100 * n_correct / n_situations
 
