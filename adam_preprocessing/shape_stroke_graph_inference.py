@@ -30,9 +30,15 @@ def update_features_yaml(features_yaml, *, predictions_by_object: Sequence[Seque
     # anyway... also this is probably much less expensive than the GNN inference itself.
     result = deepcopy(features_yaml)
     if len(result["objects"]) < len(predictions_by_object):
-        raise ValueError("Too many object predictions!")
+        raise ValueError(
+            f"Too many object predictions. Expected {len(result['objects'])} but got "
+            f"{len(predictions_by_object)}."
+        )
     if len(result["objects"]) > len(predictions_by_object):
-        raise ValueError("Not enough object predictions!")
+        raise ValueError(
+            f"Not enough object predictions. Expected {len(result['objects'])} but got "
+            f"{len(predictions_by_object)}."
+        )
     for object_, labels in zip(result["objects"], predictions_by_object):
         if len(labels) == 1:
             object_["stroke_graph"]["concept_name"] = labels[0]
