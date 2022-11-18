@@ -39,6 +39,7 @@ def main():
     Stroke_Extraction(
         segmentation_img_path=str(args.seg_img_path),
         rgb_img_path=str(args.rgb_img_path),
+        debug_vis=True,
         debug_matlab_stroke_img_save_path=str(args.save_output_to_dir / "matlab_stroke_0.png"),
         stroke_img_save_path=str(args.save_output_to_dir / "stroke_0.png"),
         stroke_graph_img_save_path=str(args.save_output_to_dir / "stroke_graph_0.png"),
