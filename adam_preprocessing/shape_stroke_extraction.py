@@ -393,6 +393,7 @@ def plot_oriented_strokes(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, 
         else:
             ax.scatter(xs, ys, marker='s', label=idx, **color)
     ax.invert_yaxis()
+    ax.set_aspect("equal", adjustable="box")
 
 
 def plot_stroke_graph(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, float]]], adj: 'np.ndarray[np.int]') -> None:
