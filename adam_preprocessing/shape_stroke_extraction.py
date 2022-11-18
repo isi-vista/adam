@@ -378,7 +378,7 @@ def plot_oriented_strokes(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, 
     """
     colors = mpl_cycler(color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
     for idx, (stroke, color) in enumerate(zip(strokes, cycle(colors))):
-        xs, ys = zip(*stroke)
+        ys, xs = zip(*stroke)
         if len(stroke) > 1:
             ax.plot(
                 xs,
@@ -422,7 +422,7 @@ def plot_stroke_graph(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, floa
     nx.draw(
         g,
         ax=ax,
-        pos={idx: np.mean(np.asarray(stroke), axis=0) for idx, stroke in enumerate(strokes)},
+        pos={idx: np.mean(np.asarray(stroke), axis=0)[[1, 0]] for idx, stroke in enumerate(strokes)},
         node_color=list(islice(cycle(colors), len(strokes))),
         with_labels=True,
     )
