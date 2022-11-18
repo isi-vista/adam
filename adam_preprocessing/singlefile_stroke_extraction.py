@@ -32,6 +32,17 @@ def main():
         default="dummy",
         help="String label to use."
     )
+    parser.add_argument(
+        "--merge-small-strokes",
+        action="store_true",
+        help="Merge small strokes before filtering."
+    )
+    parser.add_argument(
+        "--no-merge-small-strokes",
+        action="store_false",
+        dest="merge_small_strokes",
+        help="Don't merge small strokes before filtering."
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -40,6 +51,7 @@ def main():
         segmentation_img_path=str(args.seg_img_path),
         rgb_img_path=str(args.rgb_img_path),
         debug_vis=True,
+        should_merge_small_strokes=args.merge_small_strokes,
         debug_matlab_stroke_img_save_path=str(args.save_output_to_dir / "matlab_stroke_0.png"),
         stroke_img_save_path=str(args.save_output_to_dir / "stroke_0.png"),
         stroke_graph_img_save_path=str(args.save_output_to_dir / "stroke_graph_0.png"),
