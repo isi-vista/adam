@@ -592,9 +592,9 @@ class Stroke_Extraction:
         removed_ind = []
         adj = kp2stroke(np.array(out_e))
         if self.debug_vis:
-            fig, ax = plt.subplots(ncols=2)
-            plot_oriented_strokes(ax, out_s)
-            plot_stroke_graph(ax, out_s, adj)
+            fig, axs = plt.subplots(ncols=2)
+            plot_oriented_strokes(axs[0], out_s)
+            plot_stroke_graph(axs[1], out_s, adj)
             fig.tight_layout()
             fig.savefig(self.debug_matlab_stroke_img_save_path)
 
