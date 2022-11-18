@@ -354,11 +354,22 @@ def strokes_end_to_end(strokes: Sequence[Sequence[Tuple[float, float]]]) -> Sequ
         last_node = None
         cur_node = terminals[0]
         ordering = [terminals[0]]
+        # Always preserve the first stroke's orientation -- because that is our root/starting point
         preserve_orientation = [True]
         while cur_node != terminals[1]:
             next_node = [n for n in g.neighbors(cur_node) if n != last_node][0]
             ordering.append(next_node)
-            preserve_orientation.append(consistent_orientation(strokes[cur_node], strokes[next_node]))
+            preserve_orientation.append(
+                # We want to reverse the next stroke *iff* it is not oriented consistently with the
+                # starting stroke. We can make this iterative as follows:
+                #   1. Reverse the next stroke iff it is orientated consistently with the current stroke
+                #      and the current stroke should have its orientation reversed.
+                #   2. Preserve the next stroke's orientation iff it is oriented consistently with the
+                #      current stroke and the current stroke should have its orientation preserved.
+                # That is, whether to preserve the next stroke's orientation is given by:
+                consistent_orientation(strokes[cur_node], strokes[next_node])
+                == preserve_orientation[-1]
+            )
             last_node = cur_node
             cur_node = next_node
 
