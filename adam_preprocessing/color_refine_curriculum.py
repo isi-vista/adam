@@ -180,7 +180,7 @@ def main():
                 semantic_data = cv2.imread(str(semantic_image))
                 color_segmentation_data = cv2.imread(str(color_segmentation_image))
                 color_refined_segmentation = refine_segmentation_simple(
-                    color_segmentation_data, semantic_data
+                    segmentation=semantic_data, color_segmentation=color_segmentation_data
                 )
                 cv2.imwrite(
                     str(output_situation_dir / f"combined_color_refined_semantic_{number}.png"),
