@@ -158,7 +158,11 @@ def merge_small_strokes(
     new_strokes: List[List[Tuple[float, float]]] = [[] for _ in unique]
     for idx, (root, cluster) in enumerate(root_to_cluster.items()):
         cluster_strokes = [strokes[stroke_id] for stroke_id in cluster]
-        new_strokes[idx] = [point for stroke in strokes_end_to_end(cluster_strokes) for point in stroke]
+        new_strokes[idx] = [
+            point
+            for i, stroke in enumerate(strokes_end_to_end(cluster_strokes))
+            for point in (stroke[: -1] if i + 1 < len(cluster_strokes) else stroke)
+        ]
 
     # jac: I swear there has to be a more NumPy way to do this, but it eludes me. For now, avoiding
     # premature optimization.
@@ -203,7 +207,12 @@ def cluster_small_strokes(
 
     def cluster_len(cluster_id: int) -> int:
         strokes_in_cluster = cluster_to_stroke_ids[cluster_id]
-        return sum(len(strokes[stroke_id]) for stroke_id in strokes_in_cluster)
+        return sum(
+            len(strokes[stroke_id]) for stroke_id in strokes_in_cluster
+            # If there are N strokes in the cluster, there should be N - 1 points where they overlap.
+            # Those control points will be removed when we merge the strokes, so we subtrac them out
+            # when calculating the cluster length.
+        ) - len(strokes_in_cluster) + 1
 
     def neighbors(cluster_id: int) -> Sequence[int]:
         strokes_in_cluster = cluster_to_stroke_ids[cluster_id]
@@ -354,7 +363,7 @@ def strokes_end_to_end(strokes: Sequence[Sequence[Tuple[float, float]]]) -> Sequ
             cur_node = next_node
 
         result = [
-            strokes[stroke_idx] if preserve_orientation else reversed(strokes[stroke_idx])
+            strokes[stroke_idx] if preserve_orientation else list(reversed(strokes[stroke_idx]))
             for stroke_idx, preserve_orientation in zip(ordering, preserve_orientation)
         ]
         assert len(result) == len(strokes)
