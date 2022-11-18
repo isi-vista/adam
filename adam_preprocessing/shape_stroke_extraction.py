@@ -377,6 +377,9 @@ def strokes_end_to_end(strokes: Sequence[Sequence[Tuple[float, float]]]) -> Sequ
             strokes[stroke_idx] if preserve_orientation else list(reversed(strokes[stroke_idx]))
             for stroke_idx, preserve_orientation in zip(ordering, preserve_orientation)
         ]
+        # Reverse the output list if needed so that strokes can be concatenated in list order
+        if len(result) > 1 and kings_move_distance(result[0][-1], result[1][0]) > 0:
+            result = list(reversed(result))
         assert len(result) == len(strokes)
         return result
     else:
