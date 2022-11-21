@@ -120,9 +120,12 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 
 - Gayatri Atale
 - Deniz Beser
+- Connor Boyle
 - Joe Cecil
+- Sheng Cheng
 - Marjorie Freedman
 - Ryan Gabbard
+- Blake Harrison
 - Chris Jenkins
 - Ashwin Kumar
 - Elizabeth Lee
@@ -131,6 +134,7 @@ If you are using PyCharm, please set your docstring format to "Google" and your 
 - Justin Martin
 - Grace McClurg
 - Sarah Payne
+- Sidharth Sundar
 - Ralph Weischedel
 - Charles Yang
 
