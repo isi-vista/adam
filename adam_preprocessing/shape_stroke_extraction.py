@@ -158,7 +158,11 @@ def merge_small_strokes(
     new_strokes: List[List[Tuple[float, float]]] = [[] for _ in unique]
     for idx, (root, cluster) in enumerate(root_to_cluster.items()):
         cluster_strokes = [strokes[stroke_id] for stroke_id in cluster]
-        new_strokes[idx] = [point for stroke in strokes_end_to_end(cluster_strokes) for point in stroke]
+        new_strokes[idx] = [
+            point
+            for i, stroke in enumerate(strokes_end_to_end(cluster_strokes))
+            for point in (stroke[: -1] if i + 1 < len(cluster_strokes) else stroke)
+        ]
 
     # jac: I swear there has to be a more NumPy way to do this, but it eludes me. For now, avoiding
     # premature optimization.
@@ -203,7 +207,12 @@ def cluster_small_strokes(
 
     def cluster_len(cluster_id: int) -> int:
         strokes_in_cluster = cluster_to_stroke_ids[cluster_id]
-        return sum(len(strokes[stroke_id]) for stroke_id in strokes_in_cluster)
+        return sum(
+            len(strokes[stroke_id]) for stroke_id in strokes_in_cluster
+            # If there are N strokes in the cluster, there should be N - 1 points where they overlap.
+            # Those control points will be removed when we merge the strokes, so we subtrac them out
+            # when calculating the cluster length.
+        ) - len(strokes_in_cluster) + 1
 
     def neighbors(cluster_id: int) -> Sequence[int]:
         strokes_in_cluster = cluster_to_stroke_ids[cluster_id]
@@ -345,18 +354,32 @@ def strokes_end_to_end(strokes: Sequence[Sequence[Tuple[float, float]]]) -> Sequ
         last_node = None
         cur_node = terminals[0]
         ordering = [terminals[0]]
+        # Always preserve the first stroke's orientation -- because that is our root/starting point
         preserve_orientation = [True]
         while cur_node != terminals[1]:
             next_node = [n for n in g.neighbors(cur_node) if n != last_node][0]
             ordering.append(next_node)
-            preserve_orientation.append(consistent_orientation(strokes[cur_node], strokes[next_node]))
+            preserve_orientation.append(
+                # We want to reverse the next stroke *iff* it is not oriented consistently with the
+                # starting stroke. We can make this iterative as follows:
+                #   1. Reverse the next stroke iff it is orientated consistently with the current stroke
+                #      and the current stroke should have its orientation reversed.
+                #   2. Preserve the next stroke's orientation iff it is oriented consistently with the
+                #      current stroke and the current stroke should have its orientation preserved.
+                # That is, whether to preserve the next stroke's orientation is given by:
+                consistent_orientation(strokes[cur_node], strokes[next_node])
+                == preserve_orientation[-1]
+            )
             last_node = cur_node
             cur_node = next_node
 
         result = [
-            strokes[stroke_idx] if preserve_orientation else reversed(strokes[stroke_idx])
+            strokes[stroke_idx] if preserve_orientation else list(reversed(strokes[stroke_idx]))
             for stroke_idx, preserve_orientation in zip(ordering, preserve_orientation)
         ]
+        # Reverse the output list if needed so that strokes can be concatenated in list order
+        if len(result) > 1 and kings_move_distance(result[0][-1], result[1][0]) > 0:
+            result = list(reversed(result))
         assert len(result) == len(strokes)
         return result
     else:
@@ -378,7 +401,7 @@ def plot_oriented_strokes(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, 
     """
     colors = mpl_cycler(color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
     for idx, (stroke, color) in enumerate(zip(strokes, cycle(colors))):
-        xs, ys = zip(*stroke)
+        ys, xs = zip(*stroke)
         if len(stroke) > 1:
             ax.plot(
                 xs,
@@ -392,6 +415,9 @@ def plot_oriented_strokes(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, 
             )
         else:
             ax.scatter(xs, ys, marker='s', label=idx, **color)
+    ax.invert_yaxis()
+    ax.set_aspect("equal", adjustable="box")
+    ax.axis("off")
 
 
 def plot_stroke_graph(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, float]]], adj: 'np.ndarray[np.int]') -> None:
@@ -422,10 +448,11 @@ def plot_stroke_graph(ax: plt.Axes, strokes: Sequence[Sequence[Tuple[float, floa
     nx.draw(
         g,
         ax=ax,
-        pos={idx: np.mean(np.asarray(stroke), axis=0) for idx, stroke in enumerate(strokes)},
+        pos={idx: np.mean(np.asarray(stroke), axis=0)[[1, 0]] for idx, stroke in enumerate(strokes)},
         node_color=list(islice(cycle(colors), len(strokes))),
         with_labels=True,
     )
+    ax.invert_yaxis()
 
 
 class Stroke_Extraction:
@@ -592,9 +619,9 @@ class Stroke_Extraction:
         removed_ind = []
         adj = kp2stroke(np.array(out_e))
         if self.debug_vis:
-            fig, ax = plt.subplots(ncols=2)
-            plot_oriented_strokes(ax, out_s)
-            plot_stroke_graph(ax, out_s, adj)
+            fig, axs = plt.subplots(ncols=2)
+            plot_oriented_strokes(axs[0], out_s)
+            plot_stroke_graph(axs[1], out_s, adj)
             fig.tight_layout()
             fig.savefig(self.debug_matlab_stroke_img_save_path)
 
