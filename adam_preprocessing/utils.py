@@ -231,6 +231,53 @@ def accuracy(output, target, topk=(1,)):
     return res
 
 
+def get_situation_accuracy(
+    output: torch.Tensor,
+    target: torch.Tensor,
+    situation_number_to_object_indices: Mapping[int, Sequence[int]],
+) -> float:
+    """
+    Computes the situation-level accuracy.
+
+    Situation-level accuracy means two things:
+
+    1. The model gets credit for inferences at the situation level. If stroke extraction detected K
+       objects in a situation, we give the model credit if the model correctly inferred the label of
+       *any* of the K objects in that situation.
+    2. The denominator for the accuracy calculation is the total number of situations.
+
+    Parameters:
+        output:
+            Has shape `(B, L)` where B is the batch size and L is the number of labels. A row `i`
+            corresponds to the outputs for object `i` and a column `j` corresponds to the scores for
+            a particular candidate label `j`. That is, each entry gives the model's logit score for
+            applying some candidate label to a specific object.
+        target:
+            Has shape `(B,)`, where B is the batch size. Should be integer-type, with entries being
+            the discrete 0-based label for each object.
+        situation_number_to_object_indices:
+            Maps situation numbers to the indices of the objects belonging to that situation in the
+            full array of coordinates/inputs. A pair `(k, vs)` says that the objects at indices `vs`
+            in the output/target belong to situation number `k`.
+    """
+    pred = output.argmax(dim=1, keepdim=False).type_as(target)
+    # jac: Shouldn't be necessary, given we already forced pred to be .type_as(target), but it was
+    # in Sheng's accuracy code and I didn't care to experiment and find out.
+    target = target.type_as(pred)
+
+    n_situations = 0
+    n_correct = 0
+    for situation, object_indices in situation_number_to_object_indices.items():
+        n_situations += 1
+        if object_indices:
+            situation_preds = pred[object_indices]
+            n_correct += torch.any(
+                situation_preds == target[object_indices].expand_as(situation_preds)
+            ).int().item()
+
+    return 100 * n_correct / n_situations
+
+
 class LinearModel(nn.Module):
     def __init__(self, model, out, target):
         super(LinearModel, self).__init__()

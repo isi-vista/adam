@@ -20,13 +20,25 @@ import matplotlib.pyplot as plt
 import glob
 import pickle as pickle
 from MPNN import MPNN, MPNN_Linear
-from utils import accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
+from utils import (
+    accuracy, get_situation_accuracy, get_stroke_data, LinearModel, load_data, STRING_OBJECT_LABELS
+)
 
 
 def update_features_yaml(features_yaml, *, predictions_by_object: Sequence[Sequence[str]]):
     # jac: not terribly efficient to do a full deepcopy, but who cares, this should be a small dict
     # anyway... also this is probably much less expensive than the GNN inference itself.
     result = deepcopy(features_yaml)
+    if len(result["objects"]) < len(predictions_by_object):
+        raise ValueError(
+            f"Too many object predictions. Expected {len(result['objects'])} but got "
+            f"{len(predictions_by_object)}."
+        )
+    if len(result["objects"]) > len(predictions_by_object):
+        raise ValueError(
+            f"Not enough object predictions. Expected {len(result['objects'])} but got "
+            f"{len(predictions_by_object)}."
+        )
     for object_, labels in zip(result["objects"], predictions_by_object):
         if len(labels) == 1:
             object_["stroke_graph"]["concept_name"] = labels[0]
@@ -157,7 +169,14 @@ def main():
                 topk=(1,),
             )[0]
         )
+        situation_test_acc = get_situation_accuracy(
+            outputs.data,
+            test_label.data,
+            situation_number_to_object_indices,
+        )
+
         logging.info("test acc :{}".format(test_acc))
+        logging.info("situation-level test acc :{}".format(situation_test_acc))
     logging.info("Done predicting.")
 
     if args.save_outputs_to:
@@ -170,7 +189,6 @@ def main():
                 curriculum_params = yaml.safe_load(curriculum_info_yaml)
 
         n_saved = 0
-        objs_seen = 0
         for situation_num in range(curriculum_params["num_dirs"]) if args.dir_num is None else [args.dir_num]:
             input_situation_dir = args.curriculum_path / f"situation_{situation_num}"
             feature_yamls = sorted(input_situation_dir.glob("feature*"))
@@ -191,7 +209,13 @@ def main():
                             for i in range(args.top_k)
                         ] for object_idx in situation_number_to_object_indices[situation_num]
                     ]
-                    objs_seen += len(features['objects'])
+
+                # In single-object mode, a situation with k objects produces only one input to the
+                # model -- we effectively concatenate all k objects. In order to correctly label all
+                # the merged objects, we must duplicate the predictions for that one merged
+                # object so that we have one prediction per object in the features file.
+                if not args.multi_object:
+                    predictions_by_object *= len(features["objects"])
 
                 updated_features = update_features_yaml(
                     features,
