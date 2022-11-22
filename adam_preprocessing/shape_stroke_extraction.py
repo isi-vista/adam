@@ -10,7 +10,7 @@ import logging
 import cv2
 import numpy as np
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple, NamedTuple
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,19 @@ from utils import label_from_object_language_tuple
 
 
 TOUCHING_DISTANCE_THRESHOLD = 50.0
+
+
+class ExtractionResult(NamedTuple):
+    """
+    Stroke extraction results for one segmentation file.
+
+    File may or may not contain more than 1 mask.
+    """
+    num_obj: int
+    reduced_strokes: np.ndarray
+    stroke_obj_ids: np.ndarray
+    adj: np.ndarray
+    colors: np.ndarray
 
 
 def vectorized_bspline_coeff(vi, vs):
@@ -508,13 +521,15 @@ class Stroke_Extraction:
         rgb_img_path: str,
         stroke_img_save_path: str,
         stroke_graph_img_save_path: str,
-        features_save_path: str,
+        output_dir: str,
+        process_masks_independently: bool = False,
         should_merge_small_strokes: bool = False,
         debug_vis: bool = False,
         debug_matlab_stroke_img_save_path: str,
         vis: bool = True,
         save_output: bool = True,
     ):
+        self.segmentation_paths: List[str] = []
         self.obj_view = obj_view
         self.obj_type = obj_type
         self.obj_id = obj_id
@@ -529,7 +544,9 @@ class Stroke_Extraction:
         self.debug_matlab_stroke_img_save_path = debug_matlab_stroke_img_save_path
         self.stroke_img_save_path = stroke_img_save_path
         self.stroke_graph_img_save_path = stroke_graph_img_save_path
-        self.features_save_path = features_save_path
+        self.output_dir = output_dir
+        self.features_save_path = os.path.join(output_dir, "feature.yaml")
+        self.process_masks_independently = process_masks_independently
 
     @staticmethod
     def from_m5_objects_curriculum_base_path(
@@ -576,7 +593,7 @@ class Stroke_Extraction:
             ),
         )
 
-    def stroke_extraction_from_matlab(self):
+    def stroke_extraction_from_matlab(self, segmentation_path: str):
         """
         Get the raw stroke extraction results from Matlab using the BPL code.
 
@@ -591,11 +608,11 @@ class Stroke_Extraction:
         eng = matlab.engine.start_matlab()
         file_dir = os.path.dirname(__file__)
         eng.addpath(eng.genpath(file_dir), nargout=0)
-        out = eng.ske(self.path, nargout=2)
+        out = eng.ske(segmentation_path, nargout=2)
         eng.close()
         return out
 
-    def remove_strokes(self):
+    def remove_strokes(self, segmentation_path: Path) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
         """
         Process Matlab stroke extraction results into labels.
 
@@ -607,14 +624,14 @@ class Stroke_Extraction:
         - determine the number of objects in the scene as the number of components
         - label each stroke according to which object it is a part of
 
-        The outputs are stored in:
+        The outputs are returned as:
 
-        - self.num_obj
-        - self.strokes
-        - self.adj
-        - self.labels
+        - num_objs
+        - strokes
+        - stroke_obj_ids
+        - adj
         """
-        out_s, out_e = self.stroke_extraction_from_matlab()
+        out_s, out_e = self.stroke_extraction_from_matlab(str(segmentation_path))
         strokes = []
         removed_ind = []
         adj = kp2stroke(np.array(out_e))
@@ -654,7 +671,7 @@ class Stroke_Extraction:
                         adj[i, j] = 1.0
                         adj[j, i] = 1.0
         # jac: hack to get things running
-        self.num_obj = num_obj = min(n_components, len(adj))
+        num_obj = min(n_components, len(adj))
         # If we have at least two strokes and two objects, see if we can break up the connected components further to
         # get more fine-grained objects.
         #
@@ -683,14 +700,13 @@ class Stroke_Extraction:
         else:
             if num_obj == 0:
                 logger.warning(
-                    "No objects detected for segmentation image %s.", self.path
+                    "No objects detected for segmentation image %s.", segmentation_path
                 )
             stroke_obj_ids_ = np.zeros(num_obj)
-        self.stroke_obj_ids = stroke_obj_ids_
-        self.strokes = strokes
-        self.adj = adj
 
-    def strokes2controlpoints(self):
+        return num_obj, strokes, stroke_obj_ids_, adj
+
+    def strokes2controlpoints(self, strokes) -> np.ndarray:
         """
         Downsamples the known strokes to 10 points using B-splines.
 
@@ -700,61 +716,71 @@ class Stroke_Extraction:
         Outputs the downsampled strokes to self.reduced_strokes. This should be an N x 10 x 2 array,
         where N is the number of strokes. The last dimension is the x vs y coords; the middle is the
         control point number.
+
+        Return:
+            reduced_strokes
         """
         reduced_strokes = []
         coef_inv = get_bsplines_matrix(10)
-        for i in range(len(self.strokes)):
-            reduced_strokes.append(reduced_stroke(self.strokes[i], coef_inv))
-        self.reduced_strokes = reduced_strokes = np.array(reduced_strokes, dtype=np.float64)
+        for i in range(len(strokes)):
+            reduced_strokes.append(reduced_stroke(strokes[i], coef_inv))
+        return np.array(reduced_strokes, dtype=np.float64)
 
-    def plot_strokes(self):
+    def plot_strokes(self, extractions: Sequence[ExtractionResult]):
         """
         Create stroke image, saving the result to self.stroke_img_save_path.
         """
-        stroke_colors = []
-        for j in range(self.num_obj):
-            reduced_obj = self.reduced_strokes[np.where(self.stroke_obj_ids == j)[0]]
-            plt.subplot(1, self.num_obj, j + 1)
-            s_c = []
-            for i in range(len(reduced_obj)):
-                p = plt.plot(reduced_obj[i][:, 1], reduced_obj[i][:, 0], linewidth=3)
-                s_c.append(p[0].get_color())
-                plt.scatter(reduced_obj[i][:, 1], reduced_obj[i][:, 0], c="r")
-            stroke_colors.append(s_c)
-            plt.gca().invert_yaxis()
-            plt.gca().set_aspect("equal", adjustable="box")
-            plt.axis("off")
+        stroke_colors_list = []
+        n_rows, n_cols = len(extractions), max(e.num_obj for e in extractions)
+        plt.figure(0, figsize=(6.4 / 3 * n_cols, 4.8 * n_rows))
+        for e_idx, extraction in enumerate(extractions):
+            stroke_colors = []
+            for j in range(extraction.num_obj):
+                reduced_obj = extraction.reduced_strokes[np.where(extraction.stroke_obj_ids == j)[0]]
+                plt.subplot(n_rows, n_cols, (e_idx * n_cols) + j + 1)
+                s_c = []
+                for i in range(len(reduced_obj)):
+                    p = plt.plot(reduced_obj[i][:, 1], reduced_obj[i][:, 0], linewidth=3)
+                    s_c.append(p[0].get_color())
+                    plt.scatter(reduced_obj[i][:, 1], reduced_obj[i][:, 0], c="r")
+                stroke_colors.append(s_c)
+                plt.gca().invert_yaxis()
+                plt.gca().set_aspect("equal", adjustable="box")
+                plt.axis("off")
+            stroke_colors_list.append(stroke_colors)
         plt.savefig(self.stroke_img_save_path)
         plt.close()
-        self.stroke_colors = stroke_colors
+        return stroke_colors_list
 
-    def plot_graph(self):
+    def plot_graph(self, extractions: Sequence[ExtractionResult], stroke_colors_list):
         """
         Create stroke *graph* image in self.stroke_graph_img_save_path.
         """
-        for i in range(self.num_obj):
-            plt.figure(i)
-            G = nx.Graph()
-            if self.adj is [[0.0]]:
-                G.add_node("s0")
-            else:
-                ind = np.where(self.stroke_obj_ids == i)[0]
-                adj_obj = self.adj[ind, :]
-                adj_obj = adj_obj[:, ind]
+        n_rows, n_cols = len(extractions), max(e.num_obj for e in extractions)
+        plt.figure(0, figsize=(6.4 / 3 * n_cols, 4.8 * n_rows))
+        for e_idx, (extraction, stroke_colors) in enumerate(zip(extractions, stroke_colors_list)):
+            for i in range(extraction.num_obj):
+                G = nx.Graph()
+                if extraction.adj is [[0.0]]:
+                    G.add_node("s0")
+                else:
+                    ind = np.where(extraction.stroke_obj_ids == i)[0]
+                    adj_obj = extraction.adj[ind, :]
+                    adj_obj = adj_obj[:, ind]
 
-                for p in range(len(adj_obj)):
-                    G.add_node("s_{}".format(int(p + 1)))
-                    for q in range(p, len(adj_obj)):
-                        if adj_obj[p, q] == 1:
-                            G.add_edge(
-                                "s_{}".format(int(p + 1)), "s_{}".format(int(q + 1))
-                            )
-            plt.subplot(1, self.num_obj, i + 1)
-            nx.draw(G, with_labels=True, node_color=self.stroke_colors[i])
+                    for p in range(len(adj_obj)):
+                        G.add_node("s_{}".format(int(p + 1)))
+                        for q in range(p, len(adj_obj)):
+                            if adj_obj[p, q] == 1:
+                                G.add_edge(
+                                    "s_{}".format(int(p + 1)), "s_{}".format(int(q + 1))
+                                )
+                plt.subplot(n_rows, n_cols, (e_idx * n_cols) + i + 1)
+                nx.draw(G, with_labels=True, node_color=stroke_colors[i])
         plt.savefig(self.stroke_graph_img_save_path)
         plt.close()
 
-    def get_colors(self):
+    def get_colors(self, segmentation_path: Path, num_obj: int) -> np.ndarray:
         """
         Collect the average color for each object in the image together with the object "centers."
 
@@ -764,13 +790,12 @@ class Stroke_Extraction:
         # jac: img_seg is a 256x256 integer array? gray-values/pixel values are distinct iff the
         # objects for those locations are (considered) distinct. I think that is the convention
         # here.
-        img_seg = cv2.imread(self.path)
-        img_seg = cv2.cvtColor(img_seg, cv2.COLOR_BGR2GRAY)
+        img_seg = cv2.cvtColor(cv2.imread(str(segmentation_path)), cv2.COLOR_BGR2GRAY)
         # jac: obj_area is a tuple of two equal-length arrays xs, ys such that for all i,
         # img_seg[xs[i], ys[i]] != 0.
         obj_area = np.where(img_seg != 0)
-        colors = np.zeros([self.num_obj, 5])
-        for i in range(self.num_obj):
+        colors = np.zeros([num_obj, 5])
+        for i in range(num_obj):
             # If we've gone beyond the number of unique objects identified in the object
             # segmentation image, stop.
             #
@@ -788,7 +813,28 @@ class Stroke_Extraction:
             colors[i, :3] = self.img_rgb[seg_i[0], seg_i[1], :].mean(0)
             # Store the mean coordinates for the object in the last two color columns
             colors[i, 3:] = seg_i.mean(1)
-        self.colors = colors
+        return colors
+
+    def save_distinct_masks(self) -> List[Path]:
+        """
+        Save distinct masks in separate files.
+        """
+        img_seg = cv2.imread(self.path)
+        all_seg_pixels = np.reshape(img_seg, (-1, img_seg.shape[-1]))
+        all_unique_masks = np.unique(all_seg_pixels, axis=0)
+
+        # Ignore black (background) pixels
+        unique_masks = all_unique_masks[
+            np.where((all_unique_masks != [0, 0, 0]).any(axis=-1))
+        ]
+        segmentation_paths: List[Path] = []
+        for i in range(unique_masks.shape[0]):
+            segmentation_path = Path(self.output_dir) / f"{Path(self.path).stem}_mask_{i}.png"
+            segmentation_paths.append(segmentation_path)
+
+            distinct_mask = np.where(img_seg == unique_masks[i], img_seg, [0, 0, 0])
+            cv2.imwrite(str(segmentation_path), distinct_mask)
+        return segmentation_paths
 
     def get_strokes(self):
         """
@@ -798,24 +844,34 @@ class Stroke_Extraction:
 
         This writes a YAML file to self.features_save_path if self.save_output is true.
         """
+        segmentation_paths: List[Path]
+        if self.process_masks_independently:
+            segmentation_paths = self.save_distinct_masks()
+        else:
+            segmentation_paths = [Path(self.path)]
+
         # Extract strokes, downsample, and add color data
-        self.remove_strokes()
-        self.strokes2controlpoints()
-        self.get_colors()
+        extractions: List[ExtractionResult] = []
+        for segmentation_path in segmentation_paths:
+            extractions.append(self.get_strokes_for_file(segmentation_path))
         if self.vis:
-            self.plot_strokes()
-            self.plot_graph()
+            stroke_colors_list = self.plot_strokes(extractions)
+            self.plot_graph(extractions, stroke_colors_list)
+
+        # Get combined stroke extraction outputs for all masks
+        combined_extraction: ExtractionResult = self.combine_extractions(extractions)
+
         objects = []
         # Translate the extracted (downsampled strokes) and color data into the ADAM stroke
         # extraction data format.
-        for i in range(self.num_obj):
+        for i in range(combined_extraction.num_obj):
             # Using self.label, pick out the IDs/indices for the strokes belonging to object i.
             # Use this to grab the relevant stroke samples and the relevant submatrix of self.adj.
-            ind = np.where(self.stroke_obj_ids == i)[0]
+            ind = np.where(combined_extraction.stroke_obj_ids == i)[0]
             # shape: N_i x 10 x 2 where N_i is the number of strokes in the ith object
-            reduced_obj = self.reduced_strokes[ind]
+            reduced_obj = combined_extraction.reduced_strokes[ind]
             # shape: N_i x N_i
-            adj_obj = self.adj[ind, :]
+            adj_obj = combined_extraction.adj[ind, :]
             adj_obj = adj_obj[:, ind]
 
             # Calculate the overall mean coordinates across all strokes and coordinates.
@@ -823,9 +879,9 @@ class Stroke_Extraction:
             m = reduced_obj.mean((0, 1))
             # Get pairwise distances between the stroke coordinate mean (treated as a 1x2 array) and
             # the pixel-based object centers.
-            dd = pairwise_distances(m[None, :], self.colors[:, 3:])
+            dd = pairwise_distances(m[None, :], combined_extraction.colors[:, 3:])
             # Choose the color using the nearest pixel-based object center.
-            color = self.colors[dd[0].argmin(0), :3]
+            color = combined_extraction.colors[dd[0].argmin(0), :3]
             # We normalize using a standard deviation s that is calculated using both the deviations
             # from the x-mean and the deviations from the y-mean, as if these have identical
             # distributions. This is sort of weird.
@@ -843,13 +899,13 @@ class Stroke_Extraction:
             # measure of distance between objects.
             distance = dict()
             relative_distance = dict()
-            for j in range(self.num_obj):
+            for j in range(combined_extraction.num_obj):
                 other_object_name = "object" + str(j)
                 if i == j:
                     continue
                 else:
-                    ind_ = np.where(self.stroke_obj_ids == j)[0]
-                    reduced_obj_ = self.reduced_strokes[ind_]
+                    ind_ = np.where(combined_extraction.stroke_obj_ids == j)[0]
+                    reduced_obj_ = combined_extraction.reduced_strokes[ind_]
                     m_ = reduced_obj_.mean((0, 1))
 
                     # Get x & y offsets, calculate distance
@@ -954,6 +1010,41 @@ class Stroke_Extraction:
         # FIXME: This return value is never used
         return objects
 
+    def combine_extractions(self, extractions: Sequence[ExtractionResult]) -> ExtractionResult:
+        """
+        Combine all extractions into one (mostly by concatenation).
+        """
+        num_obj = sum(e.num_obj for e in extractions)
+        total_strokes_seen = 0
+        total_obj_seen = 0
+        stroke_obj_ids = []
+
+        total_strokes = sum(e.adj.shape[0] for e in extractions)
+        adj = np.zeros((total_strokes, total_strokes))
+        for e in extractions:
+            num_strokes = e.adj.shape[0]
+            stroke_obj_ids.append(e.stroke_obj_ids + total_obj_seen)
+            adj[
+                total_strokes_seen:total_strokes_seen + num_strokes,
+                total_strokes_seen:total_strokes_seen + num_strokes
+            ] = e.adj
+            total_obj_seen += e.num_obj
+            total_strokes_seen += num_strokes
+        stroke_obj_ids = np.concatenate(stroke_obj_ids, axis=0)
+        # Below: must skip strokeless extractions, or concatenation won't work
+        reduced_strokes = np.concatenate(
+            [e.reduced_strokes for e in extractions if e.reduced_strokes.shape != (0,)], axis=0)
+        colors = np.concatenate([e.colors for e in extractions], axis=0)
+
+        return ExtractionResult(num_obj, reduced_strokes, stroke_obj_ids, adj, colors)
+
+    def get_strokes_for_file(self, segmentation_path: Path) -> ExtractionResult:
+        num_obj, strokes, stroke_obj_ids, adj = self.remove_strokes(segmentation_path)
+        reduced_strokes = self.strokes2controlpoints(strokes)
+        colors = self.get_colors(segmentation_path, num_obj)
+
+        return ExtractionResult(num_obj, reduced_strokes, stroke_obj_ids, adj, colors)
+
 
 def main():
     parser = ArgumentParser(description=__doc__)
@@ -1001,6 +1092,11 @@ def main():
         dest="tolerate_errors",
         help="If passed, will halt immediately when extraction fails for a given situation."
     )
+    parser.add_argument(
+        "--process-masks-independently",
+        action="store_true",
+        help="If passed, will not merge adjacent masks of different colors."
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -1023,18 +1119,6 @@ def main():
         total=curriculum_params["num_dirs"] if args.dir_num is None else 100,
     ):
         situation_dir = args.curriculum_path / f"situation_{situation_num}"
-        language_tuple: Tuple[str, ...] = tuple()
-        if (situation_dir / "description.yaml").exists():
-            with open(
-                situation_dir / "description.yaml", encoding="utf-8"
-            ) as situation_description_file:
-                situation_description = yaml.safe_load(situation_description_file)
-            language_tuple = tuple(situation_description["language"].split(" "))
-            _integer_label, string_label = label_from_object_language_tuple(
-                language_tuple, situation_num
-            )
-        else:
-            string_label = "dummy"
         output_situation_dir = args.output_dir / f"situation_{situation_num}"
         output_situation_dir.mkdir(exist_ok=True, parents=True)
         if args.use_segmentation_type == "semantic":
@@ -1047,17 +1131,20 @@ def main():
             S = Stroke_Extraction(
                 segmentation_img_path=str(situation_dir / segmentation_imgname),
                 rgb_img_path=str(situation_dir / "rgb_0.png"),
-                debug_matlab_stroke_img_save_path=str(output_situation_dir / "matlab_stroke_0.png"),
+                debug_matlab_stroke_img_save_path=str(
+                    output_situation_dir / "matlab_stroke_0.png"),
                 stroke_img_save_path=str(output_situation_dir / "stroke_0.png"),
-                stroke_graph_img_save_path=str(output_situation_dir / "stroke_graph_0.png"),
-                features_save_path=str(output_situation_dir / "feature.yaml"),
+                stroke_graph_img_save_path=str(
+                    output_situation_dir / "stroke_graph_0.png"),
+                output_dir=output_situation_dir,
                 should_merge_small_strokes=args.merge_small_strokes,
-                obj_type=string_label,
+                obj_type="",
                 # TODO create issue: in the reorganized curriculum format, we don't store the
                 #  information about the object view/ID in an authoritative global-per-sample way such
                 #  that we could retrieve it here in the stroke extraction code.
                 obj_view="-1",
                 obj_id="-1",
+                process_masks_independently=args.process_masks_independently,
             )
             S.get_strokes()
         except ValueError as e:
