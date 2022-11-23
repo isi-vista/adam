@@ -60,6 +60,8 @@ from adam.perception.perception_graph import (
     TemporallyScopedEdgeLabel,
     edge_equals_ignoring_temporal_scope,
     raise_graph_exception,
+    SOURCE_OBJECT,
+    TARGET_OBJECT,
 )
 from adam.perception.perception_graph_nodes import (
     ObjectClusterNode,
@@ -660,6 +662,12 @@ def extract_candidate_objects(
                         # isinstance(node_to_examine, GeonAxis)
                         isinstance(in_neighbor, tuple)
                         and isinstance(in_neighbor[0], Region)
+                    )
+                    and (
+                        # Avoid in-edges from nodes representing spatial relations for the same
+                        # reason.
+                        _get_edge_label(scene_digraph, in_neighbor, node_to_examine)
+                        not in {SOURCE_OBJECT, TARGET_OBJECT}
                     )
                 )
         candidate_objects.append(
