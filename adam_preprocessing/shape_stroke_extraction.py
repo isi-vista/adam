@@ -42,7 +42,7 @@ from utils import label_from_object_language_tuple
 
 
 MIN_MASK_SIZE = 10  # Minimum number of pixels for unique mask to be saved
-TOUCHING_DISTANCE_THRESHOLD = 50.0
+TOUCHING_DISTANCE_THRESHOLD = 5.0
 
 
 class ExtractionResult(NamedTuple):
