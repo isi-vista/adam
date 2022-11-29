@@ -732,7 +732,7 @@ class Stroke_Extraction:
         """
         stroke_colors_list = []
         n_rows, n_cols = len(extractions), max(e.num_obj for e in extractions)
-        plt.figure(0, figsize=(6.4 / 3 * n_cols, 4.8 * n_rows))
+        plt.figure(0, figsize=(6.4 / 3 * max(n_cols, 1), 4.8 * max(n_rows, 1)))
         for e_idx, extraction in enumerate(extractions):
             stroke_colors = []
             for j in range(extraction.num_obj):
@@ -757,7 +757,7 @@ class Stroke_Extraction:
         Create stroke *graph* image in self.stroke_graph_img_save_path.
         """
         n_rows, n_cols = len(extractions), max(e.num_obj for e in extractions)
-        plt.figure(0, figsize=(6.4 / 3 * n_cols, 4.8 * n_rows))
+        plt.figure(0, figsize=(6.4 / 3 * max(n_cols, 1), 4.8 * max(n_rows, 1)))
         for e_idx, (extraction, stroke_colors) in enumerate(zip(extractions, stroke_colors_list)):
             for i in range(extraction.num_obj):
                 G = nx.Graph()
