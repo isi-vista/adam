@@ -14,6 +14,7 @@ pipeline:
     extract_strokes: true
     train_gnn: true
     gnn_decode: true
+    gnn_partition: "ephemeral-lg"
     submission_details_path: "%experiment_group_dir%/submission_details.log"
     job_logs_path: "%experiment_group_dir%/job_logs"
     stroke_model_path: "%experiment_group_dir%/gnn/pytorch_model.bin"
