@@ -1033,7 +1033,8 @@ class Stroke_Extraction:
         stroke_obj_ids = np.concatenate(stroke_obj_ids, axis=0)
         # Below: must skip strokeless extractions, or concatenation won't work
         reduced_strokes = np.concatenate(
-            [e.reduced_strokes for e in extractions if e.reduced_strokes.shape != (0,)], axis=0)
+            [e.reduced_strokes for e in extractions if e.reduced_strokes.shape != (0,)]
+            or [np.zeros((0, 10, 2))], axis=0)
         colors = np.concatenate([e.colors for e in extractions], axis=0)
 
         return ExtractionResult(num_obj, reduced_strokes, stroke_obj_ids, adj, colors)
