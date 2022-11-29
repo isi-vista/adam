@@ -41,7 +41,8 @@ import networkx as nx
 from utils import label_from_object_language_tuple
 
 
-TOUCHING_DISTANCE_THRESHOLD = 50.0
+MIN_MASK_SIZE = 10  # Minimum number of pixels for unique mask to be saved
+TOUCHING_DISTANCE_THRESHOLD = 5.0
 
 
 class ExtractionResult(NamedTuple):
@@ -828,12 +829,16 @@ class Stroke_Extraction:
             np.where((all_unique_masks != [0, 0, 0]).any(axis=-1))
         ]
         segmentation_paths: List[Path] = []
-        for i in range(unique_masks.shape[0]):
-            segmentation_path = Path(self.output_dir) / f"{Path(self.path).stem}_mask_{i}.png"
-            segmentation_paths.append(segmentation_path)
-
-            distinct_mask = np.where(img_seg == unique_masks[i], img_seg, [0, 0, 0])
-            cv2.imwrite(str(segmentation_path), distinct_mask)
+        num_masks: int = 0
+        for mask_color in unique_masks:
+            matches_color = (img_seg == mask_color).all(axis=-1)[..., np.newaxis]
+            if matches_color.sum() >= MIN_MASK_SIZE:
+                segmentation_path = Path(
+                    self.output_dir) / f"{Path(self.path).stem}_mask_{num_masks}.png"
+                segmentation_paths.append(segmentation_path)
+                distinct_mask = np.where(matches_color, img_seg, [0, 0, 0])
+                cv2.imwrite(str(segmentation_path), distinct_mask)
+                num_masks += 1
         return segmentation_paths
 
     def get_strokes(self):
