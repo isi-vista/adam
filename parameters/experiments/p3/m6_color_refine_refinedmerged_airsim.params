@@ -12,6 +12,7 @@ pipeline:
     strokes_use_refined_colors: true
     merge_small_strokes: true
     extract_strokes: true
+    filter_train_curriculum: false
     train_gnn: true
     gnn_decode: true
     gnn_partition: "ephemeral-lg"
