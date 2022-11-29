@@ -292,6 +292,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
     )
     merge_small_strokes = parse_bool_param(pipeline_params, "merge_small_strokes")
     extract_strokes = parse_bool_param(pipeline_params, "extract_strokes")
+    filter_train = parse_bool_param(pipeline_params, "filter_train_curriculum")
     train_gnn = parse_bool_param(pipeline_params, "train_gnn")
     gnn_decode = parse_bool_param(pipeline_params, "gnn_decode")
     # To simplify things, training can be run only on ephemeral or ephemeral-lg.
@@ -542,6 +543,32 @@ def pipeline_entrypoint(params: Parameters) -> None:
             if extract_strokes
             else None
         )
+
+        # Optionally filter the train curriculum to be single objects
+        name_to_id["filter_curriculum"] = (
+            run_job(
+                echo_command(
+                    command_builder(
+                        root / "slurm" / "filter_curriculum.sh",
+                        script_args=[
+                            str(curriculum_path),
+                        ],
+                        dependencies=dependency_list(
+                            name_to_id.get("stroke_extraction"),
+                        ),
+                        job_name=f"adamFilter{split}",
+                        log_dir=job_logs_path,
+                        email=email,
+                        mail_types=[MailType("FAIL")],
+                    ),
+                    save_to=submission_details_path,
+                ),
+                env=os.environ,
+                workdir=root,
+            )
+            if filter_train and split == "train"
+            else None
+        )
         split_to_name_to_id[split] = name_to_id
 
     # Stop server after the segmentation jobs are done
@@ -584,6 +611,7 @@ def pipeline_entrypoint(params: Parameters) -> None:
                     ],
                     dependencies=dependency_list(
                         split_to_name_to_id["train"].get("stroke_extraction"),
+                        split_to_name_to_id["train"].get("filter_curriculum"),
                         split_to_name_to_id["test"].get("stroke_extraction"),
                     ),
                     job_name="adamGNNTrain",
