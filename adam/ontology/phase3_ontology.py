@@ -214,6 +214,7 @@ PHASE_3_CURRICULUM_OBJECTS = immutableset(
         SOFA,
         BOX,
         CUP,
+        MUG,
         FLOOR,
         WINDOW,
         PAPER,
