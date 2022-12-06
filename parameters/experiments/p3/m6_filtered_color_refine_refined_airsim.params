@@ -4,15 +4,15 @@ _includes:
 
 pipeline:
     use_sbatch: true
-    do_object_segmentation: true
-    copy_segmentations_from_base: false
-    segmentation_model: "stego"
-    segment_colors: false
-    refine_colors: false
-    strokes_use_refined_colors: false
+    do_object_segmentation: false
+    copy_segmentations_from_base: true
+    segmentation_model: "airsim"
+    segment_colors: true
+    refine_colors: true
+    strokes_use_refined_colors: true
     merge_small_strokes: false
     extract_strokes: true
-    filter_train_curriculum: false
+    filter_train_curriculum: true
     train_gnn: true
     gnn_decode: true
     submission_details_path: "%experiment_group_dir%/submission_details.log"
@@ -51,15 +51,15 @@ suppress_error: false
 curriculum: "phase3"
 train_curriculum:
     curriculum_type: "training"
-    curriculum: "m6_color_refine_expt_baseline_stego"
+    curriculum: "m6_filtered_color_refine_expt_refined_airsim"
     color_is_rgb: True
 test_curriculum:
     curriculum_type: "testing"
-    curriculum: "m6_color_refine_expt_baseline_stego_eval"
+    curriculum: "m6_filtered_color_refine_expt_refined_airsim_eval"
     color_is_rgb: True
 
 # Experiment Configuration
-experiment: "m6_color_refine_expt_baseline_stego"
+experiment: "m6_color_refine_expt_refined_airsim"
 experiment_group_dir: '%adam_experiment_root%/learners/%learner%/experiments/%train_curriculum.curriculum%/'
 log_learner_state: true
 experiment_type: simulated

@@ -12,17 +12,18 @@ pipeline:
     strokes_use_refined_colors: false
     merge_small_strokes: false
     extract_strokes: true
-    filter_train_curriculum: false
+    filter_train_curriculum: true
     train_gnn: true
     gnn_decode: true
+    gnn_partition: "ephemeral-lg"
     submission_details_path: "%experiment_group_dir%/submission_details.log"
     job_logs_path: "%experiment_group_dir%/job_logs"
     stroke_model_path: "%experiment_group_dir%/gnn/pytorch_model.bin"
     stroke_python_bin_dir: "%stroke_python_root%/bin"
     adam_params_cache_file: "%experiment_group_dir%/adam_params.params"
     # Use the M6 reorganized version of the M5 objects curriculum
-    base_train_curriculum_path: "%adam_experiment_root%/curriculum/train/m6_m5_objects"
-    base_test_curriculum_path: "%adam_experiment_root%/curriculum/test/m6_m5_objects_eval"
+    base_train_curriculum_path: "%adam_experiment_root%/curriculum/train/m6_isi_objects"
+    base_test_curriculum_path: "%adam_experiment_root%/curriculum/test/m6_isi_objects_eval"
     train_curriculum_path: "%adam_experiment_root%/curriculum/train/%train_curriculum.curriculum%"
     test_curriculum_path: "%adam_experiment_root%/curriculum/test/%test_curriculum.curriculum%"
 
@@ -51,15 +52,15 @@ suppress_error: false
 curriculum: "phase3"
 train_curriculum:
     curriculum_type: "training"
-    curriculum: "m6_color_refine_expt_baseline_stego"
+    curriculum: "m6_isi_color_refine_expt_baseline_stego"
     color_is_rgb: True
 test_curriculum:
     curriculum_type: "testing"
-    curriculum: "m6_color_refine_expt_baseline_stego_eval"
+    curriculum: "m6_isi_color_refine_expt_baseline_stego_eval"
     color_is_rgb: True
 
 # Experiment Configuration
-experiment: "m6_color_refine_expt_baseline_stego"
+experiment: "m6_isi_color_refine_expt_baseline_stego"
 experiment_group_dir: '%adam_experiment_root%/learners/%learner%/experiments/%train_curriculum.curriculum%/'
 log_learner_state: true
 experiment_type: simulated
