@@ -80,6 +80,6 @@ types-urllib3==1.26.20
 typing_extensions==4.2.0
 urllib3==1.26.9
 vistautils==0.24.0
-Werkzeug==2.1.2
+Werkzeug==2.2.3
 wrapt==1.14.1
 zipp==3.8.0
